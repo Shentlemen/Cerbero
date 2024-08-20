@@ -1,0 +1,48 @@
+<div class="container">
+    <h2>Gestión de Software</h2>
+    
+    <form [formGroup]="softwareForm" (ngSubmit)="agregarSoftware()">
+      <div class="form-group">
+        <label for="nroSoftware">Número de Software:</label>
+        <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="nombre">Nombre:</label>
+        <input id="nombre" formControlName="nombre" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="version">Versión:</label>
+        <input id="version" formControlName="version" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="licencia">Licencia:</label>
+        <input id="licencia" formControlName="licencia" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="fechaInstalacion">Fecha de Instalación:</label>
+        <input id="fechaInstalacion" formControlName="fechaInstalacion" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="nroProveedor">Número de Proveedor:</label>
+        <input id="nroProveedor" formControlName="nroProveedor" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Software' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <h3>Lista de Software</h3>
+    <ul class="list-group">
+      <li *ngFor="let software of softwareList; let i = index" class="list-group-item">
+        {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
+        <button class="btn btn-info btn-sm" (click)="editarSoftware(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  

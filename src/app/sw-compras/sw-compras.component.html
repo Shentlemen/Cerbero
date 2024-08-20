@@ -1,0 +1,43 @@
+<div class="container">
+    <h2>Gestión de Compras de Software</h2>
+    
+    <form [formGroup]="swComprasForm" (ngSubmit)="agregarSwCompra()">
+      <div class="form-group">
+        <label for="nroSoftware">Número de Software:</label>
+        <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="nroCompra">Número de Compra:</label>
+        <input id="nroCompra" formControlName="nroCompra" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="item">Item:</label>
+        <input id="item" formControlName="item" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="pedido">Pedido:</label>
+        <input id="pedido" formControlName="pedido" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="descripcion">Descripción:</label>
+        <input id="descripcion" formControlName="descripcion" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Compra' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <h3>Lista de Compras de Software</h3>
+    <ul class="list-group">
+      <li *ngFor="let swCompra of swComprasList; let i = index" class="list-group-item">
+        Software: {{ swCompra.nroSoftware }} - Compra: {{ swCompra.nroCompra }} - Item: {{ swCompra.item }}
+        <button class="btn btn-info btn-sm" (click)="editarSwCompra(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarSwCompra(swCompra.nroCompra)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  

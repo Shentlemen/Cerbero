@@ -1,0 +1,53 @@
+<div class="container">
+    <h2>Gestión de Pedidos de Compras</h2>
+    
+    <form [formGroup]="comprasPedidoForm" (ngSubmit)="agregarCompraPedido()">
+      <div class="form-group">
+        <label for="nroCompra">Número de Compra:</label>
+        <input id="nroCompra" formControlName="nroCompra" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="item">Item:</label>
+        <input id="item" formControlName="item" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="pedido">Pedido:</label>
+        <input id="pedido" formControlName="pedido" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="proveedor">Proveedor:</label>
+        <input id="proveedor" formControlName="proveedor" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="cantidad">Cantidad:</label>
+        <input id="cantidad" formControlName="cantidad" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="fechaInicio">Fecha de Inicio:</label>
+        <input id="fechaInicio" formControlName="fechaInicio" type="date" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="fechaFinal">Fecha Final:</label>
+        <input id="fechaFinal" formControlName="fechaFinal" type="date" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Pedido' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <h3>Lista de Pedidos de Compras</h3>
+    <ul class="list-group">
+      <li *ngFor="let compraPedido of comprasPedidoList; let i = index" class="list-group-item">
+        Pedido: {{ compraPedido.pedido }} - Item: {{ compraPedido.item }} - Proveedor: {{ compraPedido.proveedor }}
+        <button class="btn btn-info btn-sm" (click)="editarCompraPedido(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarCompraPedido(compraPedido.nroCompra)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  

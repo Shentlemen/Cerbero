@@ -1,0 +1,53 @@
+<div class="container">
+    <h2>Gestión de Locales</h2>
+    
+    <form [formGroup]="localForm" (ngSubmit)="agregarLocal()">
+      <div class="form-group">
+        <label for="subred">Subred:</label>
+        <input id="subred" formControlName="subred" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="piso">Piso:</label>
+        <input id="piso" formControlName="piso" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="oficina">Oficina:</label>
+        <input id="oficina" formControlName="oficina" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="zona">Zona:</label>
+        <input id="zona" formControlName="zona" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="ciudad">Ciudad:</label>
+        <input id="ciudad" formControlName="ciudad" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="local">Local:</label>
+        <input id="local" formControlName="local" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="direccion">Dirección:</label>
+        <input id="direccion" formControlName="direccion" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Local' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <h3>Lista de Locales</h3>
+    <ul class="list-group">
+      <li *ngFor="let local of localList; let i = index" class="list-group-item">
+        {{ local.subred }} - {{ local.zona }} - {{ local.ciudad }} - {{ local.local }}
+        <button class="btn btn-info btn-sm" (click)="editarLocal(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarLocal(local.subred)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  

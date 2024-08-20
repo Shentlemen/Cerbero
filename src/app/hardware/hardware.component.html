@@ -1,0 +1,70 @@
+<div class="container">
+    <h2>Gestión de Hardware</h2>
+    
+    <!-- Formulario para agregar o editar hardware -->
+    <form [formGroup]="hardwareForm" (ngSubmit)="agregarHardware()">
+      <div class="form-group">
+        <label for="tipoEquipo">Tipo de Equipo:</label>
+        <input id="tipoEquipo" formControlName="tipoEquipo" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="marca">Marca:</label>
+        <input id="marca" formControlName="marca" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="modelo">Modelo:</label>
+        <input id="modelo" formControlName="modelo" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="nroSerie">Número de Serie:</label>
+        <input id="nroSerie" formControlName="nroSerie" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="disco">Disco:</label>
+        <input id="disco" formControlName="disco" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="memoria">Memoria:</label>
+        <input id="memoria" formControlName="memoria" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="tarjetaVideo">Tarjeta de Video:</label>
+        <input id="tarjetaVideo" formControlName="tarjetaVideo" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="nroSerieTeclado">Número de Serie del Teclado:</label>
+        <input id="nroSerieTeclado" formControlName="nroSerieTeclado" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="nroSerieMouse">Número de Serie del Mouse:</label>
+        <input id="nroSerieMouse" formControlName="nroSerieMouse" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="propietario">Propietario:</label>
+        <input id="propietario" formControlName="propietario" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Hardware' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <!-- Lista de hardware -->
+    <h3>Lista de Hardware</h3>
+    <ul class="list-group">
+      <li *ngFor="let hardware of hardwareList; let i = index" class="list-group-item">
+        {{ hardware.tipoEquipo }} - {{ hardware.marca }} - {{ hardware.modelo }}
+        <button class="btn btn-info btn-sm" (click)="editarHardware(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarHardware(hardware.nroEquipo)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  

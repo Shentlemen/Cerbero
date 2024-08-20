@@ -1,0 +1,43 @@
+<div class="container">
+    <h2>Gestión de Ubicaciones de Hardware</h2>
+    
+    <form [formGroup]="hwLocalForm" (ngSubmit)="agregarHwLocal()">
+      <div class="form-group">
+        <label for="nroSoftware">Número de Software:</label>
+        <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="subred">Subred:</label>
+        <input id="subred" formControlName="subred" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="piso">Piso:</label>
+        <input id="piso" formControlName="piso" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="oficina">Oficina:</label>
+        <input id="oficina" formControlName="oficina" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="descripcion">Descripción:</label>
+        <input id="descripcion" formControlName="descripcion" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Ubicación' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <h3>Lista de Ubicaciones</h3>
+    <ul class="list-group">
+      <li *ngFor="let hwLocal of hwLocalList; let i = index" class="list-group-item">
+        Subred: {{ hwLocal.subred }} - Piso: {{ hwLocal.piso }} - Oficina: {{ hwLocal.oficina }}
+        <button class="btn btn-info btn-sm" (click)="editarHwLocal(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarHwLocal(hwLocal.nroSoftware)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  

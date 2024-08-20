@@ -1,0 +1,38 @@
+<div class="container">
+    <h2>Gestión de Proveedores</h2>
+    
+    <form [formGroup]="proveedoresForm" (ngSubmit)="agregarProveedor()">
+      <div class="form-group">
+        <label for="nroProveedor">Número de Proveedor:</label>
+        <input id="nroProveedor" formControlName="nroProveedor" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="descripcion">Descripción:</label>
+        <input id="descripcion" formControlName="descripcion" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="direccion">Dirección:</label>
+        <input id="direccion" formControlName="direccion" class="form-control" />
+      </div>
+      
+      <div class="form-group">
+        <label for="telefonos">Teléfonos:</label>
+        <input id="telefonos" formControlName="telefonos" class="form-control" />
+      </div>
+      
+      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Proveedor' }}</button>
+      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+    </form>
+    
+    <h3>Lista de Proveedores</h3>
+    <ul class="list-group">
+      <li *ngFor="let proveedor of proveedoresList; let i = index" class="list-group-item">
+        {{ proveedor.descripcion }} - {{ proveedor.direccion }} - Tel: {{ proveedor.telefonos }}
+        <button class="btn btn-info btn-sm" (click)="editarProveedor(i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarProveedor(proveedor.nroProveedor)">Eliminar</button>
+      </li>
+    </ul>
+  </div>
+  
