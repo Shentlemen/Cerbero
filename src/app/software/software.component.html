@@ -1,48 +1,59 @@
 <div class="container">
-    <h2>Gestión de Software</h2>
-    
-    <form [formGroup]="softwareForm" (ngSubmit)="agregarSoftware()">
-      <div class="form-group">
-        <label for="nroSoftware">Número de Software:</label>
+  <h2>Gestión de Software</h2>
+  
+  <h3>Lista de Software</h3>
+  <ul class="list-group">
+    <li *ngFor="let software of softwareList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">Ver</button>
+        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)">Eliminar</button>
+      </div>        
+    </li>
+  </ul>
+</div>
+
+<!-- Modal -->
+<ng-template #editModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="editModalLabel">{{ isEditing ? 'Editar' : 'Ver' }}</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="softwareForm" (ngSubmit)="guardarCambios()">
+      <div class="mb-3">
+        <label for="nroSoftware" class="form-label">Número de Software:</label>
         <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="nombre">Nombre:</label>
+      <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre:</label>
         <input id="nombre" formControlName="nombre" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="version">Versión:</label>
+      <div class="mb-3">
+        <label for="version" class="form-label">Versión:</label>
         <input id="version" formControlName="version" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="licencia">Licencia:</label>
+      <div class="mb-3">
+        <label for="licencia" class="form-label">Licencia:</label>
         <input id="licencia" formControlName="licencia" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="fechaInstalacion">Fecha de Instalación:</label>
-        <input id="fechaInstalacion" formControlName="fechaInstalacion" class="form-control" />
+      <div class="mb-3">
+        <label for="fechaInstalacion" class="form-label">Fecha de Instalación:</label>
+        <input id="fechaInstalacion" formControlName="fechaInstalacion" type="date" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="nroProveedor">Número de Proveedor:</label>
+      <div class="mb-3">
+        <label for="nroProveedor" class="form-label">Número de Proveedor:</label>
         <input id="nroProveedor" formControlName="nroProveedor" class="form-control" />
       </div>
-      
-      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Software' }}</button>
-      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()" *ngIf="!isEditing">Cerrar</button>
+        <button type="button" class="btn btn-success" (click)="exportarAPdf()" *ngIf="!isEditing">Exportar a PDF</button>
+        <button type="submit" class="btn btn-primary" (click)="guardarCambios()" *ngIf="isEditing">Guardar Cambios</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelarEdicion()" *ngIf="isEditing">Cancelar</button>
+      </div>
     </form>
-    
-    <h3>Lista de Software</h3>
-    <ul class="list-group">
-      <li *ngFor="let software of softwareList; let i = index" class="list-group-item">
-        {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
-        <button class="btn btn-info btn-sm" (click)="editarSoftware(i)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)">Eliminar</button>
-      </li>
-    </ul>
   </div>
-  
+</ng-template>

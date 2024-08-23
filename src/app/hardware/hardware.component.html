@@ -1,70 +1,76 @@
+<!-- Lista de hardware -->
 <div class="container">
-    <h2>Gestión de Hardware</h2>
-    
-    <!-- Formulario para agregar o editar hardware -->
-    <form [formGroup]="hardwareForm" (ngSubmit)="agregarHardware()">
-      <div class="form-group">
-        <label for="tipoEquipo">Tipo de Equipo:</label>
+  <h3>Lista de Hardware</h3>
+  <ul class="list-group">
+    <li *ngFor="let hardware of hardwareList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+      {{ hardware.tipoEquipo }} - {{ hardware.marca }} - {{ hardware.modelo }}
+      <div>
+        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">Ver</button>
+        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarHardware(hardware.nroEquipo)">Eliminar</button>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- Modal -->
+<ng-template #editModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="editModalLabel">{{ isEditing ? 'Editar' : 'Ver' }}</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="hardwareForm" (ngSubmit)="guardarCambios()">
+      <div class="mb-3">
+        <label for="nroEquipo" class="form-label">Número de Equipo:</label>
+        <input id="nroEquipo" formControlName="nroEquipo" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="tipoEquipo" class="form-label">Tipo de Equipo:</label>
         <input id="tipoEquipo" formControlName="tipoEquipo" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="marca">Marca:</label>
+      <div class="mb-3">
+        <label for="marca" class="form-label">Marca:</label>
         <input id="marca" formControlName="marca" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="modelo">Modelo:</label>
+      <div class="mb-3">
+        <label for="modelo" class="form-label">Modelo:</label>
         <input id="modelo" formControlName="modelo" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="nroSerie">Número de Serie:</label>
+      <div class="mb-3">
+        <label for="nroSerie" class="form-label">Número de Serie:</label>
         <input id="nroSerie" formControlName="nroSerie" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="disco">Disco:</label>
+      <div class="mb-3">
+        <label for="disco" class="form-label">Disco:</label>
         <input id="disco" formControlName="disco" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="memoria">Memoria:</label>
+      <div class="mb-3">
+        <label for="memoria" class="form-label">Memoria:</label>
         <input id="memoria" formControlName="memoria" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="tarjetaVideo">Tarjeta de Video:</label>
+      <div class="mb-3">
+        <label for="tarjetaVideo" class="form-label">Tarjeta de Video:</label>
         <input id="tarjetaVideo" formControlName="tarjetaVideo" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="nroSerieTeclado">Número de Serie del Teclado:</label>
+      <div class="mb-3">
+        <label for="nroSerieTeclado" class="form-label">Número de Serie del Teclado:</label>
         <input id="nroSerieTeclado" formControlName="nroSerieTeclado" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="nroSerieMouse">Número de Serie del Mouse:</label>
+      <div class="mb-3">
+        <label for="nroSerieMouse" class="form-label">Número de Serie del Mouse:</label>
         <input id="nroSerieMouse" formControlName="nroSerieMouse" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="propietario">Propietario:</label>
+      <div class="mb-3">
+        <label for="propietario" class="form-label">Propietario:</label>
         <input id="propietario" formControlName="propietario" class="form-control" />
       </div>
-      
-      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Hardware' }}</button>
-      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()" *ngIf="!isEditing">Cerrar</button>
+        <button type="button" class="btn btn-success" (click)="exportarAPdf()" *ngIf="!isEditing">Exportar a PDF</button>
+        <button type="submit" class="btn btn-primary" (click)="guardarCambios()" *ngIf="isEditing">Guardar Cambios</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelarEdicion()" *ngIf="isEditing">Cancelar</button>
+      </div>
     </form>
-    
-    <!-- Lista de hardware -->
-    <h3>Lista de Hardware</h3>
-    <ul class="list-group">
-      <li *ngFor="let hardware of hardwareList; let i = index" class="list-group-item">
-        {{ hardware.tipoEquipo }} - {{ hardware.marca }} - {{ hardware.modelo }}
-        <button class="btn btn-info btn-sm" (click)="editarHardware(i)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarHardware(hardware.nroEquipo)">Eliminar</button>
-      </li>
-    </ul>
   </div>
-  
+</ng-template>

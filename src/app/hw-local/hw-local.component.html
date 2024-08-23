@@ -1,43 +1,55 @@
 <div class="container">
-    <h2>Gestión de Ubicaciones de Hardware</h2>
-    
-    <form [formGroup]="hwLocalForm" (ngSubmit)="agregarHwLocal()">
-      <div class="form-group">
-        <label for="nroSoftware">Número de Software:</label>
+  <h2>Gestión de Ubicaciones de Hardware</h2>
+  
+  <h3>Lista de Ubicaciones</h3>
+  <ul class="list-group">
+    <li *ngFor="let hwLocal of hwLocalList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        Subred: {{ hwLocal.subred }} - Piso: {{ hwLocal.piso }} - Oficina: {{ hwLocal.oficina }}
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">Ver</button>
+        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarHwLocal(hwLocal.nroSoftware)">Eliminar</button>
+      </div>        
+    </li>
+  </ul>
+</div>
+
+<!-- Modal -->
+<ng-template #editModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="editModalLabel">{{ isEditing ? 'Editar' : 'Ver' }}</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="hwLocalForm" (ngSubmit)="guardarCambios()">
+      <div class="mb-3">
+        <label for="nroSoftware" class="form-label">Número de Software:</label>
         <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="subred">Subred:</label>
+      <div class="mb-3">
+        <label for="subred" class="form-label">Subred:</label>
         <input id="subred" formControlName="subred" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="piso">Piso:</label>
+      <div class="mb-3">
+        <label for="piso" class="form-label">Piso:</label>
         <input id="piso" formControlName="piso" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="oficina">Oficina:</label>
+      <div class="mb-3">
+        <label for="oficina" class="form-label">Oficina:</label>
         <input id="oficina" formControlName="oficina" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="descripcion">Descripción:</label>
+      <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción:</label>
         <input id="descripcion" formControlName="descripcion" class="form-control" />
       </div>
-      
-      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Ubicación' }}</button>
-      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()" *ngIf="!isEditing">Cerrar</button>
+        <button type="button" class="btn btn-success" (click)="exportarAPdf()" *ngIf="!isEditing">Exportar a PDF</button>
+        <button type="submit" class="btn btn-primary" (click)="guardarCambios()" *ngIf="isEditing">Guardar Cambios</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelarEdicion()" *ngIf="isEditing">Cancelar</button>
+      </div>
     </form>
-    
-    <h3>Lista de Ubicaciones</h3>
-    <ul class="list-group">
-      <li *ngFor="let hwLocal of hwLocalList; let i = index" class="list-group-item">
-        Subred: {{ hwLocal.subred }} - Piso: {{ hwLocal.piso }} - Oficina: {{ hwLocal.oficina }}
-        <button class="btn btn-info btn-sm" (click)="editarHwLocal(i)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarHwLocal(hwLocal.nroSoftware)">Eliminar</button>
-      </li>
-    </ul>
   </div>
-  
+</ng-template>

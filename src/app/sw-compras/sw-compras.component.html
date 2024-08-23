@@ -1,43 +1,55 @@
 <div class="container">
-    <h2>Gestión de Compras de Software</h2>
-    
-    <form [formGroup]="swComprasForm" (ngSubmit)="agregarSwCompra()">
-      <div class="form-group">
-        <label for="nroSoftware">Número de Software:</label>
+  <h2>Gestión de Compras de Software</h2>
+  
+  <h3>Lista de Compras de Software</h3>
+  <ul class="list-group">
+    <li *ngFor="let swCompra of swComprasList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        Software: {{ swCompra.nroSoftware }} - Compra: {{ swCompra.nroCompra }} - Item: {{ swCompra.item }}
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">Ver</button>
+        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarSwCompra(swCompra.nroCompra)">Eliminar</button>
+      </div>        
+    </li>
+  </ul>
+</div>
+
+<!-- Modal -->
+<ng-template #editModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="editModalLabel">{{ isEditing ? 'Editar' : 'Ver' }}</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="swComprasForm" (ngSubmit)="guardarCambios()">
+      <div class="mb-3">
+        <label for="nroSoftware" class="form-label">Número de Software:</label>
         <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="nroCompra">Número de Compra:</label>
+      <div class="mb-3">
+        <label for="nroCompra" class="form-label">Número de Compra:</label>
         <input id="nroCompra" formControlName="nroCompra" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="item">Item:</label>
+      <div class="mb-3">
+        <label for="item" class="form-label">Item:</label>
         <input id="item" formControlName="item" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="pedido">Pedido:</label>
+      <div class="mb-3">
+        <label for="pedido" class="form-label">Pedido:</label>
         <input id="pedido" formControlName="pedido" class="form-control" />
       </div>
-      
-      <div class="form-group">
-        <label for="descripcion">Descripción:</label>
+      <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción:</label>
         <input id="descripcion" formControlName="descripcion" class="form-control" />
       </div>
-      
-      <button type="submit" class="btn btn-primary">{{ isEditing ? 'Guardar Cambios' : 'Agregar Compra' }}</button>
-      <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelarEdicion()">Cancelar</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()" *ngIf="!isEditing">Cerrar</button>
+        <button type="button" class="btn btn-success" (click)="exportarAPdf()" *ngIf="!isEditing">Exportar a PDF</button>
+        <button type="submit" class="btn btn-primary" (click)="guardarCambios()" *ngIf="isEditing">Guardar Cambios</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelarEdicion()" *ngIf="isEditing">Cancelar</button>
+      </div>
     </form>
-    
-    <h3>Lista de Compras de Software</h3>
-    <ul class="list-group">
-      <li *ngFor="let swCompra of swComprasList; let i = index" class="list-group-item">
-        Software: {{ swCompra.nroSoftware }} - Compra: {{ swCompra.nroCompra }} - Item: {{ swCompra.item }}
-        <button class="btn btn-info btn-sm" (click)="editarSwCompra(i)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarSwCompra(swCompra.nroCompra)">Eliminar</button>
-      </li>
-    </ul>
   </div>
-  
+</ng-template>

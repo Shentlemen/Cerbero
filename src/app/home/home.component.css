@@ -1,0 +1,15 @@
+.home-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Ocupa toda la altura de la ventana */
+  width: 100vw; /* Ocupa todo el ancho de la ventana */
+  background-color: black; /* Fondo negro */
+}
+
+.logo {
+  max-width: 70%; /* Ajusta el ancho máximo de la imagen */
+  max-height: 70%; /* Ajusta la altura máxima de la imagen */
+  margin: auto; /* Centra la imagen */
+  object-fit: contain; /* Mantiene la proporción de la imagen */
+}
