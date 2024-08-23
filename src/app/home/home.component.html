@@ -1,4 +1,10 @@
-<div class="home-container" (click)="navigateToMenu()">
-    <img src="logo.png" alt="Cerbero Logo" class="logo">
-  </div>
-  
+<ngx-particles [options]="particlesOptions"></ngx-particles>
+<div class="home-container"></div> <!-- Este div solo se usa para el fondo negro -->
+<div class="content-container">
+    <img src="assets/logo.png" alt="Cerbero Logo" class="logo">
+    <form class="login-form" (ngSubmit)="onSubmit()">
+        <input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required>
+        <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+</div>

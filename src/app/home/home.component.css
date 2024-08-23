@@ -1,15 +1,82 @@
-.home-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh; /* Ocupa toda la altura de la ventana */
-  width: 100vw; /* Ocupa todo el ancho de la ventana */
-  background-color: black; /* Fondo negro */
+ngx-particles {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 2; /* Las partículas sobre el fondo negro pero debajo del logo y el formulario */
+  pointer-events: none; /* Las partículas no interfieren con los clics */
 }
 
-.logo {
-  max-width: 70%; /* Ajusta el ancho máximo de la imagen */
-  max-height: 70%; /* Ajusta la altura máxima de la imagen */
-  margin: auto; /* Centra la imagen */
-  object-fit: contain; /* Mantiene la proporción de la imagen */
+.home-container {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: black; /* Fondo negro detrás de todo */
+  z-index: 1; /* Fondo negro debajo de las partículas */
 }
+
+.content-container {
+  position: absolute;
+  top: 30%; /* Ajusta este valor para controlar la altura */
+  left: 50%;
+  transform: translate(-50%, -30%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 3; /* Logo y formulario sobre las partículas */
+}
+
+
+.logo {
+  max-width: 50%;
+  max-height: 50%;
+  object-fit: contain;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.logo:hover {
+  transform: scale(1.1) rotate(10deg); /* Escala y rota el logo */
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* Agrega sombra */
+}
+
+
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-form input {
+  margin: 10px 0;
+  padding: 10px;
+  width: 200px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #f4e4d8; /* Color blanco crema */
+  color: #333; /* Color del texto */
+}
+
+.login-form input::placeholder {
+  color: #666; /* Color del placeholder */
+}
+
+.login-form button {
+  padding: 10px 20px;
+  background-color: #4b217d; /* Violeta oscuro para combinar con el logo */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.login-form button:hover {
+  background-color: #381859; /* Un tono ligeramente más oscuro para el efecto hover */
+}
+
