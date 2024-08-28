@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import jsPDF from 'jspdf';
 
-
 @Component({
   selector: 'app-software',
   standalone: true,
@@ -37,29 +36,43 @@ export class SoftwareComponent implements OnInit {
   }
 
   cancelarEdicion(): void {
-    this.isEditing = false;
-    this.softwareForm.enable();  // Vuelve a habilitar el formulario
-    this.softwareForm.reset();   // Resetea el formulario
+    this.modalService.dismissAll();  // Cierra todos los modales
+    setTimeout(() => {
+      this.isEditing = false;
+      this.currentEditIndex = null;
+      this.currentViewIndex = null;  // Resetea el índice de visualización actual
+      this.softwareForm.enable();  // Vuelve a habilitar el formulario
+      this.softwareForm.reset();   // Resetea el formulario
+    }, 200);  // Cambia el estado después de cerrar el modal
   }
-  
+
   abrirModalEditar(modal: any, index: number): void {
     this.isEditing = true;  // Cambia a modo edición
     this.currentEditIndex = index;
     const software = this.softwareList[index];
-    this.softwareForm.patchValue(software);
-    this.softwareForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (software) {
+      this.softwareForm.patchValue(software);
+      this.softwareForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.cancelarEdicion(),
+        () => this.cancelarEdicion()
+      );
+    }
   }
-  
 
   abrirModalVer(modal: any, index: number): void {
+    if (this.isEditing) {
+      return;  // No abrir el modal de "Ver" si estás en modo edición
+    }
     this.currentViewIndex = index;
     const software = this.softwareList[this.currentViewIndex];
-    this.softwareForm.patchValue(software);
-    this.softwareForm.disable();  // Deshabilita el formulario para solo ver
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (software) {
+      this.softwareForm.patchValue(software);
+      this.softwareForm.disable();  // Deshabilita el formulario para solo ver
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    }
   }
-  
+
   guardarCambios(): void {
     if (this.currentEditIndex !== null) {
       this.softwareList[this.currentEditIndex] = this.softwareForm.value;
@@ -69,10 +82,11 @@ export class SoftwareComponent implements OnInit {
       this.softwareForm.enable();  // Rehabilita el formulario después de cerrar
     }
   }
+
   exportarAPdf(): void {
     const doc = new jsPDF();
     const software = this.softwareList[this.currentViewIndex!];
-  
+
     doc.text('Software Details', 10, 10);
     doc.text(`Número de Software: ${software.nroSoftware}`, 10, 20);
     doc.text(`Nombre: ${software.nombre}`, 10, 30);
@@ -80,10 +94,9 @@ export class SoftwareComponent implements OnInit {
     doc.text(`Licencia: ${software.licencia}`, 10, 50);
     doc.text(`Fecha de Instalación: ${software.fechaInstalacion}`, 10, 60);
     doc.text(`Número de Proveedor: ${software.nroProveedor}`, 10, 70);
-  
+
     doc.save('software-details.pdf');
   }
-  
 
   eliminarSoftware(id: number): void {
     this.softwareList = this.softwareList.filter(sw => sw.nroSoftware !== id);

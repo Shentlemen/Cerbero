@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import jsPDF from 'jspdf';
 
-
 @Component({
   selector: 'app-proveedores',
   standalone: true,
@@ -35,51 +34,75 @@ export class ProveedoresComponent implements OnInit {
   }
 
   cancelarEdicion(): void {
-    this.isEditing = false;
-    this.proveedoresForm.enable();  // Vuelve a habilitar el formulario
-    this.proveedoresForm.reset();   // Resetea el formulario
+    this.modalService.dismissAll();  // Cierra todos los modales
+    this.resetFormulario();
   }
-  
+
+  cerrarModal(modal: any): void {
+    modal.dismiss();  // Cierra el modal específico
+    this.resetFormulario();
+  }
+
+  resetFormulario(): void {
+    setTimeout(() => {
+      this.isEditing = false;
+      this.currentEditIndex = null;
+      this.currentViewIndex = null;  // Resetea el índice de visualización actual
+      this.proveedoresForm.reset();   // Resetea el formulario
+      this.proveedoresForm.enable();  // Vuelve a habilitar el formulario
+    }, 200);
+  }
+
   abrirModalEditar(modal: any, index: number): void {
     this.isEditing = true;  // Cambia a modo edición
     this.currentEditIndex = index;
     const proveedor = this.proveedoresList[index];
-    this.proveedoresForm.patchValue(proveedor);
-    this.proveedoresForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (proveedor) {
+      this.proveedoresForm.patchValue(proveedor);
+      this.proveedoresForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.resetFormulario(),
+        () => this.resetFormulario()
+      );
+    }
   }
-  
 
   abrirModalVer(modal: any, index: number): void {
+    if (this.isEditing) {
+      return;  // No abrir el modal de "Ver" si estás en modo edición
+    }
     this.currentViewIndex = index;
     const proveedor = this.proveedoresList[this.currentViewIndex];
-    this.proveedoresForm.patchValue(proveedor);
-    this.proveedoresForm.disable();  // Deshabilita el formulario para solo ver
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (proveedor) {
+      this.proveedoresForm.patchValue(proveedor);
+      this.proveedoresForm.disable();  // Deshabilita el formulario para solo ver
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.resetFormulario(),
+        () => this.resetFormulario()
+      );
+    }
   }
-  
+
   guardarCambios(): void {
     if (this.currentEditIndex !== null) {
       this.proveedoresList[this.currentEditIndex] = this.proveedoresForm.value;
       this.modalService.dismissAll();
-      this.currentEditIndex = null;
-      this.proveedoresForm.reset();
-      this.proveedoresForm.enable();  // Rehabilita el formulario después de cerrar
+      this.resetFormulario();
     }
   }
+
   exportarAPdf(): void {
     const doc = new jsPDF();
     const proveedor = this.proveedoresList[this.currentViewIndex!];
-  
+
     doc.text('Proveedor Details', 10, 10);
     doc.text(`Número de Proveedor: ${proveedor.nroProveedor}`, 10, 20);
     doc.text(`Descripción: ${proveedor.descripcion}`, 10, 30);
     doc.text(`Dirección: ${proveedor.direccion}`, 10, 40);
     doc.text(`Teléfonos: ${proveedor.telefonos}`, 10, 50);
-  
+
     doc.save('proveedor-details.pdf');
   }
-  
 
   eliminarProveedor(id: number): void {
     this.proveedoresList = this.proveedoresList.filter(proveedor => proveedor.nroProveedor !== id);

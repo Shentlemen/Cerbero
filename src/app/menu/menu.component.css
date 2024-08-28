@@ -1,28 +1,68 @@
+/* Asegura que el cuerpo de la página ocupe toda la altura */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Estilo para la barra lateral */
 .sidenav {
-    height: 100%;
-    width: 250px;
-    position: fixed;
-    z-index: 1;
-    top: 0;
-    left: 0;
-    background-color: #111;
-    padding-top: 20px;
-  }
-  
-  .sidenav a {
-    padding: 8px 16px;
-    text-decoration: none;
-    font-size: 25px;
-    color: #818181;
-    display: block;
-  }
-  
-  .sidenav a:hover {
-    color: #f1f1f1;
-  }
-  
-  .main-content {
-    margin-left: 260px; /* Same as the width of the sidenav */
-    padding: 20px;
-  }
-  
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%; /* Asegura que ocupe toda la altura de la ventana */
+  background-color: #111; /* Fondo negro */
+  padding-top: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  transition: width 0.3s;
+}
+
+.sidenav a {
+  padding: 10px 15px;
+  text-decoration: none;
+  font-size: 18px;
+  color: #818181;
+  display: block;
+  transition: background-color 0.3s, color 0.3s;
+  border-bottom: 1px solid #333;
+}
+
+.sidenav a:last-child {
+  border-bottom: none;
+}
+
+.sidenav a:hover {
+  color: #f1f1f1;
+  background-color: #575757;
+}
+
+.sidenav a.active {
+  background-color: #04AA6D;
+  color: white;
+}
+
+/* Estilo para el contenedor del logo */
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Estilo para la imagen del logo */
+.logo {
+  max-width: 50%;
+  height: auto;
+}
+
+/* Estilo para el contenido principal */
+.main-content {
+  margin-left: 260px; /* Ancho de la barra lateral más un poco de espacio */
+  padding: 15px;
+  min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
+}
+
+/* Para un efecto de colapso en la barra lateral */
+.sidenav.collapsed {
+  width: 60px;
+}

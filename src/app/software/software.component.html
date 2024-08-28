@@ -1,16 +1,18 @@
 <div class="container">
-  <h2>Gestión de Software</h2>
   
-  <h3>Lista de Software</h3>
+  <div class="title-bar">
+    <h3><i class="fas fa-code"></i> Lista de Software</h3>
+  </div>
+  
   <ul class="list-group">
     <li *ngFor="let software of softwareList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
       <div>
         {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
       </div>
       <div>
-        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">Ver</button>
-        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)">Eliminar</button>
+        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)"><i class="fas fa-eye"></i> Ver</button>
+        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)"><i class="fas fa-edit"></i> Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)"><i class="fas fa-trash-alt"></i> Eliminar</button>
       </div>        
     </li>
   </ul>
@@ -19,7 +21,9 @@
 <!-- Modal -->
 <ng-template #editModal let-modal>
   <div class="modal-header">
-    <h5 class="modal-title" id="editModalLabel">{{ isEditing ? 'Editar' : 'Ver' }}</h5>
+    <h5 class="modal-title" id="editModalLabel">
+      <i class="fas fa-edit"></i> {{ isEditing ? 'Editar' : 'Ver' }}
+    </h5>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
   <div class="modal-body">

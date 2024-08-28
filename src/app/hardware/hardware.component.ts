@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import jsPDF from 'jspdf';
 
-
 @Component({
   selector: 'app-hardware',
   standalone: true,
@@ -44,43 +43,67 @@ export class HardwareComponent implements OnInit {
   }
 
   cancelarEdicion(): void {
-    this.isEditing = false;
-    this.hardwareForm.enable();  // Vuelve a habilitar el formulario
-    this.hardwareForm.reset();   // Resetea el formulario
+    this.modalService.dismissAll();  // Cierra todos los modales
+    this.resetFormulario();
   }
-  
+
+  cerrarModal(modal: any): void {
+    modal.dismiss();  // Cierra el modal específico
+    this.resetFormulario();
+  }
+
+  resetFormulario(): void {
+    setTimeout(() => {
+      this.isEditing = false;
+      this.currentEditIndex = null;
+      this.currentViewIndex = null;  // Resetea el índice de visualización actual
+      this.hardwareForm.reset();   // Resetea el formulario
+      this.hardwareForm.enable();  // Vuelve a habilitar el formulario
+    }, 200);
+  }
+
   abrirModalEditar(modal: any, index: number): void {
     this.isEditing = true;  // Cambia a modo edición
     this.currentEditIndex = index;
     const hardware = this.hardwareList[index];
-    this.hardwareForm.patchValue(hardware);
-    this.hardwareForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (hardware) {
+      this.hardwareForm.patchValue(hardware);
+      this.hardwareForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.resetFormulario(),
+        () => this.resetFormulario()
+      );
+    }
   }
-  
-  
 
   abrirModalVer(modal: any, index: number): void {
+    if (this.isEditing) {
+      return;  // No abrir el modal de "Ver" si estás en modo edición
+    }
     this.currentViewIndex = index;
     const hardware = this.hardwareList[this.currentViewIndex];
-    this.hardwareForm.patchValue(hardware);
-    this.hardwareForm.disable();  // Deshabilita el formulario para solo ver
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (hardware) {
+      this.hardwareForm.patchValue(hardware);
+      this.hardwareForm.disable();  // Deshabilita el formulario para solo ver
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.resetFormulario(),
+        () => this.resetFormulario()
+      );
+    }
   }
-  
+
   guardarCambios(): void {
     if (this.currentEditIndex !== null) {
       this.hardwareList[this.currentEditIndex] = this.hardwareForm.value;
       this.modalService.dismissAll();
-      this.currentEditIndex = null;
-      this.hardwareForm.reset();
-      this.hardwareForm.enable();  // Rehabilita el formulario después de cerrar
+      this.resetFormulario();
     }
   }
+
   exportarAPdf(): void {
     const doc = new jsPDF();
     const hardware = this.hardwareList[this.currentViewIndex!];
-  
+
     doc.text('Hardware Details', 10, 10);
     doc.text(`Tipo de Equipo: ${hardware.tipoEquipo}`, 10, 20);
     doc.text(`Marca: ${hardware.marca}`, 10, 30);
@@ -92,10 +115,9 @@ export class HardwareComponent implements OnInit {
     doc.text(`Número de Serie del Teclado: ${hardware.nroSerieTeclado}`, 10, 90);
     doc.text(`Número de Serie del Mouse: ${hardware.nroSerieMouse}`, 10, 100);
     doc.text(`Propietario: ${hardware.propietario}`, 10, 110);
-  
+
     doc.save('hardware-details.pdf');
   }
-  
 
   eliminarHardware(id: number): void {
     // Elimina el hardware de la lista basado en el número de equipo

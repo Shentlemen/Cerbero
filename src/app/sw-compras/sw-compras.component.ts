@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import jsPDF from 'jspdf';
 
-
 @Component({
   selector: 'app-sw-compras',
   standalone: true,
@@ -36,29 +35,43 @@ export class SwComprasComponent implements OnInit {
   }
 
   cancelarEdicion(): void {
-    this.isEditing = false;
-    this.swComprasForm.enable();  // Vuelve a habilitar el formulario
-    this.swComprasForm.reset();   // Resetea el formulario
+    this.modalService.dismissAll();  // Cierra todos los modales
+    setTimeout(() => {
+      this.isEditing = false;
+      this.currentEditIndex = null;
+      this.currentViewIndex = null;  // Resetea el índice de visualización actual
+      this.swComprasForm.enable();  // Vuelve a habilitar el formulario
+      this.swComprasForm.reset();   // Resetea el formulario
+    }, 200);  // Cambia el estado después de cerrar el modal
   }
-  
+
   abrirModalEditar(modal: any, index: number): void {
     this.isEditing = true;  // Cambia a modo edición
     this.currentEditIndex = index;
     const swCompra = this.swComprasList[index];
-    this.swComprasForm.patchValue(swCompra);
-    this.swComprasForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (swCompra) {
+      this.swComprasForm.patchValue(swCompra);
+      this.swComprasForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.cancelarEdicion(),
+        () => this.cancelarEdicion()
+      );
+    }
   }
-  
 
   abrirModalVer(modal: any, index: number): void {
+    if (this.isEditing) {
+      return;  // No abrir el modal de "Ver" si estás en modo edición
+    }
     this.currentViewIndex = index;
     const swCompra = this.swComprasList[this.currentViewIndex];
-    this.swComprasForm.patchValue(swCompra);
-    this.swComprasForm.disable();  // Deshabilita el formulario para solo ver
-    this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    if (swCompra) {
+      this.swComprasForm.patchValue(swCompra);
+      this.swComprasForm.disable();  // Deshabilita el formulario para solo ver
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+    }
   }
-  
+
   guardarCambios(): void {
     if (this.currentEditIndex !== null) {
       this.swComprasList[this.currentEditIndex] = this.swComprasForm.value;
@@ -68,20 +81,20 @@ export class SwComprasComponent implements OnInit {
       this.swComprasForm.enable();  // Rehabilita el formulario después de cerrar
     }
   }
+
   exportarAPdf(): void {
     const doc = new jsPDF();
     const swCompra = this.swComprasList[this.currentViewIndex!];
-  
+
     doc.text('Compra de Software Details', 10, 10);
     doc.text(`Número de Software: ${swCompra.nroSoftware}`, 10, 20);
     doc.text(`Número de Compra: ${swCompra.nroCompra}`, 10, 30);
     doc.text(`Item: ${swCompra.item}`, 10, 40);
     doc.text(`Pedido: ${swCompra.pedido}`, 10, 50);
     doc.text(`Descripción: ${swCompra.descripcion}`, 10, 60);
-  
+
     doc.save('sw-compra-details.pdf');
   }
-  
 
   eliminarSwCompra(id: number): void {
     this.swComprasList = this.swComprasList.filter(swCompra => swCompra.nroCompra !== id);

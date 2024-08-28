@@ -22,7 +22,6 @@
       "dom"
     ],
     "typeRoots": ["node_modules/@types"],
-    "types": ["tsparticles"]  // Agrega esta línea
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

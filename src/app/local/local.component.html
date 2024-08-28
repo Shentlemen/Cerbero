@@ -1,17 +1,26 @@
 <div class="container">
-  <h2>Gestión de Locales</h2>
-  
-  <h3>Lista de Locales</h3>
+  <!-- Título estilizado -->
+  <div class="title-bar">
+    <h3><i class="fas fa-warehouse"></i> Lista de Locales</h3>
+  </div>
+
+  <!-- Lista de locales -->
   <ul class="list-group">
     <li *ngFor="let local of localList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+      <span>
+        <strong>Subred:</strong> {{ local.subred }} - <strong>Zona:</strong> {{ local.zona }} - <strong>Ciudad:</strong> {{ local.ciudad }} - <strong>Local:</strong> {{ local.local }}
+      </span>
       <div>
-        {{ local.subred }} - {{ local.zona }} - {{ local.ciudad }} - {{ local.local }}
+        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">
+          <i class="fas fa-eye"></i> Ver
+        </button>
+        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
+          <i class="fas fa-edit"></i> Editar
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="eliminarLocal(local.subred)">
+          <i class="fas fa-trash-alt"></i> Eliminar
+        </button>
       </div>
-      <div>
-        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">Ver</button>
-        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarLocal(local.subred)">Eliminar</button>
-      </div>        
     </li>
   </ul>
 </div>
@@ -19,9 +28,11 @@
 <!-- Modal -->
 <ng-template #editModal let-modal>
   <div class="modal-header">
-    <h5 class="modal-title" id="editModalLabel">{{ isEditing ? 'Editar' : 'Ver' }}</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
+    <h5 class="modal-title" id="editModalLabel">
+      <i class="fas fa-edit"></i> {{ isEditing ? 'Editar' : 'Ver' }}
+    </h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="cerrarModal(modal)"></button>
+  </div>  
   <div class="modal-body">
     <form [formGroup]="localForm" (ngSubmit)="guardarCambios()">
       <div class="mb-3">
@@ -53,7 +64,7 @@
         <input id="direccion" formControlName="direccion" class="form-control" />
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()" *ngIf="!isEditing">Cerrar</button>
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal(modal)" *ngIf="!isEditing">Cerrar</button>
         <button type="button" class="btn btn-success" (click)="exportarAPdf()" *ngIf="!isEditing">Exportar a PDF</button>
         <button type="submit" class="btn btn-primary" (click)="guardarCambios()" *ngIf="isEditing">Guardar Cambios</button>
         <button type="button" class="btn btn-secondary" (click)="cancelarEdicion()" *ngIf="isEditing">Cancelar</button>
