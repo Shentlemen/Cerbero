@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class LocalComponent implements OnInit {
 
   localList: any[] = [];
+  localFiltrado: any[] = [];
   localForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -30,10 +32,38 @@ export class LocalComponent implements OnInit {
       local: [''],
       direccion: ['']
     });
+
+    this.filterForm = this.fb.group({
+      subred: [''],
+      piso: [''],
+      oficina: [''],
+      zona: [''],
+      ciudad: [''],
+      local: [''],
+      direccion: ['']
+    });
   }
 
   ngOnInit(): void {
     this.localList = this.localService.getLocal();
+    this.localFiltrado = this.localList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+
+    this.localFiltrado = this.localList.filter(local => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const localValor = local[key];
+
+        if (typeof localValor === 'number' && filtroValor !== '') {
+          return localValor === +filtroValor;  // Comparación exacta para números
+        } else {
+          return localValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {

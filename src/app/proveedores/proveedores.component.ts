@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class ProveedoresComponent implements OnInit {
 
   proveedoresList: any[] = [];
+  proveedoresFiltrado: any[] = [];
   proveedoresForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -27,10 +29,35 @@ export class ProveedoresComponent implements OnInit {
       direccion: [''],
       telefonos: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nroProveedor: [''],
+      descripcion: [''],
+      direccion: [''],
+      telefonos: ['']
+    });
   }
 
   ngOnInit(): void {
     this.proveedoresList = this.proveedoresService.getProveedores();
+    this.proveedoresFiltrado = this.proveedoresList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+
+    this.proveedoresFiltrado = this.proveedoresList.filter(proveedor => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const proveedorValor = proveedor[key];
+
+        if (typeof proveedorValor === 'number' && filtroValor !== '') {
+          return proveedorValor === +filtroValor;  // Comparación exacta para números
+        } else {
+          return proveedorValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {
@@ -67,13 +94,12 @@ export class ProveedoresComponent implements OnInit {
     }
   }
 
-  abrirModalVer(modal: any, index: number): void {
+  abrirModalVer(modal: any, proveedor: any): void {
     if (this.isEditing) {
       return;  // No abrir el modal de "Ver" si estás en modo edición
     }
-    this.currentViewIndex = index;
-    const proveedor = this.proveedoresList[this.currentViewIndex];
-    if (proveedor) {
+    this.currentViewIndex = this.proveedoresList.findIndex(p => p.nroProveedor === proveedor.nroProveedor);
+    if (this.currentViewIndex !== -1) {
       this.proveedoresForm.patchValue(proveedor);
       this.proveedoresForm.disable();  // Deshabilita el formulario para solo ver
       this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(

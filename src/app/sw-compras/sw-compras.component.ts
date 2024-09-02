@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class SwComprasComponent implements OnInit {
 
   swComprasList: any[] = [];
+  swComprasFiltrado: any[] = [];
   swComprasForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -28,21 +30,56 @@ export class SwComprasComponent implements OnInit {
       pedido: [''],
       descripcion: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nroSoftware: [''],
+      nroCompra: [''],
+      item: [''],
+      pedido: [''],
+      descripcion: ['']
+    });
   }
 
   ngOnInit(): void {
     this.swComprasList = this.swComprasService.getSwCompras();
+    this.swComprasFiltrado = this.swComprasList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+
+    this.swComprasFiltrado = this.swComprasList.filter(swCompra => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const swCompraValor = swCompra[key];
+
+        if (typeof swCompraValor === 'number' && filtroValor !== '') {
+          return swCompraValor === +filtroValor;  // Comparación exacta para números
+        } else {
+          return swCompraValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {
     this.modalService.dismissAll();  // Cierra todos los modales
+    this.resetFormulario();
+  }
+
+  cerrarModal(modal: any): void {
+    modal.dismiss();  // Cierra el modal específico
+    this.resetFormulario();
+  }
+
+  resetFormulario(): void {
     setTimeout(() => {
       this.isEditing = false;
       this.currentEditIndex = null;
       this.currentViewIndex = null;  // Resetea el índice de visualización actual
-      this.swComprasForm.enable();  // Vuelve a habilitar el formulario
       this.swComprasForm.reset();   // Resetea el formulario
-    }, 200);  // Cambia el estado después de cerrar el modal
+      this.swComprasForm.enable();  // Vuelve a habilitar el formulario
+    }, 200);
   }
 
   abrirModalEditar(modal: any, index: number): void {
@@ -53,8 +90,8 @@ export class SwComprasComponent implements OnInit {
       this.swComprasForm.patchValue(swCompra);
       this.swComprasForm.enable();  // Asegúrate de que el formulario esté habilitado para edición
       this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
-        () => this.cancelarEdicion(),
-        () => this.cancelarEdicion()
+        () => this.resetFormulario(),
+        () => this.resetFormulario()
       );
     }
   }
@@ -68,7 +105,10 @@ export class SwComprasComponent implements OnInit {
     if (swCompra) {
       this.swComprasForm.patchValue(swCompra);
       this.swComprasForm.disable();  // Deshabilita el formulario para solo ver
-      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' });
+      this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
+        () => this.resetFormulario(),
+        () => this.resetFormulario()
+      );
     }
   }
 
@@ -76,9 +116,7 @@ export class SwComprasComponent implements OnInit {
     if (this.currentEditIndex !== null) {
       this.swComprasList[this.currentEditIndex] = this.swComprasForm.value;
       this.modalService.dismissAll();
-      this.currentEditIndex = null;
-      this.swComprasForm.reset();
-      this.swComprasForm.enable();  // Rehabilita el formulario después de cerrar
+      this.resetFormulario();
     }
   }
 

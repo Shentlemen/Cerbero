@@ -1,29 +1,65 @@
-<div class="container">
-  <!-- Título estilizado -->
-  <div class="title-bar">
-    <h3><i class="fas fa-desktop"></i> Lista de Hardware</h3>
+<div class="container d-flex">
+  <!-- Filtros a la izquierda -->
+  <div class="filter-section me-4">
+    <div class="title-bar">
+      <h3>Filtros</h3>
+    </div>
+    <form [formGroup]="filterForm">
+      <div class="mb-3">
+        <label for="nroEquipoFilter" class="form-label">Número de Equipo:</label>
+        <input id="nroEquipoFilter" formControlName="nroEquipo" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="tipoEquipoFilter" class="form-label">Tipo de Equipo:</label>
+        <input id="tipoEquipoFilter" formControlName="tipoEquipo" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="marcaFilter" class="form-label">Marca:</label>
+        <input id="marcaFilter" formControlName="marca" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="modeloFilter" class="form-label">Modelo:</label>
+        <input id="modeloFilter" formControlName="modelo" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="nroSerieFilter" class="form-label">Número de Serie:</label>
+        <input id="nroSerieFilter" formControlName="nroSerie" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="propietarioFilter" class="form-label">Propietario:</label>
+        <input id="propietarioFilter" formControlName="propietario" class="form-control" />
+      </div>
+      <button type="button" class="btn btn-secondary" (click)="aplicarFiltros()">Aplicar Filtros</button>
+    </form>
   </div>
 
-  <!-- Lista de hardware -->
-  <ul class="list-group">
-    <li *ngFor="let hardware of hardwareList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
-      <span>
-        <strong>{{ hardware.tipoEquipo }}</strong> - {{ hardware.marca }} - {{ hardware.modelo }}
-      </span>
-      <div>
-        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">
-          <i class="fas fa-eye"></i> Ver
-        </button>
-        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
-          <i class="fas fa-edit"></i> Editar
-        </button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarHardware(hardware.nroEquipo)">
-          <i class="fas fa-trash-alt"></i> Eliminar
-        </button>
-      </div>
-    </li>
-  </ul>
+  <!-- Lista de hardware a la derecha -->
+  <div class="hardware-list-section flex-grow-1">
+    <div class="title-bar">
+      <h3><i class="fas fa-desktop"></i> Lista de Hardware</h3>
+    </div>
+
+    <ul class="list-group">
+      <li *ngFor="let hardware of hardwareFiltrado; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+        <span>
+          <strong>{{ hardware.tipoEquipo }}</strong> - {{ hardware.marca }} - {{ hardware.modelo }}
+        </span>
+        <div>
+          <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, hardware)">
+            <i class="fas fa-eye"></i> Ver
+          </button>
+          <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
+            <i class="fas fa-edit"></i> Editar
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="eliminarHardware(hardware.nroEquipo)">
+            <i class="fas fa-trash-alt"></i> Eliminar
+          </button>
+        </div>
+      </li>      
+    </ul>
+  </div>
 </div>
+
 
 <!-- Modal -->
 <ng-template #editModal let-modal>

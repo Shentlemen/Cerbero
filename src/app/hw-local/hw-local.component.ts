@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class HwLocalComponent implements OnInit {
 
   hwLocalList: any[] = [];
+  hwLocalFiltrado: any[] = [];
   hwLocalForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -28,10 +30,37 @@ export class HwLocalComponent implements OnInit {
       oficina: [''],
       descripcion: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nroSoftware: [''],
+      subred: [''],
+      piso: [''],
+      oficina: ['']
+    });
   }
 
   ngOnInit(): void {
     this.hwLocalList = this.hwLocalService.getHwLocal();
+    this.hwLocalFiltrado = this.hwLocalList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+
+    this.hwLocalFiltrado = this.hwLocalList.filter(hwLocal => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const hwLocalValor = hwLocal[key];
+
+        if (typeof hwLocalValor === 'number' && filtroValor !== '') {
+          return hwLocalValor === +filtroValor;  // Comparación exacta para números
+        } else if (filtroValor !== '') {
+          return hwLocalValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        } else {
+          return true; // Si el filtro está vacío, incluimos todos los elementos
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {
@@ -68,13 +97,12 @@ export class HwLocalComponent implements OnInit {
     }
   }
 
-  abrirModalVer(modal: any, index: number): void {
+  abrirModalVer(modal: any, hwLocal: any): void {
     if (this.isEditing) {
       return;  // No abrir el modal de "Ver" si estás en modo edición
     }
-    this.currentViewIndex = index;
-    const hwLocal = this.hwLocalList[this.currentViewIndex];
-    if (hwLocal) {
+    this.currentViewIndex = this.hwLocalList.findIndex(h => h.nroSoftware === hwLocal.nroSoftware);
+    if (this.currentViewIndex !== -1) {
       this.hwLocalForm.patchValue(hwLocal);
       this.hwLocalForm.disable();  // Deshabilita el formulario para solo ver
       this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
@@ -108,5 +136,6 @@ export class HwLocalComponent implements OnInit {
 
   eliminarHwLocal(id: number): void {
     this.hwLocalList = this.hwLocalList.filter(hw => hw.nroSoftware !== id);
+    this.aplicarFiltros(); // Volver a aplicar filtros después de eliminar
   }
 }

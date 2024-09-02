@@ -1,21 +1,59 @@
-<div class="container">
-  
-  <div class="title-bar">
-    <h3><i class="fas fa-code"></i> Lista de Software</h3>
-  </div>
-  
-  <ul class="list-group">
-    <li *ngFor="let software of softwareList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
-      <div>
-        {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
+<div class="container d-flex">
+  <!-- Filtros a la izquierda -->
+  <div class="filter-section me-4">
+    <div class="title-bar">
+      <h3>Filtros</h3>
+    </div>
+    <form [formGroup]="filterForm">
+      <div class="mb-3">
+        <label for="nombreFilter" class="form-label">Nombre:</label>
+        <input id="nombreFilter" formControlName="nombre" class="form-control" />
       </div>
-      <div>
-        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)"><i class="fas fa-eye"></i> Ver</button>
-        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)"><i class="fas fa-edit"></i> Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)"><i class="fas fa-trash-alt"></i> Eliminar</button>
-      </div>        
-    </li>
-  </ul>
+      <div class="mb-3">
+        <label for="versionFilter" class="form-label">Versión:</label>
+        <input id="versionFilter" formControlName="version" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="licenciaFilter" class="form-label">Licencia:</label>
+        <input id="licenciaFilter" formControlName="licencia" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="fechaInstalacionFilter" class="form-label">Fecha de Instalación:</label>
+        <input id="fechaInstalacionFilter" formControlName="fechaInstalacion" type="date" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="nroProveedorFilter" class="form-label">Número de Proveedor:</label>
+        <input id="nroProveedorFilter" formControlName="nroProveedor" class="form-control" />
+      </div>
+      <button type="button" class="btn btn-secondary" (click)="aplicarFiltros()">Aplicar Filtros</button>
+    </form>
+  </div>
+
+  <!-- Lista de software a la derecha -->
+  <div class="hardware-list-section flex-grow-1">
+    <div class="title-bar">
+      <h3><i class="fas fa-code"></i> Lista de Software</h3>
+    </div>
+
+    <ul class="list-group">
+      <li *ngFor="let software of softwareFiltrado; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+        <span>
+          {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
+        </span>
+        <div>
+          <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">
+            <i class="fas fa-eye"></i> Ver
+          </button>
+          <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
+            <i class="fas fa-edit"></i> Editar
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)">
+            <i class="fas fa-trash-alt"></i> Eliminar
+          </button>
+        </div>        
+      </li>      
+    </ul>
+  </div>
 </div>
 
 <!-- Modal -->

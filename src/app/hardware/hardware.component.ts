@@ -1,27 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { HwService } from '../hw.service';  // Importa el servicio
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'; // Importar CommonModule
+import { HwService } from '../hw.service';  
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-hardware',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],  // Asegurarse de que CommonModule y ReactiveFormsModule están importados
   templateUrl: './hardware.component.html',
   styleUrls: ['./hardware.component.css']
 })
 export class HardwareComponent implements OnInit {
 
   hardwareList: any[] = [];
+  hardwareFiltrado: any[] = [];
   hardwareForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
 
   constructor(private hwService: HwService, private fb: FormBuilder, private modalService: NgbModal) {
-    // Inicializa el formulario con controles
     this.hardwareForm = this.fb.group({
       nroEquipo: [''],
       tipoEquipo: [''],
@@ -35,12 +36,42 @@ export class HardwareComponent implements OnInit {
       nroSerieMouse: [''],
       propietario: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nroEquipo: [''],
+      tipoEquipo: [''],
+      marca: [''],
+      modelo: [''],
+      nroSerie: [''],
+      propietario: ['']
+    });
   }
 
   ngOnInit(): void {
-    // Cargar la lista de hardware utilizando el servicio
     this.hardwareList = this.hwService.getHardware();
+    this.hardwareFiltrado = this.hardwareList; // Inicialmente, sin filtros
   }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+  
+    this.hardwareFiltrado = this.hardwareList.filter(hardware => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const hardwareValor = hardware[key];
+  
+        // Comprobamos si el valor es un número y comparamos adecuadamente
+        if (typeof hardwareValor === 'number' && filtroValor !== '') {
+          return hardwareValor === +filtroValor;  // Comparación exacta para números
+        } else {
+          // Convertimos a string para asegurar la comparación correcta en otros casos
+          return hardwareValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        }
+      });
+    });
+  }
+  
+  
 
   cancelarEdicion(): void {
     this.modalService.dismissAll();  // Cierra todos los modales
@@ -75,14 +106,12 @@ export class HardwareComponent implements OnInit {
       );
     }
   }
-
-  abrirModalVer(modal: any, index: number): void {
+  abrirModalVer(modal: any, hardware: any): void {
     if (this.isEditing) {
       return;  // No abrir el modal de "Ver" si estás en modo edición
     }
-    this.currentViewIndex = index;
-    const hardware = this.hardwareList[this.currentViewIndex];
-    if (hardware) {
+    this.currentViewIndex = this.hardwareList.findIndex(h => h.nroEquipo === hardware.nroEquipo);
+    if (this.currentViewIndex !== -1) {
       this.hardwareForm.patchValue(hardware);
       this.hardwareForm.disable();  // Deshabilita el formulario para solo ver
       this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
@@ -91,7 +120,6 @@ export class HardwareComponent implements OnInit {
       );
     }
   }
-
   guardarCambios(): void {
     if (this.currentEditIndex !== null) {
       this.hardwareList[this.currentEditIndex] = this.hardwareForm.value;

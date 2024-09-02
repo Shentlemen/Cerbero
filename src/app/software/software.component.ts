@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class SoftwareComponent implements OnInit {
 
   softwareList: any[] = [];
+  softwareFiltrado: any[] = [];
   softwareForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -29,10 +31,36 @@ export class SoftwareComponent implements OnInit {
       fechaInstalacion: [''],
       nroProveedor: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nombre: [''],
+      version: [''],
+      licencia: [''],
+      fechaInstalacion: [''],
+      nroProveedor: ['']
+    });
   }
 
   ngOnInit(): void {
     this.softwareList = this.swService.getSoftware();
+    this.softwareFiltrado = this.softwareList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+
+    this.softwareFiltrado = this.softwareList.filter(software => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const softwareValor = software[key];
+
+        if (typeof softwareValor === 'number' && filtroValor !== '') {
+          return softwareValor === +filtroValor;  // Comparación exacta para números
+        } else {
+          return softwareValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {

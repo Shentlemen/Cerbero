@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class HwSwComprasComponent implements OnInit {
 
   hwSwComprasList: any[] = [];
+  hwSwComprasFiltrado: any[] = [];
   hwSwComprasForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -28,10 +30,36 @@ export class HwSwComprasComponent implements OnInit {
       item: [''],
       pedido: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nroEquipo: [''],
+      nroSoftware: [''],
+      nroCompra: ['']
+    });
   }
 
   ngOnInit(): void {
     this.hwSwComprasList = this.hwSwComprasService.getHwSwCompras();
+    this.hwSwComprasFiltrado = this.hwSwComprasList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+
+    this.hwSwComprasFiltrado = this.hwSwComprasList.filter(hwSwCompra => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const hwSwCompraValor = hwSwCompra[key];
+
+        // Comprobamos si el valor es un número y comparamos adecuadamente
+        if (typeof hwSwCompraValor === 'number' && filtroValor !== '') {
+          return hwSwCompraValor === +filtroValor;  // Comparación exacta para números
+        } else {
+          // Convertimos a string para asegurar la comparación correcta en otros casos
+          return hwSwCompraValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {
@@ -68,13 +96,12 @@ export class HwSwComprasComponent implements OnInit {
     }
   }
 
-  abrirModalVer(modal: any, index: number): void {
+  abrirModalVer(modal: any, hwSwCompra: any): void {
     if (this.isEditing) {
       return;  // No abrir el modal de "Ver" si estás en modo edición
     }
-    this.currentViewIndex = index;
-    const hwSwCompra = this.hwSwComprasList[this.currentViewIndex];
-    if (hwSwCompra) {
+    this.currentViewIndex = this.hwSwComprasList.findIndex(h => h.nroCompra === hwSwCompra.nroCompra);
+    if (this.currentViewIndex !== -1) {
       this.hwSwComprasForm.patchValue(hwSwCompra);
       this.hwSwComprasForm.disable();  // Deshabilita el formulario para solo ver
       this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(

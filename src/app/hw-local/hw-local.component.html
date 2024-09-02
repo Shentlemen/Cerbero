@@ -1,28 +1,55 @@
-<div class="container">
-  <!-- Título estilizado -->
-  <div class="title-bar">
-    <h3><i class="fas fa-map-marker-alt"></i> Lista de Ubicaciones</h3>
+<div class="container d-flex">
+  <!-- Filtros a la izquierda -->
+  <div class="filter-section me-4">
+    <div class="title-bar">
+      <h3>Filtros</h3>
+    </div>
+    <form [formGroup]="filterForm">
+      <div class="mb-3">
+        <label for="nroSoftwareFilter" class="form-label">Número de Software:</label>
+        <input id="nroSoftwareFilter" formControlName="nroSoftware" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="subredFilter" class="form-label">Subred:</label>
+        <input id="subredFilter" formControlName="subred" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="pisoFilter" class="form-label">Piso:</label>
+        <input id="pisoFilter" formControlName="piso" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="oficinaFilter" class="form-label">Oficina:</label>
+        <input id="oficinaFilter" formControlName="oficina" class="form-control" />
+      </div>
+      <button type="button" class="btn btn-secondary" (click)="aplicarFiltros()">Aplicar Filtros</button>
+    </form>
   </div>
 
-  <!-- Lista de ubicaciones de hardware -->
-  <ul class="list-group">
-    <li *ngFor="let hwLocal of hwLocalList; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
-      <span>
-        <strong>Subred:</strong> {{ hwLocal.subred }} - <strong>Piso:</strong> {{ hwLocal.piso }} - <strong>Oficina:</strong> {{ hwLocal.oficina }}
-      </span>
-      <div>
-        <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">
-          <i class="fas fa-eye"></i> Ver
-        </button>
-        <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
-          <i class="fas fa-edit"></i> Editar
-        </button>
-        <button class="btn btn-danger btn-sm" (click)="eliminarHwLocal(hwLocal.nroSoftware)">
-          <i class="fas fa-trash-alt"></i> Eliminar
-        </button>
-      </div>
-    </li>
-  </ul>
+  <!-- Lista de ubicaciones de hardware a la derecha -->
+  <div class="hw-local-list-section flex-grow-1">
+    <div class="title-bar">
+      <h3><i class="fas fa-map-marker-alt"></i> Lista de Ubicaciones</h3>
+    </div>
+
+    <ul class="list-group">
+      <li *ngFor="let hwLocal of hwLocalFiltrado; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+        <span>
+          <strong>Subred:</strong> {{ hwLocal.subred }} - <strong>Piso:</strong> {{ hwLocal.piso }} - <strong>Oficina:</strong> {{ hwLocal.oficina }}
+        </span>
+        <div>
+          <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, hwLocal)">
+            <i class="fas fa-eye"></i> Ver
+          </button>
+          <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
+            <i class="fas fa-edit"></i> Editar
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="eliminarHwLocal(hwLocal.nroSoftware)">
+            <i class="fas fa-trash-alt"></i> Eliminar
+          </button>
+        </div>
+      </li>
+    </ul>
+  </div>
 </div>
 
 <!-- Modal -->

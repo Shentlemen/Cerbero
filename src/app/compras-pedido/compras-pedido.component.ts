@@ -15,7 +15,9 @@ import jsPDF from 'jspdf';
 export class ComprasPedidoComponent implements OnInit {
 
   comprasPedidoList: any[] = [];
+  comprasPedidoFiltrado: any[] = [];
   comprasPedidoForm: FormGroup;
+  filterForm: FormGroup;
   currentEditIndex: number | null = null;
   currentViewIndex: number | null = null;
   isEditing: boolean = false;
@@ -30,10 +32,41 @@ export class ComprasPedidoComponent implements OnInit {
       fechaInicio: [''],
       fechaFinal: ['']
     });
+
+    this.filterForm = this.fb.group({
+      nroCompra: [''],
+      pedido: [''],
+      item: [''],
+      proveedor: [''],
+      fechaInicio: [''],
+      fechaFinal: ['']
+    });
   }
 
   ngOnInit(): void {
     this.comprasPedidoList = this.comprasPedidoService.getComprasPedido();
+    this.comprasPedidoFiltrado = this.comprasPedidoList; // Inicialmente, sin filtros
+  }
+
+  aplicarFiltros(): void {
+    const filtros = this.filterForm.value;
+  
+    this.comprasPedidoFiltrado = this.comprasPedidoList.filter(compraPedido => {
+      return Object.keys(filtros).every(key => {
+        const filtroValor = filtros[key];
+        const compraPedidoValor = compraPedido[key];
+  
+        // Comprobamos si el valor es un número y comparamos adecuadamente
+        if (typeof compraPedidoValor === 'number' && filtroValor !== '') {
+          return compraPedidoValor === +filtroValor;  // Comparación exacta para números
+        } else if (filtroValor !== '') {
+          // Convertimos a string para asegurar la comparación correcta en otros casos
+          return compraPedidoValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+        } else {
+          return true; // Si el filtro está vacío, incluimos todos los elementos
+        }
+      });
+    });
   }
 
   cancelarEdicion(): void {
@@ -70,13 +103,12 @@ export class ComprasPedidoComponent implements OnInit {
     }
   }
 
-  abrirModalVer(modal: any, index: number): void {
+  abrirModalVer(modal: any, compraPedido: any): void {
     if (this.isEditing) {
       return;  // No abrir el modal de "Ver" si estás en modo edición
     }
-    this.currentViewIndex = index;
-    const compraPedido = this.comprasPedidoList[this.currentViewIndex];
-    if (compraPedido) {
+    this.currentViewIndex = this.comprasPedidoList.findIndex(c => c.nroCompra === compraPedido.nroCompra);
+    if (this.currentViewIndex !== -1) {
       this.comprasPedidoForm.patchValue(compraPedido);
       this.comprasPedidoForm.disable();  // Deshabilita el formulario para solo ver
       this.modalService.open(modal, { ariaLabelledBy: 'editModalLabel' }).result.then(
@@ -112,5 +144,6 @@ export class ComprasPedidoComponent implements OnInit {
 
   eliminarCompraPedido(id: number): void {
     this.comprasPedidoList = this.comprasPedidoList.filter(compraPedido => compraPedido.nroCompra !== id);
+    this.aplicarFiltros(); // Volver a aplicar filtros después de eliminar
   }
 }
