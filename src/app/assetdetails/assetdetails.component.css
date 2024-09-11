@@ -1,0 +1,88 @@
+.title-bar {
+  background-color: #85c1e9;
+  padding: 10px 20px;
+  border-radius: 5px 5px 0 0;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.title-bar h2 {
+  color: white;
+  margin: 0;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+}
+
+.card {
+  border: none;
+  border-radius: 5px;
+}
+
+.card-body {
+  background-color: #ffffff;
+}
+
+.card-title {
+  color: #5a9bd5; /* Cambiado a un azul pastel más oscuro */
+}
+
+h4.text-secondary {
+  color: #5a9bd5 !important; /* Cambiado para coincidir con el título */
+}
+
+.list-group-item {
+  background-color: #f9f9f9;
+  border: 1px solid #dddddd;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+.btn-secondary {
+  background-color: #85c1e9; /* Cambiado a un azul pastel más claro */
+  border: none;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a9bd5; /* Cambiado a un azul pastel más oscuro */
+}
+
+.btn-info {
+  background-color: #aed6f1; /* Cambiado a un azul pastel aún más claro */
+  border: none;
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: #85c1e9; /* Cambiado a un azul pastel más claro */
+}
+
+.fas, strong {
+  color: #5a9bd5; /* Cambiado a un azul pastel más oscuro */
+}
+
+.btn-export {
+  background-color: #f0ad4e; /* Mantenido el naranja pastel para contraste */
+  border: none;
+  color: white;
+}
+
+.btn-export:hover {
+  background-color: #ec971f; /* Mantenido el naranja más oscuro para hover */
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+.btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-radius: 0.25rem;
+}

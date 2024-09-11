@@ -20,9 +20,9 @@ html, body {
 }
 
 .sidenav a {
-  padding: 10px 15px;
+  padding: 12px 18px; /* Reducido el padding */
   text-decoration: none;
-  font-size: 18px;
+  font-size: 18px; /* Reducido el tamaño de la fuente */
   color: #818181;
   display: block;
   transition: background-color 0.3s, color 0.3s;
@@ -43,21 +43,20 @@ html, body {
   color: white;
 }
 
-/* Estilo para el contenedor del logo */
-.logo-container {
-  text-align: center;
-  margin-bottom: 20px;
+/* Ajuste para los iconos si es necesario */
+.sidenav a i {
+  margin-right: 10px;
+  font-size: 20px; /* Ajustado el tamaño del icono */
 }
 
-/* Estilo para la imagen del logo */
-.logo {
-  max-width: 50%;
-  height: auto;
+/* Ajuste del ancho de la barra lateral si es necesario */
+.sidenav {
+  width: 250px; /* Reducido el ancho */
 }
 
-/* Estilo para el contenido principal */
+/* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
-  margin-left: 260px; /* Ancho de la barra lateral más un poco de espacio */
+  margin-left: 260px; /* Ajustado para coincidir con el nuevo ancho de la barra lateral */
   padding: 15px;
   min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
 }
@@ -65,4 +64,18 @@ html, body {
 /* Para un efecto de colapso en la barra lateral */
 .sidenav.collapsed {
   width: 60px;
+}
+
+/* Estilo para el contenedor del logo */
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 10px;
+}
+
+/* Estilo para la imagen del logo */
+.logo {
+  max-width: 80%; /* Reducido de 100% a 80% */
+  height: auto;
+  max-height: 100px; /* Añadido para limitar la altura máxima */
 }

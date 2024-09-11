@@ -1,0 +1,70 @@
+<div class="modal-header">
+  <h4 class="modal-title">Editar Asset</h4>
+  <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  <form>
+    <div class="form-group">
+      <label for="name">Nombre del Equipo</label>
+      <input type="text" class="form-control" id="name" [(ngModel)]="asset.NAME" name="name">
+    </div>
+    <div class="form-group">
+      <label for="tipoEquipo">Tipo de Equipo</label>
+      <input type="text" class="form-control" id="tipoEquipo" [(ngModel)]="asset.tipoEquipo" name="tipoEquipo">
+    </div>
+    <div class="form-group">
+      <label for="marca">Marca</label>
+      <input type="text" class="form-control" id="marca" [(ngModel)]="asset.marca" name="marca">
+    </div>
+    <div class="form-group">
+      <label for="modelo">Modelo</label>
+      <input type="text" class="form-control" id="modelo" [(ngModel)]="asset.modelo" name="modelo">
+    </div>
+    <div class="form-group">
+      <label for="nroSerie">Número de Serie</label>
+      <input type="text" class="form-control" id="nroSerie" [(ngModel)]="asset.nroSerie" name="nroSerie">
+    </div>
+    <div class="form-group">
+      <label for="disco">Disco</label>
+      <input type="text" class="form-control" id="disco" [(ngModel)]="asset.disco" name="disco">
+    </div>
+    <div class="form-group">
+      <label for="memoria">Memoria</label>
+      <input type="text" class="form-control" id="memoria" [(ngModel)]="asset.memoria" name="memoria">
+    </div>
+    <div class="form-group">
+      <label for="tarjetaVideo">Tarjeta de Video</label>
+      <input type="text" class="form-control" id="tarjetaVideo" [(ngModel)]="asset.tarjetaVideo" name="tarjetaVideo">
+    </div>
+    <div class="form-group">
+      <label for="nroSerieTeclado">Número de Serie del Teclado</label>
+      <input type="text" class="form-control" id="nroSerieTeclado" [(ngModel)]="asset.nroSerieTeclado" name="nroSerieTeclado">
+    </div>
+    <div class="form-group">
+      <label for="nroSerieMouse">Número de Serie del Mouse</label>
+      <input type="text" class="form-control" id="nroSerieMouse" [(ngModel)]="asset.nroSerieMouse" name="nroSerieMouse">
+    </div>
+    <div class="form-group">
+      <label for="propietario">Propietario</label>
+      <input type="text" class="form-control" id="propietario" [(ngModel)]="asset.propietario" name="propietario">
+    </div>
+    <div class="form-group">
+      <label for="osname">Sistema Operativo</label>
+      <input type="text" class="form-control" id="osname" [(ngModel)]="asset.OSNAME" name="osname">
+    </div>
+    <div class="form-group">
+      <label for="ipaddr">Dirección IP</label>
+      <input type="text" class="form-control" id="ipaddr" [(ngModel)]="asset.IPADDR" name="ipaddr">
+    </div>
+    <div class="form-group">
+      <label for="type">Tipo</label>
+      <input type="text" class="form-control" id="type" [(ngModel)]="asset.TYPE" name="type">
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="activeModal.close('Close click')">Cerrar</button>
+  <button type="button" class="btn btn-info" (click)="guardarCambios()">Guardar cambios</button>
+</div>

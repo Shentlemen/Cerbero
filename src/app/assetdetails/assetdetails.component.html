@@ -1,0 +1,55 @@
+<div class="container mt-5" *ngIf="asset">
+  <div class="card shadow-lg">
+    <div class="card-header title-bar">
+      <h2 class="mb-0 text-center">
+        <i class="fas fa-desktop me-2"></i>DETALLES DEL ASSET
+      </h2>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h3 class="card-title">{{ asset.tipoEquipo }} {{ asset.marca }} {{ asset.modelo }}</h3>
+          <h4 class="text-secondary">Información General</h4>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><i class="fas fa-tag me-2"></i><strong>Nombre del Equipo:</strong> {{ asset.NAME }}</li>
+            <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie:</strong> {{ asset.nroSerie }}</li>
+            <li class="list-group-item"><i class="fas fa-user me-2"></i><strong>Propietario:</strong> {{ asset.propietario }}</li>
+            <li class="list-group-item"><i class="fas fa-desktop me-2"></i><strong>Sistema Operativo:</strong> {{ asset.OSNAME }}</li>
+            <li class="list-group-item"><i class="fas fa-network-wired me-2"></i><strong>Dirección IP:</strong> {{ asset.IPADDR }}</li>
+            <li class="list-group-item"><i class="fas fa-info-circle me-2"></i><strong>Tipo:</strong> {{ asset.TYPE }}</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h4 class="text-secondary">Especificaciones</h4>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><i class="fas fa-hdd me-2"></i><strong>Disco:</strong> {{ asset.disco }}</li>
+            <li class="list-group-item"><i class="fas fa-memory me-2"></i><strong>Memoria:</strong> {{ asset.memoria }}</li>
+            <li class="list-group-item"><i class="fas fa-tv me-2"></i><strong>Tarjeta de Video:</strong> {{ asset.tarjetaVideo }}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <h4 class="text-secondary">Periféricos</h4>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><i class="fas fa-keyboard me-2"></i><strong>Número de Serie del Teclado:</strong> {{ asset.nroSerieTeclado }}</li>
+            <li class="list-group-item"><i class="fas fa-mouse me-2"></i><strong>Número de Serie del Mouse:</strong> {{ asset.nroSerieMouse }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <button class="btn btn-secondary" (click)="volver()">
+        <i class="fas fa-arrow-left me-2"></i>Volver
+      </button>
+      <div>
+        <button class="btn btn-export me-2" (click)="exportarAPdf()">
+          <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
+        </button>
+        <button class="btn btn-info" (click)="editarAsset()">
+          <i class="fas fa-edit me-2"></i>Editar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

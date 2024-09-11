@@ -10,7 +10,7 @@ export class HwService {
   getHardware() {
     return [
       { 
-        nroEquipo: 1, 
+        NAME: 'PC45678', 
         tipoEquipo: 'Laptop', 
         marca: 'Dell', 
         modelo: 'XPS 13', 
@@ -20,10 +20,13 @@ export class HwService {
         tarjetaVideo: 'Intel Iris Xe', 
         nroSerieTeclado: 'KBD001', 
         nroSerieMouse: 'MSE001', 
-        propietario: 'Juan Pérez' 
+        propietario: 'Juan Pérez',
+        OSNAME: 'Windows 11 Pro',
+        IPADDR: '192.168.1.101',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 2, 
+        NAME: 'PC23456', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'HP', 
         modelo: 'Pavilion', 
@@ -33,10 +36,13 @@ export class HwService {
         tarjetaVideo: 'NVIDIA GeForce GTX 1650', 
         nroSerieTeclado: 'KBD002', 
         nroSerieMouse: 'MSE002', 
-        propietario: 'María García' 
+        propietario: 'María García',
+        OSNAME: 'Windows 10 Home',
+        IPADDR: '192.168.1.102',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 3, 
+        NAME: 'PC78901', 
         tipoEquipo: 'Laptop', 
         marca: 'Lenovo', 
         modelo: 'ThinkPad', 
@@ -46,10 +52,13 @@ export class HwService {
         tarjetaVideo: 'Intel UHD Graphics 620', 
         nroSerieTeclado: 'KBD003', 
         nroSerieMouse: 'MSE003', 
-        propietario: 'Carlos Gómez' 
+        propietario: 'Carlos Gómez',
+        OSNAME: 'Ubuntu 22.04 LTS',
+        IPADDR: '192.168.1.103',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 4, 
+        NAME: 'PC34567', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'Acer', 
         modelo: 'Aspire', 
@@ -59,10 +68,13 @@ export class HwService {
         tarjetaVideo: 'AMD Radeon RX 550', 
         nroSerieTeclado: 'KBD004', 
         nroSerieMouse: 'MSE004', 
-        propietario: 'Ana López' 
+        propietario: 'Ana López',
+        OSNAME: 'Windows 11 Home',
+        IPADDR: '192.168.1.104',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 5, 
+        NAME: 'PC89012', 
         tipoEquipo: 'Laptop', 
         marca: 'Apple', 
         modelo: 'MacBook Pro', 
@@ -72,10 +84,13 @@ export class HwService {
         tarjetaVideo: 'Apple M1 GPU', 
         nroSerieTeclado: 'KBD005', 
         nroSerieMouse: 'MSE005', 
-        propietario: 'Sofía Martínez' 
+        propietario: 'Sofía Martínez',
+        OSNAME: 'macOS Monterey',
+        IPADDR: '192.168.1.105',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 6, 
+        NAME: 'PC56789', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'Dell', 
         modelo: 'OptiPlex 3080', 
@@ -85,10 +100,13 @@ export class HwService {
         tarjetaVideo: 'NVIDIA Quadro P620', 
         nroSerieTeclado: 'KBD006', 
         nroSerieMouse: 'MSE006', 
-        propietario: 'Pedro Fernández' 
+        propietario: 'Pedro Fernández',
+        OSNAME: 'Windows 10 Pro',
+        IPADDR: '192.168.1.106',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 7, 
+        NAME: 'PC12345', 
         tipoEquipo: 'Laptop', 
         marca: 'Asus', 
         modelo: 'ROG', 
@@ -98,10 +116,13 @@ export class HwService {
         tarjetaVideo: 'NVIDIA GeForce RTX 3080', 
         nroSerieTeclado: 'KBD007', 
         nroSerieMouse: 'MSE007', 
-        propietario: 'Luis Herrera' 
+        propietario: 'Luis Herrera',
+        OSNAME: 'Windows 11 Pro',
+        IPADDR: '192.168.1.107',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 8, 
+        NAME: 'PC67890', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'HP', 
         modelo: 'ProDesk', 
@@ -111,10 +132,13 @@ export class HwService {
         tarjetaVideo: 'NVIDIA Quadro P2000', 
         nroSerieTeclado: 'KBD008', 
         nroSerieMouse: 'MSE008', 
-        propietario: 'Marta Sánchez' 
+        propietario: 'Marta Sánchez',
+        OSNAME: 'Windows 10 Enterprise',
+        IPADDR: '192.168.1.108',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 9, 
+        NAME: 'PC90123', 
         tipoEquipo: 'Laptop', 
         marca: 'Microsoft', 
         modelo: 'Surface', 
@@ -124,10 +148,13 @@ export class HwService {
         tarjetaVideo: 'Intel Iris Plus Graphics', 
         nroSerieTeclado: 'KBD009', 
         nroSerieMouse: 'MSE009', 
-        propietario: 'José Ruiz' 
+        propietario: 'José Ruiz',
+        OSNAME: 'Windows 11 Home',
+        IPADDR: '192.168.1.109',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 10, 
+        NAME: 'PC01234', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'Lenovo', 
         modelo: 'IdeaCentre', 
@@ -137,10 +164,13 @@ export class HwService {
         tarjetaVideo: 'AMD Radeon RX 570', 
         nroSerieTeclado: 'KBD010', 
         nroSerieMouse: 'MSE010', 
-        propietario: 'Isabel Moreno' 
+        propietario: 'Isabel Moreno',
+        OSNAME: 'Windows 10 Home',
+        IPADDR: '192.168.1.110',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 11, 
+        NAME: 'PC54321', 
         tipoEquipo: 'Laptop', 
         marca: 'Dell', 
         modelo: 'Inspiron', 
@@ -150,10 +180,13 @@ export class HwService {
         tarjetaVideo: 'Intel Iris Xe', 
         nroSerieTeclado: 'KBD011', 
         nroSerieMouse: 'MSE011', 
-        propietario: 'Pablo Castillo' 
+        propietario: 'Pablo Castillo',
+        OSNAME: 'Ubuntu 20.04 LTS',
+        IPADDR: '192.168.1.111',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 12, 
+        NAME: 'PC98765', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'HP', 
         modelo: 'Z240', 
@@ -163,10 +196,13 @@ export class HwService {
         tarjetaVideo: 'NVIDIA Quadro P2000', 
         nroSerieTeclado: 'KBD012', 
         nroSerieMouse: 'MSE012', 
-        propietario: 'Laura Ortiz' 
+        propietario: 'Laura Ortiz',
+        OSNAME: 'Windows 10 Pro',
+        IPADDR: '192.168.1.112',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 13, 
+        NAME: 'PC43210', 
         tipoEquipo: 'Laptop', 
         marca: 'Dell', 
         modelo: 'Latitude', 
@@ -176,10 +212,13 @@ export class HwService {
         tarjetaVideo: 'Intel UHD Graphics 620', 
         nroSerieTeclado: 'KBD013', 
         nroSerieMouse: 'MSE013', 
-        propietario: 'Diego Torres' 
+        propietario: 'Diego Torres',
+        OSNAME: 'Windows 11 Pro',
+        IPADDR: '192.168.1.113',
+        TYPE: 'LAPTOP'
       },
       { 
-        nroEquipo: 14, 
+        NAME: 'PC87654', 
         tipoEquipo: 'PC Escritorio', 
         marca: 'Dell', 
         modelo: 'OptiPlex 7070', 
@@ -189,10 +228,13 @@ export class HwService {
         tarjetaVideo: 'NVIDIA GeForce GTX 1660', 
         nroSerieTeclado: 'KBD014', 
         nroSerieMouse: 'MSE014', 
-        propietario: 'Manuel Rojas' 
+        propietario: 'Manuel Rojas',
+        OSNAME: 'Windows 10 Enterprise',
+        IPADDR: '192.168.1.114',
+        TYPE: 'DESKTOP'
       },
       { 
-        nroEquipo: 15, 
+        NAME: 'PC32109', 
         tipoEquipo: 'Laptop', 
         marca: 'Lenovo', 
         modelo: 'Yoga', 
@@ -202,8 +244,19 @@ export class HwService {
         tarjetaVideo: 'Intel UHD Graphics 620', 
         nroSerieTeclado: 'KBD015', 
         nroSerieMouse: 'MSE015', 
-        propietario: 'Lucía Ramírez' 
+        propietario: 'Lucía Ramírez',
+        OSNAME: 'Windows 11 Home',
+        IPADDR: '192.168.1.115',
+        TYPE: 'LAPTOP'
       }
     ];
+  }
+
+  getHardwareById(id: string | number): any {
+    console.log('Buscando hardware con ID:', id);
+    const hardware = this.getHardware();
+    const asset = hardware.find(item => item.NAME.toString() === id.toString());
+    console.log('Asset encontrado:', asset);
+    return asset;
   }
 }

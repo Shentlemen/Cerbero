@@ -1,0 +1,48 @@
+.btn-info {
+  background-color: #aed6f1;
+  border: none;
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: #85c1e9;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Nuevo estilo para las etiquetas */
+label {
+  color: #333333; /* Color oscuro para mejor contraste */
+  font-weight: bold; /* Hace las etiquetas más gruesas */
+  margin-bottom: 5px; /* Añade un poco de espacio debajo de cada etiqueta */
+}
+
+/* Estilo para el título del modal */
+.modal-title {
+  color: #2c3e50; /* Color oscuro para el título */
+  font-weight: bold;
+}
+
+/* Mejora el contraste del botón de cierre */
+.close {
+  color: #2c3e50;
+}
+
+/* Ajusta el color de fondo del encabezado del modal para mayor contraste */
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Ajusta el color de fondo del pie del modal para mayor contraste */
+.modal-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
