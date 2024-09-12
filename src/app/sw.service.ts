@@ -7,7 +7,13 @@ export class SwService {
 
   constructor() { }
 
-  getSoftware() {
+  getSoftware(id: string | number) {
+    const softwares = this.getSoftwares();
+    return softwares.find(s => s.nroSoftware === Number(id)) || null;
+  }
+
+  getSoftwares() {
+    // Este método ahora retorna todos los softwares
     return [
       { 
         nroSoftware: 1, 

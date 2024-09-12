@@ -3,7 +3,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
+  font-family: 'Roboto', Arial, sans-serif;
 }
 
 /* Estilo para la barra lateral */
@@ -13,52 +13,46 @@ html, body {
   top: 0;
   left: 0;
   height: 100%; /* Asegura que ocupe toda la altura de la ventana */
-  background-color: #111; /* Fondo negro */
+  background-color: #2c3e50; /* Color de fondo más suave */
   padding-top: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-  transition: width 0.3s;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .sidenav a {
-  padding: 12px 18px; /* Reducido el padding */
+  padding: 15px 25px; /* Reducido el padding */
   text-decoration: none;
-  font-size: 18px; /* Reducido el tamaño de la fuente */
-  color: #818181;
-  display: block;
-  transition: background-color 0.3s, color 0.3s;
-  border-bottom: 1px solid #333;
+  font-size: 16px; /* Reducido el tamaño de la fuente */
+  color: #ecf0f1;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
 }
 
 .sidenav a:last-child {
   border-bottom: none;
 }
 
-.sidenav a:hover {
-  color: #f1f1f1;
-  background-color: #575757;
+.sidenav a:hover, .sidenav a.active {
+  background-color: #34495e;
+  color: #3498db;
+  border-left: 4px solid #3498db;
 }
 
-.sidenav a.active {
-  background-color: #04AA6D;
-  color: white;
-}
-
-/* Ajuste para los iconos si es necesario */
 .sidenav a i {
-  margin-right: 10px;
+  margin-right: 15px;
   font-size: 20px; /* Ajustado el tamaño del icono */
-}
-
-/* Ajuste del ancho de la barra lateral si es necesario */
-.sidenav {
-  width: 250px; /* Reducido el ancho */
+  width: 25px;
+  text-align: center;
 }
 
 /* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
-  margin-left: 260px; /* Ajustado para coincidir con el nuevo ancho de la barra lateral */
-  padding: 15px;
+  margin-left: 250px; /* Ajustado para coincidir con el nuevo ancho de la barra lateral */
+  padding: 20px;
   min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
+  background-color: #ecf0f1;
 }
 
 /* Para un efecto de colapso en la barra lateral */
@@ -69,13 +63,53 @@ html, body {
 /* Estilo para el contenedor del logo */
 .logo-container {
   text-align: center;
+  padding: 20px;
   margin-bottom: 20px;
+}
+
+/* Estilo para el recuadro del logo */
+.logo-wrapper {
+  background-color: #34495e; /* Fondo más oscuro solo para el recuadro del logo */
+  border-radius: 15px; /* Bordes redondeados para el recuadro */
   padding: 10px;
+  display: inline-block; /* Hace que el fondo se ajuste al contenido */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 /* Estilo para la imagen del logo */
 .logo {
-  max-width: 80%; /* Reducido de 100% a 80% */
+  width: 80%;
+  max-width: 160px;
   height: auto;
-  max-height: 100px; /* Añadido para limitar la altura máxima */
+  border-radius: 10px; /* Bordes redondeados para la imagen */
+}
+
+/* Efecto hover para los íconos */
+.sidenav a:hover i {
+  transform: scale(1.2);
+  transition: transform 0.3s ease;
+}
+
+/* Media query para pantallas más pequeñas */
+@media screen and (max-width: 768px) {
+  .sidenav {
+    width: 70px;
+  }
+  
+  .sidenav a span {
+    display: none;
+  }
+  
+  .sidenav a i {
+    margin-right: 0;
+  }
+  
+  .main-content {
+    margin-left: 70px;
+  }
+  
+  .logo {
+    width: 50px;
+    height: 50px;
+  }
 }

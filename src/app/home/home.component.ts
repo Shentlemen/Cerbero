@@ -100,6 +100,7 @@ export class HomeComponent {
   onSubmit(): void {
     console.log("Usuario:", this.username);
     console.log("Contraseña:", this.password);
-    this.router.navigate(['/menu']);  // Redirige al menú
+    // Cambia esta línea para redirigir directamente al dashboard
+    this.router.navigate(['/menu/dashboard']);
   }
 }

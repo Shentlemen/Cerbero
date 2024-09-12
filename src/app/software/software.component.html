@@ -1,10 +1,9 @@
-<div class="container d-flex">
-  <!-- Filtros a la izquierda -->
-  <div class="filter-section me-4">
+<div class="container">
+  <div class="filter-section">
     <div class="title-bar">
-      <h3>Filtros</h3>
+      <h2>Filtros</h2>
     </div>
-    <form [formGroup]="filterForm">
+    <form [formGroup]="filterForm" (ngSubmit)="aplicarFiltros()">
       <div class="mb-3">
         <label for="nombreFilter" class="form-label">Nombre:</label>
         <input id="nombreFilter" formControlName="nombre" class="form-control" />
@@ -19,83 +18,57 @@
       </div>
       <div class="mb-3">
         <label for="fechaInstalacionFilter" class="form-label">Fecha de Instalación:</label>
-        <input id="fechaInstalacionFilter" formControlName="fechaInstalacion" type="date" class="form-control" />
+        <input id="fechaInstalacionFilter" formControlName="fechaInstalacion" class="form-control" />
       </div>
-      <div class="mb-3">
-        <label for="nroProveedorFilter" class="form-label">Número de Proveedor:</label>
-        <input id="nroProveedorFilter" formControlName="nroProveedor" class="form-control" />
-      </div>
-      <button type="button" class="btn btn-secondary" (click)="aplicarFiltros()">Aplicar Filtros</button>
+      <button type="submit" class="btn btn-filtrar">Aplicar</button>
     </form>
   </div>
 
-  <!-- Lista de software a la derecha -->
-  <div class="hardware-list-section flex-grow-1">
+  <div class="software-list-section">
     <div class="title-bar">
-      <h3><i class="fas fa-code"></i> Lista de Software</h3>
+      <h2><i class="fas fa-laptop-code" aria-hidden="true"></i> Lista de Software</h2>
     </div>
-
-    <ul class="list-group">
-      <li *ngFor="let software of softwareFiltrado; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
-        <span>
-          {{ software.nombre }} - {{ software.version }} - {{ software.licencia }}
-        </span>
-        <div>
-          <button class="btn btn-secondary btn-sm me-2" (click)="abrirModalVer(editModal, i)">
-            <i class="fas fa-eye"></i> Ver
-          </button>
-          <button class="btn btn-info btn-sm me-2" (click)="abrirModalEditar(editModal, i)">
-            <i class="fas fa-edit"></i> Editar
-          </button>
-          <button class="btn btn-danger btn-sm" (click)="eliminarSoftware(software.nroSoftware)">
-            <i class="fas fa-trash-alt"></i> Eliminar
-          </button>
-        </div>        
-      </li>      
-    </ul>
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th (click)="sortData('nombre')" style="cursor: pointer;">
+            Nombre
+            <i class="fas" [ngClass]="{
+              'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc', 
+              'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc'
+            }" aria-hidden="true"></i>
+          </th>
+          <th (click)="sortData('version')" style="cursor: pointer;">
+            Versión
+            <i class="fas" [ngClass]="{
+              'fa-sort-up': sortColumn === 'version' && sortDirection === 'asc', 
+              'fa-sort-down': sortColumn === 'version' && sortDirection === 'desc'
+            }" aria-hidden="true"></i>
+          </th>
+          <th (click)="sortData('licencia')" style="cursor: pointer;">
+            Licencia
+            <i class="fas" [ngClass]="{
+              'fa-sort-up': sortColumn === 'licencia' && sortDirection === 'asc', 
+              'fa-sort-down': sortColumn === 'licencia' && sortDirection === 'desc'
+            }" aria-hidden="true"></i>
+          </th>
+          <th (click)="sortData('fechaInstalacion')" style="cursor: pointer;">
+            Fecha de Instalación
+            <i class="fas" [ngClass]="{
+              'fa-sort-up': sortColumn === 'fechaInstalacion' && sortDirection === 'asc', 
+              'fa-sort-down': sortColumn === 'fechaInstalacion' && sortDirection === 'desc'
+            }" aria-hidden="true"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let software of softwareFiltrado" (click)="verDetallesSoftware(software)" style="cursor: pointer;">
+          <td>{{ software.nombre }}</td>
+          <td>{{ software.version }}</td>
+          <td>{{ software.licencia }}</td>
+          <td>{{ software.fechaInstalacion }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
-
-<!-- Modal -->
-<ng-template #editModal let-modal>
-  <div class="modal-header">
-    <h5 class="modal-title" id="editModalLabel">
-      <i class="fas fa-edit"></i> {{ isEditing ? 'Editar' : 'Ver' }}
-    </h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
-  <div class="modal-body">
-    <form [formGroup]="softwareForm" (ngSubmit)="guardarCambios()">
-      <div class="mb-3">
-        <label for="nroSoftware" class="form-label">Número de Software:</label>
-        <input id="nroSoftware" formControlName="nroSoftware" class="form-control" />
-      </div>
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre:</label>
-        <input id="nombre" formControlName="nombre" class="form-control" />
-      </div>
-      <div class="mb-3">
-        <label for="version" class="form-label">Versión:</label>
-        <input id="version" formControlName="version" class="form-control" />
-      </div>
-      <div class="mb-3">
-        <label for="licencia" class="form-label">Licencia:</label>
-        <input id="licencia" formControlName="licencia" class="form-control" />
-      </div>
-      <div class="mb-3">
-        <label for="fechaInstalacion" class="form-label">Fecha de Instalación:</label>
-        <input id="fechaInstalacion" formControlName="fechaInstalacion" type="date" class="form-control" />
-      </div>
-      <div class="mb-3">
-        <label for="nroProveedor" class="form-label">Número de Proveedor:</label>
-        <input id="nroProveedor" formControlName="nroProveedor" class="form-control" />
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()" *ngIf="!isEditing">Cerrar</button>
-        <button type="button" class="btn btn-success" (click)="exportarAPdf()" *ngIf="!isEditing">Exportar a PDF</button>
-        <button type="submit" class="btn btn-primary" (click)="guardarCambios()" *ngIf="isEditing">Guardar Cambios</button>
-        <button type="button" class="btn btn-secondary" (click)="cancelarEdicion()" *ngIf="isEditing">Cancelar</button>
-      </div>
-    </form>
-  </div>
-</ng-template>

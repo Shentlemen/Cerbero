@@ -23,7 +23,7 @@
   }
   
   .title-bar {
-    background-color: #4ca1af;
+    background-color: #85c1e9; /* Cambiado a celeste para coincidir con assetdetails */
     padding: 6px 12px;  /* Reducimos aún más el padding */
     border-radius: 5px;
     text-align: center;
@@ -173,19 +173,19 @@
   /* ... estilos existentes ... */
 
   .btn-filtrar {
-    background-color: #98FB98;  /* Verde pastel */
-    border-color: #98FB98;
-    color: #000;  /* Texto negro para mejor contraste */
+    background-color: #85c1e9; /* Cambiado a celeste */
+    border-color: #85c1e9;
+    color: white; /* Cambiado a blanco para mejor contraste */
   }
 
   .btn-filtrar:hover {
-    background-color: #90EE90;  /* Un tono ligeramente más oscuro para el hover */
-    border-color: #90EE90;
+    background-color: #5a9bd5; /* Un tono más oscuro para el hover */
+    border-color: #5a9bd5;
   }
 
   .btn-filtrar:active {
-    background-color: #7CFC00 !important;  /* Un tono aún más oscuro para cuando se presiona */
-    border-color: #7CFC00 !important;
+    background-color: #4a8bc5 !important; /* Un tono aún más oscuro para cuando se presiona */
+    border-color: #4a8bc5 !important;
   }
 
   /* ... resto de los estilos ... */
@@ -195,6 +195,7 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 20px;
+    border: 1px solid #85c1e9; /* Añadido un borde celeste sutil */
   }
 
   .filter-section label {

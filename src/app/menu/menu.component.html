@@ -1,14 +1,28 @@
 <div class="sidenav">
   <!-- Logo de la empresa -->
   <div class="logo-container">
-    <img src="assets/logo2.png" alt="Cerbero Logo" class="logo">
+    <div class="logo-wrapper">
+      <img src="assets/awoo-awoo-shoppe.gif" alt="Cerbero Logo" class="logo">
+    </div>
   </div>
 
   <!-- Menú de navegación -->
-  <a routerLink="/menu/dashboard"><i class="fas fa-tachometer-alt"></i> DASHBOARD</a>
-  <a routerLink="/menu/assets"><i class="fas fa-laptop"></i> ASSETS</a>
-  <a routerLink="/menu/software"><i class="fas fa-code"></i> SOFTWARE</a>
-  <a routerLink="/menu/settings"><i class="fas fa-cog"></i> SETTINGS</a>
+  <a routerLink="/menu/dashboard" routerLinkActive="active">
+    <i class="fas fa-tachometer-alt"></i>
+    <span>DASHBOARD</span>
+  </a>
+  <a routerLink="/menu/assets" routerLinkActive="active">
+    <i class="fas fa-laptop"></i>
+    <span>ASSETS</span>
+  </a>
+  <a routerLink="/menu/software" routerLinkActive="active">
+    <i class="fas fa-code"></i>
+    <span>SOFTWARE</span>
+  </a>
+  <a routerLink="/menu/settings" routerLinkActive="active">
+    <i class="fas fa-cog"></i>
+    <span>SETTINGS</span>
+  </a>
 </div>
 <div class="main-content">
   <router-outlet></router-outlet>

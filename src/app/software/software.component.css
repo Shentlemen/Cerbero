@@ -1,5 +1,6 @@
 .container {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   padding: 20px;
@@ -9,27 +10,37 @@
 
 /* Sección de Filtros */
 .filter-section {
-  flex-basis: 30%;
+  flex-basis: 100%;
   max-width: 250px;
+  margin-right: 20px; /* Añade margen a la derecha */
+  margin-bottom: 20px;
 }
 
-/* Sección de Lista */
-.hardware-list-section {
-  flex-basis: 70%;
+/* Sección de Lista de Software */
+.software-list-section {
+  flex-basis: calc(70% - 20px);
   flex-grow: 1; /* Permite que la lista ocupe todo el espacio disponible */
 }
 
 .title-bar {
-  background-color: #4ca1af;
-  padding: 10px 20px;
+  background-color: #85c1e9; /* Cambiado a celeste para coincidir con assets */
+  padding: 6px 12px;  /* Reducimos aún más el padding */
   border-radius: 5px;
   text-align: center;
   color: white;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  margin-bottom: 5px; 
+  margin-bottom: 12px;  /* Reducimos un poco el margen inferior */
 }
 
-/* Estilización de la lista */
+.title-bar h2 {
+  font-size: 0.95rem;  /* Aumentamos el tamaño de la fuente */
+  margin: 0;
+  font-weight: 500;  /* Hacemos la fuente un poco más ligera */
+  text-transform: uppercase;  /* Opcional: convierte el texto a mayúsculas */
+  letter-spacing: 0.5px;  /* Opcional: añade un poco de espacio entre las letras */
+}
+
+/* Estilización de la lista de hardware */
 .list-group-item {
   display: flex;
   justify-content: space-between;
@@ -129,4 +140,91 @@
 .modal-title i {
   margin-right: 10px;
   color: #4ca1af; /* Color del ícono */
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #212529;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: top;
+  border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.table tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+/* ... estilos existentes ... */
+
+.btn-filtrar {
+  background-color: #85c1e9; /* Cambiado a celeste */
+  border-color: #85c1e9;
+  color: white;
+}
+
+.btn-filtrar:hover {
+  background-color: #5a9bd5; /* Un tono más oscuro para el hover */
+  border-color: #5a9bd5;
+}
+
+.btn-filtrar:active {
+  background-color: #4a8bc5 !important; /* Un tono aún más oscuro para cuando se presiona */
+  border-color: #4a8bc5 !important;
+}
+
+/* ... resto de los estilos ... */
+
+.filter-section, .software-list-section {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  border: 1px solid #85c1e9; /* Añadido un borde celeste sutil */
+}
+
+.filter-section label {
+  color: #333333;  /* Un gris oscuro para mejor contraste */
+  font-weight: 600;  /* Hacemos la fuente un poco más gruesa */
+  margin-bottom: 5px;  /* Añadimos un pequeño margen debajo de cada etiqueta */
+}
+
+.form-label {
+  display: block;  /* Asegura que cada etiqueta esté en su propia línea */
+}
+
+.form-control {
+  margin-bottom: 15px;  /* Añade espacio entre los campos de entrada */
+}
+
+.chart-section {
+  flex-basis: calc(30% - 20px);
+  margin-left: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .filter-section, .software-list-section {
+    flex-basis: 100%;
+    max-width: 100%;
+    margin-right: 0;
+  }
 }
