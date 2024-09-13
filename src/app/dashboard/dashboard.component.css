@@ -1,9 +1,7 @@
 .construccion-container {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    height: 100vh;
     text-align: center;
   }
   
@@ -11,3 +9,128 @@
     max-width: 100%;
     height: auto;
   }
+
+.dashboard-container {
+  background-color: #f0f2f5;
+  min-height: 100vh;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.dashboard-header {
+  background-color: #ffffff;
+  padding: 15px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f0f2f5;
+}
+
+.dashboard-title {
+  color: #333333;
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-title i {
+  margin-right: 12px;
+  font-size: 1.8rem;
+  color: #85c1e9;  /* Color celeste para el icono */
+}
+
+.dashboard-title span {
+  border-bottom: 3px solid #85c1e9;
+  padding-bottom: 3px;
+}
+
+.chart-title {
+  color: #333333;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: center;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #85c1e9;
+  display: inline-block;
+}
+
+.chart-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.8rem;
+  }
+
+  .dashboard-title i {
+    font-size: 1.6rem;
+  }
+
+  .chart-title {
+    font-size: 1.3rem;
+  }
+}
+
+.charts-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.chart-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  flex: 1;
+  min-width: 300px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.chart-card h2 {
+  color: #333;
+  font-size: 18px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.main-chart {
+  flex: 2;
+  min-width: 400px;
+}
+
+@media (max-width: 1200px) {
+  .charts-container {
+    flex-direction: column;
+  }
+
+  .chart-card, .main-chart {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-header h1 {
+    font-size: 20px;
+  }
+
+  .chart-card h2 {
+    font-size: 16px;
+  }
+}

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HwService } from '../hw.service';  
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 
 @Component({
@@ -20,18 +20,28 @@ export class AssetsComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private hwService: HwService, private fb: FormBuilder, private router: Router) {
+  constructor(private hwService: HwService, private fb: FormBuilder, private router: Router, private route: ActivatedRoute) {
     this.filterForm = this.fb.group({
       NAME: [''],
       OSNAME: [''],
       IPADDR: [''],
-      TYPE: ['']
+      TYPE: [''],
+      marca: ['']  // Añadimos el campo de marca
     });
   }
 
   ngOnInit(): void {
     this.assetsList = this.hwService.getHardware();
-    this.assetsFiltrados = [...this.assetsList]; // Copia todos los assets inicialmente
+    this.assetsFiltrados = [...this.assetsList];
+
+    this.route.queryParams.subscribe(params => {
+      if (params['filterType'] && params['filterValue']) {
+        this.filterForm.patchValue({
+          [params['filterType']]: params['filterValue']
+        });
+        this.aplicarFiltros();
+      }
+    });
   }
 
   aplicarFiltros(): void {

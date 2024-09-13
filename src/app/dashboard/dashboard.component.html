@@ -1,4 +1,22 @@
-<div class="construccion-container">
-  <img src="assets/page-construction.gif" alt="Página en construcción" class="construccion-gif">
-  <p>Esta página está en construcción. Disculpe las molestias.</p>
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1 class="dashboard-title">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </h1>
+  </header>
+  <div class="charts-container">
+    <div class="chart-card">
+      <h2 class="chart-title">Tipos de PC</h2>
+      <canvasjs-chart [options]="pieChartOptions" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
+    </div>
+    <div class="chart-card main-chart">
+      <h2 class="chart-title">Marcas de PC</h2>
+      <canvasjs-chart [options]="barChartOptions" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
+    </div>
+    <div class="chart-card">
+      <h2 class="chart-title">Sistemas Operativos</h2>
+      <canvasjs-chart [options]="pieChartOptions2" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
+    </div>
+  </div>
 </div>

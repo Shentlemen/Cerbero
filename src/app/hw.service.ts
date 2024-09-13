@@ -1,5 +1,23 @@
 import { Injectable } from '@angular/core';
 
+// Definimos una interfaz para el tipo de hardware
+interface Hardware {
+  NAME: string;
+  tipoEquipo: string;
+  marca: string;
+  modelo: string;
+  nroSerie: string;
+  disco: string;
+  memoria: string;
+  tarjetaVideo: string;
+  nroSerieTeclado: string;
+  nroSerieMouse: string;
+  propietario: string;
+  OSNAME: string;
+  IPADDR: string;
+  TYPE: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -7,7 +25,8 @@ export class HwService {
 
   constructor() { }
 
-  getHardware() {
+  // Método para obtener todos los equipos de hardware
+  getHardware(): Hardware[] {
     return [
       { 
         NAME: 'PC45678', 
@@ -248,15 +267,96 @@ export class HwService {
         OSNAME: 'Windows 11 Home',
         IPADDR: '192.168.1.115',
         TYPE: 'LAPTOP'
+      },
+      { 
+        NAME: 'MB10001', 
+        tipoEquipo: 'Smartphone', 
+        marca: 'Samsung', 
+        modelo: 'Galaxy S21', 
+        nroSerie: 'SG21-001', 
+        disco: '128GB', 
+        memoria: '8GB', 
+        tarjetaVideo: 'Adreno 660', 
+        nroSerieTeclado: 'N/A', 
+        nroSerieMouse: 'N/A', 
+        propietario: 'Carmen Vega',
+        OSNAME: 'Android 12',
+        IPADDR: '192.168.1.116',
+        TYPE: 'MOBILE'
+      },
+      { 
+        NAME: 'MB10002', 
+        tipoEquipo: 'Tablet', 
+        marca: 'Apple', 
+        modelo: 'iPad Pro', 
+        nroSerie: 'IPP-002', 
+        disco: '256GB', 
+        memoria: '8GB', 
+        tarjetaVideo: 'Apple GPU', 
+        nroSerieTeclado: 'N/A', 
+        nroSerieMouse: 'N/A', 
+        propietario: 'Roberto Méndez',
+        OSNAME: 'iPadOS 15',
+        IPADDR: '192.168.1.117',
+        TYPE: 'MOBILE'
+      },
+      { 
+        NAME: 'MB10003', 
+        tipoEquipo: 'Smartphone', 
+        marca: 'Google', 
+        modelo: 'Pixel 6', 
+        nroSerie: 'GP6-003', 
+        disco: '128GB', 
+        memoria: '8GB', 
+        tarjetaVideo: 'Mali-G78 MP20', 
+        nroSerieTeclado: 'N/A', 
+        nroSerieMouse: 'N/A', 
+        propietario: 'Elena Fuentes',
+        OSNAME: 'Android 13',
+        IPADDR: '192.168.1.118',
+        TYPE: 'MOBILE'
+      },
+      { 
+        NAME: 'MB10004', 
+        tipoEquipo: 'Tablet', 
+        marca: 'Samsung', 
+        modelo: 'Galaxy Tab S7', 
+        nroSerie: 'GTS7-004', 
+        disco: '128GB', 
+        memoria: '6GB', 
+        tarjetaVideo: 'Adreno 650', 
+        nroSerieTeclado: 'N/A', 
+        nroSerieMouse: 'N/A', 
+        propietario: 'Javier Soto',
+        OSNAME: 'Android 12',
+        IPADDR: '192.168.1.119',
+        TYPE: 'MOBILE'
+      },
+      { 
+        NAME: 'MB10005', 
+        tipoEquipo: 'Smartphone', 
+        marca: 'Apple', 
+        modelo: 'iPhone 13', 
+        nroSerie: 'IP13-005', 
+        disco: '256GB', 
+        memoria: '6GB', 
+        tarjetaVideo: 'Apple GPU', 
+        nroSerieTeclado: 'N/A', 
+        nroSerieMouse: 'N/A', 
+        propietario: 'Marta Jiménez',
+        OSNAME: 'iOS 15',
+        IPADDR: '192.168.1.120',
+        TYPE: 'MOBILE'
       }
     ];
   }
 
-  getHardwareById(id: string | number): any {
+  // Método para obtener hardware por ID (NAME en este caso)
+  getHardwareById(id: string | number): Hardware | null {
     console.log('Buscando hardware con ID:', id);
     const hardware = this.getHardware();
     const asset = hardware.find(item => item.NAME.toString() === id.toString());
     console.log('Asset encontrado:', asset);
-    return asset;
+    return asset || null;
   }
 }

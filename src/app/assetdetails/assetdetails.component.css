@@ -46,13 +46,13 @@ h4.text-secondary {
 }
 
 .btn-secondary {
-  background-color: #85c1e9; /* Cambiado a un azul pastel más claro */
-  border: none;
-  color: white;
+  background-color: #6c757d;
+  border-color: #6c757d;
 }
 
 .btn-secondary:hover {
-  background-color: #5a9bd5; /* Cambiado a un azul pastel más oscuro */
+  background-color: #5a6268;
+  border-color: #545b62;
 }
 
 .btn-info {
@@ -70,13 +70,14 @@ h4.text-secondary {
 }
 
 .btn-export {
-  background-color: #f0ad4e; /* Mantenido el naranja pastel para contraste */
-  border: none;
+  background-color: #f0ad4e;
+  border-color: #f0ad4e;
   color: white;
 }
 
 .btn-export:hover {
-  background-color: #ec971f; /* Mantenido el naranja más oscuro para hover */
+  background-color: #ec971f;
+  border-color: #d58512;
 }
 
 .card-footer {
@@ -90,6 +91,14 @@ h4.text-secondary {
   font-size: 1rem;
   line-height: 1.5;
   border-radius: 0.25rem;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.card-footer .btn {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
 }
 
 @media (max-width: 768px) {
@@ -111,5 +120,10 @@ h4.text-secondary {
 
   h4 {
     font-size: 1.1rem;
+  }
+
+  .card-footer .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
   }
 }

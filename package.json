@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^18.2.1",
     "@angular/platform-browser-dynamic": "^18.2.1",
     "@angular/router": "^18.2.1",
+    "@canvasjs/angular-charts": "^1.2.0",
     "@ng-bootstrap/ng-bootstrap": "^17.0.1",
     "@tsparticles/angular": "^3.0.0",
     "@tsparticles/engine": "^3.5.0",

@@ -40,8 +40,8 @@ ngx-particles {
 }
 
 .logo:hover {
-  transform: scale(1.1) rotate(10deg); /* Escala y rota el logo */
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* Agrega sombra */
+  transform: scale(1.05); /* Reducido de 1.1 a 1.05 para un incremento menor */
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* Mantenemos la sombra */
 }
 
 
