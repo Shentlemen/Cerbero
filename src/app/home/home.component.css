@@ -14,13 +14,30 @@ ngx-particles {
   height: 100%;
   top: 0;
   left: 0;
-  background-color: black; /* Fondo negro detrás de todo */
-  z-index: 1; /* Fondo negro debajo de las partículas */
+  background: #000000; /* Fondo negro sólido */
+  z-index: 1;
+  overflow: hidden;
+}
+
+.home-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+    radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+    radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+  background-size: 550px 550px, 350px 350px, 250px 250px;
+  background-position: 0 0, 40px 60px, 130px 270px;
+  opacity: 0.3; /* Reduce la opacidad para un efecto más sutil */
 }
 
 .content-container {
   position: absolute;
-  top: 30%; /* Ajusta este valor para controlar la altura */
+  top: 30%;
   left: 50%;
   transform: translate(-50%, -30%);
   display: flex;
@@ -28,12 +45,19 @@ ngx-particles {
   justify-content: center;
   align-items: center;
   z-index: 3; /* Logo y formulario sobre las partículas */
+  /* Eliminamos la animación fadeIn */
+  /* animation: fadeIn 1s ease-out; */
 }
 
+/* Eliminamos la definición de la animación fadeIn ya que no la usaremos */
+/* @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+} */
 
 .logo {
-  max-width: 50%;
-  max-height: 50%;
+  max-width: 40%; /* Reducido de 50% a 40% */
+  max-height: 40%; /* Reducido de 50% a 40% */
   object-fit: contain;
   margin-bottom: 20px;
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
@@ -43,8 +67,6 @@ ngx-particles {
   transform: scale(1.05); /* Reducido de 1.1 a 1.05 para un incremento menor */
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* Mantenemos la sombra */
 }
-
-
 
 .login-form {
   display: flex;
@@ -60,6 +82,8 @@ ngx-particles {
   border: 1px solid #ccc;
   background-color: #f4e4d8; /* Color blanco crema */
   color: #333; /* Color del texto */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .login-form input::placeholder {
@@ -73,10 +97,19 @@ ngx-particles {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
-
 
 .login-form button:hover {
   background-color: #381859; /* Un tono ligeramente más oscuro para el efecto hover */
+}
+
+.running-wolf {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  max-width: 150px; /* Ajusta este valor según el tamaño que desees */
+  height: auto;
+  z-index: 4; /* Asegura que esté por encima de otros elementos */
 }
 
