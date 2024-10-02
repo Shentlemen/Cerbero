@@ -1,35 +1,42 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { HwService } from '../hw.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ActivatedRoute } from '@angular/router';
+import { HardwareService } from '../services/hardware.service';
 import { Location, CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AssetEditModalComponent } from '../asset-edit-modal/asset-edit-modal.component';
 
 interface Asset {
-  NAME: string; // Cambiado de nroEquipo a NAME
-  tipoEquipo: string;
-  marca: string;
-  modelo: string;
-  nroSerie: string;
-  disco: string;
-  memoria: string;
-  tarjetaVideo: string;
-  nroSerieTeclado: string;
-  nroSerieMouse: string;
-  propietario: string;
-  OSNAME: string;
-  IPADDR: string;
-  TYPE: string;
-  // ... otros campos que puedas tener
+  id: number;
+  deviceId: string;
+  name: string;
+  workgroup: string;
+  osName: string;
+  osVersion: string;
+  osComments: string;
+  processors: string;
+  processorType: string;
+  processorN: number;
+  memory: number;
+  swap: number;
+  ipAddr: string;
+  ipSrc: string;
+  dns: string;
+  defaultGateway: string;
+  type: string;
+  description: string;
+  winCompany: string;
+  winOwner: string;
+  winProdId: string;
+  winProdKey: string;
 }
 
 @Component({
   selector: 'app-assetdetails',
-  standalone: true,  // Añade esta línea
-  imports: [CommonModule, NgbModalModule, AssetEditModalComponent],  // Añade NgbModal y AssetEditModalComponent a los imports
+  standalone: true,
+  imports: [CommonModule, NgbModalModule, AssetEditModalComponent],
   templateUrl: './assetdetails.component.html',
   styleUrls: ['./assetdetails.component.css']
 })
@@ -38,7 +45,7 @@ export class AssetdetailsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private hwService: HwService,
+    private hardwareService: HardwareService,
     private location: Location,
     private router: Router,
     private modalService: NgbModal
@@ -46,11 +53,26 @@ export class AssetdetailsComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      console.log('ID recibido:', id);
-      if (id) {
-        this.asset = this.hwService.getHardwareById(id);
-        console.log('Asset obtenido:', this.asset);
+      const idParam = params.get('id');
+      if (idParam) {
+        const id = parseInt(idParam, 10);
+        if (!isNaN(id)) {
+          this.hardwareService.getHardwareById(id).subscribe(
+            (result: Asset) => {
+              this.asset = result;
+              console.log('Asset obtenido:', this.asset);
+            },
+            (error) => {
+              console.error('Error al obtener el asset:', error);
+              // Handle the error, e.g., redirect to an error page
+              // this.router.navigate(['/error']);
+            }
+          );
+        } else {
+          console.error('ID inválido:', idParam);
+          // Handle invalid ID, e.g., redirect to an error page
+          // this.router.navigate(['/error']);
+        }
       }
     });
   }
@@ -66,20 +88,27 @@ export class AssetdetailsComponent implements OnInit {
 
     // Preparar los datos para la tabla
     const tableData = [
-      ['Nombre del Equipo', this.asset.NAME], // Cambiado de nroEquipo a NAME
-      ['Tipo de Equipo', this.asset.tipoEquipo],
-      ['Marca', this.asset.marca],
-      ['Modelo', this.asset.modelo],
-      ['Número de Serie', this.asset.nroSerie],
-      ['Disco', this.asset.disco],
-      ['Memoria', this.asset.memoria],
-      ['Tarjeta de Video', this.asset.tarjetaVideo],
-      ['Número de Serie del Teclado', this.asset.nroSerieTeclado],
-      ['Número de Serie del Mouse', this.asset.nroSerieMouse],
-      ['Propietario', this.asset.propietario],
-      ['Sistema Operativo', this.asset.OSNAME],
-      ['Dirección IP', this.asset.IPADDR],
-      ['Tipo', this.asset.TYPE]
+      ['ID', this.asset.id.toString()],
+      ['Device ID', this.asset.deviceId],
+      ['Nombre', this.asset.name],
+      ['Grupo de trabajo', this.asset.workgroup],
+      ['Sistema Operativo', this.asset.osName],
+      ['Versión SO', this.asset.osVersion],
+      ['Procesadores', this.asset.processors.toString()],
+      ['Tipo de Procesador', this.asset.processorType],
+      ['Núcleos', this.asset.processorN.toString()],
+      ['Memoria', `${this.asset.memory} MB`],
+      ['Swap', `${this.asset.swap} MB`],
+      ['Dirección IP', this.asset.ipAddr],
+      ['IP Source', this.asset.ipSrc],
+      ['DNS', this.asset.dns],
+      ['Gateway por defecto', this.asset.defaultGateway],
+      ['Tipo', this.asset.type.toString()],
+      ['Descripción', this.asset.description],
+      ['Compañía Windows', this.asset.winCompany],
+      ['Propietario Windows', this.asset.winOwner],
+      ['ID de Producto Windows', this.asset.winProdId],
+      ['Clave de Producto Windows', this.asset.winProdKey],
     ];
 
     // Generar la tabla
@@ -102,7 +131,7 @@ export class AssetdetailsComponent implements OnInit {
     }
 
     // Guardar el PDF
-    doc.save(`Asset_${this.asset.NAME}.pdf`); // Cambiado de nroEquipo a NAME
+    doc.save(`Asset_${this.asset.name}.pdf`);
   }
 
   volver(): void {
