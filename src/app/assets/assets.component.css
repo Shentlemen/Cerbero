@@ -5,7 +5,7 @@
     align-items: flex-start;
     padding: 20px;
     max-width: 1200px; /* Ajusta este valor si necesitas más ancho */
-    margin: auto;
+    margin: 0.2rem auto !important;
   }
   
   /* Sección de Filtros */
@@ -20,6 +20,10 @@
   .hardware-list-section {
     flex-basis: calc(70% - 20px);
     flex-grow: 1; /* Permite que la lista ocupe todo el espacio disponible */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
   }
   
   .title-bar {
@@ -220,3 +224,134 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 20px;
   }
+
+  /* ... existing styles ... */
+
+  .pagination {
+    margin-top: 20px !important;
+    margin-bottom: 20px !important; /* Reduce el espacio debajo de los botones */
+  }
+
+  .pagination .page-item .page-link {
+    color: #2c3e50 !important; /* Color oscuro para el texto */
+    background-color: #d5e8f3 !important; /* Fondo azul pastel más claro */
+    border-color: #a8d1e7 !important; /* Borde ligeramente más oscuro */
+    font-family: 'Arial', sans-serif !important;
+    font-weight: bold !important;
+    padding: 8px 16px !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .pagination .page-item.active .page-link {
+    color: #ffffff !important; /* Texto blanco para el botón activo */
+    background-color: #85c1e9 !important; /* Fondo azul pastel más oscuro para el botón activo */
+    border-color: #5a9bd5 !important;
+  }
+
+  .pagination .page-item .page-link:hover,
+  .pagination .page-item .page-link:focus {
+    color: #ffffff !important; /* Texto blanco para hover y focus */
+    background-color: #85c1e9 !important; /* Mismo color que el botón activo */
+    border-color: #5a9bd5 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Estilos específicos para botones de primera y última página */
+  .pagination .page-item:first-child .page-link,
+  .pagination .page-item:last-child .page-link {
+    background-color: #b3d9f0 !important; /* Un tono intermedio para estos botones */
+    color: #2c3e50 !important; /* Mantener el texto oscuro */
+  }
+
+  .pagination .page-item:first-child .page-link:hover,
+  .pagination .page-item:last-child .page-link:hover {
+    background-color: #85c1e9 !important;
+    color: #ffffff !important; /* Cambiar a texto blanco en hover */
+  }
+
+  /* Ajusta el contenedor principal para reducir el espacio extra al final */
+  .hardware-list-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Evita que el contenedor se estire innecesariamente */
+    flex: 1;
+  }
+
+  /* Asegúrate de que la tabla ocupe solo el espacio necesario */
+  .table-responsive {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px; /* Espacio entre la tabla y la paginación */
+  }
+
+  /* Ajusta el contenedor de paginación */
+  ngb-pagination {
+    align-self: center; /* Centra la paginación horizontalmente */
+    margin-top: auto; /* Empuja la paginación hacia abajo */
+  }
+
+  /* Estilos para los botones de primera y última página */
+  .pagination .page-item:first-child .page-link,
+  .pagination .page-item:last-child .page-link {
+    background-color: #6ab0b9 !important; /* Color diferente para estos botones */
+  }
+
+  .pagination .page-item:first-child .page-link:hover,
+  .pagination .page-item:last-child .page-link:hover {
+    background-color: #5a9bd5 !important;
+  }
+
+  /* Add this at the end of the file */
+  .container {
+    margin-top: 0.2rem;
+  }
+
+  /* If you want to ensure it overrides any existing styles, you can use !important */
+  /* .container {
+    margin-top: 0.2rem !important;
+  } */
+
+/* Estilos de paginación */
+::ng-deep .pagination {
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+::ng-deep .pagination .page-item .page-link {
+  color: #2c3e50 !important;
+  background-color: #d5e8f3 !important;
+  border-color: #a8d1e7 !important;
+  font-family: 'Arial', sans-serif !important;
+  font-weight: bold !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+::ng-deep .pagination .page-item.active .page-link {
+  color: #ffffff !important;
+  background-color: #85c1e9 !important;
+  border-color: #5a9bd5 !important;
+}
+
+::ng-deep .pagination .page-item .page-link:hover,
+::ng-deep .pagination .page-item .page-link:focus {
+  color: #ffffff !important;
+  background-color: #85c1e9 !important;
+  border-color: #5a9bd5 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Estilos específicos para botones de primera y última página */
+::ng-deep .pagination .page-item:first-child .page-link,
+::ng-deep .pagination .page-item:last-child .page-link {
+  background-color: #b3d9f0 !important;
+  color: #2c3e50 !important;
+}
+
+::ng-deep .pagination .page-item:first-child .page-link:hover,
+::ng-deep .pagination .page-item:last-child .page-link:hover {
+  background-color: #85c1e9 !important;
+  color: #ffffff !important;
+}

@@ -1,17 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { HttpClientModule } from '@angular/common/http';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './assets.component.html',
-  styleUrls: ['./assets.component.css']
+  styleUrls: ['./assets.component.css'],
+  encapsulation: ViewEncapsulation.None // Añade esta línea
 })
 export class AssetsComponent implements OnInit {
 
@@ -20,6 +22,9 @@ export class AssetsComponent implements OnInit {
   filterForm: FormGroup;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+  page = 1;
+  pageSize = 10;
+  collectionSize = 0;
 
   constructor(
     private hardwareService: HardwareService,
@@ -31,32 +36,34 @@ export class AssetsComponent implements OnInit {
       name: [''],
       osName: [''],
       ipAddr: [''],
-      type: [''],
-      deviceId: ['']
+      type: ['']
     });
   }
 
   ngOnInit(): void {
     this.hardwareService.getHardware().subscribe(
       (data: any[]) => {
-        console.log('Datos recibidos:', data); // Añadir este log
+        console.log('Datos recibidos:', data);
         this.assetsList = data;
         this.assetsFiltrados = [...this.assetsList];
-        console.log('Assets filtrados:', this.assetsFiltrados); // Añadir este log
+        console.log('Assets filtrados:', this.assetsFiltrados);
+        
+        // Apply filters from query params
+        this.route.queryParams.subscribe(params => {
+          if (params['filterType'] && params['filterValue']) {
+            this.filterForm.patchValue({
+              [params['filterType']]: params['filterValue']
+            });
+            this.aplicarFiltros();
+          }
+        });
+        
+        this.collectionSize = this.assetsFiltrados.length;
       },
       (error) => {
         console.error('Error al cargar la lista de assets', error);
       }
     );
-
-    this.route.queryParams.subscribe(params => {
-      if (params['filterType'] && params['filterValue']) {
-        this.filterForm.patchValue({
-          [params['filterType']]: params['filterValue']
-        });
-        this.aplicarFiltros();
-      }
-    });
   }
 
   aplicarFiltros(): void {
@@ -67,15 +74,27 @@ export class AssetsComponent implements OnInit {
         const filtroValor = filtros[key];
         const assetValor = asset[key];
 
-        if (filtroValor === '') return true; // Si el filtro está vacío, no se aplica
+        if (!filtroValor) return true; // If the filter is empty, don't apply it
 
-        if (typeof assetValor === 'number' && filtroValor !== '') {
-          return assetValor === +filtroValor;
+        if (typeof assetValor === 'string' && typeof filtroValor === 'string') {
+          return assetValor.toLowerCase().includes(filtroValor.toLowerCase().trim());
         } else {
-          return assetValor.toString().toLowerCase().includes(filtroValor.toString().toLowerCase().trim());
+          return assetValor == filtroValor; // Use loose equality for other types
         }
       });
     });
+
+    console.log('Filtros aplicados:', filtros);
+    console.log('Assets filtrados:', this.assetsFiltrados);
+    
+    this.collectionSize = this.assetsFiltrados.length;
+    this.page = 1; // Reset to first page when filters are applied
+  }
+
+  get pagedAssets(): any[] {
+    const startItem = (this.page - 1) * this.pageSize;
+    const endItem = this.page * this.pageSize;
+    return this.assetsFiltrados.slice(startItem, endItem);
   }
 
   verDetallesAsset(asset: any): void {

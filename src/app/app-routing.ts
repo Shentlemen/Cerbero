@@ -13,8 +13,9 @@ export const routes: Routes = [
     { path: 'dashboard', component: DashboardComponent },
     { path: 'assets', component: AssetsComponent },
     { path: 'asset-details/:id', component: AssetdetailsComponent },
-    { path: 'software', component: SoftwareComponent },
+    { path: 'software', component: SettingsComponent },
     { path: 'settings', component: SettingsComponent },
+    { path: 'procurement', component: SettingsComponent }, // New route
   ]},
   { path: '**', redirectTo: '' }
 ];

@@ -20,10 +20,6 @@
         <label for="typeFilter" class="form-label">Tipo:</label>
         <input id="typeFilter" formControlName="type" class="form-control" />
       </div>
-      <div class="mb-3">
-        <label for="deviceIdFilter" class="form-label">ID del Dispositivo:</label>
-        <input id="deviceIdFilter" formControlName="deviceId" class="form-control" />
-      </div>
       <button type="submit" class="btn btn-filtrar">Aplicar</button>
     </form>
   </div>
@@ -33,47 +29,60 @@
       <h2><i class="fas fa-desktop" aria-hidden="true"></i> Lista de Hardware</h2>
     </div>
     <p *ngIf="assetsFiltrados.length === 0">No se encontraron assets.</p>
-    <table class="table table-striped table-hover" *ngIf="assetsFiltrados.length > 0">
-      <thead>
-        <tr>
-          <th (click)="sortData('name')" style="cursor: pointer;">
-            Nombre del Equipo
-            <i class="fas" [ngClass]="{
-              'fa-sort-up': sortColumn === 'name' && sortDirection === 'asc', 
-              'fa-sort-down': sortColumn === 'name' && sortDirection === 'desc'
-            }" aria-hidden="true"></i>
-          </th>
-          <th (click)="sortData('osName')" style="cursor: pointer;">
-            Sistema Operativo
-            <i class="fas" [ngClass]="{
-              'fa-sort-up': sortColumn === 'osName' && sortDirection === 'asc', 
-              'fa-sort-down': sortColumn === 'osName' && sortDirection === 'desc'
-            }" aria-hidden="true"></i>
-          </th>
-          <th (click)="sortData('ipAddr')" style="cursor: pointer;">
-            Dirección IP
-            <i class="fas" [ngClass]="{
-              'fa-sort-up': sortColumn === 'ipAddr' && sortDirection === 'asc', 
-              'fa-sort-down': sortColumn === 'ipAddr' && sortDirection === 'desc'
-            }" aria-hidden="true"></i>
-          </th>
-          <th (click)="sortData('type')" style="cursor: pointer;">
-            Tipo
-            <i class="fas" [ngClass]="{
-              'fa-sort-up': sortColumn === 'type' && sortDirection === 'asc', 
-              'fa-sort-down': sortColumn === 'type' && sortDirection === 'desc'
-            }" aria-hidden="true"></i>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let asset of assetsFiltrados" (click)="verDetallesAsset(asset)" style="cursor: pointer;">
-          <td>{{ asset.name }}</td>
-          <td>{{ asset.osName }}</td>
-          <td>{{ asset.ipAddr }}</td>
-          <td>{{ asset.type }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover" *ngIf="assetsFiltrados.length > 0">
+        <thead>
+          <tr>
+            <th (click)="sortData('name')" style="cursor: pointer;">
+              Nombre del Equipo
+              <i class="fas" [ngClass]="{
+                'fa-sort-up': sortColumn === 'name' && sortDirection === 'asc', 
+                'fa-sort-down': sortColumn === 'name' && sortDirection === 'desc'
+              }" aria-hidden="true"></i>
+            </th>
+            <th (click)="sortData('osName')" style="cursor: pointer;">
+              Sistema Operativo
+              <i class="fas" [ngClass]="{
+                'fa-sort-up': sortColumn === 'osName' && sortDirection === 'asc', 
+                'fa-sort-down': sortColumn === 'osName' && sortDirection === 'desc'
+              }" aria-hidden="true"></i>
+            </th>
+            <th (click)="sortData('ipAddr')" style="cursor: pointer;">
+              Dirección IP
+              <i class="fas" [ngClass]="{
+                'fa-sort-up': sortColumn === 'ipAddr' && sortDirection === 'asc', 
+                'fa-sort-down': sortColumn === 'ipAddr' && sortDirection === 'desc'
+              }" aria-hidden="true"></i>
+            </th>
+            <th (click)="sortData('type')" style="cursor: pointer;">
+              Tipo
+              <i class="fas" [ngClass]="{
+                'fa-sort-up': sortColumn === 'type' && sortDirection === 'asc', 
+                'fa-sort-down': sortColumn === 'type' && sortDirection === 'desc'
+              }" aria-hidden="true"></i>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let asset of pagedAssets" (click)="verDetallesAsset(asset)" style="cursor: pointer;">
+            <td>{{ asset.name }}</td>
+            <td>{{ asset.osName }}</td>
+            <td>{{ asset.ipAddr }}</td>
+            <td>{{ asset.type }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <ngb-pagination
+      [(page)]="page"
+      [pageSize]="pageSize"
+      [collectionSize]="collectionSize"
+      [boundaryLinks]="true"
+      [maxSize]="5"
+      [rotate]="true"
+      [ellipses]="false"
+      class="d-flex justify-content-center pagination"
+    ></ngb-pagination>
   </div>
 </div>

@@ -5,17 +5,19 @@ import { loadSlim } from '@tsparticles/slim';
 import { IOptions, RecursivePartial } from '@tsparticles/engine';
 import { FormsModule } from '@angular/forms';
 import { loadPolygonShape } from '@tsparticles/shape-polygon';
+import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [NgxParticlesModule, FormsModule],
+  imports: [NgxParticlesModule, FormsModule, NgIf],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent {
   username: string = '';
   password: string = '';
+  loginError: boolean = false;
 
   constructor(private router: Router, private readonly ngParticlesService: NgParticlesService) {}
 
@@ -139,8 +141,11 @@ export class HomeComponent {
   }
 
   onSubmit(): void {
-    console.log("Usuario:", this.username);
-    console.log("Contraseña:", this.password);
-    this.router.navigate(['/menu/dashboard']);
+    if (this.username === 'admin' && this.password === 'admin') {
+      this.loginError = false;
+      this.router.navigate(['/menu/dashboard']);
+    } else {
+      this.loginError = true;
+    }
   }
 }

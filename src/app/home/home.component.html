@@ -6,6 +6,9 @@
         <input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required>
         <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required>
         <button type="submit">Iniciar Sesión</button>
+        <div *ngIf="loginError" class="login-error">
+            Usuario o contraseña incorrectos
+        </div>
     </form>
 </div>
 <img src="assets/Runingwolf.webp" alt="Running Wolf" class="running-wolf">

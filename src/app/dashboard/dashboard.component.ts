@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { HwService } from '../hw.service';
+import { HardwareService } from '../services/hardware.service';
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CanvasJSAngularChartsModule],
+  imports: [CommonModule, CanvasJSAngularChartsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -15,54 +16,66 @@ export class DashboardComponent implements OnInit {
   barChartOptions: any;
   pieChartOptions2: any;
 
-  constructor(private hwService: HwService, private router: Router) {}
+  constructor(private hardwareService: HardwareService, private router: Router) {}
 
   ngOnInit() {
-    const assets = this.hwService.getHardware();
-    
-    // Preparar datos para las gráficas
-    const typeData = this.prepareChartData(assets, 'TYPE');
-    const brandData = this.prepareChartData(assets, 'marca');
-    const osData = this.prepareChartData(assets, 'OSNAME');
+    this.hardwareService.getHardware().subscribe(
+      (assets: any[]) => {
+        console.log('Datos recibidos:', assets); // Log para depuración
 
-    // Configuración común para las gráficas
-    const commonOptions = {
-      animationEnabled: true,
-      exportEnabled: true,
-      theme: "light2",
-    };
+        // Preparar datos para las gráficas
+        const typeData = this.prepareChartData(assets, 'type');
+        const brandData = this.prepareChartData(assets, 'marca');
+        const osData = this.prepareChartData(assets, 'osName');
 
-    this.pieChartOptions = {
-      ...commonOptions,
-      data: [{
-        type: "pie",
-        indexLabel: "{label}: {y}",
-        startAngle: -90,
-        dataPoints: typeData,
-        click: this.onChartPointClick.bind(this, 'TYPE')
-      }]
-    };
+        console.log('Datos preparados:', { typeData, brandData, osData }); // Log para depuración
 
-    this.barChartOptions = {
-      ...commonOptions,
-      axisY: { title: "Cantidad" },
-      data: [{
-        type: "column",
-        dataPoints: brandData,
-        click: this.onChartPointClick.bind(this, 'marca')
-      }]
-    };
+        // Configuración común para las gráficas
+        const commonOptions = {
+          animationEnabled: true,
+          exportEnabled: true,
+          theme: "light2",
+        };
 
-    this.pieChartOptions2 = {
-      ...commonOptions,
-      data: [{
-        type: "pie",
-        indexLabel: "{label}: {y}",
-        startAngle: 0,
-        dataPoints: osData,
-        click: this.onChartPointClick.bind(this, 'OSNAME')
-      }]
-    };
+        this.pieChartOptions = {
+          ...commonOptions,
+          title: { text: "Tipos de PC" },
+          data: [{
+            type: "pie",
+            indexLabel: "{label}: {y}",
+            startAngle: -90,
+            dataPoints: typeData,
+            click: this.onChartPointClick.bind(this, 'type')
+          }]
+        };
+
+        this.barChartOptions = {
+          ...commonOptions,
+          title: { text: "Marcas de PC" },
+          axisY: { title: "Cantidad" },
+          data: [{
+            type: "column",
+            dataPoints: brandData,
+            click: this.onChartPointClick.bind(this, 'marca')
+          }]
+        };
+
+        this.pieChartOptions2 = {
+          ...commonOptions,
+          title: { text: "Sistemas Operativos" },
+          data: [{
+            type: "pie",
+            indexLabel: "{label}: {y}",
+            startAngle: 0,
+            dataPoints: osData,
+            click: this.onChartPointClick.bind(this, 'osName')
+          }]
+        };
+      },
+      (error) => {
+        console.error('Error al cargar los datos del hardware', error);
+      }
+    );
   }
 
   private prepareChartData(array: any[], prop: string): any[] {

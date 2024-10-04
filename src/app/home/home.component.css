@@ -113,3 +113,18 @@ ngx-particles {
   z-index: 4; /* Asegura que esté por encima de otros elementos */
 }
 
+.login-error {
+  color: #ff0000; /* Vuelto a rojo */
+  background-color: rgba(255, 0, 0, 0.1); /* Fondo rojo claro */
+  border: 1px solid #ff0000; /* Borde rojo */
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 15px;
+  text-align: center;
+  font-size: 0.9rem;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.login-form input.ng-invalid.ng-touched {
+  border-color: #ff0000; /* Vuelto a rojo */
+}

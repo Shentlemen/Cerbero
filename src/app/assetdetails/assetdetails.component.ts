@@ -31,6 +31,8 @@ interface Asset {
   winOwner: string;
   winProdId: string;
   winProdKey: string;
+  lastDate: Date;
+  lastCome: Date;
 }
 
 @Component({
@@ -58,8 +60,11 @@ export class AssetdetailsComponent implements OnInit {
         const id = parseInt(idParam, 10);
         if (!isNaN(id)) {
           this.hardwareService.getHardwareById(id).subscribe(
-            (result: Asset) => {
-              this.asset = result;
+            (result: any) => { // Cambiado de Asset a any temporalmente
+              // Parsear las fechas
+              result.lastDate = result.lastDate ? new Date(result.lastDate) : null;
+              result.lastCome = result.lastCome ? new Date(result.lastCome) : null;
+              this.asset = result as Asset;
               console.log('Asset obtenido:', this.asset);
             },
             (error) => {
@@ -109,6 +114,8 @@ export class AssetdetailsComponent implements OnInit {
       ['Propietario Windows', this.asset.winOwner],
       ['ID de Producto Windows', this.asset.winProdId],
       ['Clave de Producto Windows', this.asset.winProdKey],
+      ['Último escaneo', new Date(this.asset.lastDate).toLocaleString()],
+      ['Primer inventariado', new Date(this.asset.lastCome).toLocaleString()],
     ];
 
     // Generar la tabla
