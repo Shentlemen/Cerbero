@@ -4,21 +4,19 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: 20px;
-    max-width: 1200px; /* Ajusta este valor si necesitas más ancho */
+    max-width: 1400px; /* Aumentamos el ancho máximo */
     margin: 0.2rem auto !important;
   }
   
   /* Sección de Filtros */
   .filter-section {
-    flex-basis: 100%;
-    max-width: 250px;
-    margin-right: 20px; /* Añade margen a la derecha */
-    margin-bottom: 20px;
+    flex: 0 0 20%; /* Ajustamos el ancho */
+    margin-right: 20px;
   }
   
   /* Sección de Lista de Hardware */
   .hardware-list-section {
-    flex-basis: calc(70% - 20px);
+    flex: 0 0 50%; /* Ajustamos el ancho */
     flex-grow: 1; /* Permite que la lista ocupe todo el espacio disponible */
     display: flex;
     flex-direction: column;
@@ -324,7 +322,7 @@
   border-color: #a8d1e7 !important;
   font-family: 'Arial', sans-serif !important;
   font-weight: bold !important;
-  padding: 8px 16px !important;
+  padding: 6px 12px !important;
   transition: all 0.3s ease !important;
 }
 
@@ -354,4 +352,79 @@
 ::ng-deep .pagination .page-item:last-child .page-link:hover {
   background-color: #85c1e9 !important;
   color: #ffffff !important;
+}
+
+/* Ajusta el contenedor principal para reducir el espacio extra al final */
+.hardware-list-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+/* Asegúrate de que la tabla ocupe solo el espacio necesario */
+.table-responsive {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px; /* Reduce el espacio entre la tabla y la paginación */
+}
+
+/* Ajusta el contenedor de paginación */
+::ng-deep ngb-pagination {
+  margin-top: 10px !important; /* Reduce el margen superior */
+  margin-bottom: 10px !important; /* Reduce el margen inferior */
+}
+
+/* Ajusta los botones de paginación */
+::ng-deep .pagination {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+::ng-deep .pagination .page-item .page-link {
+  padding: 6px 12px !important; /* Reduce el padding de los botones */
+}
+
+/* ... resto del código ... */
+
+.stats-section {
+  flex: 0 0 25%; /* Nueva sección de estadísticas */
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-left: 20px;
+}
+
+.stats-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.stat-item {
+  flex: 0 0 48%;
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f0f7fa;
+  border-radius: 8px;
+}
+
+.stat-item h3 {
+  font-size: 1rem;
+  color: #4a8bc5;
+  margin-bottom: 5px;
+}
+
+.stat-item p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.chart-container {
+  width: 100%;
+  height: 200px;
+  margin-top: 20px;
 }

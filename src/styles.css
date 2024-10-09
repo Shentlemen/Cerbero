@@ -8,3 +8,75 @@ body {
     background: linear-gradient(to right, #000000, #ffffff);
   }
   /* #2c3e50 */
+
+/* Estilos de paginación */
+.pagination {
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.pagination .page-item .page-link {
+  color: #2c3e50 !important;
+  background-color: #d5e8f3 !important;
+  border-color: #a8d1e7 !important;
+  font-family: 'Arial', sans-serif !important;
+  font-weight: bold !important;
+  padding: 6px 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+.pagination .page-item.active .page-link {
+  color: #ffffff !important;
+  background-color: #85c1e9 !important;
+  border-color: #5a9bd5 !important;
+}
+
+.pagination .page-item .page-link:hover,
+.pagination .page-item .page-link:focus {
+  color: #ffffff !important;
+  background-color: #85c1e9 !important;
+  border-color: #5a9bd5 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Estilos específicos para botones de primera y última página */
+.pagination .page-item:first-child .page-link,
+.pagination .page-item:last-child .page-link {
+  background-color: #b3d9f0 !important;
+  color: #2c3e50 !important;
+}
+
+.pagination .page-item:first-child .page-link:hover,
+.pagination .page-item:last-child .page-link:hover {
+  background-color: #85c1e9 !important;
+  color: #ffffff !important;
+}
+
+/* Ajustes para el contenedor de la lista de hardware */
+.hardware-list-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.table-responsive {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+ngb-pagination {
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.pagination {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.pagination .page-item .page-link {
+  padding: 6px 12px !important;
+}

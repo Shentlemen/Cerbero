@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
+import { BiosService } from '../services/bios.service'; // Asegúrate de crear este servicio
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,20 +17,35 @@ export class DashboardComponent implements OnInit {
   pieChartOptions: any;
   barChartOptions: any;
   pieChartOptions2: any;
+  alerts: any[] = [
+    { type: 'warning', message: 'Cambio detectado en la RAM: 8GB a 16GB', date: '2023-11-15', pc: 'PC14587' },
+    { type: 'warning', message: 'Cambio detectado en la tarjeta de video: NVIDIA GTX 1060 a RTX 3070', date: '2023-11-14', pc: 'PC18932' },
+    { type: 'danger', message: 'Disco duro al 85% de capacidad', date: '2023-11-13', pc: 'PC20145' },
+    { type: 'info', message: 'Cambio de IP detectado: 192.168.1.100 a 192.168.1.150', date: '2023-11-12', pc: 'PC15678' },
+    { type: 'warning', message: 'Cambio detectado en el procesador: Intel i5 a Intel i7', date: '2023-11-11', pc: 'PC17234' }
+  ];
 
-  constructor(private hardwareService: HardwareService, private router: Router) {}
+  constructor(
+    private hardwareService: HardwareService,
+    private biosService: BiosService, // Inyecta el nuevo servicio
+    private router: Router
+  ) {}
 
   ngOnInit() {
-    this.hardwareService.getHardware().subscribe(
-      (assets: any[]) => {
-        console.log('Datos recibidos:', assets); // Log para depuración
+    forkJoin({
+      hardware: this.hardwareService.getHardware(),
+      bios: this.biosService.getAllBios()
+    }).subscribe(
+      ({ hardware, bios }) => {
+        console.log('Datos de hardware:', hardware);
+        console.log('Datos de BIOS:', bios);
 
         // Preparar datos para las gráficas
-        const typeData = this.prepareChartData(assets, 'type');
-        const brandData = this.prepareChartData(assets, 'marca');
-        const osData = this.prepareChartData(assets, 'osName');
+        const typeData = this.prepareHardwareTypeData(hardware);
+        const brandData = this.prepareBrandData(bios);
+        const osData = this.prepareChartData(hardware, 'osName');
 
-        console.log('Datos preparados:', { typeData, brandData, osData }); // Log para depuración
+        console.log('Datos preparados:', { typeData, brandData, osData });
 
         // Configuración común para las gráficas
         const commonOptions = {
@@ -73,13 +90,33 @@ export class DashboardComponent implements OnInit {
         };
       },
       (error) => {
-        console.error('Error al cargar los datos del hardware', error);
+        console.error('Error al cargar los datos', error);
       }
     );
   }
 
+  private prepareHardwareTypeData(hardware: any[]): any[] {
+    const typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
+
+    const counts = hardware.reduce((acc: Record<string, number>, curr) => {
+      const type = typeMap[curr.type as keyof typeof typeMap] || 'Desconocido';
+      if (!acc[type]) {
+        acc[type] = 0;
+      }
+      acc[type]++;
+      return acc;
+    }, {});
+
+    return Object.entries(counts).map(([label, y]) => ({ label, y }));
+  }
+
   private prepareChartData(array: any[], prop: string): any[] {
     const counts = this.countByProperty(array, prop);
+    return Object.entries(counts).map(([label, y]) => ({ label, y }));
+  }
+
+  private prepareBrandData(biosData: any[]): any[] {
+    const counts = this.countByProperty(biosData, 'smanufacturer');
     return Object.entries(counts).map(([label, y]) => ({ label, y }));
   }
 

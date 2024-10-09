@@ -48,16 +48,9 @@ ngx-particles {
   /* Eliminamos la animación fadeIn */
   /* animation: fadeIn 1s ease-out; */
 }
-
-/* Eliminamos la definición de la animación fadeIn ya que no la usaremos */
-/* @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-} */
-
 .logo {
-  max-width: 40%; /* Reducido de 50% a 40% */
-  max-height: 40%; /* Reducido de 50% a 40% */
+  max-width: 65%; /* Reducido de 50% a 40% */
+  max-height: 65%; /* Reducido de 50% a 40% */
   object-fit: contain;
   margin-bottom: 20px;
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
@@ -91,6 +84,7 @@ ngx-particles {
 }
 
 .login-form button {
+  margin-top: 20px; /* Nuevo: añade espacio arriba del botón */
   padding: 10px 20px;
   background-color: #4b217d; /* Violeta oscuro para combinar con el logo */
   color: white;

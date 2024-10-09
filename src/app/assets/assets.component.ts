@@ -13,7 +13,59 @@ import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
   imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
-  encapsulation: ViewEncapsulation.None // Añade esta línea
+  encapsulation: ViewEncapsulation.None,
+  styles: [`
+    .pagination {
+      margin-top: 15px !important;
+      margin-bottom: 15px !important;
+      background-color: transparent !important;
+    }
+
+    .pagination .page-item .page-link {
+      color: #4a8bc5;
+      background-color: transparent;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      margin: 0 2px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      font-size: 16px; /* Aumentado el tamaño de la fuente */
+      min-width: 2.2rem; /* Asegura un ancho mínimo */
+      min-height: 2.2rem; /* Asegura una altura mínima */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pagination .page-item.active .page-link {
+      color: #ffffff;
+      background-color: #4a8bc5;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .pagination .page-item .page-link:hover,
+    .pagination .page-item .page-link:focus {
+      color: #ffffff;
+      background-color: #5a9bd5;
+      transform: scale(1.1);
+    }
+
+    .pagination .page-item:first-child .page-link,
+    .pagination .page-item:last-child .page-link {
+      background-color: #f0f7fa;
+      color: #4a8bc5;
+      border-radius: 20px;
+      padding: 0.5rem 0.75rem;
+      font-size: 18px; /* Ligeramente más grande para los símbolos de extremos */
+    }
+
+    .pagination .page-item:first-child .page-link:hover,
+    .pagination .page-item:last-child .page-link:hover {
+      background-color: #4a8bc5;
+      color: #ffffff;
+    }
+  `]
 })
 export class AssetsComponent implements OnInit {
 
@@ -23,7 +75,7 @@ export class AssetsComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 10;
+  pageSize = 11;
   collectionSize = 0;
 
   constructor(
@@ -59,6 +111,7 @@ export class AssetsComponent implements OnInit {
         });
         
         this.collectionSize = this.assetsFiltrados.length;
+        this.aplicarFiltros(); // Añade esta línea para asegurar que la paginación se actualice
       },
       (error) => {
         console.error('Error al cargar la lista de assets', error);
@@ -72,14 +125,20 @@ export class AssetsComponent implements OnInit {
     this.assetsFiltrados = this.assetsList.filter(asset => {
       return Object.keys(filtros).every(key => {
         const filtroValor = filtros[key];
-        const assetValor = asset[key];
+        let assetValor = asset[key];
 
-        if (!filtroValor) return true; // If the filter is empty, don't apply it
+        if (!filtroValor) return true; // Si el filtro está vacío, no lo aplicamos
+
+        if (key === 'type') {
+          // Convertimos el valor del filtro a su equivalente numérico
+          const typeNumber = this.getTypeNumber(filtroValor);
+          return assetValor === typeNumber;
+        }
 
         if (typeof assetValor === 'string' && typeof filtroValor === 'string') {
           return assetValor.toLowerCase().includes(filtroValor.toLowerCase().trim());
         } else {
-          return assetValor == filtroValor; // Use loose equality for other types
+          return assetValor == filtroValor; // Usamos igualdad no estricta para otros tipos
         }
       });
     });
@@ -88,7 +147,7 @@ export class AssetsComponent implements OnInit {
     console.log('Assets filtrados:', this.assetsFiltrados);
     
     this.collectionSize = this.assetsFiltrados.length;
-    this.page = 1; // Reset to first page when filters are applied
+    this.page = 1; // Reseteamos a la primera página cuando se aplican los filtros
   }
 
   get pagedAssets(): any[] {
@@ -115,8 +174,8 @@ export class AssetsComponent implements OnInit {
     }
 
     this.assetsFiltrados.sort((a, b) => {
-      let valueA = a[column];
-      let valueB = b[column];
+      let valueA = column === 'type' ? this.getHardwareType(a[column]) : a[column];
+      let valueB = column === 'type' ? this.getHardwareType(b[column]) : b[column];
 
       if (column === 'name') {
         // Extract numeric part for 'name' column
@@ -139,5 +198,33 @@ export class AssetsComponent implements OnInit {
       }
       return 0;
     });
+  }
+
+  getPCCount(): number {
+    return this.assetsList.filter(asset => asset.type === '1' || asset.type === '2').length;
+  }
+
+  getLaptopCount(): number {
+    return this.assetsList.filter(asset => asset.type === '3').length;
+  }
+
+  getOtherCount(): number {
+    return this.assetsList.filter(asset => asset.type !== '1' && asset.type !== '2' && asset.type !== '3').length;
+  }
+
+  private typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
+
+  private getTypeNumber(typeString: string): string {
+    const lowercaseType = typeString.toLowerCase();
+    for (const [key, value] of Object.entries(this.typeMap)) {
+      if (value.toLowerCase() === lowercaseType) {
+        return key;
+      }
+    }
+    return typeString; // Si no se encuentra una coincidencia, devuelve el string original
+  }
+
+  getHardwareType(type: string): string {
+    return this.typeMap[type] || 'Desconocido';
   }
 }
