@@ -8,6 +8,6 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
     provideHttpClient(),
-    { provide: 'API_URL', useValue: 'http://localhost:8080/api' }
+    { provide: 'API_URL', useValue: 'localhost:8080/api' }
   ]
 }).catch(err => console.error(err));

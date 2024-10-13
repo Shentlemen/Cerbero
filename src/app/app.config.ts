@@ -4,8 +4,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
-// Definimos la URL de la API
-const apiUrl = 'http://localhost:8080/api';
+// Hardcodeamos la URL de la API aquí
+const apiUrl = 'http://10.1.1.98:8080/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [

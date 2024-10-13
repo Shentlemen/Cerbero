@@ -2,14 +2,20 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { ConfigService } from './config.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HardwareService {
-  private apiUrl = 'http://localhost:8080/api/hardware';  // URL del backend
+  private apiUrl: string;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private configService: ConfigService
+  ) {
+    this.apiUrl = `${this.configService.getApiUrl()}/hardware`;
+  }
 
   // Método para obtener la lista de assets desde el back-end
   getHardware(): Observable<any[]> {
@@ -29,4 +35,32 @@ export class HardwareService {
       })
     );
   }
+
+  // Puedes agregar más métodos aquí si los necesitas, por ejemplo:
+  // createHardware(hardware: any): Observable<any> {
+  //   return this.http.post<any>(this.apiUrl, hardware).pipe(
+  //     catchError((error) => {
+  //       console.error('Error al crear el asset', error);
+  //       throw error;
+  //     })
+  //   );
+  // }
+
+  // updateHardware(id: number, hardware: any): Observable<any> {
+  //   return this.http.put<any>(`${this.apiUrl}/${id}`, hardware).pipe(
+  //     catchError((error) => {
+  //       console.error('Error al actualizar el asset', error);
+  //       throw error;
+  //     })
+  //   );
+  // }
+
+  // deleteHardware(id: number): Observable<void> {
+  //   return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+  //     catchError((error) => {
+  //       console.error('Error al eliminar el asset', error);
+  //       throw error;
+  //     })
+  //   );
+  // }
 }

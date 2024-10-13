@@ -1,14 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { ConfigService } from './config.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BiosService {
-  private apiUrl = 'http://localhost:8080/api/bios'; // URL hardcodeada o desde un archivo de configuración
+  private apiUrl: string;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private configService: ConfigService
+  ) {
+    this.apiUrl = `${this.configService.getApiUrl()}/bios`;
+  }
 
   getAllBios(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
