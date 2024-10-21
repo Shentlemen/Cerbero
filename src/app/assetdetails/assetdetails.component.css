@@ -68,8 +68,12 @@ h4.text-secondary {
   background-color: #85c1e9; /* Cambiado a un azul pastel más claro */
 }
 
-.fas, strong {
-  color: #5a9bd5; /* Cambiado a un azul pastel más oscuro */
+.fas {
+  color: #000000; /* Iconos en negro */
+}
+
+strong {
+  color: #5a9bd5; /* Texto en negrita se mantiene en celeste */
 }
 
 .btn-export {

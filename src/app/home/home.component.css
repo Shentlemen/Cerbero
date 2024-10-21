@@ -49,8 +49,8 @@ ngx-particles {
   /* animation: fadeIn 1s ease-out; */
 }
 .logo {
-  max-width: 65%; /* Reducido de 50% a 40% */
-  max-height: 65%; /* Reducido de 50% a 40% */
+  max-width: 45%; /* Reducido de 50% a 40% */
+  max-height: 45%; /* Reducido de 50% a 40% */
   object-fit: contain;
   margin-bottom: 20px;
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
@@ -84,18 +84,29 @@ ngx-particles {
 }
 
 .login-form button {
-  margin-top: 20px; /* Nuevo: añade espacio arriba del botón */
-  padding: 10px 20px;
-  background-color: #4b217d; /* Violeta oscuro para combinar con el logo */
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #1a1a1a; /* Color oscuro para el botón */
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .login-form button:hover {
-  background-color: #381859; /* Un tono ligeramente más oscuro para el efecto hover */
+  background-color: #333333; /* Un tono ligeramente más claro para el efecto hover */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+.login-form button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .running-wolf {

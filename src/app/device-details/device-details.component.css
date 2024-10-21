@@ -1,0 +1,37 @@
+h4.text-secondary {
+  color: #5a9bd5 !important;
+  font-size: 1rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #85c1e9;
+  padding-bottom: 0.5rem;
+}
+
+.list-group-item {
+  background-color: #f9f9f9;
+  border: 1px solid #dddddd;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  padding: 0.5rem;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.list-group-item strong {
+  color: #5a9bd5;
+}
+
+.fas {
+  color: #000000;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 768px) {
+  h4.text-secondary {
+    font-size: 1.1rem;
+  }
+
+  .list-group-item {
+    font-size: 0.8rem;
+  }
+}

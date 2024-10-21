@@ -1,1 +1,13 @@
-<p>memory-details works!</p>
+<div *ngIf="memoryData">
+  <h4 class="text-secondary">Información de Memoria {{ index + 1 }}</h4>
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item"><i class="fas fa-memory me-2"></i><strong>Capacidad:</strong> {{ memoryData.capacity | number }} bytes</li>
+    <li class="list-group-item"><i class="fas fa-tag me-2"></i><strong>Descripción:</strong> {{ memoryData.caption }}</li>
+    <li class="list-group-item"><i class="fas fa-info-circle me-2"></i><strong>Descripción detallada:</strong> {{ memoryData.description }}</li>
+    <li class="list-group-item"><i class="fas fa-plug me-2"></i><strong>Número de slots:</strong> {{ memoryData.numSlots }}</li>
+    <li class="list-group-item"><i class="fas fa-cog me-2"></i><strong>Propósito:</strong> {{ memoryData.purpose }}</li>
+    <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de serie:</strong> {{ memoryData.serialNumber }}</li>
+    <li class="list-group-item"><i class="fas fa-tachometer-alt me-2"></i><strong>Velocidad:</strong> {{ memoryData.speed }} MHz</li>
+    <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Tipo:</strong> {{ memoryData.type }}</li>
+  </ul>
+</div>

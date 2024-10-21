@@ -78,6 +78,11 @@ export class AssetsComponent implements OnInit {
   pageSize = 11;
   collectionSize = 0;
 
+  totalAssets: number = 0; // Declaración de la propiedad
+  pcCount: number = 0;     // Declaración de la propiedad
+  laptopCount: number = 0; // Declaración de la propiedad
+  otherCount: number = 0;  // Declaración de la propiedad
+
   constructor(
     private hardwareService: HardwareService,
     private fb: FormBuilder,
@@ -88,30 +93,38 @@ export class AssetsComponent implements OnInit {
       name: [''],
       osName: [''],
       ipAddr: [''],
-      type: ['']
+      type: [''],
+      smanufacturer: [''] // Cambiado a 'smanufacturer'
     });
   }
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      const filterType = params['filterType'];
+      const filterValue = params['filterValue'];
+
+      console.log('Filter Type:', filterType);
+      console.log('Filter Value:', filterValue);
+
+      if (filterType && filterValue) {
+        const mappedValue = filterType === 'type' ? this.getTypeNumber(filterValue) : filterValue;
+        const formControlName = filterType === 'marca' ? 'smanufacturer' : filterType; // Cambiado a 'smanufacturer'
+        this.filterForm.patchValue({ [formControlName]: mappedValue });
+        console.log('Updated filter form:', this.filterForm.value); // Verifica que el formulario se actualiza correctamente
+        this.aplicarFiltros();
+      } else {
+        this.loadAssets();
+      }
+    });
+  }
+
+  loadAssets(): void {
     this.hardwareService.getHardware().subscribe(
       (data: any[]) => {
-        console.log('Datos recibidos:', data);
         this.assetsList = data;
         this.assetsFiltrados = [...this.assetsList];
-        console.log('Assets filtrados:', this.assetsFiltrados);
-        
-        // Apply filters from query params
-        this.route.queryParams.subscribe(params => {
-          if (params['filterType'] && params['filterValue']) {
-            this.filterForm.patchValue({
-              [params['filterType']]: params['filterValue']
-            });
-            this.aplicarFiltros();
-          }
-        });
-        
         this.collectionSize = this.assetsFiltrados.length;
-        this.aplicarFiltros(); // Añade esta línea para asegurar que la paginación se actualice
+        this.updateSummary(); // Asegúrate de actualizar el resumen aquí
       },
       (error) => {
         console.error('Error al cargar la lista de assets', error);
@@ -121,33 +134,69 @@ export class AssetsComponent implements OnInit {
 
   aplicarFiltros(): void {
     const filtros = this.filterForm.value;
+    console.log('Applying filters:', filtros);
 
-    this.assetsFiltrados = this.assetsList.filter(asset => {
-      return Object.keys(filtros).every(key => {
-        const filtroValor = filtros[key];
-        let assetValor = asset[key];
+    // Traduce el tipo de asset a su valor numérico antes de enviar la consulta
+    if (filtros.type) {
+      filtros.type = this.getTypeNumber(filtros.type);
+    }
 
-        if (!filtroValor) return true; // Si el filtro está vacío, no lo aplicamos
+    this.hardwareService.filterHardware(filtros).subscribe(
+      (data: any[]) => {
+        this.assetsFiltrados = data;
+        this.collectionSize = this.assetsFiltrados.length;
+        this.page = 1; // Reseteamos a la primera página cuando se aplican los filtros
+        this.updateSummary(); // Asegúrate de actualizar el resumen aquí
+      },
+      (error) => {
+        console.error('Error al aplicar filtros', error);
+      }
+    );
+  }
 
-        if (key === 'type') {
-          // Convertimos el valor del filtro a su equivalente numérico
-          const typeNumber = this.getTypeNumber(filtroValor);
-          return assetValor === typeNumber;
-        }
+  updateSummary(): void {
+    const typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
 
-        if (typeof assetValor === 'string' && typeof filtroValor === 'string') {
-          return assetValor.toLowerCase().includes(filtroValor.toLowerCase().trim());
-        } else {
-          return assetValor == filtroValor; // Usamos igualdad no estricta para otros tipos
-        }
-      });
+    // Inicializa los contadores
+    let totalAssets = 0;
+    let pcCount = 0;
+    let laptopCount = 0;
+    let otherCount = 0;
+
+    // Verifica los datos antes de procesarlos
+    console.log('Assets filtrados:', this.assetsFiltrados);
+
+    // Recorre la lista de assets filtrados y cuenta los tipos
+    this.assetsFiltrados.forEach(asset => {
+      totalAssets++;
+      const type = typeMap[asset.type] || 'Otros';
+
+      switch (type) {
+        case 'PC':
+        case 'MINI PC':
+          pcCount++;
+          break;
+        case 'LAPTOP':
+          laptopCount++;
+          break;
+        default:
+          otherCount++;
+          break;
+      }
     });
 
-    console.log('Filtros aplicados:', filtros);
-    console.log('Assets filtrados:', this.assetsFiltrados);
-    
-    this.collectionSize = this.assetsFiltrados.length;
-    this.page = 1; // Reseteamos a la primera página cuando se aplican los filtros
+    // Actualiza las variables del resumen
+    this.totalAssets = totalAssets;
+    this.pcCount = pcCount;
+    this.laptopCount = laptopCount;
+    this.otherCount = otherCount;
+
+    console.log('Resumen actualizado:', {
+      totalAssets: this.totalAssets,
+      pcCount: this.pcCount,
+      laptopCount: this.laptopCount,
+      otherCount: this.otherCount
+    });
   }
 
   get pagedAssets(): any[] {
@@ -215,13 +264,13 @@ export class AssetsComponent implements OnInit {
   private typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
 
   private getTypeNumber(typeString: string): string {
-    const lowercaseType = typeString.toLowerCase();
-    for (const [key, value] of Object.entries(this.typeMap)) {
-      if (value.toLowerCase() === lowercaseType) {
-        return key;
-      }
-    }
-    return typeString; // Si no se encuentra una coincidencia, devuelve el string original
+    const typeMap: Record<string, string> = { 
+      'PC': '1', 
+      'MINI PC': '2', 
+      'LAPTOP': '3', 
+      'TABLET': '4' // Asegúrate de que "TABLET" esté en mayúsculas
+    };
+    return typeMap[typeString.toUpperCase()] || typeString;
   }
 
   getHardwareType(type: string): string {

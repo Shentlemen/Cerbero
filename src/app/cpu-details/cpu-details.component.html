@@ -1,0 +1,18 @@
+<div *ngIf="cpuData">
+  <h4 class="text-secondary">Información de CPU</h4>
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Fabricante:</strong> {{ cpuData.manufacturer }}</li>
+    <li class="list-group-item"><i class="fas fa-cog me-2"></i><strong>Tipo:</strong> {{ cpuData.type }}</li>
+    <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie:</strong> {{ cpuData.serialNumber }}</li>
+    <li class="list-group-item"><i class="fas fa-tachometer-alt me-2"></i><strong>Velocidad:</strong> {{ cpuData.speed }}</li>
+    <li class="list-group-item"><i class="fas fa-layer-group me-2"></i><strong>Núcleos:</strong> {{ cpuData.cores }}</li>
+    <li class="list-group-item"><i class="fas fa-memory me-2"></i><strong>Caché L2:</strong> {{ cpuData.l2CacheSize }}</li>
+    <li class="list-group-item"><i class="fas fa-project-diagram me-2"></i><strong>Arquitectura:</strong> {{ cpuData.cpuArch }}</li>
+    <li class="list-group-item"><i class="fas fa-ruler-horizontal me-2"></i><strong>Ancho de Datos:</strong> {{ cpuData.dataWidth }}</li>
+    <li class="list-group-item"><i class="fas fa-ruler-combined me-2"></i><strong>Ancho de Dirección Actual:</strong> {{ cpuData.currentAddressWidth }}</li>
+    <li class="list-group-item"><i class="fas fa-project-diagram me-2"></i><strong>CPUs Lógicas:</strong> {{ cpuData.logicalCpus }}</li>
+    <li class="list-group-item"><i class="fas fa-bolt me-2"></i><strong>Voltaje:</strong> {{ cpuData.voltage }}</li>
+    <li class="list-group-item"><i class="fas fa-tachometer-alt me-2"></i><strong>Velocidad Actual:</strong> {{ cpuData.currentSpeed }}</li>
+    <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Socket:</strong> {{ cpuData.socket }}</li>
+  </ul>
+</div>

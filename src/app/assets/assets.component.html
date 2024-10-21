@@ -20,6 +20,10 @@
         <label for="typeFilter" class="form-label">Tipo:</label>
         <input id="typeFilter" formControlName="type" class="form-control" />
       </div>
+      <div class="mb-3">
+        <label for="manufacturerFilter" class="form-label">Marca:</label>
+        <input id="manufacturerFilter" formControlName="smanufacturer" class="form-control" />
+      </div>
       <button type="submit" class="btn btn-filtrar">Aplicar</button>
     </form>
   </div>
@@ -102,19 +106,19 @@
     <div class="stats-content">
       <div class="stat-item">
         <h3>Total de Assets</h3>
-        <p>{{ assetsList.length }}</p>
+        <p>{{ totalAssets }}</p>
       </div>
       <div class="stat-item">
         <h3>PCs</h3>
-        <p>{{ getPCCount() }}</p>
+        <p>{{ pcCount }}</p>
       </div>
       <div class="stat-item">
         <h3>Laptops</h3>
-        <p>{{ getLaptopCount() }}</p>
+        <p>{{ laptopCount }}</p>
       </div>
       <div class="stat-item">
         <h3>Otros</h3>
-        <p>{{ getOtherCount() }}</p>
+        <p>{{ otherCount }}</p>
       </div>
     </div>
     <div class="chart-container">
@@ -122,4 +126,11 @@
       <!-- Por ejemplo, usando Chart.js o cualquier otra librería de gráficos -->
     </div>
   </div>
+</div>
+
+<div>
+  <p>Total de Activos: {{ totalAssets }}</p>
+  <p>Contador de PCs: {{ pcCount }}</p>
+  <p>Contador de Laptops: {{ laptopCount }}</p>
+  <p>Otros: {{ otherCount }}</p>
 </div>

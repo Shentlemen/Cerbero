@@ -25,16 +25,16 @@ export class HomeComponent {
     fpsLimit: 120,
     particles: {
       number: {
-        value: 80,
+        value: 100,
         density: {
           enable: true,
         }
       },
       color: {
-        value: ["#4ca1af", "#2c3e50", "#16a085", "#8e44ad", "#2980b9"],
+        value: ["#ffffff"],
       },
       shape: {
-        type: ["circle", "triangle", "polygon"],
+        type: ["circle", "polygon"],
         options: {
           polygon: {
             sides: 6
@@ -42,7 +42,7 @@ export class HomeComponent {
         }
       },
       opacity: {
-        value: 0.5,
+        value: { min: 0.1, max: 0.5 },
         animation: {
           enable: true,
           speed: 1,
@@ -51,10 +51,10 @@ export class HomeComponent {
         }
       },
       size: {
-        value: { min: 1, max: 5 },
+        value: { min: 1, max: 3 },
         animation: {
           enable: true,
-          speed: 4,
+          speed: 2,
           startValue: "min",
           sync: false
         }
@@ -63,26 +63,26 @@ export class HomeComponent {
         enable: true,
         distance: 150,
         color: "#ffffff",
-        opacity: 0.4,
+        opacity: 0.5,
         width: 1
       },
       move: {
         enable: true,
-        speed: 2,
+        speed: 3.0, // Aumenta la velocidad a 3.0 para un movimiento más rápido
         direction: "none",
-        random: false,
+        random: true,
         straight: false,
         outModes: {
           default: "out"
         },
         attract: {
-          enable: true,
+          enable: false,
           rotate: { x: 600, y: 1200 }
         }
       }
     },
     interactivity: {
-      detectsOn: "window", // Detectar eventos en toda la ventana
+      detectsOn: "window", 
       events: {
         onHover: {
           enable: true,
@@ -92,40 +92,15 @@ export class HomeComponent {
           enable: true,
           mode: "push"
         },
-        onDiv: [{ // Interacción con elementos específicos
-          selectors: ['#logo', '#loginBox'], // IDs de los elementos
+        resize: {
           enable: true,
-          mode: "repulse",
-          type: "rectangle"
-        }],
-        resize: { // Cambiado para que resize sea un objeto
-          enable: true, // Ahora se usa un objeto con la propiedad enable
           delay: 0.5
         }
       },
       modes: {
-        grab: {
-          distance: 400,
-          links: {
-            opacity: 1
-          }
-        },
-        bubble: {
-          distance: 400,
-          size: 40,
-          duration: 2,
-          opacity: 8,
-          speed: 3
-        },
         repulse: {
           distance: 200,
           duration: 0.4
-        },
-        push: {
-          quantity: 4
-        },
-        remove: {
-          quantity: 2
         }
       }
     },

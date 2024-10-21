@@ -113,3 +113,11 @@ html, body {
     height: 50px;
   }
 }
+
+.logo-name {
+  display: block; /* Asegura que la imagen se comporte como un bloque */
+  margin: 0 auto 20px; /* Centra la imagen horizontalmente y añade un margen inferior */
+  width: 90%; /* Aumenta el tamaño de la imagen */
+  max-width: 180px; /* Ajusta el tamaño máximo de la imagen */
+  height: auto;
+}

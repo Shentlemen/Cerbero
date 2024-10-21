@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { ConfigService } from './config.service';
 
 @Injectable({
@@ -36,31 +36,28 @@ export class HardwareService {
     );
   }
 
-  // Puedes agregar más métodos aquí si los necesitas, por ejemplo:
-  // createHardware(hardware: any): Observable<any> {
-  //   return this.http.post<any>(this.apiUrl, hardware).pipe(
-  //     catchError((error) => {
-  //       console.error('Error al crear el asset', error);
-  //       throw error;
-  //     })
-  //   );
-  // }
+  getHardwareByManufacturer(smanufacturer: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/by-manufacturer`, { params: { smanufacturer } });
+  }
 
-  // updateHardware(id: number, hardware: any): Observable<any> {
-  //   return this.http.put<any>(`${this.apiUrl}/${id}`, hardware).pipe(
-  //     catchError((error) => {
-  //       console.error('Error al actualizar el asset', error);
-  //       throw error;
-  //     })
-  //   );
-  // }
 
-  // deleteHardware(id: number): Observable<void> {
-  //   return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
-  //     catchError((error) => {
-  //       console.error('Error al eliminar el asset', error);
-  //       throw error;
-  //     })
-  //   );
-  // }
+  filterHardware(filters: any): Observable<any[]> {
+    let params = new HttpParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        params = params.set(key, filters[key]);
+      }
+    });
+
+    console.log('Sending HTTP request with params:', params.toString()); // Verifica los parámetros enviados
+
+    // Cambia la URL al nuevo endpoint
+    return this.http.get<any[]>(`${this.configService.getApiUrl()}/hardware/filter`, { params }).pipe(
+      tap(data => console.log('Received data:', data)), // Verifica los datos recibidos
+      catchError(error => {
+        console.error('Error in filterHardware:', error);
+        return throwError(error);
+      })
+    );
+  }
 }

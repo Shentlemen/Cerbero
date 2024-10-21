@@ -3,9 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-
-// Hardcodeamos la URL de la API aquí
-const apiUrl = 'http://10.1.1.98:8080/api';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,6 +11,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(),
-    { provide: 'API_URL', useValue: apiUrl }
+    { provide: 'API_URL', useValue: environment.apiUrl }
   ]
 };

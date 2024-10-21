@@ -117,6 +117,7 @@ export class DashboardComponent implements OnInit {
 
   private prepareBrandData(biosData: any[]): any[] {
     const counts = this.countByProperty(biosData, 'smanufacturer');
+    console.log('Brand counts:', counts); // Agrega este log para verificar los valores
     return Object.entries(counts).map(([label, y]) => ({ label, y }));
   }
 

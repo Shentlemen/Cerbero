@@ -15,6 +15,7 @@
   background-color: #f0f2f5;
   min-height: 100vh;
   padding: 20px;
+  padding-top: 5px; /* Reducir aún más el padding superior */
   color: #333;
 }
 
@@ -27,24 +28,28 @@
 }
 
 .dashboard-title {
-  font-family: 'Roboto', sans-serif;
-  font-size: 2rem;
+  font-family: 'Lato', sans-serif; /* Cambiar a una fuente diferente */
+  font-size: 1.8rem;
   font-weight: 500;
-  color: #2c3e50;
+  color: #34495e; /* Usar un tono gris oscuro para el texto */
   margin: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #d0e7f9, #a6cde3); /* Colores pastel más apagados */
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-title i {
-  margin-right: 12px;
+  margin-right: 8px;
   font-size: 1.8rem;
-  color: #3498db;
+  color: #34495e; /* Asegurar que el icono también sea legible */
 }
 
 .dashboard-title span {
-  border-bottom: 3px solid #85c1e9;
-  padding-bottom: 3px;
+  border-bottom: none;
 }
 
 .chart-title {
