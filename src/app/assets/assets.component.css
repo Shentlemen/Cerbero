@@ -3,54 +3,64 @@
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 20px;
-    max-width: 1400px; /* Aumentamos el ancho máximo */
+    padding: 25px;
+    max-width: 1400px;
     margin: 0.2rem auto !important;
-    background-color: #f7f9fc; /* Fondo pastel */
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   }
   
   /* Sección de Filtros */
   .filter-section {
-    flex: 0 0 20%; /* Ajustamos el ancho */
+    flex: 0 0 20%;
     margin-right: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 15px;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    border-radius: 12px;
+    box-shadow: 
+      0 4px 15px rgba(0,0,0,0.05),
+      inset 0 -2px 0 rgba(52,152,219,0.2);
+    padding: 25px;
+    transition: all 0.3s ease;
+  }
+  
+  .filter-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+      0 8px 20px rgba(0,0,0,0.1),
+      inset 0 -3px 0 rgba(52,152,219,0.4);
   }
   
   /* Sección de Lista de Hardware */
   .hardware-list-section {
-    flex: 0 0 50%; /* Ajustamos el ancho */
-    flex-grow: 1; /* Permite que la lista ocupe todo el espacio disponible */
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
     flex: 1;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 15px;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    border-radius: 12px;
+    box-shadow: 
+      0 4px 15px rgba(0,0,0,0.05),
+      inset 0 -2px 0 rgba(52,152,219,0.2);
+    padding: 25px;
   }
   
   .title-bar {
-    background-color: #85c1e9; /* Cambiado a celeste para coincidir con assetdetails */
-    padding: 6px 12px;  /* Reducimos aún más el padding */
-    border-radius: 5px;
-    text-align: center;
-    color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin-bottom: 12px;  /* Reducimos un poco el margen inferior */
+    background: linear-gradient(120deg, #3498db, #2980b9);
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(52,152,219,0.2);
   }
   
   .title-bar h2 {
-    font-size: 0.95rem;  /* Aumentamos el tamaño de la fuente */
+    color: white;
+    font-size: 1.2rem;
     margin: 0;
-    font-weight: 500;  /* Hacemos la fuente un poco más ligera */
-    text-transform: uppercase;  /* Opcional: convierte el texto a mayúsculas */
-    letter-spacing: 0.5px;  /* Opcional: añade un poco de espacio entre las letras */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .title-bar i {
+    font-size: 1.4rem;
   }
   
   /* Estilización de la lista de hardware */
@@ -157,73 +167,117 @@
   
   .table {
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
     color: #212529;
     border-collapse: collapse;
   }
 
   .table th,
   .table td {
-    padding: 0.75rem;
-    vertical-align: top;
-    border-top: 1px solid #dee2e6;
+    padding: 15px;
+    vertical-align: middle;
+    color: #2c3e50;
+    border-bottom: 1px solid #e8f0fe;
   }
 
   .table thead th {
-    vertical-align: bottom;
-    border-bottom: 2px solid #dee2e6;
-    background-color: #e9f0f7; /* Color pastel */
+    background: linear-gradient(120deg, #e8f0fe, #f5f7fa);
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 15px;
+    border: none;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
   }
 
-  .table tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 0, 0, 0.05);
+  .table thead th:hover {
+    background: linear-gradient(120deg, #d4e6fc, #e8f0fe);
+  }
+
+  .table tbody tr {
+    transition: all 0.3s ease;
+    transform-origin: center left;
   }
 
   .table tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.075);
+    background-color: #f8f9fa;
+    transform: scale(1.005);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    z-index: 1;
   }
 
-  /* ... estilos existentes ... */
+  .table td {
+    padding: 15px;
+    vertical-align: middle;
+    color: #2c3e50;
+    border-bottom: 1px solid #e8f0fe;
+  }
+
+  .stats-section {
+    flex: 0 0 25%;
+    margin-left: 20px;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    border-radius: 12px;
+    box-shadow: 
+      0 4px 15px rgba(0,0,0,0.05),
+      inset 0 -2px 0 rgba(52,152,219,0.2);
+    padding: 25px;
+  }
+
+  .stat-item {
+    background: linear-gradient(145deg, #f8f9fa, #ffffff);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 
+      0 4px 15px rgba(0,0,0,0.03),
+      inset 0 -2px 0 rgba(52,152,219,0.1);
+    transition: all 0.3s ease;
+  }
+
+  .stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+      0 6px 20px rgba(0,0,0,0.08),
+      inset 0 -3px 0 rgba(52,152,219,0.2);
+  }
+
+  .stat-item h3 {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .stat-item p {
+    color: #3498db;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+  }
 
   .btn-filtrar {
-    background-color: #85c1e9; /* Cambiado a celeste */
-    border-color: #85c1e9;
-    color: white; /* Cambiado a blanco para mejor contraste */
-    transition: background-color 0.3s ease;
+    width: 100%;
+    background: linear-gradient(120deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-top: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 4px 15px rgba(52,152,219,0.3),
+      inset 0 -2px 0 rgba(0,0,0,0.1);
   }
 
   .btn-filtrar:hover {
-    background-color: #5a9bd5; /* Un tono más oscuro para el hover */
-    border-color: #5a9bd5;
-  }
-
-  .btn-filtrar:active {
-    background-color: #4a8bc5 !important; /* Un tono aún más oscuro para cuando se presiona */
-    border-color: #4a8bc5 !important;
-  }
-
-  /* ... resto de los estilos ... */
-
-  .filter-section, .hardware-list-section {
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 20px;
-    border: 1px solid #85c1e9; /* Añadido un borde celeste sutil */
-  }
-
-  .filter-section label {
-    color: #333333;  /* Un gris oscuro para mejor contraste */
-    font-weight: 600;  /* Hacemos la fuente un poco más gruesa */
-    margin-bottom: 5px;  /* Añadimos un pequeño margen debajo de cada etiqueta */
-  }
-
-  .form-label {
-    display: block;  /* Asegura que cada etiqueta esté en su propia línea */
-  }
-
-  .form-control {
-    margin-bottom: 15px;  /* Añade espacio entre los campos de entrada */
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 20px rgba(52,152,219,0.4),
+      inset 0 -2px 0 rgba(0,0,0,0.1);
   }
 
   .chart-section {
@@ -294,6 +348,7 @@
     flex-direction: column;
     min-height: 0; /* Evita que el contenedor se estire innecesariamente */
     flex: 1;
+    overflow: hidden;
   }
 
   /* Asegúrate de que la tabla ocupe solo el espacio necesario */
@@ -301,6 +356,7 @@
     flex: 1;
     overflow-y: auto;
     margin-bottom: 10px; /* Espacio entre la tabla y la paginación */
+    overflow-x: hidden;
   }
 
   /* Ajusta el contenedor de paginación */
@@ -380,6 +436,7 @@
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 /* Asegúrate de que la tabla ocupe solo el espacio necesario */
@@ -447,4 +504,37 @@
   width: 100%;
   height: 200px;
   margin-top: 20px;
+}
+
+.form-label {
+  color: #2c3e50; /* Azul oscuro */
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mb-3 {
+  margin-bottom: 1.5rem !important;
+}
+
+.form-control {
+  border: 2px solid #e8f0fe;
+  border-radius: 8px;
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+  background: #ffffff; /* Fondo blanco para mejor contraste */
+  color: #2c3e50; /* Color del texto del input */
+}
+
+.form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+  transform: translateY(-2px);
+  background: #ffffff;
+}
+
+.form-control::placeholder {
+  color: #95a5a6; /* Color más suave para el placeholder */
 }

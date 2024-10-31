@@ -18,22 +18,55 @@
   </div>
   
   <div class="alerts-container">
-    <h2 class="alerts-title">Alertas Recientes</h2>
+    <div class="alerts-header">
+      <h2 class="alerts-title">Alertas Recientes</h2>
+      <button 
+        class="btn btn-check-changes" 
+        (click)="checkHardwareChanges()" 
+        [disabled]="isChecking"
+        title="Verificar cambios en el hardware">
+        <i class="fas fa-sync-alt" [class.fa-spin]="isChecking"></i>
+        {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
+      </button>
+    </div>
     <div class="alert-list">
-      <div *ngFor="let alert of alerts" class="alert-item" [ngClass]="alert.type">
-        <div class="alert-icon">
-          <i class="fas" [ngClass]="{
-            'fa-exclamation-triangle': alert.type === 'warning',
-            'fa-exclamation-circle': alert.type === 'danger',
-            'fa-info-circle': alert.type === 'info'
-          }"></i>
-        </div>
+      <div *ngIf="alerts.length === 0" class="no-alerts">
+        <i class="fas fa-check-circle"></i>
+        <h3>¡Todo en orden!</h3>
+        <p>No hay alertas pendientes en este momento</p>
+      </div>
+      
+      <div *ngFor="let alert of alerts" class="alert-item">
         <div class="alert-content">
-          <p class="alert-message">
-            <span class="pc-name">{{ alert.pc }}:</span> {{ alert.message }}
-          </p>
-          <p class="alert-date">{{ alert.date }}</p>
+          <div class="alert-header">
+            <span class="alert-title">{{alert.pcName}}</span>
+            <span class="alert-date">{{alert.fecha | date:'dd/MM/yyyy HH:mm'}}</span>
+          </div>
+          <div class="alert-details">
+            <span *ngIf="alert.memory" class="alert-tag memory">
+              <i class="fas fa-memory"></i> 
+              Memoria: {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+            </span>
+            <span *ngIf="alert.disk" class="alert-tag disk">
+              <i class="fas fa-hdd"></i> 
+              Disco al {{ alert.valorNuevo }}%
+            </span>
+            <span *ngIf="alert.ip" class="alert-tag ip">
+              <i class="fas fa-network-wired"></i> 
+              IP: {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+            </span>
+            <span *ngIf="alert.video" class="alert-tag video">
+              <i class="fas fa-video"></i> 
+              Video: {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+            </span>
+          </div>
         </div>
+        <button 
+          class="btn btn-sm btn-primary" 
+          (click)="confirmarAlerta(alert.hardwareId)"
+          [disabled]="alert.confirmada">
+          {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
+        </button>
       </div>
     </div>
   </div>

@@ -5,6 +5,8 @@ import { BiosService } from '../services/bios.service'; // Asegúrate de crear e
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
+import { AlertService, Alerta } from '../services/alert.service';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,21 +19,18 @@ export class DashboardComponent implements OnInit {
   pieChartOptions: any;
   barChartOptions: any;
   pieChartOptions2: any;
-  alerts: any[] = [
-    { type: 'warning', message: 'Cambio detectado en la RAM: 8GB a 16GB', date: '2023-11-15', pc: 'PC14587' },
-    { type: 'warning', message: 'Cambio detectado en la tarjeta de video: NVIDIA GTX 1060 a RTX 3070', date: '2023-11-14', pc: 'PC18932' },
-    { type: 'danger', message: 'Disco duro al 85% de capacidad', date: '2023-11-13', pc: 'PC20145' },
-    { type: 'info', message: 'Cambio de IP detectado: 192.168.1.100 a 192.168.1.150', date: '2023-11-12', pc: 'PC15678' },
-    { type: 'warning', message: 'Cambio detectado en el procesador: Intel i5 a Intel i7', date: '2023-11-11', pc: 'PC17234' }
-  ];
+  alerts: Alerta[] = [];
+  isChecking: boolean = false;
 
   constructor(
     private hardwareService: HardwareService,
     private biosService: BiosService, // Inyecta el nuevo servicio
-    private router: Router
+    private router: Router,
+    private alertService: AlertService
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.loadAlertas();
     forkJoin({
       hardware: this.hardwareService.getHardware(),
       bios: this.biosService.getAllBios()
@@ -56,7 +55,7 @@ export class DashboardComponent implements OnInit {
 
         this.pieChartOptions = {
           ...commonOptions,
-          title: { text: "Tipos de PC" },
+          title: { text: "Tipo" },
           data: [{
             type: "pie",
             indexLabel: "{label}: {y}",
@@ -68,7 +67,7 @@ export class DashboardComponent implements OnInit {
 
         this.barChartOptions = {
           ...commonOptions,
-          title: { text: "Marcas de PC" },
+          title: { text: "Marca" },
           axisY: { title: "Cantidad" },
           data: [{
             type: "column",
@@ -79,7 +78,7 @@ export class DashboardComponent implements OnInit {
 
         this.pieChartOptions2 = {
           ...commonOptions,
-          title: { text: "Sistemas Operativos" },
+          title: { text: "S.O." },
           data: [{
             type: "pie",
             indexLabel: "{label}: {y}",
@@ -93,6 +92,35 @@ export class DashboardComponent implements OnInit {
         console.error('Error al cargar los datos', error);
       }
     );
+  }
+
+  loadAlertas(): void {
+    this.alertService.getAlertas().subscribe(
+      (alertas: Alerta[]) => {
+        this.alerts = alertas;
+      },
+      error => {
+        console.error('Error al cargar las alertas', error);
+      }
+    );
+  }
+
+  confirmarAlerta(hardwareId: number): void {
+    this.alertService.confirmarAlerta(hardwareId).subscribe({
+      next: (response: string) => {
+        console.log('Alerta confirmada exitosamente:', response);
+        this.loadAlertas();
+      },
+      error: (error) => {
+        let mensajeError = 'Error al confirmar la alerta';
+        if (error.status === 404) {
+          mensajeError = 'No se encontró la alerta';
+        } else if (error.status === 400) {
+          mensajeError = 'Solicitud inválida';
+        }
+        console.error(mensajeError, error);
+      }
+    });
   }
 
   private prepareHardwareTypeData(hardware: any[]): any[] {
@@ -136,6 +164,27 @@ export class DashboardComponent implements OnInit {
     const filterValue = e.dataPoint.label;
     this.router.navigate(['/menu/assets'], { 
       queryParams: { filterType, filterValue }
+    });
+  }
+
+  checkHardwareChanges(): void {
+    if (this.isChecking) return;
+    
+    this.isChecking = true;
+    this.alertService.checkHardwareChanges().pipe(
+      finalize(() => {
+        this.isChecking = false;
+      })
+    ).subscribe({
+      next: () => {
+        // Recargar alertas después de verificar cambios
+        this.loadAlertas();
+      },
+      error: (error) => {
+        console.error('Error al verificar cambios:', error);
+        // Aquí puedes mostrar un mensaje al usuario usando un servicio de notificaciones
+        // o un componente de toast/snackbar
+      }
     });
   }
 }

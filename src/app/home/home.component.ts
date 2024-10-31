@@ -25,7 +25,7 @@ export class HomeComponent {
     fpsLimit: 120,
     particles: {
       number: {
-        value: 100,
+        value: 60,
         density: {
           enable: true,
         }
@@ -34,24 +34,13 @@ export class HomeComponent {
         value: ["#ffffff"],
       },
       shape: {
-        type: ["circle", "polygon"],
-        options: {
-          polygon: {
-            sides: 6
-          }
-        }
+        type: "circle",
       },
       opacity: {
-        value: { min: 0.1, max: 0.5 },
-        animation: {
-          enable: true,
-          speed: 1,
-          startValue: "min",
-          sync: false
-        }
+        value: 0.7,
       },
       size: {
-        value: { min: 1, max: 3 },
+        value: { min: 1, max: 4 },
         animation: {
           enable: true,
           speed: 2,
@@ -59,25 +48,21 @@ export class HomeComponent {
           sync: false
         }
       },
-      links: {
+      wobble: {
         enable: true,
-        distance: 150,
-        color: "#ffffff",
-        opacity: 0.5,
-        width: 1
+        distance: 10,
+        speed: 2
       },
       move: {
         enable: true,
-        speed: 3.0, // Aumenta la velocidad a 3.0 para un movimiento más rápido
-        direction: "none",
-        random: true,
+        speed: 2,
+        direction: "bottom",
         straight: false,
+        random: true,
         outModes: {
-          default: "out"
-        },
-        attract: {
-          enable: false,
-          rotate: { x: 600, y: 1200 }
+          default: "out",
+          bottom: "out",
+          top: "out"
         }
       }
     },
