@@ -1,8 +1,6 @@
 <div *ngIf="biosData">
   <h4 class="text-secondary">Información de BIOS</h4>
   <ul class="list-group list-group-flush">
-    <!-- Elimina o comenta la siguiente línea -->
-    <!-- <li class="list-group-item"><i class="fas fa-fingerprint me-2"></i><strong>ID de Hardware:</strong> {{ biosData.hardwareId }}</li> -->
     <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante del Sistema:</strong> {{ biosData.smanufacturer }}</li>
     <li class="list-group-item"><i class="fas fa-laptop me-2"></i><strong>Modelo del Sistema:</strong> {{ biosData.smodel }}</li>
     <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie del Sistema:</strong> {{ biosData.ssn }}</li>
@@ -10,7 +8,7 @@
     <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante del BIOS:</strong> {{ biosData.bmanufacturer }}</li>
     <li class="list-group-item"><i class="fas fa-code me-2"></i><strong>Versión del BIOS:</strong> {{ biosData.bversion }}</li>
     <li class="list-group-item"><i class="fas fa-calendar-alt me-2"></i><strong>Fecha del BIOS:</strong> {{ biosData.bdate }}</li>
-    <li class="list-group-item"><i class="fas fa-tag me-2"></i><strong>Etiqueta de Activo:</strong> {{ biosData.assetTag }}</li>
+    <li class="list-group-item"><i class="fas fa-tag me-2"></i><strong>Etiqueta de Activo:</strong> {{ biosData.assettag }}</li>
     <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante de la Placa Base:</strong> {{ biosData.mmanufacturer }}</li>
     <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Modelo de la Placa Base:</strong> {{ biosData.mmodel }}</li>
     <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie de la Placa Base:</strong> {{ biosData.msn }}</li>
