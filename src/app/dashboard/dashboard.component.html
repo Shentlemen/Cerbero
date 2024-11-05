@@ -63,7 +63,7 @@
         </div>
         <button 
           class="btn btn-sm btn-primary" 
-          (click)="confirmarAlerta(alert.hardwareId)"
+          (click)="confirmarAlerta(alert.id)"
           [disabled]="alert.confirmada">
           {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
         </button>

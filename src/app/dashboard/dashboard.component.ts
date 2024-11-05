@@ -105,8 +105,8 @@ export class DashboardComponent implements OnInit {
     );
   }
 
-  confirmarAlerta(hardwareId: number): void {
-    this.alertService.confirmarAlerta(hardwareId).subscribe({
+  confirmarAlerta(alertaId: number): void {
+    this.alertService.confirmarAlerta(alertaId).subscribe({
       next: (response: string) => {
         console.log('Alerta confirmada exitosamente:', response);
         this.loadAlertas();

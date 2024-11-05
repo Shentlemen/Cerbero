@@ -39,13 +39,13 @@ export class AlertService {
     );
   }
 
-  confirmarAlerta(hardwareId: number): Observable<any> {
+  confirmarAlerta(alertaId: number): Observable<any> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
 
     return this.http.put(
-      `${this.apiUrl}/confirmar/${hardwareId}`, 
+      `${this.apiUrl}/confirmar/${alertaId}`, 
       {}, 
       { 
         headers,
