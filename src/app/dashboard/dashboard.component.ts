@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
-import { BiosService } from '../services/bios.service'; // Asegúrate de crear este servicio
+import { BiosService } from '../services/bios.service';
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
@@ -24,7 +24,7 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private hardwareService: HardwareService,
-    private biosService: BiosService, // Inyecta el nuevo servicio
+    private biosService: BiosService,
     private router: Router,
     private alertService: AlertService
   ) {}

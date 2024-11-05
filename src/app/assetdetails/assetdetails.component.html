@@ -2,41 +2,62 @@
   <div class="card shadow-lg">
     <div class="card-header title-bar">
       <h2 class="mb-0 text-center">
-        <i class="fas fa-desktop me-2"></i>DETALLES DEL ACTIVO <!-- Cambiado de "ASSET" a "ACTIVO" -->
+        <i class="fas fa-desktop me-2"></i>DETALLES DEL ACTIVO
       </h2>
     </div>
     <div class="card-body">
-      <!-- Pestañas -->                                                   
       <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'general'" (click)="changeTab('general')" style="cursor: pointer;">General</a>
+          <a class="nav-link" [class.active]="activeTab === 'general'" (click)="changeTab('general')" style="cursor: pointer;">
+            <i class="fas fa-info-circle me-2"></i>General
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'bios'" (click)="changeTab('bios')" style="cursor: pointer;">BIOS</a>
+          <a class="nav-link" [class.active]="activeTab === 'bios'" (click)="changeTab('bios')" style="cursor: pointer;">
+            <i class="fas fa-microchip me-2"></i>BIOS
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')" style="cursor: pointer;">CPU</a>
+          <a class="nav-link" [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')" style="cursor: pointer;">
+            <i class="fas fa-processor me-2"></i>CPU
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'device'" (click)="changeTab('device')" style="cursor: pointer;">Dispositivo</a>
+          <a class="nav-link" [class.active]="activeTab === 'device'" (click)="changeTab('device')" style="cursor: pointer;">
+            <i class="fas fa-hdd me-2"></i>Dispositivo
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'drive'" (click)="changeTab('drive')" style="cursor: pointer;">Unidades</a>
+          <a class="nav-link" [class.active]="activeTab === 'drive'" (click)="changeTab('drive')" style="cursor: pointer;">
+            <i class="fas fa-database me-2"></i>Unidades
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'memory'" (click)="changeTab('memory')" style="cursor: pointer;">Memoria</a>
+          <a class="nav-link" [class.active]="activeTab === 'memory'" (click)="changeTab('memory')" style="cursor: pointer;">
+            <i class="fas fa-memory me-2"></i>Memoria
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'monitor'" (click)="changeTab('monitor')" style="cursor: pointer;">Monitor</a>
+          <a class="nav-link" [class.active]="activeTab === 'monitor'" (click)="changeTab('monitor')" style="cursor: pointer;">
+            <i class="fas fa-tv me-2"></i>Monitor
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'storage'" (click)="changeTab('storage')" style="cursor: pointer;">Almacenamiento</a>
+          <a class="nav-link" [class.active]="activeTab === 'storage'" (click)="changeTab('storage')" style="cursor: pointer;">
+            <i class="fas fa-hard-drive me-2"></i>Almacenamiento
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'video'" (click)="changeTab('video')" style="cursor: pointer;">Video</a>
+          <a class="nav-link" [class.active]="activeTab === 'video'" (click)="changeTab('video')" style="cursor: pointer;">
+            <i class="fas fa-film me-2"></i>Video
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'ubicacion'" (click)="changeTab('ubicacion')" style="cursor: pointer;">
+            <i class="fas fa-map-marker-alt me-2"></i>Ubicación
+          </a>
         </li>
       </ul>
-
       <!-- Contenido de las pestañas -->
       <div class="tab-content" [ngSwitch]="activeTab">
         <div *ngSwitchCase="'general'">
@@ -121,6 +142,9 @@
         </div>
         <div *ngSwitchCase="'video'">
           <app-video-details *ngFor="let video of componentData.video" [videoData]="video"></app-video-details>
+        </div>
+        <div *ngSwitchCase="'ubicacion'">
+          <app-ubicacion-details [hardwareId]="asset.id"></app-ubicacion-details>
         </div>
       </div>
     </div>

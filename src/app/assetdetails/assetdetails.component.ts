@@ -24,6 +24,8 @@ import { MemoryDetailsComponent } from '../memory-details/memory-details.compone
 import { MonitorDetailsComponent } from '../monitor-details/monitor-details.component';
 import { StorageDetailsComponent } from '../storage-details/storage-details.component';
 import { VideoDetailsComponent } from '../video-details/video-details.component';
+import { UbicacionDetailsComponent } from '../ubicacion-details/ubicacion-details.component';
+import { UbicacionEquipoService } from '../services/ubicacion-equipo.service';
 
 interface Asset {
   id: number;
@@ -66,7 +68,8 @@ interface Asset {
     MemoryDetailsComponent,
     MonitorDetailsComponent,
     StorageDetailsComponent,
-    VideoDetailsComponent
+    VideoDetailsComponent,
+    UbicacionDetailsComponent
   ],
   providers: [
     BiosService,
@@ -76,7 +79,8 @@ interface Asset {
     MemoryService,
     MonitorService,
     StorageService,
-    VideoService
+    VideoService,
+    UbicacionEquipoService
   ],
   templateUrl: './assetdetails.component.html',
   styleUrls: ['./assetdetails.component.css']
