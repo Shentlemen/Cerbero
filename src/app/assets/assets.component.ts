@@ -82,6 +82,7 @@ export class AssetsComponent implements OnInit {
   pcCount: number = 0;     // Declaración de la propiedad
   laptopCount: number = 0; // Declaración de la propiedad
   otherCount: number = 0;  // Declaración de la propiedad
+  miniPcCount: number = 0; // Añadir esta nueva propiedad
 
   constructor(
     private hardwareService: HardwareService,
@@ -155,16 +156,19 @@ export class AssetsComponent implements OnInit {
   }
 
   updateSummary(): void {
-    const typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
+    const typeMap: Record<string, string> = { 
+      '1': 'PC', 
+      '2': 'MINI PC', 
+      '3': 'LAPTOP', 
+      '4': 'Tablet' 
+    };
 
     // Inicializa los contadores
     let totalAssets = 0;
     let pcCount = 0;
+    let miniPcCount = 0; // Nuevo contador
     let laptopCount = 0;
     let otherCount = 0;
-
-    // Verifica los datos antes de procesarlos
-    console.log('Assets filtrados:', this.assetsFiltrados);
 
     // Recorre la lista de assets filtrados y cuenta los tipos
     this.assetsFiltrados.forEach(asset => {
@@ -173,8 +177,10 @@ export class AssetsComponent implements OnInit {
 
       switch (type) {
         case 'PC':
-        case 'MINI PC':
           pcCount++;
+          break;
+        case 'MINI PC':
+          miniPcCount++;
           break;
         case 'LAPTOP':
           laptopCount++;
@@ -188,12 +194,14 @@ export class AssetsComponent implements OnInit {
     // Actualiza las variables del resumen
     this.totalAssets = totalAssets;
     this.pcCount = pcCount;
+    this.miniPcCount = miniPcCount; // Actualiza el nuevo contador
     this.laptopCount = laptopCount;
     this.otherCount = otherCount;
 
     console.log('Resumen actualizado:', {
       totalAssets: this.totalAssets,
       pcCount: this.pcCount,
+      miniPcCount: this.miniPcCount,
       laptopCount: this.laptopCount,
       otherCount: this.otherCount
     });
