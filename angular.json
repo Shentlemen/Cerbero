@@ -22,30 +22,66 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
+              "src/favicon.ico",
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public/assets",
+                "output": "assets"
               }
             ],
             "styles": [
-              "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "@angular/material/prebuilt-themes/azure-blue.css",
-              "src/styles.css"
+              "src/styles.css",
+              {
+                "input": "public/assets/css/all.min.css",
+                "bundleName": "fontawesome",
+                "inject": true
+              },
+              {
+                "input": "public/assets/css/bootstrap-5.1.3.css",
+                "bundleName": "bootstrap",
+                "inject": true
+              },
+              {
+                "input": "public/assets/css/material-icons.css",
+                "bundleName": "material-icons",
+                "inject": true
+              },
+              {
+                "input": "public/assets/css/roboto-fonts.css",
+                "bundleName": "roboto",
+                "inject": true
+              },
+              {
+                "input": "public/assets/css/open-sans.css",
+                "bundleName": "open-sans",
+                "inject": true
+              }
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "canvg",
+              "core-js",
+              "raf",
+              "rgbcolor",
+              "jspdf-autotable",
+              "@canvasjs/charts",
+              "html2canvas",
+              "dompurify"
+            ]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2mb",
+                  "maximumError": "3mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "8kb",
+                  "maximumError": "10kb"
                 }
               ],
               "outputHashing": "all",
@@ -88,9 +124,11 @@
             ],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
+              "src/favicon.ico",
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public/assets",
+                "output": "/assets"
               }
             ],
             "styles": [

@@ -22,6 +22,13 @@ export class DashboardComponent implements OnInit {
   alerts: Alerta[] = [];
   isChecking: boolean = false;
 
+  private typeMap: Record<string, string> = {
+    '0': 'PC',
+    '2': 'MINI PC',
+    '3': 'LAPTOP',
+    '4': 'TABLET'
+  };
+
   constructor(
     private hardwareService: HardwareService,
     private biosService: BiosService,
@@ -124,14 +131,25 @@ export class DashboardComponent implements OnInit {
   }
 
   private prepareHardwareTypeData(hardware: any[]): any[] {
-    const typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
+    const typeMap: Record<string | number, string> = {
+      '0': 'PC',
+      '1': 'PC',
+      '2': 'MINI PC',
+      '3': 'LAPTOP',
+      '4': 'TABLET'
+    };
 
     const counts = hardware.reduce((acc: Record<string, number>, curr) => {
-      const type = typeMap[curr.type as keyof typeof typeMap] || 'Desconocido';
+      const typeValue = curr.type?.toString() || '0';
+      const type = typeMap[typeValue] || typeMap[parseInt(typeValue)] || 'Desconocido';
+      
       if (!acc[type]) {
         acc[type] = 0;
       }
       acc[type]++;
+      
+      console.log('Tipo original:', curr.type, 'Tipo mapeado:', type, 'TypeValue:', typeValue);
+      
       return acc;
     }, {});
 
