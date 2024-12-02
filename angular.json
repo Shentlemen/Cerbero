@@ -24,13 +24,21 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public/assets",
+                "output": "/assets"
               }
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "@angular/material/prebuilt-themes/azure-blue.css",
-              "src/styles.css"
+              "src/styles.css",
+              "public/assets/css/roboto-fonts.css",
+              "public/assets/css/open-sans.css",
+              "public/assets/css/material-icons.css",
+              "public/assets/css/bootstrap-5.1.3.css",
+              "public/assets/css/fontawesome.css",
+              "public/assets/css/solid.css",
+              "public/assets/css/brands.css"
             ],
             "scripts": []
           },
@@ -39,8 +47,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "3MB"
                 },
                 {
                   "type": "anyComponentStyle",
