@@ -157,7 +157,7 @@ export class AssetsComponent implements OnInit {
 
   updateSummary(): void {
     const typeMap: Record<string, string> = { 
-      '1': 'PC', 
+      '0': 'PC', 
       '2': 'MINI PC', 
       '3': 'LAPTOP', 
       '4': 'Tablet' 
@@ -258,7 +258,7 @@ export class AssetsComponent implements OnInit {
   }
 
   getPCCount(): number {
-    return this.assetsList.filter(asset => asset.type === '1' || asset.type === '2').length;
+    return this.assetsList.filter(asset => asset.type === '0' || asset.type === '2').length;
   }
 
   getLaptopCount(): number {
@@ -266,22 +266,33 @@ export class AssetsComponent implements OnInit {
   }
 
   getOtherCount(): number {
-    return this.assetsList.filter(asset => asset.type !== '1' && asset.type !== '2' && asset.type !== '3').length;
+    return this.assetsList.filter(asset => asset.type !== '0' && asset.type !== '2' && asset.type !== '3').length;
   }
 
-  private typeMap: Record<string, string> = { '1': 'PC', '2': 'MINI PC', '3': 'LAPTOP', '4': 'Tablet' };
+  private typeMap: Record<string, string> = { 
+    '0': 'PC', 
+    '2': 'MINI PC', 
+    '3': 'LAPTOP', 
+    '4': 'Tablet' 
+  };
 
   private getTypeNumber(typeString: string): string {
     const typeMap: Record<string, string> = { 
-      'PC': '1', 
+      'PC': '0', 
       'MINI PC': '2', 
       'LAPTOP': '3', 
-      'TABLET': '4' // Asegúrate de que "TABLET" esté en mayúsculas
+      'TABLET': '4'
     };
     return typeMap[typeString.toUpperCase()] || typeString;
   }
 
   getHardwareType(type: string): string {
-    return this.typeMap[type] || 'Desconocido';
+    const typeMap: Record<string, string> = {
+      '0': 'PC',
+      '2': 'MINI PC',
+      '3': 'LAPTOP',
+      '4': 'TABLET'
+    };
+    return typeMap[type] || 'Desconocido';
   }
 }
