@@ -1,65 +1,63 @@
-<div class="software-container">
+<div class="devices-container">
   <div class="header-section">
     <div class="title-wrapper">
-      <h1><i class="fas fa-code"></i> Software Instalado</h1>
+      <h1><i class="fas fa-network-wired"></i> Dispositivos de Red</h1>
       <div class="stats-pills">
         <div class="stat-pill total">
           <i class="fas fa-boxes"></i>
-          <span>{{totalSoftware}} Total</span>
+          <span>{{devices.length}} Total</span>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="software-content">
+  <div class="devices-content">
     <div class="table-container">
-      <table class="software-table">
+      <table class="devices-table">
         <thead>
           <tr>
             <th>
               <div class="th-content">
-                <span>Nombre</span>
+                <span>Nombre de red</span>
               </div>
             </th>
             <th>
               <div class="th-content">
-                <span>Editor</span>
+                <span>IP</span>
               </div>
             </th>
             <th>
               <div class="th-content">
-                <span>Versión</span>
+                <span>Tipo</span>
               </div>
             </th>
             <th>
               <div class="th-content">
-                <span>Equipos</span>
+                <span>Descripción</span>
               </div>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let software of softwareList" class="software-row">
+          <tr *ngFor="let device of devices" class="device-row">
             <td>
-              <div class="software-name">
-                <i class="fas fa-cube"></i>
-                <span>{{ software.name }}</span>
+              <div class="device-name">
+                <i class="fas fa-network-wired"></i>
+                <span>{{ device.name }}</span>
               </div>
             </td>
             <td>
-              <span class="publisher">{{ software.publisher }}</span>
+              <span class="ip-address">{{ device.ip }}</span>
             </td>
             <td>
-              <span class="version-badge">{{ software.version }}</span>
+              <span class="type-badge">{{ device.type }}</span>
             </td>
             <td>
-              <span class="count-badge" (click)="navigateToAssets(software)">
-                {{ software.count }}
-              </span>
+              <span class="description">{{ device.description }}</span>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
-</div>
+</div> 

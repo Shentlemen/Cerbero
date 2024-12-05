@@ -1,550 +1,302 @@
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 25px;
-    max-width: 1400px;
-    margin: 0.2rem auto !important;
-    background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-  
-  /* Sección de Filtros */
-  .filter-section {
-    flex: 0 0 20%;
-    margin-right: 20px;
-    background: linear-gradient(145deg, #ffffff, #f8f9fa);
-    border-radius: 12px;
-    box-shadow: 
-      0 4px 15px rgba(0,0,0,0.05),
-      inset 0 -2px 0 rgba(52,152,219,0.2);
-    padding: 25px;
-    transition: all 0.3s ease;
-  }
-  
-  .filter-section:hover {
-    transform: translateY(-5px);
-    box-shadow: 
-      0 8px 20px rgba(0,0,0,0.1),
-      inset 0 -3px 0 rgba(52,152,219,0.4);
-  }
-  
-  /* Sección de Lista de Hardware */
-  .hardware-list-section {
-    flex: 1;
-    background: linear-gradient(145deg, #ffffff, #f8f9fa);
-    border-radius: 12px;
-    box-shadow: 
-      0 4px 15px rgba(0,0,0,0.05),
-      inset 0 -2px 0 rgba(52,152,219,0.2);
-    padding: 25px;
-  }
-  
-  .title-bar {
-    background: linear-gradient(120deg, #3498db, #2980b9);
-    padding: 12px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(52,152,219,0.2);
-  }
-  
-  .title-bar h2 {
-    color: white;
-    font-size: 1.2rem;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .title-bar i {
-    font-size: 1.4rem;
-  }
-  
-  /* Estilización de la lista de hardware */
-  .list-group-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 15px;
-    margin-bottom: 10px;
-    background-color: #ffffff;
-    border: 1px solid #dddddd;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-    flex-wrap: wrap; /* Permite que los elementos salten a una nueva línea si es necesario */
-  }
-  
-  .list-group-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  }
-  
-  .list-group-item:nth-child(odd) {
-    background-color: #f9f9f9;
-  }
-  
-  .list-group-item:nth-child(even) {
-    background-color: #ffffff;
-  }
-  
-  .list-group-item > span {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap; /* Evita el salto de línea si no es necesario */
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .list-group-item > div {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    margin-left: 10px;
-    flex-wrap: wrap; /* Permite que los botones salten a una nueva línea si es necesario */
-  }
-  
-  /* Estilización de los botones */
-  .btn {
-    margin-right: 10px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    font-weight: bold;
-    color: white;
-  }
-  
-  .btn-secondary {
-    background-color: #6ab0b9; /* Un tono pastel de azul */
-    border: none;
-  }
-  
-  .btn-secondary:hover {
-    background-color: #4ca1af; /* Azul suave para hover */
-  }
-  
-  .btn-info {
-    background-color: #85c1e9; /* Azul pastel */
-    border: none;
-  }
-  
-  .btn-info:hover {
-    background-color: #5a9bd5; /* Azul ligeramente más oscuro para hover */
-  }
-  
-  .btn-danger {
-    background-color: #e57373; /* Rojo pastel (igual que el hover anterior) */
-    border: none;
-  }
-  
-  .btn-danger:hover {
-    background-color: #d65a5a; /* Rojo ligeramente más oscuro para hover */
-  }
-  
-  /* Estilización del modal */
-  .modal-header {
-    background-color: #f7f7f7; /* Fondo del encabezado */
-    border-bottom: 2px solid #4ca1af; /* Borde inferior */
-    padding-bottom: 10px;
-  }
-  
-  .modal-title {
-    margin: 0;
-    padding: 10px;
-    font-size: 1.75rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #4ca1af;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Sombra suave */
-  }
-  
-  .modal-title i {
-    margin-right: 10px;
-    color: #4ca1af; /* Color del ícono */
-  }
-  
-  .table {
-    width: 100%;
-    margin-bottom: 0;
-    color: #212529;
-    border-collapse: collapse;
-  }
-
-  .table th,
-  .table td {
-    padding: 15px;
-    vertical-align: middle;
-    color: #2c3e50;
-    border-bottom: 1px solid #e8f0fe;
-  }
-
-  .table thead th {
-    background: linear-gradient(120deg, #e8f0fe, #f5f7fa);
-    color: #2c3e50;
-    font-weight: 600;
-    padding: 15px;
-    border: none;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .table thead th:hover {
-    background: linear-gradient(120deg, #d4e6fc, #e8f0fe);
-  }
-
-  .table tbody tr {
-    transition: all 0.3s ease;
-    transform-origin: center left;
-  }
-
-  .table tbody tr:hover {
-    background-color: #f8f9fa;
-    transform: scale(1.005);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    z-index: 1;
-  }
-
-  .table td {
-    padding: 15px;
-    vertical-align: middle;
-    color: #2c3e50;
-    border-bottom: 1px solid #e8f0fe;
-  }
-
-  .stats-section {
-    flex: 0 0 25%;
-    margin-left: 20px;
-    background: linear-gradient(145deg, #ffffff, #f8f9fa);
-    border-radius: 12px;
-    box-shadow: 
-      0 4px 15px rgba(0,0,0,0.05),
-      inset 0 -2px 0 rgba(52,152,219,0.2);
-    padding: 25px;
-  }
-
-  .stat-item {
-    background: linear-gradient(145deg, #f8f9fa, #ffffff);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 
-      0 4px 15px rgba(0,0,0,0.03),
-      inset 0 -2px 0 rgba(52,152,219,0.1);
-    transition: all 0.3s ease;
-  }
-
-  .stat-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 
-      0 6px 20px rgba(0,0,0,0.08),
-      inset 0 -3px 0 rgba(52,152,219,0.2);
-  }
-
-  .stat-item h3 {
-    color: #2c3e50;
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .stat-item p {
-    color: #3498db;
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin: 0;
-    text-align: center;
-  }
-
-  .btn-filtrar {
-    width: 100%;
-    background: linear-gradient(120deg, #3498db, #2980b9);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-weight: 500;
-    margin-top: 15px;
-    transition: all 0.3s ease;
-    box-shadow: 
-      0 4px 15px rgba(52,152,219,0.3),
-      inset 0 -2px 0 rgba(0,0,0,0.1);
-  }
-
-  .btn-filtrar:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 6px 20px rgba(52,152,219,0.4),
-      inset 0 -2px 0 rgba(0,0,0,0.1);
-  }
-
-  .chart-section {
-    flex-basis: calc(30% - 20px);
-    margin-left: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 20px;
-  }
-
-  /* ... existing styles ... */
-
-  .pagination {
-    margin-top: 20px !important;
-    margin-bottom: 20px !important; /* Reduce el espacio debajo de los botones */
-  }
-
-  .pagination .page-item .page-link {
-    color: #4a8bc5;
-    background-color: transparent;
-    border: none;
-    padding: 0.5rem 0.75rem;
-    margin: 0 2px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    font-weight: 500;
-    font-size: 16px;
-    min-width: 2.2rem;
-    min-height: 2.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pagination .page-item.active .page-link {
-    color: #ffffff;
-    background-color: #4a8bc5;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-
-  .pagination .page-item .page-link:hover,
-  .pagination .page-item .page-link:focus {
-    color: #ffffff;
-    background-color: #5a9bd5;
-    transform: scale(1.1);
-  }
-
-  /* Estilos específicos para botones de primera y última página */
-  .pagination .page-item:first-child .page-link,
-  .pagination .page-item:last-child .page-link {
-    background-color: #f0f7fa;
-    color: #4a8bc5;
-    border-radius: 20px;
-    padding: 0.5rem 0.75rem;
-    font-size: 18px;
-  }
-
-  .pagination .page-item:first-child .page-link:hover,
-  .pagination .page-item:last-child .page-link:hover {
-    background-color: #4a8bc5;
-    color: #ffffff;
-  }
-
-  /* Ajusta el contenedor principal para reducir el espacio extra al final */
-  .hardware-list-section {
-    display: flex;
-    flex-direction: column;
-    min-height: 0; /* Evita que el contenedor se estire innecesariamente */
-    flex: 1;
-    overflow: hidden;
-  }
-
-  /* Asegúrate de que la tabla ocupe solo el espacio necesario */
-  .table-responsive {
-    flex: 1;
-    overflow-y: auto;
-    margin-bottom: 10px; /* Espacio entre la tabla y la paginación */
-    overflow-x: hidden;
-  }
-
-  /* Ajusta el contenedor de paginación */
-  ngb-pagination {
-    align-self: center; /* Centra la paginación horizontalmente */
-    margin-top: auto; /* Empuja la paginación hacia abajo */
-  }
-
-  /* Estilos para los botones de primera y última página */
-  .pagination .page-item:first-child .page-link,
-  .pagination .page-item:last-child .page-link {
-    background-color: #6ab0b9 !important; /* Color diferente para estos botones */
-  }
-
-  .pagination .page-item:first-child .page-link:hover,
-  .pagination .page-item:last-child .page-link:hover {
-    background-color: #5a9bd5 !important;
-  }
-
-  /* Add this at the end of the file */
-  .container {
-    margin-top: 0.2rem;
-  }
-
-  /* If you want to ensure it overrides any existing styles, you can use !important */
-  /* .container {
-    margin-top: 0.2rem !important;
-  } */
-
-/* Estilos de paginación */
-::ng-deep .pagination {
-  margin-top: 10px !important;
-  margin-bottom: 10px !important;
+.assets-container {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
 }
 
-::ng-deep .pagination .page-item .page-link {
-  color: #2c3e50 !important;
-  background-color: #d5e8f3 !important;
-  border-color: #a8d1e7 !important;
-  font-family: 'Arial', sans-serif !important;
-  font-weight: bold !important;
-  padding: 6px 12px !important;
-  transition: all 0.3s ease !important;
+.header-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
 }
 
-::ng-deep .pagination .page-item.active .page-link {
-  color: #ffffff !important;
-  background-color: #85c1e9 !important;
-  border-color: #5a9bd5 !important;
-}
-
-::ng-deep .pagination .page-item .page-link:hover,
-::ng-deep .pagination .page-item .page-link:focus {
-  color: #ffffff !important;
-  background-color: #85c1e9 !important;
-  border-color: #5a9bd5 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-}
-
-/* Estilos específicos para botones de primera y última página */
-::ng-deep .pagination .page-item:first-child .page-link,
-::ng-deep .pagination .page-item:last-child .page-link {
-  background-color: #b3d9f0 !important;
-  color: #2c3e50 !important;
-}
-
-::ng-deep .pagination .page-item:first-child .page-link:hover,
-::ng-deep .pagination .page-item:last-child .page-link:hover {
-  background-color: #85c1e9 !important;
-  color: #ffffff !important;
-}
-
-/* Ajusta el contenedor principal para reducir el espacio extra al final */
-.hardware-list-section {
+.title-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
+  gap: 1.5rem;
 }
 
-/* Asegúrate de que la tabla ocupe solo el espacio necesario */
-.table-responsive {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 10px; /* Reduce el espacio entre la tabla y la paginación */
+.title-wrapper h1 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-/* Ajusta el contenedor de paginación */
-::ng-deep ngb-pagination {
-  margin-top: 10px !important; /* Reduce el margen superior */
-  margin-bottom: 10px !important; /* Reduce el margen inferior */
+.title-wrapper h1 i {
+  color: #3498db;
+  font-size: 2rem;
 }
 
-/* Ajusta los botones de paginación */
-::ng-deep .pagination {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
+.stats-pills {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-::ng-deep .pagination .page-item .page-link {
-  padding: 6px 12px !important; /* Reduce el padding de los botones */
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-/* ... resto del código ... */
-
-.stats-section {
-  flex: 0 0 25%; /* Nueva sección de estadísticas */
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 20px;
-  margin-left: 20px;
+.stat-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.stats-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 15px;
-  padding: 10px;
+.stat-pill.active {
+  background: #3498db;
+  color: white;
 }
 
-.stat-item {
-  background: linear-gradient(145deg, #f8f9fa, #ffffff);
-  border-radius: 10px;
-  padding: 15px;
-  text-align: center;
-  box-shadow: 
-    0 4px 15px rgba(0,0,0,0.03),
-    inset 0 -2px 0 rgba(52,152,219,0.2);
+.stat-pill.active i {
+  color: white;
+}
+
+.stat-pill.total.active {
+  background: #2c3e50;
+}
+
+.stat-pill i {
+  color: #3498db;
+}
+
+.stat-pill.total {
+  background: #3498db;
+  color: white;
+}
+
+.stat-pill.total i {
+  color: white;
+}
+
+.assets-content {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.assets-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: white;
+}
+
+.assets-table th {
+  background: #f8f9fa;
+  padding: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.stat-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 
-    0 6px 20px rgba(0,0,0,0.1),
-    inset 0 -3px 0 rgba(52,152,219,0.4);
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.stat-item h3 {
-  font-size: 1rem;
-  color: #4a8bc5;
-  margin-bottom: 5px;
+.assets-table th:hover {
+  background: #edf2f7;
 }
 
-.stat-item p {
-  font-size: 1.5rem;
-  font-weight: bold;
+.assets-table th.active {
+  color: #3498db;
+}
+
+.asset-row {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.asset-row:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.asset-row td {
+  padding: 1rem;
+  border-bottom: 1px solid #edf2f7;
   color: #2c3e50;
 }
 
-.chart-container {
-  width: 100%;
-  height: 200px;
-  margin-top: 20px;
+.asset-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #2c3e50;
+  font-weight: 500;
 }
 
-.form-label {
-  color: #2c3e50; /* Azul oscuro */
-  font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.asset-name i {
+  font-size: 1.2rem;
+  color: #3498db;
 }
 
-.mb-3 {
-  margin-bottom: 1.5rem !important;
+.asset-name span {
+  color: #2c3e50;
+  font-weight: 500;
 }
 
-.form-control {
-  border: 2px solid #e8f0fe;
-  border-radius: 8px;
-  padding: 10px 15px;
-  transition: all 0.3s ease;
-  background: #ffffff; /* Fondo blanco para mejor contraste */
-  color: #2c3e50; /* Color del texto del input */
+.os-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
 }
 
-.form-control:focus {
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
-  transform: translateY(-2px);
-  background: #ffffff;
+.os-badge.windows {
+  background: #e8f4fd;
+  color: #3498db;
 }
 
-.form-control::placeholder {
-  color: #95a5a6; /* Color más suave para el placeholder */
+.os-badge.linux {
+  background: #fdf6e3;
+  color: #d35400;
+}
+
+.ip-address {
+  font-family: monospace;
+  color: #2c3e50;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.type-badge.desktop {
+  background: #e8f6f3;
+  color: #27ae60;
+}
+
+.type-badge.laptop {
+  background: #f0f4fd;
+  color: #3498db;
+}
+
+.type-badge.mini {
+  background: #fdf6e3;
+  color: #d35400;
+}
+
+body ngb-pagination.custom-pagination {
+  margin: 2rem 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination {
+  margin: 0 !important;
+  gap: 8px !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item .page-link {
+  width: 38px !important;
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  border: 2px solid transparent !important;
+  background-color: #f0f4f8 !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item:first-child .page-link,
+body ngb-pagination.custom-pagination ul.pagination .page-item:last-child .page-link {
+  width: auto !important;
+  padding: 0 15px !important;
+  font-size: 0.9rem !important;
+  background-color: #e8eef7 !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item .page-link:hover {
+  background-color: #e2e8f0 !important;
+  color: #3498db !important;
+  transform: translateY(-1px) !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item.active .page-link {
+  background-color: #3498db !important;
+  color: white !important;
+  border-color: #3498db !important;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25) !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-link {
+  background-color: #f8fafc !important;
+  color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+@media (max-width: 768px) {
+  ::ng-deep ngb-pagination.custom-pagination .page-item .page-link {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  ::ng-deep ngb-pagination.custom-pagination .page-item:first-child .page-link,
+  ::ng-deep ngb-pagination.custom-pagination .page-item:last-child .page-link {
+    padding: 0 12px !important;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .assets-container {
+    padding: 1rem;
+  }
+
+  .header-section {
+    padding: 1rem;
+  }
+
+  .stats-pills {
+    gap: 0.5rem;
+  }
+
+  .stat-pill {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .assets-content {
+    padding: 1rem;
+  }
 }

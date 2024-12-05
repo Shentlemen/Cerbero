@@ -1,58 +1,76 @@
 <div class="settings-container">
-  <h2>
-    <i class="fas fa-cogs me-2"></i>
-    Configuración del Sistema
-  </h2>
+  <div class="danger-header">
+    <i class="fas fa-radiation-alt me-2 pulse"></i>
+    <h2>ZONA DE ALTO RIESGO</h2>
+    <i class="fas fa-radiation-alt me-2 pulse"></i>
+  </div>
   
   <div class="sync-section">
+    <div class="warning-banner">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>ÁREA RESTRINGIDA - SOLO PERSONAL AUTORIZADO</span>
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+
     <h3>
-      <i class="fas fa-database me-2"></i>
+      <i class="fas fa-database me-2 glow"></i>
       Sincronización de Bases de Datos
     </h3>
     
-    <button 
-      class="btn btn-primary sync-button" 
-      (click)="mostrarConfirmacion(confirmModal)"
-      [disabled]="isSyncing">
-      <i class="fas fa-sync-alt me-2" [class.fa-spin]="isSyncing"></i>
-      {{ isSyncing ? 'Sincronizando...' : 'Sincronizar Bases de Datos' }}
-    </button>
+    <div class="danger-zone">
+      <div class="hazard-stripes"></div>
+      <button 
+        class="btn danger-button" 
+        (click)="mostrarConfirmacion(confirmModal)"
+        [disabled]="isSyncing">
+        <i class="fas fa-sync-alt me-2" [class.fa-spin]="isSyncing"></i>
+        {{ isSyncing ? 'PROCESO CRÍTICO EN CURSO...' : 'INICIAR PROCESO CRÍTICO' }}
+      </button>
+      <div class="hazard-stripes"></div>
+    </div>
 
     <!-- Template del modal -->
     <ng-template #confirmModal let-modal>
-      <div class="modal-header">
+      <div class="modal-header danger">
         <h4 class="modal-title">
-          <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-          Confirmar Sincronización
+          <i class="fas fa-skull-crossbones text-danger me-2 pulse"></i>
+          ¡ADVERTENCIA DE SEGURIDAD!
         </h4>
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
-      <div class="modal-body">
-        <p>¿Está seguro que desea iniciar la sincronización?</p>
-        <p class="text-warning">
-          <i class="fas fa-clock me-2"></i>
-          Este proceso puede cagar la base de datos.
-        </p>
+      <div class="modal-body danger">
+        <div class="warning-box">
+          <p class="danger-text">¿ESTÁ COMPLETAMENTE SEGURO DE CONTINUAR?</p>
+          <p class="danger-warning">
+            <i class="fas fa-bomb me-2"></i>
+            ESTE PROCESO PUEDE DESTRUIR LA BASE DE DATOS
+          </p>
+          <div class="danger-details">
+            <p><i class="fas fa-times-circle"></i> No hay vuelta atrás</p>
+            <p><i class="fas fa-times-circle"></i> Los datos pueden perderse</p>
+            <p><i class="fas fa-times-circle"></i> Proceso irreversible</p>
+          </div>
+        </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer danger">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
-          <i class="fas fa-times me-2"></i>
-          Cancelar
+          <i class="fas fa-door-open me-2"></i>
+          ABORTAR
         </button>
-        <button type="button" class="btn btn-primary" (click)="modal.close('confirm')">
-          <i class="fas fa-check me-2"></i>
-          Confirmar
+        <button type="button" class="btn btn-danger pulse-button" (click)="modal.close('confirm')">
+          <i class="fas fa-radiation-alt me-2"></i>
+          EJECUTAR DE TODAS FORMAS
         </button>
       </div>
     </ng-template>
 
-    <!-- Resultados de sincronización -->
-    <div *ngIf="syncResult" class="sync-results">
+    <!-- Resultados -->
+    <div *ngIf="syncResult" class="sync-results danger">
       <h4>
         <i class="fas fa-check-circle me-2"></i>
-        Resultados de la sincronización
+        Proceso Completado
       </h4>
-      <div class="alert alert-success">
+      <div class="alert alert-danger">
         <div *ngFor="let item of syncResult | keyvalue">
           <i class="fas fa-check me-2"></i>
           <strong>{{item.key}}:</strong> {{item.value}}
@@ -60,9 +78,8 @@
       </div>
     </div>
 
-    <!-- Mensaje de error -->
-    <div *ngIf="error" class="alert alert-danger">
-      <i class="fas fa-exclamation-triangle me-2"></i>
+    <div *ngIf="error" class="alert alert-danger error-box">
+      <i class="fas fa-radiation-alt me-2"></i>
       {{error}}
     </div>
   </div>

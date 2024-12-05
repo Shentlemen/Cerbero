@@ -27,6 +27,9 @@
       <li class="list-group-item">
         <i class="fas fa-location-arrow me-2"></i><strong>Dirección:</strong> {{ubicacion.direccion}}
       </li>
+      <li class="list-group-item">
+        <i class="fas fa-network-wired me-2"></i><strong>Subnet:</strong> {{ubicacion.subnet}}
+      </li>
     </ul>
     <div class="footer-buttons">
       <div>
@@ -91,6 +94,17 @@
             <div class="form-group">
               <label><i class="fas fa-location-arrow me-2"></i>Dirección</label>
               <input type="text" class="form-control" formControlName="direccion">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-network-wired me-2"></i>Subnet</label>
+              <select class="form-control" formControlName="subnet">
+                <option value="">Seleccione una subnet</option>
+                <option *ngFor="let subnet of subnets" [value]="subnet.id">
+                  {{subnet.name}} ({{subnet.netId}})
+                </option>
+              </select>
             </div>
           </div>
         </div>

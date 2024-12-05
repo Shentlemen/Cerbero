@@ -5,6 +5,7 @@ import { UbicacionEquipoOse } from '../models/ubicacion-equipo.model';
 import { UbicacionEquipoService } from '../services/ubicacion-equipo.service';
 import jsPDF from 'jspdf';
 import { Router } from '@angular/router';
+import { SubnetService, SubnetDTO } from '../services/subnet.service';
 
 @Component({
   selector: 'app-ubicacion-details',
@@ -18,9 +19,11 @@ export class UbicacionDetailsComponent implements OnInit {
   ubicacion: UbicacionEquipoOse | null = null;
   isEditing = false;
   ubicacionForm: FormGroup;
+  subnets: SubnetDTO[] = [];
 
   constructor(
     private ubicacionService: UbicacionEquipoService,
+    private subnetService: SubnetService,
     private fb: FormBuilder,
     private router: Router
   ) {
@@ -29,6 +32,7 @@ export class UbicacionDetailsComponent implements OnInit {
 
   ngOnInit() {
     this.loadUbicacion();
+    this.loadSubnets();
   }
 
   createForm(): FormGroup {
@@ -40,7 +44,8 @@ export class UbicacionDetailsComponent implements OnInit {
       interno: [''],
       departamento: ['', Validators.required],
       ciudad: ['', Validators.required],
-      direccion: ['', Validators.required]
+      direccion: ['', Validators.required],
+      subnet: ['', [Validators.required, Validators.min(1)]]
     });
   }
 
@@ -59,6 +64,17 @@ export class UbicacionDetailsComponent implements OnInit {
         } else {
           console.error('Error al cargar ubicación:', error);
         }
+      }
+    });
+  }
+
+  loadSubnets() {
+    this.subnetService.getSubnets().subscribe({
+      next: (subnets) => {
+        this.subnets = subnets;
+      },
+      error: (error) => {
+        console.error('Error al cargar subnets:', error);
       }
     });
   }
@@ -132,7 +148,8 @@ export class UbicacionDetailsComponent implements OnInit {
       ['Interno:', this.ubicacion.interno],
       ['Departamento:', this.ubicacion.departamento],
       ['Ciudad:', this.ubicacion.ciudad],
-      ['Dirección:', this.ubicacion.direccion]
+      ['Dirección:', this.ubicacion.direccion],
+      ['Subnet:', this.ubicacion.subnet.toString()]
     ];
 
     detalles.forEach(([label, value]) => {

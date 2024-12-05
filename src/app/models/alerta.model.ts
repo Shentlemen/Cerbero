@@ -10,4 +10,5 @@ export interface Alerta {
   confirmada: boolean;
   valorAnterior?: string;
   valorNuevo?: string;
+  new_hardware: number;
 }

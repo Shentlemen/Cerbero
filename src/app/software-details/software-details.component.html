@@ -1,0 +1,25 @@
+<div class="software-details">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Editor</th>
+          <th>Versión</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let software of softwareData">
+          <td>
+            <div class="software-name">
+              <i class="fas fa-cube"></i>
+              <span>{{ software.name }}</span>
+            </div>
+          </td>
+          <td>{{ software.publisher }}</td>
+          <td><span class="version-badge">{{ software.version }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div> 

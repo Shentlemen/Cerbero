@@ -121,3 +121,60 @@ html, body {
   max-width: 180px; /* Ajusta el tamaño máximo de la imagen */
   height: auto;
 }
+
+.menu-item {
+  color: #ecf0f1;
+}
+
+.menu-header {
+  padding: 15px 25px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.menu-header:hover {
+  background-color: #34495e;
+  color: #3498db;
+  border-left: 4px solid #3498db;
+}
+
+.menu-header i:first-child {
+  margin-right: 15px;
+  font-size: 20px;
+  width: 25px;
+  text-align: center;
+}
+
+.arrow-icon {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  font-size: 14px;
+}
+
+.arrow-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.submenu.show {
+  max-height: 200px;
+}
+
+.submenu-item {
+  padding: 12px 25px 12px 45px !important;
+  font-size: 14px !important;
+}
+
+.submenu-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}

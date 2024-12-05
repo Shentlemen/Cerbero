@@ -5,7 +5,6 @@ import { ActivatedRoute } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { CpuService } from '../services/cpu.service';
-import { DeviceService } from '../services/device.service';
 import { DriveService } from '../services/drive.service';
 import { MemoryService } from '../services/memory.service';
 import { MonitorService } from '../services/monitor.service';
@@ -18,7 +17,6 @@ import { AssetEditModalComponent } from '../asset-edit-modal/asset-edit-modal.co
 import { forkJoin } from 'rxjs';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
 import { CpuDetailsComponent } from '../cpu-details/cpu-details.component';
-import { DeviceDetailsComponent } from '../device-details/device-details.component';
 import { DriveDetailsComponent } from '../drive-details/drive-details.component';
 import { MemoryDetailsComponent } from '../memory-details/memory-details.component';
 import { MonitorDetailsComponent } from '../monitor-details/monitor-details.component';
@@ -26,6 +24,8 @@ import { StorageDetailsComponent } from '../storage-details/storage-details.comp
 import { VideoDetailsComponent } from '../video-details/video-details.component';
 import { UbicacionDetailsComponent } from '../ubicacion-details/ubicacion-details.component';
 import { UbicacionEquipoService } from '../services/ubicacion-equipo.service';
+import { SoftwareDetailsComponent } from '../software-details/software-details.component';
+import { SoftwareByHardwareService } from '../services/software-by-hardware.service';
 
 interface Asset {
   id: number;
@@ -60,27 +60,26 @@ interface Asset {
   imports: [
     CommonModule, 
     NgbModalModule, 
-    AssetEditModalComponent,
     BiosDetailsComponent,
     CpuDetailsComponent,
-    DeviceDetailsComponent,
     DriveDetailsComponent,
     MemoryDetailsComponent,
     MonitorDetailsComponent,
     StorageDetailsComponent,
     VideoDetailsComponent,
-    UbicacionDetailsComponent
+    UbicacionDetailsComponent,
+    SoftwareDetailsComponent
   ],
   providers: [
     BiosService,
     CpuService,
-    DeviceService,
     DriveService,
     MemoryService,
     MonitorService,
     StorageService,
     VideoService,
-    UbicacionEquipoService
+    UbicacionEquipoService,
+    SoftwareByHardwareService
   ],
   templateUrl: './assetdetails.component.html',
   styleUrls: ['./assetdetails.component.css']
@@ -95,7 +94,6 @@ export class AssetdetailsComponent implements OnInit {
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private cpuService: CpuService,
-    private deviceService: DeviceService,
     private driveService: DriveService,
     private memoryService: MemoryService,
     private monitorService: MonitorService,
@@ -103,7 +101,8 @@ export class AssetdetailsComponent implements OnInit {
     private videoService: VideoService,
     private location: Location,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private softwareByHardwareService: SoftwareByHardwareService
   ) { }
 
   ngOnInit(): void {
@@ -120,7 +119,7 @@ export class AssetdetailsComponent implements OnInit {
               console.log('Asset obtenido:', this.asset);
               
               // Pre-cargar datos de todas las pestañas
-              ['bios', 'cpu', 'device', 'drive', 'memory', 'monitor', 'storage', 'video'].forEach(tab => {
+              ['bios', 'cpu', 'drive', 'memory', 'monitor', 'storage', 'video'].forEach(tab => {
                 this.loadComponentData(tab);
               });
             },
@@ -163,9 +162,6 @@ export class AssetdetailsComponent implements OnInit {
       case 'cpu':
         service = this.cpuService;
         break;
-      case 'device':
-        service = this.deviceService;
-        break;
       case 'drive':
         service = this.driveService;
         break;
@@ -181,6 +177,9 @@ export class AssetdetailsComponent implements OnInit {
       case 'video':
         service = this.videoService;
         break;
+      case 'software':
+        service = this.softwareByHardwareService;
+        break;
       default:
         return;
     }
@@ -188,7 +187,7 @@ export class AssetdetailsComponent implements OnInit {
     if (service && service[method]) {
       service[method](this.asset.id).subscribe(
         (data: any) => {
-          if (component === 'bios' || component === 'cpu' || component === 'device') {
+          if (component === 'bios' || component === 'cpu') {
             // Asegurarse de que los datos sean un objeto único
             this.componentData[component] = Array.isArray(data) ? data[0] : data;
           } else {
@@ -227,9 +226,6 @@ export class AssetdetailsComponent implements OnInit {
         break;
       case 'cpu':
         tableData = this.prepareCpuData();
-        break;
-      case 'device':
-        tableData = this.prepareDeviceData();
         break;
       case 'drive':
         tableData = this.prepareDriveData();
@@ -350,22 +346,6 @@ export class AssetdetailsComponent implements OnInit {
     return data;
   }
 
-  prepareDeviceData(): any[][] {
-    if (!this.componentData.device) {
-      return [['No hay datos de dispositivo disponibles', '']];
-    }
-
-    const device = this.componentData.device;
-    return [
-      ['ID', device.id?.toString() || 'N/A'],
-      ['ID de Hardware', device.hardwareId?.toString() || 'N/A'],
-      ['Valor Entero', device.ivalue?.toString() || 'N/A'],
-      ['Nombre', device.name || 'N/A'],
-      ['Valor de Texto', device.tvalue || 'N/A'],
-      ['Comentarios', device.comments || 'N/A']
-    ];
-  }
-
   prepareDriveData(): any[][] {
     if (!this.componentData.drive || this.componentData.drive.length === 0) {
       return [['No hay datos de unidades disponibles', '']];
@@ -456,6 +436,18 @@ export class AssetdetailsComponent implements OnInit {
       ['Nombre', video.name || 'N/A'],
       ['Resolución', video.resolution || 'N/A']
     ]);
+  }
+
+  prepareSoftwareData(): any[][] {
+    if (!this.componentData.software || this.componentData.software.length === 0) {
+      return [['No hay software instalado disponible', '']];
+    }
+
+    return this.componentData.software.map((sw: any) => [
+      ['Nombre', sw.name || 'N/A'],
+      ['Editor', sw.publisher || 'N/A'],
+      ['Versión', sw.version || 'N/A']
+    ]).flat();
   }
 
   volver(): void {

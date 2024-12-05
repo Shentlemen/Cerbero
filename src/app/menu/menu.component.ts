@@ -8,4 +8,10 @@ import { RouterOutlet, RouterModule } from '@angular/router';
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.css']
 })
-export class MenuComponent {}
+export class MenuComponent {
+  isAssetsExpanded: boolean = false;
+
+  toggleAssetsMenu(): void {
+    this.isAssetsExpanded = !this.isAssetsExpanded;
+  }
+}

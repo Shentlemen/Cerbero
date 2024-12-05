@@ -1,4 +1,4 @@
-.software-container {
+.devices-container {
   padding: 2rem;
   background: #f8f9fa;
   min-height: 100vh;
@@ -53,7 +53,7 @@
   color: white;
 }
 
-.software-content {
+.devices-content {
   background: white;
   border-radius: 15px;
   padding: 1.5rem;
@@ -64,14 +64,14 @@
   overflow-x: auto;
 }
 
-.software-table {
+.devices-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   background-color: white;
 }
 
-.software-table th {
+.devices-table th {
   background: #f8f9fa;
   padding: 1rem;
   font-weight: 600;
@@ -85,24 +85,24 @@
   gap: 0.5rem;
 }
 
-.software-row {
+.device-row {
   transition: all 0.3s ease;
   background-color: white;
 }
 
-.software-row:hover {
+.device-row:hover {
   background: #f8f9fa;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.software-row td {
+.device-row td {
   padding: 1rem;
   border-bottom: 1px solid #edf2f7;
   color: #2c3e50;
 }
 
-.software-name {
+.device-name {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -110,17 +110,27 @@
   font-weight: 500;
 }
 
-.software-name i {
+.device-name i {
   font-size: 1.2rem;
   color: #3498db;
 }
 
-.publisher {
+.device-name span {
   color: #2c3e50;
   font-weight: 500;
 }
 
-.version-badge {
+.ip-address {
+  font-family: monospace;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.description {
+  color: #2c3e50;
+}
+
+.type-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
@@ -128,23 +138,4 @@
   color: #2e7d32;
   font-size: 13px;
   font-weight: 600;
-}
-
-.count-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  background-color: #e3f2fd;
-  color: #1976d2;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.count-badge:hover {
-  background-color: #1976d2;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }

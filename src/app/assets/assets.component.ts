@@ -6,6 +6,9 @@ import { RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { BiosService } from '../services/bios.service';
+import { forkJoin } from 'rxjs';
+import { SoftwareService } from '../services/software.service';
 
 @Component({
   selector: 'app-assets',
@@ -13,59 +16,7 @@ import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
   imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
-  encapsulation: ViewEncapsulation.None,
-  styles: [`
-    .pagination {
-      margin-top: 15px !important;
-      margin-bottom: 15px !important;
-      background-color: transparent !important;
-    }
-
-    .pagination .page-item .page-link {
-      color: #4a8bc5;
-      background-color: transparent;
-      border: none;
-      padding: 0.5rem 0.75rem;
-      margin: 0 2px;
-      border-radius: 50%;
-      transition: all 0.3s ease;
-      font-weight: 500;
-      font-size: 16px; /* Aumentado el tamaño de la fuente */
-      min-width: 2.2rem; /* Asegura un ancho mínimo */
-      min-height: 2.2rem; /* Asegura una altura mínima */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .pagination .page-item.active .page-link {
-      color: #ffffff;
-      background-color: #4a8bc5;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .pagination .page-item .page-link:hover,
-    .pagination .page-item .page-link:focus {
-      color: #ffffff;
-      background-color: #5a9bd5;
-      transform: scale(1.1);
-    }
-
-    .pagination .page-item:first-child .page-link,
-    .pagination .page-item:last-child .page-link {
-      background-color: #f0f7fa;
-      color: #4a8bc5;
-      border-radius: 20px;
-      padding: 0.5rem 0.75rem;
-      font-size: 18px; /* Ligeramente más grande para los símbolos de extremos */
-    }
-
-    .pagination .page-item:first-child .page-link:hover,
-    .pagination .page-item:last-child .page-link:hover {
-      background-color: #4a8bc5;
-      color: #ffffff;
-    }
-  `]
+  encapsulation: ViewEncapsulation.None
 })
 export class AssetsComponent implements OnInit {
 
@@ -83,9 +34,13 @@ export class AssetsComponent implements OnInit {
   laptopCount: number = 0; // Declaración de la propiedad
   otherCount: number = 0;  // Declaración de la propiedad
   miniPcCount: number = 0; // Añadir esta nueva propiedad
+  currentFilter: string = '';
+  originalAssetsList: any[] = []; // Para guardar la lista original
 
   constructor(
     private hardwareService: HardwareService,
+    private biosService: BiosService,
+    private softwareService: SoftwareService,
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute
@@ -94,8 +49,8 @@ export class AssetsComponent implements OnInit {
       name: [''],
       osName: [''],
       ipAddr: [''],
-      type: [''],
-      smanufacturer: [''] // Cambiado a 'smanufacturer'
+      biosType: [''],
+      smanufacturer: ['']
     });
   }
 
@@ -107,11 +62,19 @@ export class AssetsComponent implements OnInit {
       console.log('Filter Type:', filterType);
       console.log('Filter Value:', filterValue);
 
-      if (filterType && filterValue) {
-        const mappedValue = filterType === 'type' ? this.getTypeNumber(filterValue) : filterValue;
-        const formControlName = filterType === 'marca' ? 'smanufacturer' : filterType; // Cambiado a 'smanufacturer'
-        this.filterForm.patchValue({ [formControlName]: mappedValue });
-        console.log('Updated filter form:', this.filterForm.value); // Verifica que el formulario se actualiza correctamente
+      if (filterType === 'software') {
+        try {
+          const softwareInfo = JSON.parse(filterValue);
+          this.loadAssetsForSoftware(softwareInfo);
+        } catch (error) {
+          console.error('Error parsing software filter:', error);
+          this.loadAssets();
+        }
+      } else if (filterType && filterValue) {
+        const formControlName = filterType === 'marca' ? 'smanufacturer' : 
+                              filterType === 'type' ? 'biosType' : filterType;
+        
+        this.filterForm.patchValue({ [formControlName]: filterValue });
         this.aplicarFiltros();
       } else {
         this.loadAssets();
@@ -120,34 +83,128 @@ export class AssetsComponent implements OnInit {
   }
 
   loadAssets(): void {
-    this.hardwareService.getHardware().subscribe(
-      (data: any[]) => {
-        this.assetsList = data;
-        this.assetsFiltrados = [...this.assetsList];
+    forkJoin([
+      this.hardwareService.getHardware(),
+      this.biosService.getAllBios()
+    ]).subscribe({
+      next: ([hardwareList, biosList]) => {
+        const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
+        
+        this.assetsList = hardwareList.map(h => ({
+          ...h,
+          biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase()
+        }));
+        
+        this.originalAssetsList = this.assetsList;
+        this.assetsFiltrados = [...this.originalAssetsList];
         this.collectionSize = this.assetsFiltrados.length;
-        this.updateSummary(); // Asegúrate de actualizar el resumen aquí
+        this.updateSummary();
+
+        // Para debug
+        console.log('Tipos cargados:', [...new Set(this.assetsList.map(a => a.biosType))]);
       },
-      (error) => {
-        console.error('Error al cargar la lista de assets', error);
+      error: (error) => {
+        console.error('Error al cargar los assets:', error);
       }
-    );
+    });
+  }
+
+  loadAssetsForSoftware(softwareInfo: any): void {
+    // Primero obtenemos los IDs de hardware que tienen este software
+    this.softwareService.getHardwaresBySoftware(softwareInfo).subscribe({
+      next: (hardwareIds) => {
+        forkJoin([
+          this.hardwareService.getHardware(),
+          this.biosService.getAllBios()
+        ]).subscribe({
+          next: ([hardwareList, biosList]) => {
+            const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
+            
+            // Filtrar la lista de hardware por los IDs obtenidos
+            this.assetsList = hardwareList
+              .filter(h => hardwareIds.includes(h.id))
+              .map(h => ({
+                ...h,
+                biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase()
+              }));
+            
+            this.originalAssetsList = this.assetsList;
+            this.assetsFiltrados = [...this.originalAssetsList];
+            this.collectionSize = this.assetsFiltrados.length;
+            this.updateSummary();
+          },
+          error: (error) => {
+            console.error('Error al cargar los assets:', error);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener hardware IDs:', error);
+        this.loadAssets(); // Cargar todos los assets si hay error
+      }
+    });
   }
 
   aplicarFiltros(): void {
     const filtros = this.filterForm.value;
-    console.log('Applying filters:', filtros);
+    console.log('Aplicando filtros:', filtros);
 
-    // Traduce el tipo de asset a su valor numérico antes de enviar la consulta
-    if (filtros.type) {
-      filtros.type = this.getTypeNumber(filtros.type);
-    }
+    forkJoin({
+      hardware: this.hardwareService.getHardware(),
+      bios: this.biosService.getAllBios()
+    }).subscribe(
+      ({ hardware, bios }) => {
+        // Crear un mapa de BIOS por hardwareId
+        const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
+        
+        // Combinar datos de hardware con BIOS
+        let filteredAssets = hardware.map(h => {
+          const biosData = biosMap.get(h.id);
+          return {
+            ...h,
+            biosType: biosData?.type || 'DESCONOCIDO',
+            smanufacturer: biosData?.smanufacturer || 'DESCONOCIDO'
+          };
+        });
 
-    this.hardwareService.filterHardware(filtros).subscribe(
-      (data: any[]) => {
-        this.assetsFiltrados = data;
+        // Aplicar filtros
+        filteredAssets = filteredAssets.filter(asset => {
+          let cumpleFiltros = true;
+
+          if (filtros.name && asset.name) {
+            cumpleFiltros = cumpleFiltros && 
+              asset.name.toLowerCase().includes(filtros.name.toLowerCase());
+          }
+
+          if (filtros.osName && asset.osName) {
+            cumpleFiltros = cumpleFiltros && 
+              asset.osName.toLowerCase().includes(filtros.osName.toLowerCase());
+          }
+
+          if (filtros.ipAddr && asset.ipAddr) {
+            cumpleFiltros = cumpleFiltros && 
+              asset.ipAddr.toLowerCase().includes(filtros.ipAddr.toLowerCase());
+          }
+
+          if (filtros.biosType && asset.biosType) {
+            cumpleFiltros = cumpleFiltros && 
+              asset.biosType.toLowerCase().includes(filtros.biosType.toLowerCase());
+          }
+
+          if (filtros.smanufacturer && asset.smanufacturer) {
+            cumpleFiltros = cumpleFiltros && 
+              asset.smanufacturer.toLowerCase().includes(filtros.smanufacturer.toLowerCase());
+          }
+
+          return cumpleFiltros;
+        });
+
+        this.assetsFiltrados = filteredAssets;
         this.collectionSize = this.assetsFiltrados.length;
-        this.page = 1; // Reseteamos a la primera página cuando se aplican los filtros
-        this.updateSummary(); // Asegúrate de actualizar el resumen aquí
+        this.page = 1;
+        this.updateSummary();
+        
+        console.log('Assets filtrados:', this.assetsFiltrados);
       },
       (error) => {
         console.error('Error al aplicar filtros', error);
@@ -156,33 +213,27 @@ export class AssetsComponent implements OnInit {
   }
 
   updateSummary(): void {
-    const typeMap: Record<string, string> = { 
-      '0': 'PC', 
-      '2': 'MINI PC', 
-      '3': 'LAPTOP', 
-      '4': 'Tablet' 
-    };
-
     // Inicializa los contadores
     let totalAssets = 0;
     let pcCount = 0;
-    let miniPcCount = 0; // Nuevo contador
+    let miniPcCount = 0;
     let laptopCount = 0;
     let otherCount = 0;
 
     // Recorre la lista de assets filtrados y cuenta los tipos
     this.assetsFiltrados.forEach(asset => {
       totalAssets++;
-      const type = typeMap[asset.type] || 'Otros';
+      const type = (asset.biosType || '').toUpperCase();
 
       switch (type) {
-        case 'PC':
+        case 'DESKTOP':
           pcCount++;
           break;
         case 'MINI PC':
           miniPcCount++;
           break;
         case 'LAPTOP':
+        case 'NOTEBOOK':
           laptopCount++;
           break;
         default:
@@ -194,16 +245,16 @@ export class AssetsComponent implements OnInit {
     // Actualiza las variables del resumen
     this.totalAssets = totalAssets;
     this.pcCount = pcCount;
-    this.miniPcCount = miniPcCount; // Actualiza el nuevo contador
+    this.miniPcCount = miniPcCount;
     this.laptopCount = laptopCount;
     this.otherCount = otherCount;
 
     console.log('Resumen actualizado:', {
-      totalAssets: this.totalAssets,
-      pcCount: this.pcCount,
-      miniPcCount: this.miniPcCount,
-      laptopCount: this.laptopCount,
-      otherCount: this.otherCount
+      totalAssets,
+      pcCount,
+      miniPcCount,
+      laptopCount,
+      otherCount
     });
   }
 
@@ -231,19 +282,14 @@ export class AssetsComponent implements OnInit {
     }
 
     this.assetsFiltrados.sort((a, b) => {
-      let valueA = column === 'type' ? this.getHardwareType(a[column]) : a[column];
-      let valueB = column === 'type' ? this.getHardwareType(b[column]) : b[column];
+      let valueA = a[column];
+      let valueB = b[column];
 
-      if (column === 'name') {
-        // Extract numeric part for 'name' column
-        const numA = parseInt(valueA.replace(/\D/g, ''));
-        const numB = parseInt(valueB.replace(/\D/g, ''));
-        if (!isNaN(numA) && !isNaN(numB)) {
-          return this.sortDirection === 'asc' ? numA - numB : numB - numA;
-        }
+      if (column === 'biosType') {
+        valueA = valueA || 'DESCONOCIDO';
+        valueB = valueB || 'DESCONOCIDO';
       }
 
-      // For other columns, use the existing logic
       if (typeof valueA === 'string') valueA = valueA.toLowerCase();
       if (typeof valueB === 'string') valueB = valueB.toLowerCase();
 
@@ -257,42 +303,23 @@ export class AssetsComponent implements OnInit {
     });
   }
 
-  getPCCount(): number {
-    return this.assetsList.filter(asset => asset.type === '0' || asset.type === '2').length;
-  }
+  filterByType(type: string): void {
+    this.currentFilter = type;
+    if (this.currentFilter === '') {
+      this.assetsFiltrados = [...this.originalAssetsList];
+    } else {
+      this.assetsFiltrados = this.originalAssetsList.filter(asset => 
+        (asset.biosType || '').trim().toUpperCase() === this.currentFilter.trim().toUpperCase()
+      );
+    }
+    
+    this.collectionSize = this.assetsFiltrados.length;
+    this.page = 1;
+    this.updateSummary();
 
-  getLaptopCount(): number {
-    return this.assetsList.filter(asset => asset.type === '3').length;
-  }
-
-  getOtherCount(): number {
-    return this.assetsList.filter(asset => asset.type !== '0' && asset.type !== '2' && asset.type !== '3').length;
-  }
-
-  private typeMap: Record<string, string> = { 
-    '0': 'PC', 
-    '2': 'MINI PC', 
-    '3': 'LAPTOP', 
-    '4': 'Tablet' 
-  };
-
-  private getTypeNumber(typeString: string): string {
-    const typeMap: Record<string, string> = { 
-      'PC': '0', 
-      'MINI PC': '2', 
-      'LAPTOP': '3', 
-      'TABLET': '4'
-    };
-    return typeMap[typeString.toUpperCase()] || typeString;
-  }
-
-  getHardwareType(type: string): string {
-    const typeMap: Record<string, string> = {
-      '0': 'PC',
-      '2': 'MINI PC',
-      '3': 'LAPTOP',
-      '4': 'TABLET'
-    };
-    return typeMap[type] || 'Desconocido';
+    // Para debug
+    console.log('Filtro aplicado:', this.currentFilter);
+    console.log('Assets filtrados:', this.assetsFiltrados);
+    console.log('Tipos disponibles:', [...new Set(this.originalAssetsList.map(a => a.biosType))]);
   }
 }

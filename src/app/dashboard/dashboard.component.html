@@ -15,11 +15,17 @@
     <div class="chart-card" *ngIf="pieChartOptions2">
       <canvasjs-chart [options]="pieChartOptions2" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
     </div>
+    <div class="chart-card" *ngIf="lineChartOptions">
+      <canvasjs-chart [options]="lineChartOptions" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
+    </div>
   </div>
-  
+
   <div class="alerts-container">
     <div class="alerts-header">
-      <h2 class="alerts-title">Alertas Recientes</h2>
+      <h2 class="alerts-title">
+        <i class="fa-solid fa-bell"></i>
+        Alertas Recientes
+      </h2>
       <button 
         class="btn btn-check-changes" 
         (click)="checkHardwareChanges()" 
@@ -39,31 +45,62 @@
       <div *ngFor="let alert of alerts" class="alert-item">
         <div class="alert-content">
           <div class="alert-header">
-            <span class="alert-title">{{alert.pcName}}</span>
+            <div class="alert-main-info">
+              <span class="alert-title" (click)="navigateToAssetDetails(alert.hardwareId)">
+                {{alert.pcName}}
+              </span>
+              <div *ngIf="alert.memory" class="alert-tag-container memory">
+                <span class="alert-tag-description">
+                  <i class="fas fa-memory"></i> 
+                  Cambio en la memoria RAM
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+                </span>
+              </div>
+              <div *ngIf="alert.disk" class="alert-tag-container disk">
+                <span class="alert-tag-description">
+                  <i class="fas fa-hdd"></i> 
+                  Uso de disco detectado
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorNuevo }}%
+                </span>
+              </div>
+              <div *ngIf="alert.ip" class="alert-tag-container ip">
+                <span class="alert-tag-description">
+                  <i class="fas fa-network-wired"></i> 
+                  Cambio de dirección IP
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+                </span>
+              </div>
+              <div *ngIf="alert.video" class="alert-tag-container video">
+                <span class="alert-tag-description">
+                  <i class="fas fa-video"></i> 
+                  Cambio en tarjeta de video
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+                </span>
+              </div>
+              <div *ngIf="alert.new_hardware === 1" class="alert-tag-container new-hardware">
+                <span class="alert-tag-description">
+                  <i class="fas fa-plus-circle"></i> 
+                  Nuevo equipo detectado
+                </span>
+                <span class="alert-tag-value">
+                  en la red
+                </span>
+              </div>
+            </div>
             <span class="alert-date">{{alert.fecha | date:'dd/MM/yyyy HH:mm'}}</span>
-          </div>
-          <div class="alert-details">
-            <span *ngIf="alert.memory" class="alert-tag memory">
-              <i class="fas fa-memory"></i> 
-              Memoria: {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-            </span>
-            <span *ngIf="alert.disk" class="alert-tag disk">
-              <i class="fas fa-hdd"></i> 
-              Disco al {{ alert.valorNuevo }}%
-            </span>
-            <span *ngIf="alert.ip" class="alert-tag ip">
-              <i class="fas fa-network-wired"></i> 
-              IP: {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-            </span>
-            <span *ngIf="alert.video" class="alert-tag video">
-              <i class="fas fa-video"></i> 
-              Video: {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-            </span>
           </div>
         </div>
         <button 
           class="btn btn-sm btn-primary" 
-          (click)="confirmarAlerta(alert.id)"
+          (click)="confirmarAlerta(alert)"
           [disabled]="alert.confirmada">
           {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
         </button>

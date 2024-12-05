@@ -19,12 +19,7 @@
         </li>
         <li class="nav-item">
           <a class="nav-link" [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')" style="cursor: pointer;">
-            <i class="fas fa-processor me-2"></i>CPU
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'device'" (click)="changeTab('device')" style="cursor: pointer;">
-            <i class="fas fa-hdd me-2"></i>Dispositivo
+            <i class="fas fa-microchip me-2"></i>CPU
           </a>
         </li>
         <li class="nav-item">
@@ -55,6 +50,11 @@
         <li class="nav-item">
           <a class="nav-link" [class.active]="activeTab === 'ubicacion'" (click)="changeTab('ubicacion')" style="cursor: pointer;">
             <i class="fas fa-map-marker-alt me-2"></i>Ubicación
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'software'" (click)="changeTab('software')" style="cursor: pointer;">
+            <i class="fas fa-cube me-2"></i>Software
           </a>
         </li>
       </ul>
@@ -118,10 +118,6 @@
           <app-cpu-details *ngIf="componentData.cpu" [cpuData]="componentData.cpu"></app-cpu-details>
           <p *ngIf="!componentData.cpu">No hay datos de CPU disponibles.</p>
         </div>
-        <div *ngSwitchCase="'device'">
-          <app-device-details *ngIf="componentData.device" [deviceData]="componentData.device"></app-device-details>
-          <p *ngIf="!componentData.device">No hay datos de dispositivo disponibles.</p>
-        </div>
         <div *ngSwitchCase="'drive'">
           <app-drive-details *ngFor="let drive of componentData.drive" [driveData]="drive"></app-drive-details>
         </div>
@@ -145,6 +141,10 @@
         </div>
         <div *ngSwitchCase="'ubicacion'">
           <app-ubicacion-details [hardwareId]="asset.id"></app-ubicacion-details>
+        </div>
+        <div *ngSwitchCase="'software'">
+          <app-software-details *ngIf="componentData.software" [softwareData]="componentData.software"></app-software-details>
+          <p *ngIf="!componentData.software">No hay datos de software disponibles.</p>
         </div>
       </div>
     </div>

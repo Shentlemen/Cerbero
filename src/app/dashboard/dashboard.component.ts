@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
@@ -7,11 +7,12 @@ import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { AlertService, Alerta } from '../services/alert.service';
 import { finalize } from 'rxjs/operators';
+import { NetworkInfoService } from '../services/network-info.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, CanvasJSAngularChartsModule],
+  imports: [CommonModule, CanvasJSAngularChartsModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -19,6 +20,7 @@ export class DashboardComponent implements OnInit {
   pieChartOptions: any;
   barChartOptions: any;
   pieChartOptions2: any;
+  lineChartOptions: any;
   alerts: Alerta[] = [];
   isChecking: boolean = false;
 
@@ -33,21 +35,23 @@ export class DashboardComponent implements OnInit {
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private router: Router,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private networkInfoService: NetworkInfoService
   ) {}
 
   ngOnInit(): void {
     this.loadAlertas();
     forkJoin({
       hardware: this.hardwareService.getHardware(),
-      bios: this.biosService.getAllBios()
+      bios: this.biosService.getAllBios(),
+      network: this.networkInfoService.getNetworkInfo()
     }).subscribe(
-      ({ hardware, bios }) => {
-        console.log('Datos de hardware:', hardware);
-        console.log('Datos de BIOS:', bios);
-
-        // Preparar datos para las gráficas
-        const typeData = this.prepareHardwareTypeData(hardware);
+      ({ hardware, bios, network }) => {
+        // Crear un mapa de hardware a BIOS
+        const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
+        
+        // Preparar datos para las gráficas usando el tipo de BIOS
+        const typeData = this.prepareHardwareTypeData(hardware, biosMap);
         const brandData = this.prepareBrandData(bios);
         const osData = this.prepareChartData(hardware, 'osName');
 
@@ -62,7 +66,7 @@ export class DashboardComponent implements OnInit {
 
         this.pieChartOptions = {
           ...commonOptions,
-          title: { text: "Tipo" },
+          title: { text: "Terminales" },
           data: [{
             type: "pie",
             indexLabel: "{label}: {y}",
@@ -74,7 +78,7 @@ export class DashboardComponent implements OnInit {
 
         this.barChartOptions = {
           ...commonOptions,
-          title: { text: "Marca" },
+          title: { text: "Fabricante" },
           axisY: { title: "Cantidad" },
           data: [{
             type: "column",
@@ -94,6 +98,8 @@ export class DashboardComponent implements OnInit {
             click: this.onChartPointClick.bind(this, 'osName')
           }]
         };
+
+        this.prepareNetworkChart(network);
       },
       (error) => {
         console.error('Error al cargar los datos', error);
@@ -104,6 +110,7 @@ export class DashboardComponent implements OnInit {
   loadAlertas(): void {
     this.alertService.getAlertas().subscribe(
       (alertas: Alerta[]) => {
+        console.log('Alertas recibidas:', alertas);
         this.alerts = alertas;
       },
       error => {
@@ -112,9 +119,9 @@ export class DashboardComponent implements OnInit {
     );
   }
 
-  confirmarAlerta(alertaId: number): void {
-    this.alertService.confirmarAlerta(alertaId).subscribe({
-      next: (response: string) => {
+  confirmarAlerta(alerta: Alerta): void {
+    this.alertService.confirmarAlerta(alerta.id).subscribe({
+      next: (response) => {
         console.log('Alerta confirmada exitosamente:', response);
         this.loadAlertas();
       },
@@ -130,25 +137,15 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private prepareHardwareTypeData(hardware: any[]): any[] {
-    const typeMap: Record<string | number, string> = {
-      '0': 'PC',
-      '1': 'PC',
-      '2': 'MINI PC',
-      '3': 'LAPTOP',
-      '4': 'TABLET'
-    };
-
+  private prepareHardwareTypeData(hardware: any[], biosMap: Map<number, any>): any[] {
     const counts = hardware.reduce((acc: Record<string, number>, curr) => {
-      const typeValue = curr.type?.toString() || '0';
-      const type = typeMap[typeValue] || typeMap[parseInt(typeValue)] || 'Desconocido';
+      const biosData = biosMap.get(curr.id);
+      const type = biosData?.type?.toUpperCase() || 'DESCONOCIDO';
       
       if (!acc[type]) {
         acc[type] = 0;
       }
       acc[type]++;
-      
-      console.log('Tipo original:', curr.type, 'Tipo mapeado:', type, 'TypeValue:', typeValue);
       
       return acc;
     }, {});
@@ -204,5 +201,49 @@ export class DashboardComponent implements OnInit {
         // o un componente de toast/snackbar
       }
     });
+  }
+
+  navigateToAssetDetails(hardwareId: number): void {
+    console.log('Navegando a detalles del asset:', hardwareId);
+    this.router.navigate(['/menu/asset-details', hardwareId])
+      .then(() => {
+        console.log('Navegación completada');
+      })
+      .catch(err => {
+        console.error('Error en la navegación:', err);
+      });
+  }
+
+  private prepareNetworkChart(networkData: any[]): void {
+    const devicesByType = networkData.reduce((acc: Record<string, any[]>, device: any) => {
+      const type = device.type || 'Desconocido';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(device);
+      return acc;
+    }, {});
+
+    const dataPoints = Object.entries(devicesByType).map(([type, devices]) => ({
+      label: type,
+      y: devices.length,
+      indexLabel: `${type}: {y}`
+    }));
+
+    this.lineChartOptions = {
+      animationEnabled: true,
+      theme: "light2",
+      title: {
+        text: "Dispositivos"
+      },
+      data: [{
+        type: "pie",
+        startAngle: -90,
+        indexLabelFontSize: 16,
+        showInLegend: true,
+        toolTipContent: "{label}: <strong>{y}</strong>",
+        dataPoints: dataPoints
+      }]
+    };
   }
 }

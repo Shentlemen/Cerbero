@@ -8,4 +8,5 @@ export interface UbicacionEquipoOse {
     departamento: string;
     ciudad: string;
     direccion: string;
+    subnet: number;
 }

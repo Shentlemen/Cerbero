@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { ConfigService } from './config.service';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +30,7 @@ export class AlertService {
         ip: Boolean(alerta.ip),
         video: Boolean(alerta.video),
         confirmada: Boolean(alerta.confirmada),
+        new_hardware: alerta.newHardware ? 1 : 0,
         pcName: alerta.pcName || 'Desconocido'
       }))),
       catchError(error => {
@@ -40,25 +41,13 @@ export class AlertService {
   }
 
   confirmarAlerta(alertaId: number): Observable<any> {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-
     return this.http.put(
-      `${this.apiUrl}/confirmar/${alertaId}`, 
-      {}, 
-      { 
-        headers,
-        responseType: 'text'
-      }
+      `${this.apiUrl}/confirmar/${alertaId}`,
+      {}
     ).pipe(
       catchError(error => {
-        if (error.status === 404) {
-          console.error('Alerta no encontrada');
-        } else if (error.status === 400) {
-          console.error('Solicitud inválida');
-        }
-        throw error;
+        console.error('Error al confirmar alerta:', error);
+        return throwError(() => error);
       })
     );
   }
@@ -89,5 +78,6 @@ export interface Alerta {
   confirmada: boolean;
   valorAnterior?: string;
   valorNuevo?: string;
+  new_hardware: number;
 }
 

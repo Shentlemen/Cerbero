@@ -2,176 +2,217 @@
   padding: 2rem;
   max-width: 1000px;
   margin: 2rem auto;
-  background-color: #ffffff;
+  background-color: #1a1a1a;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+  border: 2px solid #ff0000;
 }
 
-h2 {
-  color: #2c3e50;
-  font-size: 2rem;
+.danger-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e9ecef;
+  padding: 1rem;
+  background: repeating-linear-gradient(
+    45deg,
+    #000,
+    #000 10px,
+    #ff0000 10px,
+    #ff0000 20px
+  );
+  border-radius: 8px;
+}
+
+.danger-header h2 {
+  color: #fff;
+  font-size: 2.5rem;
+  margin: 0;
+  text-shadow: 0 0 10px #ff0000;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.warning-banner {
+  background-color: #ff0000;
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  animation: pulse 2s infinite;
 }
 
 .sync-section {
-  background-color: #f8f9fa;
+  background-color: #2a2a2a;
   padding: 2.5rem;
   border-radius: 10px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 3px solid #ff0000;
+  position: relative;
 }
 
 h3 {
-  color: #3498db;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  font-weight: 500;
+  color: #ff0000;
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
 }
 
-.sync-button {
-  background-color: #3498db;
+.danger-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  position: relative;
+}
+
+.hazard-stripes {
+  height: 20px;
+  width: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    #ff0000,
+    #ff0000 10px,
+    #000 10px,
+    #000 20px
+  );
+}
+
+.danger-button {
+  background-color: #ff0000;
+  color: white;
   border: none;
-  padding: 1rem 2.5rem;
-  font-size: 1.1rem;
+  padding: 1.5rem 3rem;
+  font-size: 1.3rem;
+  font-weight: bold;
   border-radius: 8px;
   transition: all 0.3s ease;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 250px;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  letter-spacing: 2px;
 }
 
-.sync-button:hover:not(:disabled) {
-  background-color: #2980b9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.danger-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
 }
 
-.sync-button:disabled {
-  background-color: #95a5a6;
+.danger-button:disabled {
+  background-color: #666;
   cursor: not-allowed;
-  opacity: 0.8;
 }
 
-.sync-button i {
-  font-size: 1.2rem;
+/* Modal styles */
+.modal-header.danger {
+  background-color: #ff0000;
+  color: white;
+  border-bottom: 3px solid #000;
 }
 
-.sync-results {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin-top: 2rem;
+.modal-body.danger {
+  background-color: #1a1a1a;
+  color: white;
 }
 
-.sync-results h4 {
-  color: #2c3e50;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-.alert {
-  padding: 1.2rem;
-  border-radius: 8px;
-  margin-top: 1.5rem;
-  border: none;
-}
-
-.alert-success {
-  background-color: #d4edda;
-  color: #155724;
-  box-shadow: 0 2px 4px rgba(21, 87, 36, 0.1);
-}
-
-.alert-success strong {
-  color: #0f401a;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-  box-shadow: 0 2px 4px rgba(114, 28, 36, 0.1);
-}
-
-.alert div {
-  margin: 0.5rem 0;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.alert div:last-child {
-  border-bottom: none;
-}
-
-/* Agregar estilos para el modal */
-.modal-content {
-  background-color: #ffffff;
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.modal-header {
-  background-color: #f5f6f7;
-  border-bottom: 2px solid #e9ecef;
-  border-radius: 12px 12px 0 0;
-  padding: 1.5rem;
-}
-
-.modal-title {
-  color: #2c3e50;
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.modal-body {
+.warning-box {
+  border: 2px solid #ff0000;
   padding: 2rem;
-}
-
-.modal-body p {
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  color: #2c3e50;
-  font-weight: 500;
-}
-
-.modal-body p.text-warning {
-  color: #e67e22 !important;
-  font-weight: 600;
-}
-
-.text-warning {
-  color: #f39c12 !important;
-}
-
-.modal-footer {
-  border-top: 2px solid #e9ecef;
-  padding: 1.5rem;
-  border-radius: 0 0 12px 12px;
-}
-
-.modal-footer .btn {
-  padding: 0.8rem 1.5rem;
-  font-weight: 500;
   border-radius: 8px;
+  background-color: rgba(255, 0, 0, 0.1);
 }
 
-.modal-footer .btn-secondary {
-  background-color: #e9ecef;
-  border: none;
-  color: #2c3e50;
+.danger-text {
+  font-size: 1.5rem;
+  color: #ff0000;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
 }
 
-.modal-footer .btn-primary {
-  background-color: #3498db;
-  border: none;
+.danger-warning {
+  font-size: 1.2rem;
+  color: #ff0000;
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
-.modal-header .fa-exclamation-triangle {
-  color: #e67e22;
+.danger-details {
+  border-top: 1px solid #ff0000;
+  padding-top: 1rem;
+}
+
+.danger-details p {
+  color: #ff4444;
+  margin: 0.5rem 0;
+}
+
+.modal-footer.danger {
+  background-color: #1a1a1a;
+  border-top: 3px solid #ff0000;
+}
+
+.pulse-button {
+  animation: pulse 2s infinite;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.glow {
+  animation: glow 2s infinite;
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 5px #ff0000;
+  }
+  50% {
+    text-shadow: 0 0 20px #ff0000, 0 0 30px #ff0000;
+  }
+  100% {
+    text-shadow: 0 0 5px #ff0000;
+  }
+}
+
+.error-box {
+  background-color: #ff0000;
+  color: white;
+  border: 2px solid #fff;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .danger-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .danger-button {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+  }
 }

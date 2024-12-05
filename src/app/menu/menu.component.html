@@ -1,6 +1,11 @@
 <div class="sidenav">
-  <div class="logo-name-container"> <!-- Añade un contenedor para centrar la imagen -->
-    <img src="assets/logoName.png" alt="Logo de la App" class="logo-name">
+  <div class="logo-name-container">
+    <img 
+      src="assets/logoName.png" 
+      alt="Logo de la App" 
+      class="logo-name"
+      onerror="console.error('Error loading image:', this.src);"
+    >
   </div>
   <div class="logo-container">
     <div class="logo-wrapper">
@@ -13,10 +18,26 @@
     <i class="fas fa-tachometer-alt"></i>
     <span>PANEL DE CONTROL</span>
   </a>
-  <a routerLink="/menu/assets" routerLinkActive="active">
-    <i class="fas fa-laptop"></i>
-    <span>ACTIVOS</span>
-  </a>
+  
+  <!-- Menú expandible de Activos -->
+  <div class="menu-item" [class.expanded]="isAssetsExpanded">
+    <div class="menu-header" (click)="toggleAssetsMenu()">
+      <i class="fas fa-desktop"></i>
+      <span>ACTIVOS</span>
+      <i class="fas fa-chevron-down arrow-icon" [class.rotated]="isAssetsExpanded"></i>
+    </div>
+    <div class="submenu" [class.show]="isAssetsExpanded">
+      <a routerLink="/menu/assets" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-laptop"></i>
+        <span>TERMINALES</span>
+      </a>
+      <a routerLink="/menu/devices" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-hdd"></i>
+        <span>DISPOSITIVOS</span>
+      </a>
+    </div>
+  </div>
+
   <a routerLink="/menu/software" routerLinkActive="active">
     <i class="fas fa-code"></i>
     <span>SOFTWARE</span>
@@ -24,6 +45,10 @@
   <a routerLink="/menu/procurement" routerLinkActive="active">
     <i class="fas fa-shopping-cart"></i>
     <span>ADQUISICIONES</span>
+  </a>
+  <a routerLink="/menu/subnets" routerLinkActive="active">
+    <i class="fas fa-network-wired"></i>
+    <span>SUB REDES</span>
   </a>
   <a routerLink="/menu/settings" routerLinkActive="active">
     <i class="fas fa-cog"></i>
