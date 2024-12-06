@@ -23,17 +23,47 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
               {
                 "glob": "**/*",
-                "input": "src/assets/",
-                "output": "/assets/"
+                "input": "public/assets",
+                "output": "assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/leaflet/dist/images",
+                "output": "assets/images"
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              {
+                "input": "public/assets/css/bootstrap.min.css",
+                "bundleName": "bootstrap.min"
+              },
+              {
+                "input": "public/assets/css/all.min.css",
+                "bundleName": "all.min"
+              },
+              {
+                "input": "public/assets/css/roboto-fonts.css",
+                "bundleName": "roboto-fonts"
+              },
+              {
+                "input": "public/assets/css/open-sans.css",
+                "bundleName": "open-sans"
+              },
+              {
+                "input": "public/assets/css/material-icons.css",
+                "bundleName": "material-icons"
+              },
+              "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css"
             ],
-            "scripts": [],
+            "scripts": [
+              "node_modules/leaflet/dist/leaflet.js",
+              "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js"
+            ],
             "allowedCommonJsDependencies": [
               "canvg",
               "core-js",
@@ -42,7 +72,9 @@
               "jspdf-autotable",
               "@canvasjs/charts",
               "html2canvas",
-              "dompurify"
+              "dompurify",
+              "leaflet",
+              "leaflet.markercluster"
             ]
           },
           "configurations": {
@@ -74,49 +106,8 @@
             }
           },
           "defaultConfiguration": "production"
-        },
-        "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
-          "configurations": {
-            "production": {
-              "buildTarget": "Cerbero:build:production"
-            },
-            "development": {
-              "buildTarget": "Cerbero:build:development"
-            }
-          },
-          "defaultConfiguration": "development"
-        },
-        "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n"
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
-            "tsConfig": "tsconfig.spec.json",
-            "assets": [
-              "src/favicon.ico",
-              {
-                "glob": "**/*",
-                "input": "public/assets",
-                "output": "/assets"
-              }
-            ],
-            "styles": [
-              "@angular/material/prebuilt-themes/azure-blue.css",
-              "src/styles.css"
-            ],
-            "scripts": []
-          }
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }

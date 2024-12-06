@@ -47,27 +47,36 @@ export class DashboardComponent implements OnInit {
       network: this.networkInfoService.getNetworkInfo()
     }).subscribe(
       ({ hardware, bios, network }) => {
-        // Crear un mapa de hardware a BIOS
         const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
-        
-        // Preparar datos para las gráficas usando el tipo de BIOS
         const typeData = this.prepareHardwareTypeData(hardware, biosMap);
         const brandData = this.prepareBrandData(bios);
         const osData = this.prepareChartData(hardware, 'osName');
 
-        console.log('Datos preparados:', { typeData, brandData, osData });
-
-        // Configuración común para las gráficas
+        // Configuración común para todas las gráficas
         const commonOptions = {
           animationEnabled: true,
           exportEnabled: true,
           theme: "light2",
+          title: {
+            fontSize: 16,
+            padding: 10
+          },
+          data: [{
+            indexLabelFontSize: 11,
+            indexLabelMaxWidth: 100,
+            indexLabelWrap: true,
+            showInLegend: false,
+          }]
         };
 
         this.pieChartOptions = {
           ...commonOptions,
-          title: { text: "Terminales" },
+          title: { 
+            ...commonOptions.title,
+            text: "Terminales" 
+          },
           data: [{
+            ...commonOptions.data[0],
             type: "pie",
             indexLabel: "{label}: {y}",
             startAngle: -90,
@@ -78,9 +87,17 @@ export class DashboardComponent implements OnInit {
 
         this.barChartOptions = {
           ...commonOptions,
-          title: { text: "Fabricante" },
-          axisY: { title: "Cantidad" },
+          title: { 
+            ...commonOptions.title,
+            text: "Fabricante" 
+          },
+          axisY: { 
+            title: "Cantidad",
+            titleFontSize: 12,
+            labelFontSize: 11
+          },
           data: [{
+            ...commonOptions.data[0],
             type: "column",
             dataPoints: brandData,
             click: this.onChartPointClick.bind(this, 'marca')
@@ -89,8 +106,12 @@ export class DashboardComponent implements OnInit {
 
         this.pieChartOptions2 = {
           ...commonOptions,
-          title: { text: "S.O." },
+          title: { 
+            ...commonOptions.title,
+            text: "S.O." 
+          },
           data: [{
+            ...commonOptions.data[0],
             type: "pie",
             indexLabel: "{label}: {y}",
             startAngle: 0,
@@ -99,7 +120,7 @@ export class DashboardComponent implements OnInit {
           }]
         };
 
-        this.prepareNetworkChart(network);
+        this.prepareNetworkChart(network, commonOptions);
       },
       (error) => {
         console.error('Error al cargar los datos', error);
@@ -214,7 +235,7 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  private prepareNetworkChart(networkData: any[]): void {
+  private prepareNetworkChart(networkData: any[], commonOptions: any): void {
     const devicesByType = networkData.reduce((acc: Record<string, any[]>, device: any) => {
       const type = device.type || 'Desconocido';
       if (!acc[type]) {
@@ -231,17 +252,15 @@ export class DashboardComponent implements OnInit {
     }));
 
     this.lineChartOptions = {
-      animationEnabled: true,
-      theme: "light2",
+      ...commonOptions,
       title: {
+        ...commonOptions.title,
         text: "Dispositivos"
       },
       data: [{
+        ...commonOptions.data[0],
         type: "pie",
         startAngle: -90,
-        indexLabelFontSize: 16,
-        showInLegend: true,
-        toolTipContent: "{label}: <strong>{y}</strong>",
         dataPoints: dataPoints
       }]
     };

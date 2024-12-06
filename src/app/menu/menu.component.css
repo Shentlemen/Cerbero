@@ -178,3 +178,30 @@ html, body {
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* Estilos para logoName2.png */
+.logo-name-container {
+  padding: 10px;
+  text-align: center;
+}
+
+.logo-name {
+  width: 180px;  /* Reducido a un tamaño más razonable */
+  height: auto;
+  margin: 0 auto 20px;
+  display: block;
+  max-width: 90%; /* Asegura que se mantenga dentro del contenedor */
+}
+
+/* Estilos para el GIF */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+}
+
+.logo {
+  max-width: 100%;
+  height: auto;
+  width: 150px;  /* Manteniendo el tamaño original del GIF */
+}

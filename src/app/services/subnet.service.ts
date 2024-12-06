@@ -4,9 +4,15 @@ import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
 
 export interface SubnetDTO {
+  id: string;
   netId: string;
   name: string;
-  id: string;
+}
+
+export interface SubnetCoordinatesDTO {
+  netId: string;
+  latitud: number;
+  longitud: number;
 }
 
 @Injectable({
@@ -28,5 +34,21 @@ export class SubnetService {
 
   getSubnetById(id: string): Observable<SubnetDTO> {
     return this.http.get<SubnetDTO>(`${this.apiUrl}/${id}`);
+  }
+
+  getSubnetCoordinates(netId: string): Observable<SubnetCoordinatesDTO> {
+    return this.http.get<SubnetCoordinatesDTO>(`${this.apiUrl}/coordenadas/${netId}`);
+  }
+
+  getAllSubnetCoordinates(): Observable<SubnetCoordinatesDTO[]> {
+    return this.http.get<SubnetCoordinatesDTO[]>(`${this.apiUrl}/coordenadas`);
+  }
+
+  saveSubnetCoordinates(netId: string, latitud: number, longitud: number): Observable<SubnetCoordinatesDTO> {
+    return this.http.post<SubnetCoordinatesDTO>(`${this.apiUrl}/coordenadas`, { netId, latitud, longitud });
+  }
+
+  updateSubnetCoordinates(netId: string, latitud: number, longitud: number): Observable<SubnetCoordinatesDTO> {
+    return this.http.put<SubnetCoordinatesDTO>(`${this.apiUrl}/coordenadas/${netId}`, { latitud, longitud });
   }
 }

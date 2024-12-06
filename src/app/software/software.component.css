@@ -62,6 +62,23 @@
 
 .table-container {
   overflow-x: auto;
+  width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: #3498db #f8f9fa;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background-color: #3498db;
+  border-radius: 4px;
 }
 
 .software-table {
@@ -69,6 +86,36 @@
   border-collapse: separate;
   border-spacing: 0;
   background-color: white;
+  min-width: 800px;
+}
+
+.software-table th,
+.software-table td {
+  white-space: nowrap;
+}
+
+.software-table th:nth-child(1),
+.software-table td:nth-child(1) {
+  width: 40%;
+  min-width: 200px;
+}
+
+.software-table th:nth-child(2),
+.software-table td:nth-child(2) {
+  width: 25%;
+  min-width: 150px;
+}
+
+.software-table th:nth-child(3),
+.software-table td:nth-child(3) {
+  width: 20%;
+  min-width: 100px;
+}
+
+.software-table th:nth-child(4),
+.software-table td:nth-child(4) {
+  width: 15%;
+  min-width: 100px;
 }
 
 .software-table th {
@@ -147,4 +194,13 @@
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.software-name span,
+.publisher {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+  display: inline-block;
 }

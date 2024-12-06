@@ -16,4 +16,89 @@
 
 .table td {
   vertical-align: middle;
+}
+
+/* Estilos para el mapa */
+.map-container {
+  height: 500px;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Estilo para el título del mapa */
+h3 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+h3 i {
+  color: #85c1e9;
+}
+
+.coordinate-input {
+  width: 120px;
+  display: inline-block;
+}
+
+.btn-primary {
+  background-color: #85c1e9;
+  border-color: #85c1e9;
+}
+
+.btn-primary:hover {
+  background-color: #5dade2;
+  border-color: #5dade2;
+}
+
+.btn-primary:disabled {
+  background-color: #bdc3c7;
+  border-color: #bdc3c7;
+}
+
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+
+.marker-cluster div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.marker-cluster-small {
+  background-color: rgba(181, 226, 140, 0.6);
+}
+
+.marker-cluster-small div {
+  background-color: rgba(110, 204, 57, 0.6);
+}
+
+.marker-cluster-medium {
+  background-color: rgba(241, 211, 87, 0.6);
+}
+
+.marker-cluster-medium div {
+  background-color: rgba(240, 194, 12, 0.6);
+}
+
+.marker-cluster-large {
+  background-color: rgba(253, 156, 115, 0.6);
+}
+
+.marker-cluster-large div {
+  background-color: rgba(241, 128, 23, 0.6);
+}
+
+.marker-cluster span {
+  line-height: 30px;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 0 1px #000;
 } 

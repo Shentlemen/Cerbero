@@ -88,7 +88,9 @@
     inset 0 -2px 0 rgba(52,152,219,0.2);
   padding: 25px;
   flex: 1;
-  min-width: 300px;
+  min-width: unset;
+  width: 100%;
+  height: 100%;
   transition: all 0.3s ease;
 }
 
@@ -110,7 +112,7 @@
 
 .main-chart {
   flex: 2;
-  min-width: 400px;
+  min-width: unset;
 }
 
 @media (max-width: 1200px) {
@@ -503,9 +505,54 @@
 
 .charts-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   margin-bottom: 30px;
+}
+
+.chart-card {
+  width: 100%;
+  height: 100%;
+  min-width: unset;
+  padding: 15px;
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.05),
+    inset 0 -2px 0 rgba(52,152,219,0.2);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.1),
+    inset 0 -3px 0 rgba(52,152,219,0.4);
+}
+
+/* Ajustamos solo el tamaño de las gráficas según el ancho de la pantalla */
+@media (max-width: 1600px) {
+  canvasjs-chart {
+    width: 100% !important;
+    height: 250px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  canvasjs-chart {
+    width: 100% !important;
+    height: 200px !important;
+  }
+  .chart-card {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 992px) {
+  canvasjs-chart {
+    width: 100% !important;
+    height: 150px !important;
+  }
 }
 
 .alert-tag-container {
@@ -557,4 +604,11 @@
   background-color: #e8f5e9;
   color: #2e7d32;
   border: 1px solid #c8e6c9;
+}
+
+/* Asegurar que todas las gráficas tengan el mismo tamaño */
+canvasjs-chart {
+  width: 100% !important;
+  height: 300px !important;
+  display: block;
 }
