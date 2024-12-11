@@ -101,4 +101,52 @@ h3 i {
   color: #fff;
   font-weight: bold;
   text-shadow: 0 0 1px #000;
-} 
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 0.2s ease;
+  user-select: none; /* Evita la selección de texto */
+}
+
+.th-content:hover {
+  background-color: #e8f4ff;
+  border-radius: 4px;
+}
+
+.th-content span {
+  font-weight: 600;
+}
+
+.th-content i {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+th.active .th-content {
+  color: #3498db;
+  background-color: #e8f4ff;
+  border-radius: 4px;
+}
+
+th.active .th-content i {
+  color: #3498db;
+}
+
+.fa-sort-up {
+  transform: translateY(2px);
+}
+
+.fa-sort-down {
+  transform: translateY(-2px);
+}
+
+.th-content:active {
+  transform: scale(0.98);
+  background-color: #d1e8ff;
+}

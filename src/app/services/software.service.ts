@@ -4,10 +4,12 @@ import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
 
 export interface SoftwareDTO {
+  id: number;
   name: string;
   publisher: string;
   version: string;
   count: number;
+  hidden: boolean;
 }
 
 @Injectable({
@@ -34,5 +36,14 @@ export class SoftwareService {
       version: software.version
     });
     return this.http.get<number[]>(`${this.apiUrl}/hardwares?${params}`);
+  }
+
+  toggleSoftwareVisibility(software: SoftwareDTO, hidden: boolean): Observable<any> {
+    const params = new URLSearchParams({
+      name: software.name,
+      publisher: software.publisher,
+      version: software.version
+    });
+    return this.http.put(`${this.apiUrl}/visibility?${params}`, { hidden });
   }
 } 

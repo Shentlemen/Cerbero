@@ -14,6 +14,8 @@ import { HttpClientModule } from '@angular/common/http';
 export class SoftwareComponent implements OnInit {
   softwareList: SoftwareDTO[] = [];
   totalSoftware: number = 0;
+  showHidden: boolean = false;
+  filteredSoftwareList: SoftwareDTO[] = [];
 
   constructor(
     private softwareService: SoftwareService,
@@ -28,10 +30,37 @@ export class SoftwareComponent implements OnInit {
     this.softwareService.getSoftwareWithCounts().subscribe({
       next: (data) => {
         this.softwareList = data;
-        this.totalSoftware = data.length;
+        this.filterSoftwareList();
       },
       error: (error) => {
         console.error('Error al cargar el software:', error);
+      }
+    });
+  }
+
+  filterSoftwareList(): void {
+    this.filteredSoftwareList = this.softwareList.filter(software => 
+      this.showHidden || !software.hidden
+    );
+    this.totalSoftware = this.filteredSoftwareList.length;
+  }
+
+  toggleHiddenSoftware(): void {
+    this.showHidden = !this.showHidden;
+    this.filterSoftwareList();
+  }
+
+  toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
+    event.stopPropagation();
+    const newHiddenState = !software.hidden;
+    
+    this.softwareService.toggleSoftwareVisibility(software, newHiddenState).subscribe({
+      next: () => {
+        software.hidden = newHiddenState;
+        this.filterSoftwareList();
+      },
+      error: (error) => {
+        console.error('Error al cambiar visibilidad:', error);
       }
     });
   }

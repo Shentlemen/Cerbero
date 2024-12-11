@@ -7,6 +7,10 @@
           <i class="fas fa-boxes"></i>
           <span>{{totalSoftware}} Total</span>
         </div>
+        <button class="visibility-toggle" (click)="toggleHiddenSoftware()">
+          <i class="fas" [ngClass]="showHidden ? 'fa-eye-slash' : 'fa-eye'"></i>
+          {{ showHidden ? 'Ocultar software escondido' : 'Mostrar software escondido' }}
+        </button>
       </div>
     </div>
   </div>
@@ -36,14 +40,21 @@
                 <span>Equipos</span>
               </div>
             </th>
+            <th>
+              <div class="th-content">
+                <span>Acciones</span>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let software of softwareList" class="software-row">
+          <tr *ngFor="let software of filteredSoftwareList" 
+              class="software-row"
+              [class.hidden]="software.hidden">
             <td>
               <div class="software-name">
                 <i class="fas fa-cube"></i>
-                <span>{{ software.name }}</span>
+                <span [title]="software.name">{{ software.name }}</span>
               </div>
             </td>
             <td>
@@ -56,6 +67,13 @@
               <span class="count-badge" (click)="navigateToAssets(software)">
                 {{ software.count }}
               </span>
+            </td>
+            <td>
+              <button class="visibility-button" 
+                      (click)="toggleSoftwareVisibility(software, $event)"
+                      [title]="software.hidden ? 'Mostrar software' : 'Ocultar software'">
+                <i class="fas" [ngClass]="software.hidden ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
             </td>
           </tr>
         </tbody>

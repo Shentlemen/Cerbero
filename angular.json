@@ -25,37 +25,27 @@
               "src/favicon.ico",
               {
                 "glob": "**/*",
-                "input": "public/assets",
+                "input": "src/assets",
                 "output": "assets"
               },
               {
                 "glob": "**/*",
                 "input": "node_modules/leaflet/dist/images",
-                "output": "assets/images"
+                "output": "assets/leaflet/images"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/leaflet.markercluster/dist",
+                "output": "assets/leaflet.markercluster"
               }
             ],
             "styles": [
               "src/styles.css",
-              {
-                "input": "public/assets/css/bootstrap.min.css",
-                "bundleName": "bootstrap.min"
-              },
-              {
-                "input": "public/assets/css/all.min.css",
-                "bundleName": "all.min"
-              },
-              {
-                "input": "public/assets/css/roboto-fonts.css",
-                "bundleName": "roboto-fonts"
-              },
-              {
-                "input": "public/assets/css/open-sans.css",
-                "bundleName": "open-sans"
-              },
-              {
-                "input": "public/assets/css/material-icons.css",
-                "bundleName": "material-icons"
-              },
+              "src/assets/css/bootstrap.min.css",
+              "src/assets/css/all.min.css",
+              "src/assets/css/roboto-fonts.css",
+              "src/assets/css/open-sans.css",
+              "src/assets/css/material-icons.css",
               "node_modules/leaflet/dist/leaflet.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css"
@@ -106,8 +96,23 @@
             }
           },
           "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "Cerbero:build:production"
+            },
+            "development": {
+              "buildTarget": "Cerbero:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

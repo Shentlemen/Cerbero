@@ -36,6 +36,11 @@ export class AssetsComponent implements OnInit {
   miniPcCount: number = 0; // Añadir esta nueva propiedad
   currentFilter: string = '';
   originalAssetsList: any[] = []; // Para guardar la lista original
+  activeFilter: string | null = null;
+  filterValues: { [key: string]: string } = {
+    'name': '',
+    'ipAddr': ''
+  };
 
   constructor(
     private hardwareService: HardwareService,
@@ -321,5 +326,50 @@ export class AssetsComponent implements OnInit {
     console.log('Filtro aplicado:', this.currentFilter);
     console.log('Assets filtrados:', this.assetsFiltrados);
     console.log('Tipos disponibles:', [...new Set(this.originalAssetsList.map(a => a.biosType))]);
+  }
+
+  toggleFilter(column: string): void {
+    if (this.activeFilter === column) {
+      this.activeFilter = null;
+    } else {
+      this.activeFilter = column;
+    }
+    this.updateSummary();
+  }
+
+  applyColumnFilter(event: Event): void {
+    const value = (event.target as HTMLInputElement).value.toLowerCase();
+    if (this.activeFilter) {
+      this.filterValues[this.activeFilter] = value;
+    }
+    
+    if (!this.activeFilter || !value) {
+      this.assetsFiltrados = [...this.originalAssetsList];
+    } else {
+      this.assetsFiltrados = this.originalAssetsList.filter(asset => {
+        if (this.activeFilter === 'ipAddr') {
+          const ipValue = asset[this.activeFilter]?.toLowerCase() || '';
+          const searchOctets = value.split('.');
+          const ipOctets = ipValue.split('.');
+          
+          for (let i = 0; i < searchOctets.length; i++) {
+            if (searchOctets[i] && !ipOctets[i].startsWith(searchOctets[i])) {
+              return false;
+            }
+          }
+          return true;
+        } else {
+          const fieldValue = asset[this.activeFilter as string]?.toLowerCase() || '';
+          return fieldValue.includes(value);
+        }
+      });
+    }
+    this.updateSummary();
+  }
+
+  handleKeyPress(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      this.activeFilter = null;
+    }
   }
 }

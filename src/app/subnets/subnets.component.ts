@@ -1,7 +1,7 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SubnetService, SubnetDTO } from '../services/subnet.service';
+import { SubnetService, SubnetDTO, SubnetCoordinatesDTO } from '../services/subnet.service';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
@@ -12,6 +12,14 @@ interface ExtendedSubnet extends SubnetDTO {
   longitud?: number;
   hasCoordinates: boolean;
   editing: boolean;
+  [key: string]: any;
+}
+
+// Añade esta declaración después de las importaciones
+declare module 'leaflet' {
+  interface Map {
+    markerClusterGroup: () => L.MarkerClusterGroup;
+  }
 }
 
 @Component({
@@ -26,6 +34,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   private map: L.Map | undefined;
   private markerClusterGroup: L.MarkerClusterGroup | undefined;
   private lines: L.Polyline[] = [];
+  public sortColumn: string = '';
+  public sortDirection: 'asc' | 'desc' = 'asc';
 
   private montevideoCenter = {
     lat: -34.9011,
@@ -35,37 +45,56 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   constructor(private subnetService: SubnetService) {}
 
   ngOnInit(): void {
-    this.loadSubnets();
+    console.log('Iniciando componente SubnetsComponent');
+    this.loadResources()
+      .then(() => {
+        console.log('Recursos cargados, iniciando mapa...');
+        return this.initMap();
+      })
+      .then(() => {
+        console.log('Mapa iniciado, cargando subredes...');
+        this.loadSubnets();
+      })
+      .catch(error => {
+        console.error('Error en la inicialización:', error);
+      });
   }
 
   ngAfterViewInit(): void {
-    this.initMap();
+    // Ya no necesitamos inicializar aquí
   }
 
   private loadSubnets(): void {
-    forkJoin({
-      subnets: this.subnetService.getSubnets(),
-      coordinates: this.subnetService.getAllSubnetCoordinates()
-    }).subscribe({
-      next: ({ subnets, coordinates }) => {
-        const coordMap = new Map(coordinates.map(c => [c.netId, c]));
-        
-        this.subnets = subnets.map(subnet => {
-          const coords = coordMap.get(subnet.netId);
-          return {
-            ...subnet,
-            latitud: coords?.latitud,
-            longitud: coords?.longitud,
-            hasCoordinates: !!coords,
-            editing: false
-          };
+    console.log('Cargando subredes...');
+    this.subnetService.getSubnets().subscribe({
+      next: (subnets) => {
+        console.log('Subredes recibidas:', subnets);
+        forkJoin({
+          subnets: this.subnetService.getSubnets(),
+          coordinates: this.subnetService.getAllSubnetCoordinates()
+        }).subscribe({
+          next: ({ subnets, coordinates }: { subnets: SubnetDTO[], coordinates: SubnetCoordinatesDTO[] }) => {
+            const coordMap = new Map(coordinates.map(c => [c.netId, c]));
+            
+            this.subnets = subnets.map(subnet => {
+              const coords = coordMap.get(subnet.netId);
+              return {
+                ...subnet,
+                latitud: coords?.latitud,
+                longitud: coords?.longitud,
+                hasCoordinates: !!coords,
+                editing: false
+              };
+            });
+            
+            this.addMarkersToMap();
+          },
+          error: (error) => {
+            console.error('Error al cargar datos:', error);
+          }
         });
-        
-        this.addMarkersToMap();
       },
-      error: (error) => {
-        console.error('Error al cargar datos:', error);
-      }
+      error: (error) => console.error('Error cargando subredes:', error)
     });
   }
 
@@ -113,78 +142,96 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   cancelEdit(subnet: ExtendedSubnet): void {
     subnet.editing = false;
     // Recargar las coordenadas originales
-    this.subnetService.getSubnetCoordinates(subnet.netId).subscribe(coords => {
+    this.subnetService.getSubnetCoordinates(subnet.netId).subscribe((coords: SubnetCoordinatesDTO) => {
       subnet.latitud = coords.latitud;
       subnet.longitud = coords.longitud;
     });
   }
 
-  private initMap(): void {
-    // Configuración de iconos base
-    const iconRetinaUrl = 'assets/images/marker-icon-2x.png';
-    const iconUrl = 'assets/images/marker-icon.png';
-    const shadowUrl = 'assets/images/marker-shadow.png';
-    
-    L.Marker.prototype.options.icon = L.icon({
-      iconRetinaUrl,
-      iconUrl,
-      shadowUrl,
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      tooltipAnchor: [16, -28],
-      shadowSize: [41, 41]
-    });
+  private async loadResources(): Promise<void> {
+    return new Promise((resolve) => {
+      console.log('Iniciando carga de recursos locales...');
 
-    // Crear el mapa
-    this.map = L.map('map', {
-      center: [ -34.6037, -58.3816 ],
-      zoom: 12
-    });
-
-    // Intentar cargar el mapa con manejo de errores
-    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(this.map);
-
-    // Manejar errores de carga de tiles
-    tileLayer.on('tileerror', (error) => {
-      console.warn('Error loading tile:', error);
-      // Aquí podrías mostrar un mensaje al usuario o cargar un tile por defecto
-    });
-
-    this.markerClusterGroup = L.markerClusterGroup({
-      maxClusterRadius: 80,
-      iconCreateFunction: function(cluster) {
-        const count = cluster.getChildCount();
-        let size = 40;
-        let className = 'marker-cluster-';
-        
-        if (count < 10) {
-          className += 'small';
-        } else if (count < 100) {
-          className += 'medium';
-          size = 50;
-        } else {
-          className += 'large';
-          size = 60;
-        }
-        
-        return L.divIcon({
-          html: '<div><span>' + count + '</span></div>',
-          className: 'marker-cluster ' + className,
-          iconSize: new L.Point(size, size)
-        });
+      // Verificar si Leaflet ya está cargado
+      if (typeof L === 'undefined') {
+        console.error('Leaflet no está cargado. Verifica que el script esté incluido correctamente.');
+        return;
       }
-    });
 
-    this.map.addLayer(this.markerClusterGroup);
+      // Configurar la ruta de los iconos
+      L.Icon.Default.imagePath = './assets/leaflet/images/';
+      console.log('Ruta de iconos configurada:', L.Icon.Default.imagePath);
+
+      // Verificar si MarkerCluster ya está disponible
+      if (typeof L.markerClusterGroup === 'function') {
+        console.log('MarkerCluster ya está disponible');
+        resolve();
+        return;
+      }
+
+      // Si no está disponible, intentar cargarlo
+      const script = document.createElement('script');
+      script.src = './assets/leaflet.markercluster/leaflet.markercluster.js';
+      
+      script.onload = () => {
+        console.log('MarkerCluster cargado, verificando estado:', {
+          leaflet: typeof L,
+          markerCluster: typeof L?.markerClusterGroup,
+          hasFunction: typeof L?.markerClusterGroup === 'function'
+        });
+        
+        if (typeof L?.markerClusterGroup === 'function') {
+          console.log('MarkerCluster inicializado correctamente');
+          resolve();
+        } else {
+          console.error('Error: MarkerCluster no disponible después de cargar');
+          // Intentar obtener desde window
+          if (typeof window['L']?.markerClusterGroup === 'function') {
+            Object.defineProperty(L, 'markerClusterGroup', {
+              value: window['L'].markerClusterGroup.bind(window['L']),
+              configurable: true
+            });
+            console.log('MarkerCluster copiado desde window.L');
+            resolve();
+          }
+        }
+      };
+
+      script.onerror = (error) => {
+        console.error('Error cargando MarkerCluster:', error);
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  private async initMap(): Promise<void> {
+    if (!this.map) {
+      console.log('Creando mapa...');
+      this.map = L.map('map', {
+        center: [this.montevideoCenter.lat, this.montevideoCenter.lng],
+        zoom: 13
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(this.map);
+
+      this.markerClusterGroup = L.markerClusterGroup();
+      this.map.addLayer(this.markerClusterGroup);
+      console.log('Mapa creado correctamente');
+    }
   }
 
   private addMarkersToMap(): void {
+    if (!this.map || !this.markerClusterGroup) {
+      console.error('Mapa o markerClusterGroup no inicializados');
+      return;
+    }
+
     // Limpiar marcadores y líneas existentes
-    this.markerClusterGroup?.clearLayers();
+    this.markerClusterGroup.clearLayers();
     this.lines.forEach(line => line.remove());
     this.lines = [];
 
@@ -215,5 +262,44 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
       }).addTo(this.map!);
       this.lines.push(line);
     }
+  }
+
+  sortData(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+
+    this.subnets.sort((a, b) => {
+      let valueA = a[column];
+      let valueB = b[column];
+
+      // Manejo especial para IPs
+      if (column === 'ipAddr' || column === 'mask') {
+        valueA = valueA.split('.').map((num: string) => parseInt(num, 10));
+        valueB = valueB.split('.').map((num: string) => parseInt(num, 10));
+        
+        for (let i = 0; i < 4; i++) {
+          if (valueA[i] !== valueB[i]) {
+            return (valueA[i] - valueB[i]) * (this.sortDirection === 'asc' ? 1 : -1);
+          }
+        }
+        return 0;
+      }
+
+      // Manejo normal para otros campos
+      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+
+      if (valueA < valueB) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
   }
 } 
