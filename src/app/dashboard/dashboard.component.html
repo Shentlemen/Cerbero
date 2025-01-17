@@ -46,7 +46,12 @@
         <div class="alert-content">
           <div class="alert-header">
             <div class="alert-main-info">
-              <span class="alert-title" (click)="navigateToAssetDetails(alert.hardwareId)">
+              <span class="alert-title" 
+                    [class.new-hardware-alert]="alert.new_hardware === 1"
+                    (click)="alert.new_hardware === 1 ? showNewHardwareMessage() : navigateToAssetDetails(alert.hardwareId)"
+                    [attr.data-bs-toggle]="alert.new_hardware === 1 ? 'tooltip' : null"
+                    [attr.data-bs-title]="alert.new_hardware === 1 ? 'Este equipo aún no está registrado en la base de datos' : ''"
+                    [ngStyle]="{'cursor': alert.new_hardware === 1 ? 'help' : 'pointer'}">
                 {{alert.pcName}}
               </span>
               <div *ngIf="alert.memory" class="alert-tag-container memory">

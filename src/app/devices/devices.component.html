@@ -39,7 +39,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let device of devices" class="device-row">
+          <tr *ngFor="let device of devices" class="device-row" (click)="verDetallesDevice(device)">
             <td>
               <div class="device-name">
                 <i class="fas fa-network-wired"></i>

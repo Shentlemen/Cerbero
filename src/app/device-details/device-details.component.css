@@ -1,0 +1,82 @@
+.device-details-container {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.title-wrapper h1 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-wrapper h1 i {
+  color: #3498db;
+  font-size: 2rem;
+}
+
+.content-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.nav-tabs {
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.nav-tabs .nav-link {
+  color: #64748b;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+}
+
+.info-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.info-label {
+  width: 150px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.info-value {
+  color: #1e293b;
+  flex: 1;
+} 

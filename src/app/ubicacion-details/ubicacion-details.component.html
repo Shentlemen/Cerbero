@@ -98,13 +98,20 @@
           </div>
           <div class="col-md-6 mb-3">
             <div class="form-group">
-              <label><i class="fas fa-network-wired me-2"></i>Subnet</label>
-              <select class="form-control" formControlName="subnet">
+              <label for="subnet">Subnet *</label>
+              <select 
+                id="subnet" 
+                formControlName="subnet" 
+                class="form-control"
+                [class.is-invalid]="ubicacionForm.get('subnet')?.invalid && ubicacionForm.get('subnet')?.touched">
                 <option value="">Seleccione una subnet</option>
                 <option *ngFor="let subnet of subnets" [value]="subnet.id">
-                  {{subnet.name}} ({{subnet.netId}})
+                  {{subnet.name}}
                 </option>
               </select>
+              <div class="invalid-feedback" *ngIf="ubicacionForm.get('subnet')?.errors?.['required'] && ubicacionForm.get('subnet')?.touched">
+                La subnet es requerida
+              </div>
             </div>
           </div>
         </div>

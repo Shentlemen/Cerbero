@@ -29,8 +29,10 @@ export class SoftwareComponent implements OnInit {
   loadSoftware(): void {
     this.softwareService.getSoftwareWithCounts().subscribe({
       next: (data) => {
+        console.log('Software cargado:', data);
         this.softwareList = data;
         this.filterSoftwareList();
+        console.log('Software filtrado:', this.filteredSoftwareList);
       },
       error: (error) => {
         console.error('Error al cargar el software:', error);
@@ -42,6 +44,7 @@ export class SoftwareComponent implements OnInit {
     this.filteredSoftwareList = this.softwareList.filter(software => 
       this.showHidden || !software.hidden
     );
+    console.log(`Total software: ${this.softwareList.length}, Mostrados: ${this.filteredSoftwareList.length}, Ocultos: ${this.showHidden}`);
     this.totalSoftware = this.filteredSoftwareList.length;
   }
 
@@ -52,6 +55,18 @@ export class SoftwareComponent implements OnInit {
 
   toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
+    
+    if (!software?.id) {
+      console.error('Error: Software sin ID', software);
+      return;
+    }
+
+    console.log('Actualizando visibilidad del software:', { 
+      id: software.id, 
+      name: software.name, 
+      hidden: !software.hidden 
+    });
+
     const newHiddenState = !software.hidden;
     
     this.softwareService.toggleSoftwareVisibility(software, newHiddenState).subscribe({

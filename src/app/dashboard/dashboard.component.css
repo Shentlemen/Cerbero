@@ -612,3 +612,12 @@ canvasjs-chart {
   height: 300px !important;
   display: block;
 }
+
+.new-hardware-alert {
+  color: #666;
+  text-decoration: none !important;
+}
+
+.new-hardware-alert:hover {
+  color: #666;
+}

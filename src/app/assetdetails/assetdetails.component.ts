@@ -213,60 +213,122 @@ export class AssetdetailsComponent implements OnInit {
     }
 
     const doc = new jsPDF();
-    doc.text(`Detalles del Asset - ${this.activeTab.toUpperCase()}`, 14, 15);
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Configuración del encabezado
+    doc.setFillColor(65, 161, 175);
+    doc.rect(0, 0, pageWidth, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text(`${this.asset?.name || 'Asset'} - ${this.activeTab.toUpperCase()}`, pageWidth/2, 15, { align: 'center' });
+    
+    // Resetear color de texto para el contenido
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+
+    // Agregar fecha de generación
+    const fecha = new Date().toLocaleString();
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${fecha}`, 14, 35);
 
     let tableData: any[][] = [];
+    let title = '';
 
     switch (this.activeTab) {
       case 'general':
+        title = 'Información General';
         tableData = this.prepareGeneralData();
         break;
       case 'bios':
+        title = 'Información de BIOS';
         tableData = this.prepareBiosData();
         break;
       case 'cpu':
+        title = 'Información de CPU';
         tableData = this.prepareCpuData();
         break;
       case 'drive':
+        title = 'Información de Unidades';
         tableData = this.prepareDriveData();
         break;
       case 'memory':
+        title = 'Información de Memoria';
         tableData = this.prepareMemoryData();
         break;
       case 'monitor':
+        title = 'Información de Monitores';
         tableData = this.prepareMonitorData();
         break;
       case 'storage':
+        title = 'Información de Almacenamiento';
         tableData = this.prepareStorageData();
         break;
       case 'video':
+        title = 'Información de Video';
         tableData = this.prepareVideoData();
+        break;
+      case 'software':
+        title = 'Software Instalado';
+        tableData = this.prepareSoftwareData();
+        break;
+      case 'ubicacion':
+        title = 'Información de Ubicación';
+        tableData = this.prepareUbicacionData();
         break;
     }
 
-    console.log('Datos para el PDF:', tableData);
-
-    // Generar la tabla
+    // Generar la tabla con estilo mejorado
     autoTable(doc, {
-      startY: 30,
+      startY: 45,
       head: [['Característica', 'Valor']],
       body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [65, 161, 175], textColor: 255 },
-      alternateRowStyles: { fillColor: [240, 240, 240] },
-      margin: { top: 30 }
+      theme: 'grid',
+      headStyles: {
+        fillColor: [65, 161, 175],
+        textColor: 255,
+        fontSize: 12,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontSize: 11,
+        textColor: 50,
+        lineWidth: 0.1
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { top: 45, right: 14, bottom: 20, left: 14 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 'auto' },
+        1: { cellWidth: 'auto' }
+      },
+      didDrawPage: function(data) {
+        // Agregar pie de página en cada página
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 20,
+          doc.internal.pageSize.height - 10,
+          { align: 'right' }
+        );
+        
+        // Agregar línea divisoria en el pie de página
+        doc.setDrawColor(200);
+        doc.line(
+          14,
+          doc.internal.pageSize.height - 20,
+          pageWidth - 14,
+          doc.internal.pageSize.height - 20
+        );
+      }
     });
 
-    // Añadir pie de página
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(10);
-      doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-    }
-
-    // Guardar el PDF
-    doc.save(`Asset_${this.asset?.name}_${this.activeTab}.pdf`);
+    // Guardar el PDF con nombre descriptivo
+    const fileName = `${this.asset?.name || 'Asset'}_${this.activeTab}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
   }
 
   prepareGeneralData(): any[][] {
@@ -448,6 +510,25 @@ export class AssetdetailsComponent implements OnInit {
       ['Editor', sw.publisher || 'N/A'],
       ['Versión', sw.version || 'N/A']
     ]).flat();
+  }
+
+  prepareUbicacionData(): any[][] {
+    if (!this.componentData.ubicacion) {
+      return [['No hay datos de ubicación disponibles', '']];
+    }
+
+    const ubicacion = this.componentData.ubicacion;
+    return [
+      ['Gerencia', ubicacion.nombreGerencia || 'N/A'],
+      ['Oficina', ubicacion.nombreOficina || 'N/A'],
+      ['Piso', ubicacion.piso || 'N/A'],
+      ['Número de Puerta', ubicacion.numeroPuerta || 'N/A'],
+      ['Interno', ubicacion.interno || 'N/A'],
+      ['Departamento', ubicacion.departamento || 'N/A'],
+      ['Ciudad', ubicacion.ciudad || 'N/A'],
+      ['Dirección', ubicacion.direccion || 'N/A'],
+      ['Subnet', ubicacion.subnet?.toString() || 'N/A']
+    ];
   }
 
   volver(): void {

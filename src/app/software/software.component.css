@@ -61,10 +61,8 @@
 }
 
 .table-container {
-  overflow-x: auto;
   width: 100%;
-  scrollbar-width: thin;
-  scrollbar-color: #3498db #f8f9fa;
+  overflow-x: hidden;
 }
 
 .table-container::-webkit-scrollbar {
@@ -81,41 +79,68 @@
   border-radius: 4px;
 }
 
+.table-container::before,
+.table-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 20px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.table-container::before {
+  left: 0;
+  background: linear-gradient(to right, white, transparent);
+}
+
+.table-container::after {
+  right: 0;
+  background: linear-gradient(to left, white, transparent);
+}
+
 .software-table {
   width: 100%;
+  table-layout: fixed;
+  display: table;
   border-collapse: separate;
   border-spacing: 0;
   background-color: white;
-  min-width: 800px;
 }
 
 .software-table th,
 .software-table td {
   white-space: nowrap;
+  padding: 1rem 0.5rem;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .software-table th:nth-child(1),
 .software-table td:nth-child(1) {
-  width: 50%;
-  min-width: 300px;
+  width: 40%;
 }
 
 .software-table th:nth-child(2),
 .software-table td:nth-child(2) {
-  width: 20%;
-  min-width: 120px;
+  width: 25%;
 }
 
 .software-table th:nth-child(3),
 .software-table td:nth-child(3) {
   width: 15%;
-  min-width: 100px;
 }
 
 .software-table th:nth-child(4),
 .software-table td:nth-child(4) {
-  width: 15%;
-  min-width: 100px;
+  width: 12%;
+}
+
+.software-table th:nth-child(5),
+.software-table td:nth-child(5) {
+  width: 8%;
 }
 
 .software-table th {
@@ -152,12 +177,11 @@
 .software-name {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: #2c3e50;
-  font-weight: 500;
+  gap: 0.5rem;
 }
 
 .software-name i {
+  flex-shrink: 0;
   font-size: 1.2rem;
   color: #3498db;
 }
@@ -200,9 +224,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 500px;
-  display: inline-block;
-  position: relative;
+  min-width: 0;
+  flex: 1;
 }
 
 .software-name span:hover::after {
@@ -248,9 +271,11 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.35rem;
   border-radius: 4px;
   transition: all 0.2s ease;
+  min-width: 32px;
+  height: 32px;
 }
 
 .visibility-button:hover {
@@ -290,4 +315,41 @@
 .software-row.hidden .visibility-button:hover {
   background-color: #cbd5e1;
   color: #3498db;
+}
+
+@media screen and (max-width: 768px) {
+  .software-table th:nth-child(1),
+  .software-table td:nth-child(1) {
+    width: 35%;
+  }
+
+  .software-table th:nth-child(2),
+  .software-table td:nth-child(2) {
+    width: 25%;
+  }
+
+  .software-table th:nth-child(3),
+  .software-table td:nth-child(3) {
+    width: 20%;
+  }
+
+  .software-table th:nth-child(4),
+  .software-table td:nth-child(4) {
+    width: 10%;
+  }
+
+  .software-table th:nth-child(5),
+  .software-table td:nth-child(5) {
+    width: 10%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .software-name i {
+    font-size: 1rem;
+  }
+
+  .software-table td {
+    padding: 0.75rem 0.3rem;
+  }
 }

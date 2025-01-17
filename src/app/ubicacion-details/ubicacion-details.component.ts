@@ -45,7 +45,7 @@ export class UbicacionDetailsComponent implements OnInit {
       departamento: ['', Validators.required],
       ciudad: ['', Validators.required],
       direccion: ['', Validators.required],
-      subnet: ['', [Validators.required, Validators.min(1)]]
+      subnet: ['', Validators.required]
     });
   }
 
@@ -88,25 +88,44 @@ export class UbicacionDetailsComponent implements OnInit {
 
   onSubmit() {
     if (this.ubicacionForm.valid) {
+      const formValues = this.ubicacionForm.value;
+      
+      const subnetValue = formValues.subnet ? parseInt(formValues.subnet, 10) : null;
+      console.log('Valor de subnet antes de validación:', {
+        original: formValues.subnet,
+        parsed: subnetValue,
+        type: typeof formValues.subnet
+      });
+
       const ubicacionData: UbicacionEquipoOse = {
-        hardwareId: this.hardwareId,
-        ...this.ubicacionForm.value
+        hardwareId: Number(this.hardwareId),
+        nombreGerencia: formValues.nombreGerencia.trim(),
+        nombreOficina: formValues.nombreOficina.trim(),
+        piso: formValues.piso.trim(),
+        numeroPuerta: formValues.numeroPuerta.trim(),
+        interno: formValues.interno?.trim() || null,
+        departamento: formValues.departamento.trim(),
+        ciudad: formValues.ciudad.trim(),
+        direccion: formValues.direccion.trim(),
+        subnet: formValues.subnet
       };
 
-      const request = this.ubicacion
-        ? this.ubicacionService.updateUbicacion(this.hardwareId, ubicacionData)
-        : this.ubicacionService.createUbicacion(ubicacionData);
+      console.log('Datos a enviar:', ubicacionData);
 
-      request.subscribe({
+      this.ubicacionService.updateUbicacion(this.hardwareId, ubicacionData).subscribe({
         next: (response) => {
           this.ubicacion = response;
           this.isEditing = false;
-          // Aquí podrías mostrar un mensaje de éxito
         },
         error: (error) => {
           console.error('Error al guardar ubicación:', error);
-          // Aquí podrías mostrar un mensaje de error
         }
+      });
+    } else {
+      // Marcar todos los campos como touched para mostrar errores
+      Object.keys(this.ubicacionForm.controls).forEach(key => {
+        const control = this.ubicacionForm.get(key);
+        control?.markAsTouched();
       });
     }
   }

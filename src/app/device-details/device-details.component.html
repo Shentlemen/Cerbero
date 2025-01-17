@@ -1,0 +1,52 @@
+<div class="device-details-container">
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-network-wired"></i>
+        {{ device?.name || 'Dispositivo' }}
+      </h1>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
+      <li [ngbNavItem]="1">
+        <a ngbNavLink>General</a>
+        <ng-template ngbNavContent>
+          <div class="device-info">
+            <div class="info-row">
+              <span class="label">Nombre:</span>
+              <span class="value">{{device?.name}}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Tipo:</span>
+              <span class="value">{{device?.type}}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">IP:</span>
+              <span class="value">{{device?.ip}}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">MAC:</span>
+              <span class="value">{{device?.mac}}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Descripción:</span>
+              <span class="value">{{device?.description}}</span>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+      
+      <li [ngbNavItem]="2">
+        <a ngbNavLink>Ubicación</a>
+        <ng-template ngbNavContent>
+          <app-ubicacion-dispositivo [mac]="device?.mac ?? ''" [ubicacion]="ubicacion">
+          </app-ubicacion-dispositivo>
+        </ng-template>
+      </li>
+    </ul>
+
+    <div [ngbNavOutlet]="nav" class="mt-4"></div>
+  </div>
+</div> 

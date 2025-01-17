@@ -1,0 +1,76 @@
+<div class="ubicacion-container">
+  <div *ngIf="!isEditing && ubicacion">
+    <div class="info-row">
+      <span class="label">Gerencia:</span>
+      <span class="value">{{ubicacion.nombreGerencia}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Oficina:</span>
+      <span class="value">{{ubicacion.nombreOficina}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Piso:</span>
+      <span class="value">{{ubicacion.piso}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Número de Puerta:</span>
+      <span class="value">{{ubicacion.numeroPuerta}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Interno:</span>
+      <span class="value">{{ubicacion.interno || 'No especificado'}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Departamento:</span>
+      <span class="value">{{ubicacion.departamento}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Ciudad:</span>
+      <span class="value">{{ubicacion.ciudad}}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dirección:</span>
+      <span class="value">{{ubicacion.direccion}}</span>
+    </div>
+    <button class="btn btn-primary" (click)="toggleEdit()">Editar</button>
+  </div>
+
+  <form *ngIf="isEditing" [formGroup]="ubicacionForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label>Gerencia</label>
+      <input type="text" class="form-control" formControlName="nombreGerencia">
+    </div>
+    <div class="form-group">
+      <label>Oficina</label>
+      <input type="text" class="form-control" formControlName="nombreOficina">
+    </div>
+    <div class="form-group">
+      <label>Piso</label>
+      <input type="text" class="form-control" formControlName="piso">
+    </div>
+    <div class="form-group">
+      <label>Número de Puerta</label>
+      <input type="text" class="form-control" formControlName="numeroPuerta">
+    </div>
+    <div class="form-group">
+      <label>Interno</label>
+      <input type="text" class="form-control" formControlName="interno">
+    </div>
+    <div class="form-group">
+      <label>Departamento</label>
+      <input type="text" class="form-control" formControlName="departamento">
+    </div>
+    <div class="form-group">
+      <label>Ciudad</label>
+      <input type="text" class="form-control" formControlName="ciudad">
+    </div>
+    <div class="form-group">
+      <label>Dirección</label>
+      <input type="text" class="form-control" formControlName="direccion">
+    </div>
+    <div class="button-group">
+      <button type="submit" class="btn btn-primary" [disabled]="!ubicacionForm.valid">Guardar</button>
+      <button type="button" class="btn btn-secondary" (click)="toggleEdit()">Cancelar</button>
+    </div>
+  </form>
+</div> 

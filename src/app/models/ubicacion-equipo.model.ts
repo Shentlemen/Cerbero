@@ -4,9 +4,9 @@ export interface UbicacionEquipoOse {
     nombreOficina: string;
     piso: string;
     numeroPuerta: string;
-    interno: string;
+    interno?: string;
     departamento: string;
     ciudad: string;
     direccion: string;
-    subnet: number;
+    subnet: string;
 }

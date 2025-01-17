@@ -1,6 +1,7 @@
 export interface NetworkInfoDTO {
-  description: string;
+  mac: string;
+  name: string;
   type: string;
   ip: string;
-  name: string;
+  description: string;
 } 

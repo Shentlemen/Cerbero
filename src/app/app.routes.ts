@@ -5,6 +5,7 @@ import { SoftwareComponent } from './software/software.component';
 import { ProcurementComponent } from './procurement/procurement.component';
 import { SubnetsComponent } from './subnets/subnets.component';
 import { DevicesComponent } from './devices/devices.component';
+import { DeviceDetailsComponent } from './device-details/device-details.component';
 
 export const routes: Routes = [
   {
@@ -28,6 +29,7 @@ export const routes: Routes = [
       { path: 'procurement', component: ProcurementComponent },
       { path: 'subnets', component: SubnetsComponent },
       { path: 'devices', component: DevicesComponent },
+      { path: 'device-details/:mac', component: DeviceDetailsComponent }
     ]
   },
   {

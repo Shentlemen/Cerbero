@@ -290,13 +290,25 @@ export class AssetsComponent implements OnInit {
       let valueA = a[column];
       let valueB = b[column];
 
-      if (column === 'biosType') {
-        valueA = valueA || 'DESCONOCIDO';
-        valueB = valueB || 'DESCONOCIDO';
-      }
+      // Manejar valores nulos o undefined
+      if (valueA === null || valueA === undefined) valueA = '';
+      if (valueB === null || valueB === undefined) valueB = '';
 
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+      // Manejo especial para IPs
+      if (column === 'ipAddr') {
+        // Convertir IPs a números para comparación
+        const ipToNum = (ip: string) => {
+          if (!ip) return 0;
+          const parts = ip.split('.');
+          return parts.reduce((sum, part) => sum * 256 + parseInt(part, 10), 0);
+        };
+        valueA = ipToNum(valueA);
+        valueB = ipToNum(valueB);
+      } else {
+        // Para otros campos, convertir a minúsculas si son strings
+        if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+        if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+      }
 
       if (valueA < valueB) {
         return this.sortDirection === 'asc' ? -1 : 1;

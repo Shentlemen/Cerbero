@@ -28,10 +28,15 @@
       <table class="assets-table">
         <thead>
           <tr>
-            <th>
+            <th (click)="sortData('name')" [class.active]="sortColumn === 'name'">
               <div class="th-content">
                 <span>Equipo</span>
-                <i class="fas fa-search search-icon" (click)="toggleFilter('name')"></i>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'name' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'name' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'name'
+                }"></i>
+                <i class="fas fa-search search-icon" (click)="toggleFilter('name'); $event.stopPropagation()"></i>
                 <div *ngIf="activeFilter === 'name'" class="filter-input-container" (click)="$event.stopPropagation()">
                   <input 
                     type="text" 
@@ -54,10 +59,15 @@
                 }"></i>
               </div>
             </th>
-            <th>
+            <th (click)="sortData('ipAddr')" [class.active]="sortColumn === 'ipAddr'">
               <div class="th-content">
                 <span>IP</span>
-                <i class="fas fa-search search-icon" (click)="toggleFilter('ipAddr')"></i>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'ipAddr' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'ipAddr' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'ipAddr'
+                }"></i>
+                <i class="fas fa-search search-icon" (click)="toggleFilter('ipAddr'); $event.stopPropagation()"></i>
                 <div *ngIf="activeFilter === 'ipAddr'" class="filter-input-container" (click)="$event.stopPropagation()">
                   <input 
                     type="text" 

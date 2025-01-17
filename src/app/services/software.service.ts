@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
+import { tap } from 'rxjs/operators';
 
 export interface SoftwareDTO {
   id: number;
@@ -26,7 +27,9 @@ export class SoftwareService {
   }
 
   getSoftwareWithCounts(): Observable<SoftwareDTO[]> {
-    return this.http.get<SoftwareDTO[]>(`${this.apiUrl}/with-counts`);
+    return this.http.get<SoftwareDTO[]>(`${this.apiUrl}/with-counts`).pipe(
+      tap(software => console.log('Software cargado:', software))
+    );
   }
 
   getHardwaresBySoftware(software: SoftwareDTO): Observable<number[]> {
@@ -39,11 +42,6 @@ export class SoftwareService {
   }
 
   toggleSoftwareVisibility(software: SoftwareDTO, hidden: boolean): Observable<any> {
-    const params = new URLSearchParams({
-      name: software.name,
-      publisher: software.publisher,
-      version: software.version
-    });
-    return this.http.put(`${this.apiUrl}/visibility?${params}`, { hidden });
+    return this.http.put(`${this.apiUrl}/${software.id}/visibility`, { hidden });
   }
 } 

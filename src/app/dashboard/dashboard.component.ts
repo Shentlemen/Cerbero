@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
@@ -9,14 +9,20 @@ import { AlertService, Alerta } from '../services/alert.service';
 import { finalize } from 'rxjs/operators';
 import { NetworkInfoService } from '../services/network-info.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, CanvasJSAngularChartsModule, RouterModule],
+  imports: [
+    CommonModule,
+    CanvasJSAngularChartsModule, 
+    RouterModule
+  ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit {
   pieChartOptions: any;
   barChartOptions: any;
   pieChartOptions2: any;
@@ -128,6 +134,12 @@ export class DashboardComponent implements OnInit {
     );
   }
 
+  ngAfterViewInit() {
+    // Inicializar todos los tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    Array.from(tooltipTriggerList).forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+  }
+
   loadAlertas(): void {
     this.alertService.getAlertas().subscribe(
       (alertas: Alerta[]) => {
@@ -225,7 +237,6 @@ export class DashboardComponent implements OnInit {
   }
 
   navigateToAssetDetails(hardwareId: number): void {
-    console.log('Navegando a detalles del asset:', hardwareId);
     this.router.navigate(['/menu/asset-details', hardwareId])
       .then(() => {
         console.log('Navegación completada');
@@ -264,5 +275,9 @@ export class DashboardComponent implements OnInit {
         dataPoints: dataPoints
       }]
     };
+  }
+
+  showNewHardwareMessage(): void {
+    alert('Este equipo es nuevo y aún no está registrado en la base de datos. Por favor, confirme la alerta para procesar su registro.');
   }
 }
