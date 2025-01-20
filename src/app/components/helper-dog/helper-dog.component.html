@@ -1,0 +1,11 @@
+<div class="helper-dog" [class.active]="isActive">
+  <img 
+    src="assets/awoo-awoo-shoppe.gif" 
+    alt="Helper Dog" 
+    (click)="toggleHelper()"
+    [class.bounce]="isActive">
+  
+  <div class="speech-bubble" *ngIf="showMessage">
+    {{ currentTip?.message }}
+  </div>
+</div> 

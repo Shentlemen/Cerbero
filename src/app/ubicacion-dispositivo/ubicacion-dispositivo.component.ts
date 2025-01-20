@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UbicacionDispositivoService } from '../services/ubicacion-dispositivo.service';
 
 @Component({
@@ -82,6 +82,15 @@ export class UbicacionDispositivoComponent implements OnInit {
           console.error('Error al guardar ubicación:', error);
         }
       });
+    }
+  }
+
+  cancelarEdicion() {
+    this.isEditing = false;
+    if (this.ubicacion) {
+      this.ubicacionForm.patchValue(this.ubicacion);
+    } else {
+      this.ubicacionForm.reset();
     }
   }
 } 

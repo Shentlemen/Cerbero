@@ -1,76 +1,90 @@
 <div class="ubicacion-container">
+  <!-- Vista de información -->
   <div *ngIf="!isEditing && ubicacion">
-    <div class="info-row">
-      <span class="label">Gerencia:</span>
-      <span class="value">{{ubicacion.nombreGerencia}}</span>
+    <h4 class="text-secondary">Información de Ubicación</h4>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        <i class="fas fa-building me-2"></i><strong>Gerencia:</strong> {{ubicacion.nombreGerencia}}
+      </li>
+      <li class="list-group-item">
+        <i class="fas fa-door-open me-2"></i><strong>Oficina:</strong> {{ubicacion.nombreOficina}}
+      </li>
+      <li class="list-group-item">
+        <i class="fas fa-level-up-alt me-2"></i><strong>Piso:</strong> {{ubicacion.piso}}
+      </li>
+      <li class="list-group-item">
+        <i class="fas fa-door-closed me-2"></i><strong>Puerta:</strong> {{ubicacion.numeroPuerta}}
+      </li>
+      <li class="list-group-item">
+        <i class="fas fa-phone me-2"></i><strong>Interno:</strong> {{ubicacion.interno}}
+      </li>
+      <li class="list-group-item">
+        <i class="fas fa-map me-2"></i><strong>Departamento:</strong> {{ubicacion.departamento}}
+      </li>
+    </ul>
+    <div class="footer-buttons">
+      <div>
+        <button class="btn btn-primary" (click)="toggleEdit()">
+          <i class="fas fa-edit me-2"></i>Editar
+        </button>
+      </div>
     </div>
-    <div class="info-row">
-      <span class="label">Oficina:</span>
-      <span class="value">{{ubicacion.nombreOficina}}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Piso:</span>
-      <span class="value">{{ubicacion.piso}}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Número de Puerta:</span>
-      <span class="value">{{ubicacion.numeroPuerta}}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Interno:</span>
-      <span class="value">{{ubicacion.interno || 'No especificado'}}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Departamento:</span>
-      <span class="value">{{ubicacion.departamento}}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Ciudad:</span>
-      <span class="value">{{ubicacion.ciudad}}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Dirección:</span>
-      <span class="value">{{ubicacion.direccion}}</span>
-    </div>
-    <button class="btn btn-primary" (click)="toggleEdit()">Editar</button>
   </div>
 
-  <form *ngIf="isEditing" [formGroup]="ubicacionForm" (ngSubmit)="onSubmit()">
-    <div class="form-group">
-      <label>Gerencia</label>
-      <input type="text" class="form-control" formControlName="nombreGerencia">
+  <!-- Vista de formulario -->
+  <div *ngIf="isEditing || !ubicacion" class="ubicacion-form card">
+    <div class="card-header">
+      <h3><i class="fas fa-edit me-2"></i>{{ubicacion ? 'Editar' : 'Crear'}} Ubicación</h3>
     </div>
-    <div class="form-group">
-      <label>Oficina</label>
-      <input type="text" class="form-control" formControlName="nombreOficina">
+    <div class="card-body">
+      <form [formGroup]="ubicacionForm" (ngSubmit)="onSubmit()">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-building me-2"></i>Gerencia</label>
+              <input type="text" class="form-control" formControlName="nombreGerencia">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-door-open me-2"></i>Oficina</label>
+              <input type="text" class="form-control" formControlName="nombreOficina">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-level-up-alt me-2"></i>Piso</label>
+              <input type="text" class="form-control" formControlName="piso">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-door-closed me-2"></i>Número de Puerta</label>
+              <input type="text" class="form-control" formControlName="numeroPuerta">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-phone me-2"></i>Interno</label>
+              <input type="text" class="form-control" formControlName="interno">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <label><i class="fas fa-map me-2"></i>Departamento</label>
+              <input type="text" class="form-control" formControlName="departamento">
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="ubicacionForm.invalid">
+            <i class="fas fa-save me-2"></i>{{ubicacion ? 'Actualizar' : 'Crear'}}
+          </button>
+          <button type="button" class="btn btn-secondary ms-2" (click)="cancelarEdicion()">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+        </div>
+      </form>
     </div>
-    <div class="form-group">
-      <label>Piso</label>
-      <input type="text" class="form-control" formControlName="piso">
-    </div>
-    <div class="form-group">
-      <label>Número de Puerta</label>
-      <input type="text" class="form-control" formControlName="numeroPuerta">
-    </div>
-    <div class="form-group">
-      <label>Interno</label>
-      <input type="text" class="form-control" formControlName="interno">
-    </div>
-    <div class="form-group">
-      <label>Departamento</label>
-      <input type="text" class="form-control" formControlName="departamento">
-    </div>
-    <div class="form-group">
-      <label>Ciudad</label>
-      <input type="text" class="form-control" formControlName="ciudad">
-    </div>
-    <div class="form-group">
-      <label>Dirección</label>
-      <input type="text" class="form-control" formControlName="direccion">
-    </div>
-    <div class="button-group">
-      <button type="submit" class="btn btn-primary" [disabled]="!ubicacionForm.valid">Guardar</button>
-      <button type="button" class="btn btn-secondary" (click)="toggleEdit()">Cancelar</button>
-    </div>
-  </form>
+  </div>
 </div> 

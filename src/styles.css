@@ -80,3 +80,31 @@ ngb-pagination {
 .pagination .page-item .page-link {
   padding: 6px 12px !important;
 }
+
+/* Definición de las fuentes Orbitron */
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/assets/webfonts/Orbitron-Regular.woff2') format('woff2'),
+       url('/assets/webfonts/Orbitron-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/assets/webfonts/Orbitron-SemiBold.woff2') format('woff2'),
+       url('/assets/webfonts/Orbitron-SemiBold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/assets/webfonts/Orbitron-ExtraBold.woff2') format('woff2'),
+       url('/assets/webfonts/Orbitron-ExtraBold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}

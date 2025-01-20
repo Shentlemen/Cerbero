@@ -7,7 +7,10 @@ import { HttpClientModule } from '@angular/common/http';
 @Component({
   selector: 'app-software',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [
+    CommonModule,
+    HttpClientModule
+  ],
   templateUrl: './software.component.html',
   styleUrls: ['./software.component.css']
 })

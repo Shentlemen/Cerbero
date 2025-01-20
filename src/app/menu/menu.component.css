@@ -12,39 +12,49 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100%; /* Asegura que ocupe toda la altura de la ventana */
-  background-color: #2c3e50; /* Color de fondo más suave */
+  height: 100%;
+  background-color: #2c3e50;
   padding-top: 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
-.sidenav a {
-  padding: 15px 25px; /* Reducido el padding */
+.sidenav a, .menu-header {
+  padding: 18px 25px;
   text-decoration: none;
-  font-size: 16px; /* Reducido el tamaño de la fuente */
+  font-size: 16px;
   color: #ecf0f1;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
   border-left: 4px solid transparent;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 400;
+  letter-spacing: 1.2px;
+  margin: 4px 0;
+}
+
+.sidenav a span, .menu-header span {
+  margin-left: 15px;
+  font-size: 15px;
 }
 
 .sidenav a:last-child {
   border-bottom: none;
 }
 
-.sidenav a:hover, .sidenav a.active {
+.sidenav a:hover, .sidenav a.active, .menu-header:hover {
   background-color: #34495e;
   color: #3498db;
   border-left: 4px solid #3498db;
+  box-shadow: inset 0 0 10px rgba(52, 152, 219, 0.1);
 }
 
-.sidenav a i {
-  margin-right: 15px;
-  font-size: 20px; /* Ajustado el tamaño del icono */
-  width: 25px;
+.sidenav a i, .menu-header i {
+  font-size: 18px;
+  width: 20px;
   text-align: center;
+  color: #3498db;
 }
 
 /* Ajuste correspondiente en el margen del contenido principal */
@@ -85,9 +95,10 @@ html, body {
 }
 
 /* Efecto hover para los íconos */
-.sidenav a:hover i {
-  transform: scale(1.2);
+.sidenav a:hover i, .menu-header:hover i {
+  transform: scale(1.1);
   transition: transform 0.3s ease;
+  color: #3498db;
 }
 
 /* Media query para pantallas más pequeñas */
@@ -96,11 +107,11 @@ html, body {
     width: 70px;
   }
   
-  .sidenav a span {
+  .sidenav a span, .menu-header span {
     display: none;
   }
   
-  .sidenav a i {
+  .sidenav a i, .menu-header i {
     margin-right: 0;
   }
   
@@ -111,6 +122,14 @@ html, body {
   .logo {
     width: 50px;
     height: 50px;
+  }
+  
+  .submenu-item {
+    padding-left: 25px !important;
+  }
+  
+  .arrow-icon {
+    display: none;
   }
 }
 
@@ -151,7 +170,7 @@ html, body {
 .arrow-icon {
   margin-left: auto;
   transition: transform 0.3s ease;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .arrow-icon.rotated {
@@ -166,11 +185,13 @@ html, body {
 
 .submenu.show {
   max-height: 200px;
+  transition: max-height 0.3s ease-in;
 }
 
 .submenu-item {
   padding: 12px 25px 12px 45px !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
+  background-color: rgba(52, 73, 94, 0.3);
 }
 
 .submenu-item.disabled {
@@ -205,3 +226,58 @@ html, body {
   height: auto;
   width: 150px;  /* Manteniendo el tamaño original del GIF */
 }
+
+.title-container {
+  padding: 5px 15px;
+  position: relative;
+  background: linear-gradient(145deg, #2c3e50, #2a3a4a);
+  border-radius: 10px;
+  margin: 2px 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.app-title {
+  margin: 0;
+  text-align: center;
+  position: relative;
+  padding: 5px 0;
+  user-select: none;  /* Previene la selección de texto */
+  -webkit-user-select: none;  /* Para Safari */
+  -moz-user-select: none;     /* Para Firefox */
+  -ms-user-select: none;      /* Para IE/Edge */
+}
+
+.k-letter {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #3498db;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-family: 'Orbitron', sans-serif;
+  cursor: default;  /* Cambia el cursor a default */
+}
+
+.title-text {
+  font-size: 2rem;
+  font-weight: 500;
+  color: #ffffff;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  cursor: default;  /* Cambia el cursor a default */
+}
+
+.title-decoration {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #3498db, transparent);
+}
+
+/* Eliminamos la keyframe animation que no usaremos más */
+@keyframes decorationSlide {
+  /* Eliminada la animación */
+}
+
+/* Asegúrate de importar la fuente Orbitron en tu index.html */

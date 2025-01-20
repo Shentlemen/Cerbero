@@ -92,6 +92,8 @@
   width: 100%;
   height: 100%;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .chart-card:hover {
@@ -508,6 +510,8 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   margin-bottom: 30px;
+  position: relative;
+  z-index: 1;
 }
 
 .chart-card {
@@ -620,4 +624,19 @@ canvasjs-chart {
 
 .new-hardware-alert:hover {
   color: #666;
+}
+
+canvasjs-chart {
+  position: static !important;
+  z-index: auto !important;
+}
+
+.chart-card {
+  position: relative;
+  z-index: 1;
+}
+
+.charts-container {
+  position: relative;
+  z-index: 1;
 }
