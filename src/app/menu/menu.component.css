@@ -8,35 +8,56 @@ html, body {
 
 /* Estilo para la barra lateral */
 .sidenav {
-  width: 250px;
+  width: 220px;
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
   background-color: #2c3e50;
-  padding-top: 20px;
+  padding-top: 15px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  overflow-y: auto; /* Permite scroll vertical */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
+/* Estilo para la barra de scroll */
+.sidenav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidenav::-webkit-scrollbar-track {
+  background: #2c3e50;
+}
+
+.sidenav::-webkit-scrollbar-thumb {
+  background: #3498db;
+  border-radius: 3px;
+}
+
+.sidenav::-webkit-scrollbar-thumb:hover {
+  background: #2980b9;
 }
 
 .sidenav a, .menu-header {
-  padding: 18px 25px;
+  padding: 12px 20px;
   text-decoration: none;
-  font-size: 16px;
+  font-size: 14px;
   color: #ecf0f1;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
-  border-left: 4px solid transparent;
+  border-left: 3px solid transparent;
   font-family: 'Orbitron', sans-serif;
   font-weight: 400;
-  letter-spacing: 1.2px;
-  margin: 4px 0;
+  letter-spacing: 1px;
+  margin: 2px 0;
+  gap: 10px;
 }
 
 .sidenav a span, .menu-header span {
-  margin-left: 15px;
-  font-size: 15px;
+  margin-left: 0;
+  font-size: 13px;
 }
 
 .sidenav a:last-child {
@@ -51,16 +72,16 @@ html, body {
 }
 
 .sidenav a i, .menu-header i {
-  font-size: 18px;
-  width: 20px;
+  font-size: 16px;
+  width: 16px;
   text-align: center;
   color: #3498db;
 }
 
 /* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
-  margin-left: 250px; /* Ajustado para coincidir con el nuevo ancho de la barra lateral */
-  padding: 20px;
+  margin-left: 220px;
+  padding: 15px;
   min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
   background-color: #ecf0f1;
 }
@@ -88,8 +109,8 @@ html, body {
 
 /* Estilo para la imagen del logo */
 .logo {
-  width: 80%;
-  max-width: 160px;
+  width: 120px;
+  max-width: 100%;
   height: auto;
   border-radius: 10px; /* Bordes redondeados para la imagen */
 }
@@ -135,23 +156,36 @@ html, body {
 
 .logo-name {
   display: block; /* Asegura que la imagen se comporte como un bloque */
-  margin: 0 auto 20px; /* Centra la imagen horizontalmente y añade un margen inferior */
-  width: 90%; /* Aumenta el tamaño de la imagen */
-  max-width: 180px; /* Ajusta el tamaño máximo de la imagen */
+  margin: 0 auto 15px; /* Centra la imagen horizontalmente y añade un margen inferior */
+  width: 150px; /* Reducido de 180px */
   height: auto;
 }
 
 .menu-item {
+  width: 100%;
   color: #ecf0f1;
 }
 
 .menu-header {
-  padding: 15px 25px;
+  padding: 18px 25px;
   display: flex;
   align-items: center;
+  gap: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
   border-left: 4px solid transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.menu-header span {
+  margin-left: 0;
+  flex: 1;
+}
+
+.arrow-icon {
+  margin-left: auto;
+  font-size: 12px;
 }
 
 .menu-header:hover {
@@ -161,16 +195,10 @@ html, body {
 }
 
 .menu-header i:first-child {
-  margin-right: 15px;
-  font-size: 20px;
-  width: 25px;
+  margin-right: 0;
+  font-size: 18px;
+  width: 20px;
   text-align: center;
-}
-
-.arrow-icon {
-  margin-left: auto;
-  transition: transform 0.3s ease;
-  font-size: 12px;
 }
 
 .arrow-icon.rotated {
@@ -184,14 +212,23 @@ html, body {
 }
 
 .submenu.show {
-  max-height: 200px;
+  max-height: 500px; /* Aumentado de 200px a 500px para mostrar todos los elementos */
   transition: max-height 0.3s ease-in;
 }
 
 .submenu-item {
-  padding: 12px 25px 12px 45px !important;
-  font-size: 12px !important;
+  padding: 8px 20px 8px 35px !important;
+  font-size: 11px !important;
   background-color: rgba(52, 73, 94, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.submenu-item i {
+  font-size: 13px !important;
+  width: 14px;
+  text-align: center;
 }
 
 .submenu-item.disabled {
@@ -207,9 +244,9 @@ html, body {
 }
 
 .logo-name {
-  width: 180px;  /* Reducido a un tamaño más razonable */
+  width: 150px;
   height: auto;
-  margin: 0 auto 20px;
+  margin: 0 auto 15px;
   display: block;
   max-width: 90%; /* Asegura que se mantenga dentro del contenedor */
 }
@@ -224,7 +261,7 @@ html, body {
 .logo {
   max-width: 100%;
   height: auto;
-  width: 150px;  /* Manteniendo el tamaño original del GIF */
+  width: 120px;
 }
 
 .title-container {
@@ -248,7 +285,7 @@ html, body {
 }
 
 .k-letter {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   font-weight: 600;
   color: #3498db;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
@@ -257,7 +294,7 @@ html, body {
 }
 
 .title-text {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 500;
   color: #ffffff;
   font-family: 'Orbitron', sans-serif;
@@ -281,3 +318,13 @@ html, body {
 }
 
 /* Asegúrate de importar la fuente Orbitron en tu index.html */
+
+/* Eliminar los estilos antiguos de arrow-icon y agregar los nuevos */
+.menu-indicator {
+  display: none;
+}
+
+/* Asegurar que el texto ocupe el espacio completo */
+.menu-header span {
+  flex: 1;
+}

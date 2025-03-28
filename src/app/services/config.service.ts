@@ -5,7 +5,11 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ConfigService {
-  private apiUrl = environment.apiUrl;
+  public apiUrl: string;
+
+  constructor() {
+    this.apiUrl = environment.apiUrl;
+  }
 
   getApiUrl(): string {
     return this.apiUrl || '';

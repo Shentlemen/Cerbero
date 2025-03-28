@@ -1,0 +1,213 @@
+<div class="generic-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-industry"></i> Gestión de Proveedores</h1>
+        <div class="stats-pills">
+          <div class="stat-pill total">
+            <i class="fas fa-industry"></i>
+            <span>{{collectionSize}} Total</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(proveedorModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Proveedor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando proveedores...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idProveedores')" [class.active]="sortColumn === 'idProveedores'">
+                <div class="th-content">
+                  <span>ID</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idProveedores' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idProveedores' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idProveedores'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
+                <div class="th-content">
+                  <span>Nombre</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'nombre'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('nombreComercial')" [class.active]="sortColumn === 'nombreComercial'">
+                <div class="th-content">
+                  <span>Nombre Comercial</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'nombreComercial' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'nombreComercial' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'nombreComercial'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('RUC')" [class.active]="sortColumn === 'RUC'">
+                <div class="th-content">
+                  <span>RUC</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'RUC' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'RUC' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'RUC'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('correoContacto')" [class.active]="sortColumn === 'correoContacto'">
+                <div class="th-content">
+                  <span>Correo</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'correoContacto' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'correoContacto' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'correoContacto'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('telefonoContacto')" [class.active]="sortColumn === 'telefonoContacto'">
+                <div class="th-content">
+                  <span>Teléfono</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'telefonoContacto' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'telefonoContacto' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'telefonoContacto'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
+              <td>{{proveedor.idProveedores}}</td>
+              <td>{{proveedor.nombre}}</td>
+              <td>{{proveedor.nombreComercial}}</td>
+              <td>{{proveedor.RUC}}</td>
+              <td>{{proveedor.correoContacto}}</td>
+              <td>{{proveedor.telefonoContacto}}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(proveedorModal, proveedor)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarProveedor(proveedor.idProveedores)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedProveedores.length === 0" class="alert alert-info">
+        No hay proveedores registrados.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar proveedor -->
+<ng-template #proveedorModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Proveedor</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="proveedorForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-control" formControlName="nombre">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('nombre')?.errors?.['required'] && proveedorForm.get('nombre')?.touched">
+            El nombre es requerido.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Nombre Comercial</label>
+          <input type="text" class="form-control" formControlName="nombreComercial">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('nombreComercial')?.errors?.['required'] && proveedorForm.get('nombreComercial')?.touched">
+            El nombre comercial es requerido.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-3">
+          <label class="form-label">RUC</label>
+          <input type="text" class="form-control" formControlName="RUC" maxlength="11">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('RUC')?.errors?.['required'] && proveedorForm.get('RUC')?.touched">
+            El RUC es requerido.
+          </div>
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('RUC')?.errors?.['pattern'] && proveedorForm.get('RUC')?.touched">
+            El RUC debe tener 11 dígitos numéricos.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Correo de Contacto</label>
+          <input type="email" class="form-control" formControlName="correoContacto">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['required'] && proveedorForm.get('correoContacto')?.touched">
+            El correo es requerido.
+          </div>
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['email'] && proveedorForm.get('correoContacto')?.touched">
+            Ingrese un correo válido.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Teléfono de Contacto</label>
+          <input type="tel" class="form-control" formControlName="telefonoContacto" maxlength="9">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['required'] && proveedorForm.get('telefonoContacto')?.touched">
+            El teléfono es requerido.
+          </div>
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['pattern'] && proveedorForm.get('telefonoContacto')?.touched">
+            El teléfono debe tener 9 dígitos numéricos.
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarProveedor()" [disabled]="!proveedorForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template> 

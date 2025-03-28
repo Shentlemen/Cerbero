@@ -6,11 +6,12 @@ import { UbicacionEquipoService } from '../services/ubicacion-equipo.service';
 import jsPDF from 'jspdf';
 import { Router } from '@angular/router';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
+import { HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-ubicacion-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
   templateUrl: './ubicacion-details.component.html',
   styleUrls: ['./ubicacion-details.component.css']
 })

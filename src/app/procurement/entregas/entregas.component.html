@@ -1,0 +1,189 @@
+<div class="entregas-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-truck"></i> Gestión de Entregas</h1>
+        <div class="stats-pills">
+          <div class="stat-pill total">
+            <i class="fas fa-boxes"></i>
+            <span>{{collectionSize}} Total</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(entregaModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nueva Entrega
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="entregas-content">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando entregas...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="entregas-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idEntrega')" [class.active]="sortColumn === 'idEntrega'">
+                <div class="th-content">
+                  <span>ID</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idEntrega' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idEntrega' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idEntrega'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('idItem')" [class.active]="sortColumn === 'idItem'">
+                <div class="th-content">
+                  <span>ID Item</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idItem' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idItem' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idItem'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('cantidad')" [class.active]="sortColumn === 'cantidad'">
+                <div class="th-content">
+                  <span>Cantidad</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'cantidad' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'cantidad' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'cantidad'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
+                <div class="th-content">
+                  <span>Descripción</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'descripcion'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('fechaPedido')" [class.active]="sortColumn === 'fechaPedido'">
+                <div class="th-content">
+                  <span>Fecha Pedido</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'fechaPedido' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'fechaPedido' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'fechaPedido'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('fechaFinGarantia')" [class.active]="sortColumn === 'fechaFinGarantia'">
+                <div class="th-content">
+                  <span>Fecha Fin Garantía</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'fechaFinGarantia' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'fechaFinGarantia' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'fechaFinGarantia'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entrega of pagedEntregas" class="entrega-row">
+              <td>{{entrega.idEntrega}}</td>
+              <td>{{entrega.idItem}}</td>
+              <td>{{entrega.cantidad}}</td>
+              <td>{{entrega.descripcion}}</td>
+              <td>{{formatearFecha(entrega.fechaPedido)}}</td>
+              <td>{{formatearFecha(entrega.fechaFinGarantia)}}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(entregaModal, entrega)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarEntrega(entrega.idEntrega)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedEntregas.length === 0" class="alert alert-info">
+        No hay entregas registradas.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar entrega -->
+<ng-template #entregaModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nueva'}} Entrega</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="entregaForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID Item</label>
+          <input type="number" class="form-control" formControlName="idItem">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Cantidad</label>
+          <input type="number" class="form-control" formControlName="cantidad" min="1">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-control" formControlName="descripcion">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Fecha Pedido</label>
+          <input type="date" class="form-control" formControlName="fechaPedido">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Fecha Fin Garantía</label>
+          <input type="date" class="form-control" formControlName="fechaFinGarantia">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarEntrega()" [disabled]="!entregaForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template> 

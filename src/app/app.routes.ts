@@ -27,9 +27,21 @@ export const routes: Routes = [
       { path: 'software', component: SoftwareComponent },
       { path: 'settings', loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },
       { path: 'procurement', component: ProcurementComponent },
+      { path: 'procurement/activos', loadComponent: () => import('./procurement/activos/activos.component').then(m => m.ActivosComponent) },
+      { path: 'procurement/activos/:id', loadComponent: () => import('./procurement/activos/activo-details/activo-details.component').then(m => m.ActivoDetailsComponent) },
+      { path: 'procurement/compras', loadComponent: () => import('./procurement/compras/compras.component').then(m => m.ComprasComponent) },
+      { path: 'procurement/entregas', loadComponent: () => import('./procurement/entregas/entregas.component').then(m => m.EntregasComponent) },
+      { path: 'procurement/lotes', loadComponent: () => import('./procurement/lotes/lotes.component').then(m => m.LotesComponent) },
+      { path: 'procurement/proveedores', loadComponent: () => import('./procurement/proveedores/proveedores.component').then(m => m.ProveedoresComponent) },
+      { path: 'procurement/usuarios', loadComponent: () => import('./procurement/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
+      { path: 'procurement/tipos-activo', loadComponent: () => import('./procurement/tipos-activo/tipos-activo.component').then(m => m.TiposActivoComponent) },
+      { path: 'procurement/tipos-compra', loadComponent: () => import('./procurement/tipos-compra/tipos-compra.component').then(m => m.TiposCompraComponent) },
+      { path: 'procurement/servicios-garantia', loadComponent: () => import('./procurement/servicios-garantia/servicios-garantia.component').then(m => m.ServiciosGarantiaComponent) },
       { path: 'subnets', component: SubnetsComponent },
       { path: 'devices', component: DevicesComponent },
-      { path: 'device-details/:mac', component: DeviceDetailsComponent }
+      { path: 'device-details/:mac', component: DeviceDetailsComponent },
+      { path: 'locations', loadComponent: () => import('./locations/locations.component')
+        .then(m => m.LocationsComponent) }
     ]
   },
   {

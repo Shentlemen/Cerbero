@@ -1,0 +1,117 @@
+<div class="tipos-compra-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-file-invoice-dollar"></i> Tipos de Compra</h1>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(tipoCompraModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Tipo de Compra
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tipos-compra-content">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando tipos de compra...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="tipos-compra-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idTipoCompra')" [class.active]="sortColumn === 'idTipoCompra'">
+                <div class="th-content">
+                  <span>ID</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idTipoCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idTipoCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idTipoCompra'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
+                <div class="th-content">
+                  <span>Descripción</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'descripcion'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tipoCompra of pagedTiposCompra" class="tipo-compra-row">
+              <td>{{tipoCompra.idTipoCompra}}</td>
+              <td>{{tipoCompra.descripcion}}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(tipoCompraModal, tipoCompra)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarTipoCompra(tipoCompra.idTipoCompra)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedTiposCompra.length === 0" class="alert alert-info">
+        No hay tipos de compra registrados.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar tipo de compra -->
+<ng-template #tipoCompraModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Tipo de Compra</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="tipoCompraForm">
+      <div class="row">
+        <div class="col-12 mb-3">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-control" formControlName="descripcion" placeholder="Ingrese la descripción del tipo de compra">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarTipoCompra()" [disabled]="!tipoCompraForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template> 

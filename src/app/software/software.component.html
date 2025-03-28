@@ -1,23 +1,24 @@
-<div class="software-container">
+<div class="generic-container">
   <div class="header-section">
-    <div class="title-wrapper">
-      <h1><i class="fas fa-code"></i> Software Instalado</h1>
-      <div class="stats-pills">
-        <div class="stat-pill total">
-          <i class="fas fa-boxes"></i>
-          <span>{{totalSoftware}} Total</span>
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-code"></i> Software Instalado</h1>
+        <div class="stats-pills">
+          <div class="stat-pill total">
+            <i class="fas fa-boxes"></i>
+            <span>{{totalSoftware}} Total</span>
+          </div>
+          <button class="visibility-toggle" (click)="toggleHiddenSoftware()">
+            <i class="fas" [ngClass]="showHidden ? 'fa-eye-slash' : 'fa-eye'"></i>
+            {{ showHidden ? 'Ocultar software escondido' : 'Mostrar software escondido' }}
+          </button>
         </div>
-        <button class="visibility-toggle" (click)="toggleHiddenSoftware()">
-          <i class="fas" [ngClass]="showHidden ? 'fa-eye-slash' : 'fa-eye'"></i>
-          {{ showHidden ? 'Ocultar software escondido' : 'Mostrar software escondido' }}
-        </button>
       </div>
     </div>
   </div>
-
-  <div class="software-content">
+  <div class="content-section">
     <div class="table-container">
-      <table class="software-table">
+      <table class="generic-table">
         <thead>
           <tr>
             <th>

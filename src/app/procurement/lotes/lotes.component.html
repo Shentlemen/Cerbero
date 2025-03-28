@@ -1,0 +1,218 @@
+<div class="generic-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-boxes"></i> Gestión de Lotes</h1>
+        <div class="stats-pills">
+          <div class="stat-pill total">
+            <i class="fas fa-boxes"></i>
+            <span>{{collectionSize}} Total</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(loteModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Lote
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando lotes...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idItem')" [class.active]="sortColumn === 'idItem'">
+                <div class="th-content">
+                  <span>ID</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idItem' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idItem' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idItem'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
+                <div class="th-content">
+                  <span>Descripción</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'descripcion'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('idCompra')" [class.active]="sortColumn === 'idCompra'">
+                <div class="th-content">
+                  <span>Compra</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idCompra'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('cantidad')" [class.active]="sortColumn === 'cantidad'">
+                <div class="th-content">
+                  <span>Cantidad</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'cantidad' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'cantidad' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'cantidad'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('mesesGarantia')" [class.active]="sortColumn === 'mesesGarantia'">
+                <div class="th-content">
+                  <span>Garantía (Meses)</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'mesesGarantia' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'mesesGarantia' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'mesesGarantia'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lote of pagedLotes" class="lote-row">
+              <td>{{lote.idItem}}</td>
+              <td>{{lote.descripcion}}</td>
+              <td>{{lote.idCompra}}</td>
+              <td>{{lote.cantidad}}</td>
+              <td>{{lote.mesesGarantia}}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(loteModal, lote)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarLote(lote.idItem)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedLotes.length === 0" class="alert alert-info">
+        No hay lotes registrados.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar lote -->
+<ng-template #loteModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Lote</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="loteForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID de Compra</label>
+          <input type="number" class="form-control" formControlName="idCompra" min="1">
+          <div class="invalid-feedback" *ngIf="loteForm.get('idCompra')?.errors?.['required'] && loteForm.get('idCompra')?.touched">
+            El ID de compra es requerido.
+          </div>
+          <div class="invalid-feedback" *ngIf="loteForm.get('idCompra')?.errors?.['min'] && loteForm.get('idCompra')?.touched">
+            El ID de compra debe ser mayor a 0.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID de Proveedor</label>
+          <input type="number" class="form-control" formControlName="idProveedor" min="1">
+          <div class="invalid-feedback" *ngIf="loteForm.get('idProveedor')?.errors?.['required'] && loteForm.get('idProveedor')?.touched">
+            El ID de proveedor es requerido.
+          </div>
+          <div class="invalid-feedback" *ngIf="loteForm.get('idProveedor')?.errors?.['min'] && loteForm.get('idProveedor')?.touched">
+            El ID de proveedor debe ser mayor a 0.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-3">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-control" formControlName="descripcion">
+          <div class="invalid-feedback" *ngIf="loteForm.get('descripcion')?.errors?.['required'] && loteForm.get('descripcion')?.touched">
+            La descripción es requerida.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Cantidad</label>
+          <input type="number" class="form-control" formControlName="cantidad" min="1">
+          <div class="invalid-feedback" *ngIf="loteForm.get('cantidad')?.errors?.['required'] && loteForm.get('cantidad')?.touched">
+            La cantidad es requerida.
+          </div>
+          <div class="invalid-feedback" *ngIf="loteForm.get('cantidad')?.errors?.['min'] && loteForm.get('cantidad')?.touched">
+            La cantidad debe ser mayor a 0.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Meses de Garantía</label>
+          <input type="number" class="form-control" formControlName="mesesGarantia" min="0">
+          <div class="invalid-feedback" *ngIf="loteForm.get('mesesGarantia')?.errors?.['required'] && loteForm.get('mesesGarantia')?.touched">
+            Los meses de garantía son requeridos.
+          </div>
+          <div class="invalid-feedback" *ngIf="loteForm.get('mesesGarantia')?.errors?.['min'] && loteForm.get('mesesGarantia')?.touched">
+            Los meses de garantía no pueden ser negativos.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-3">
+          <label class="form-label">ID de Servicio de Garantía</label>
+          <input type="number" class="form-control" formControlName="idServicioGarantia" min="1">
+          <div class="invalid-feedback" *ngIf="loteForm.get('idServicioGarantia')?.errors?.['required'] && loteForm.get('idServicioGarantia')?.touched">
+            El ID de servicio de garantía es requerido.
+          </div>
+          <div class="invalid-feedback" *ngIf="loteForm.get('idServicioGarantia')?.errors?.['min'] && loteForm.get('idServicioGarantia')?.touched">
+            El ID de servicio de garantía debe ser mayor a 0.
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarLote()" [disabled]="!loteForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template> 

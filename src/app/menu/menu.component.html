@@ -23,7 +23,6 @@
     <div class="menu-header" (click)="toggleAssetsMenu()">
       <i class="fas fa-desktop"></i>
       <span>ACTIVOS</span>
-      <i class="fas fa-chevron-down arrow-icon" [class.rotated]="isAssetsExpanded"></i>
     </div>
     <div class="submenu" [class.show]="isAssetsExpanded">
       <a routerLink="/menu/assets" routerLinkActive="active" class="submenu-item">
@@ -41,18 +40,75 @@
     <i class="fas fa-code"></i>
     <span>SOFTWARE</span>
   </a>
-  <a routerLink="/menu/procurement" routerLinkActive="active">
-    <i class="fas fa-shopping-cart"></i>
-    <span>ADQUISICIONES</span>
-  </a>
+
+  <!-- Menú expandible de Adquisiciones -->
+  <div class="menu-item" [class.expanded]="isProcurementExpanded">
+    <div class="menu-header" (click)="toggleProcurementMenu()">
+      <i class="fas fa-shopping-cart"></i>
+      <span>ADQUISICIONES</span>
+    </div>
+    <div class="submenu" [class.show]="isProcurementExpanded">
+      <a routerLink="/menu/procurement/activos" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-box"></i>
+        <span>ACTIVOS</span>
+      </a>
+      <a routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-shopping-bag"></i>
+        <span>COMPRAS</span>
+      </a>
+      <a routerLink="/menu/procurement/entregas" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-truck"></i>
+        <span>ENTREGAS</span>
+      </a>
+      <a routerLink="/menu/procurement/lotes" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-boxes"></i>
+        <span>LOTES</span>
+      </a>
+      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-industry"></i>
+        <span>PROVEEDORES</span>
+      </a>
+      <a routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-users"></i>
+        <span>USUARIOS</span>
+      </a>
+    </div>
+  </div>
+
   <a routerLink="/menu/subnets" routerLinkActive="active">
     <i class="fas fa-network-wired"></i>
     <span>SUB REDES</span>
   </a>
-  <a routerLink="/menu/settings" routerLinkActive="active">
-    <i class="fas fa-cog"></i>
-    <span>CONFIGURACIÓN</span>
-  </a>
+
+  <!-- Menú expandible de Configuración -->
+  <div class="menu-item" [class.expanded]="isConfigExpanded">
+    <div class="menu-header" (click)="toggleConfigMenu()">
+      <i class="fas fa-cog"></i>
+      <span>CONFIGURACIÓN</span>
+    </div>
+    <div class="submenu" [class.show]="isConfigExpanded">
+      <a routerLink="/menu/settings" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-database"></i>
+        <span>BASE DE DATOS</span>
+      </a>
+      <a routerLink="/menu/locations" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>UBICACIONES</span>
+      </a>
+      <a routerLink="/menu/procurement/tipos-activo" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-tags"></i>
+        <span>TIPOS DE ACTIVO</span>
+      </a>
+      <a routerLink="/menu/procurement/tipos-compra" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <span>TIPOS DE COMPRA</span>
+      </a>
+      <a routerLink="/menu/procurement/servicios-garantia" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-shield-alt"></i>
+        <span>GARANTÍA</span>
+      </a>
+    </div>
+  </div>
 </div>
 <div class="main-content">
   <router-outlet></router-outlet>

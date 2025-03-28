@@ -13,26 +13,37 @@
       <li [ngbNavItem]="1">
         <a ngbNavLink>General</a>
         <ng-template ngbNavContent>
-          <div class="device-info">
-            <div class="info-row">
-              <span class="label">Nombre:</span>
-              <span class="value">{{device?.name}}</span>
+          <div class="card">
+            <div class="card-header">
+              <h4>Información del Dispositivo</h4>
             </div>
-            <div class="info-row">
-              <span class="label">Tipo:</span>
-              <span class="value">{{device?.type}}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">IP:</span>
-              <span class="value">{{device?.ip}}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">MAC:</span>
-              <span class="value">{{device?.mac}}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">Descripción:</span>
-              <span class="value">{{device?.description}}</span>
+            <div class="card-body">
+              <div *ngIf="loading" class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando información del dispositivo...</p>
+              </div>
+
+              <div *ngIf="error" class="alert alert-danger">
+                {{ error }}
+              </div>
+
+              <div *ngIf="!loading && !error">
+                <div class="row">
+                  <div class="col-md-4">
+                    <p><strong>Nombre:</strong> {{device?.name}}</p>
+                    <p><strong>Tipo:</strong> {{device?.type}}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p><strong>IP:</strong> {{device?.ip}}</p>
+                    <p><strong>MAC:</strong> {{device?.mac}}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p><strong>Descripción:</strong> {{device?.description || 'Sin descripción'}}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </ng-template>
@@ -41,12 +52,62 @@
       <li [ngbNavItem]="2">
         <a ngbNavLink>Ubicación</a>
         <ng-template ngbNavContent>
-          <app-ubicacion-dispositivo [mac]="device?.mac ?? ''" [ubicacion]="ubicacion">
-          </app-ubicacion-dispositivo>
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h4>Ubicación del Dispositivo</h4>
+              <button class="btn btn-primary" (click)="seleccionarUbicacion()" [disabled]="loading">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                {{ ubicacionActual ? 'Actualizar Ubicación' : 'Asignar Ubicación' }}
+              </button>
+            </div>
+            <div class="card-body">
+              <div *ngIf="loading" class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando información de ubicación...</p>
+              </div>
+
+              <div *ngIf="error" class="alert alert-danger">
+                {{ error }}
+              </div>
+
+              <div *ngIf="!loading && !error">
+                <div *ngIf="ubicacionActual; else sinUbicacion">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Gerencia:</strong> {{ubicacionActual.nombreGerencia}}</p>
+                      <p><strong>Oficina:</strong> {{ubicacionActual.nombreOficina}}</p>
+                      <p><strong>Ciudad:</strong> {{ubicacionActual.ciudad}}</p>
+                      <p><strong>Departamento:</strong> {{ubicacionActual.departamento}}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>Dirección:</strong> {{ubicacionActual.direccion}}</p>
+                      <p><strong>Piso:</strong> {{ubicacionActual.piso}}</p>
+                      <p><strong>Puerta:</strong> {{ubicacionActual.numeroPuerta}}</p>
+                      <p><strong>Interno:</strong> {{ubicacionActual.interno}}</p>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #sinUbicacion>
+                  <div class="alert alert-info">
+                    Este dispositivo no tiene una ubicación asignada.
+                  </div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
         </ng-template>
       </li>
     </ul>
 
     <div [ngbNavOutlet]="nav" class="mt-4"></div>
+  </div>
+
+  <!-- Agregamos el footer con el botón volver -->
+  <div class="footer-section">
+    <button class="btn btn-secondary" (click)="volver()">
+      <i class="fas fa-arrow-left me-2"></i>Volver
+    </button>
   </div>
 </div> 

@@ -40,7 +40,7 @@
               }
             ],
             "styles": [
-              "src/styles.css",
+              "src/styles/main.scss",
               "src/assets/css/bootstrap.min.css",
               "src/assets/css/all.min.css",
               "src/assets/css/roboto-fonts.css",
@@ -50,6 +50,11 @@
               "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css"
             ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "src/styles"
+              ]
+            },
             "scripts": [
               "node_modules/leaflet/dist/leaflet.js",
               "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js"

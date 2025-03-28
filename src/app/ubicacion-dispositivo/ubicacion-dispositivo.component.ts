@@ -2,11 +2,23 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UbicacionDispositivoService } from '../services/ubicacion-dispositivo.service';
+import { HttpErrorResponse, HttpClientModule } from '@angular/common/http';
+
+interface Ubicacion {
+  nombreGerencia: string;
+  nombreOficina: string;
+  piso: string;
+  numeroPuerta: string;
+  interno: string;
+  departamento: string;
+  ciudad: string;
+  direccion: string;
+}
 
 @Component({
   selector: 'app-ubicacion-dispositivo',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
   templateUrl: './ubicacion-dispositivo.component.html',
   styleUrls: ['./ubicacion-dispositivo.component.css']
 })
@@ -42,13 +54,13 @@ export class UbicacionDispositivoComponent implements OnInit {
 
   loadUbicacion() {
     this.ubicacionService.getUbicacionByMacAddr(this.mac).subscribe({
-      next: (ubicacion) => {
+      next: (ubicacion: Ubicacion) => {
         this.ubicacion = ubicacion;
         if (this.isEditing) {
           this.ubicacionForm.patchValue(ubicacion);
         }
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         if (error.status === 404) {
           this.ubicacion = null;
           this.isEditing = true;
@@ -74,11 +86,11 @@ export class UbicacionDispositivoComponent implements OnInit {
       };
 
       this.ubicacionService.saveUbicacion(ubicacionData).subscribe({
-        next: (response) => {
+        next: (response: Ubicacion) => {
           this.ubicacion = response;
           this.isEditing = false;
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error al guardar ubicación:', error);
         }
       });

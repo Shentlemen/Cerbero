@@ -52,31 +52,95 @@
   border-bottom-color: #3498db;
 }
 
-.info-card {
-  background: #f8fafc;
+.card {
+  background: white;
   border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.5rem;
+  border-radius: 12px 12px 0 0;
+}
+
+.card-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.card-body {
   padding: 1.5rem;
 }
 
-.info-row {
-  display: flex;
+.card-body p {
   margin-bottom: 1rem;
-  padding: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
+  color: #2c3e50;
+  line-height: 1.6;
 }
 
-.info-row:last-child {
-  border-bottom: none;
+.card-body p:last-child {
   margin-bottom: 0;
 }
 
-.info-label {
-  width: 150px;
-  font-weight: 600;
+.card-body strong {
   color: #64748b;
+  font-weight: 600;
 }
 
-.info-value {
-  color: #1e293b;
-  flex: 1;
+.footer-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  border: none;
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+  background: #3498db;
+  border: none;
+  color: white;
+}
+
+.btn-primary i {
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+}
+
+@media (max-width: 768px) {
+  .device-details-container {
+    padding: 1rem;
+  }
+
+  .card-header, .card-body {
+    padding: 1rem;
+  }
 } 

@@ -1,0 +1,265 @@
+.servicios-garantia-container {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.title-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.title-wrapper h1 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-wrapper h1 i {
+  color: #41A1AF;
+  font-size: 2rem;
+}
+
+.content-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: white;
+}
+
+.table th {
+  background: #f8f9fa;
+  padding: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.th-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table th:hover {
+  background: #edf2f7;
+}
+
+.table th.active {
+  color: #41A1AF;
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid #edf2f7;
+  color: #2c3e50;
+}
+
+.table tr {
+  transition: all 0.3s ease;
+}
+
+.table tr:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.btn-primary {
+  background-color: #41A1AF;
+  border-color: #41A1AF;
+}
+
+.btn-primary:hover {
+  background-color: #3a919e;
+  border-color: #3a919e;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+.modal-title {
+  color: #333;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.text-danger {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Pagination Styles */
+ngb-pagination {
+  margin-bottom: 0;
+}
+
+.pagination-info {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* Paginación */
+.pagination-container {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+body ngb-pagination.custom-pagination {
+  margin: 2rem 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination {
+  margin: 0 !important;
+  gap: 8px !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item .page-link {
+  width: 38px !important;
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  border: 2px solid transparent !important;
+  background-color: #f0f4f8 !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item:first-child .page-link,
+body ngb-pagination.custom-pagination ul.pagination .page-item:last-child .page-link {
+  width: auto !important;
+  padding: 0 15px !important;
+  font-size: 0.9rem !important;
+  background-color: #e8eef7 !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item .page-link:hover {
+  background-color: #e2e8f0 !important;
+  color: #3498db !important;
+  transform: translateY(-1px) !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item.active .page-link {
+  background-color: #3498db !important;
+  color: white !important;
+  border-color: #3498db !important;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25) !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-link {
+  background-color: #f8fafc !important;
+  color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+@media (max-width: 768px) {
+  .servicios-garantia-container {
+    padding: 1rem;
+  }
+
+  .header-section {
+    padding: 1rem;
+  }
+
+  .content-section {
+    padding: 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pagination-info {
+    margin-top: 1rem;
+    text-align: center;
+  }
+
+  body ngb-pagination.custom-pagination .page-item .page-link {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  body ngb-pagination.custom-pagination .page-item:first-child .page-link,
+  body ngb-pagination.custom-pagination .page-item:last-child .page-link {
+    padding: 0 12px !important;
+  }
+} 

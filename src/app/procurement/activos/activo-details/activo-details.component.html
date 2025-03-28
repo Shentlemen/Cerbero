@@ -1,0 +1,115 @@
+<div class="activo-details-container">
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-box"></i>
+        Detalles del Activo
+      </h1>
+      <button class="btn btn-secondary" (click)="volver()">
+        <i class="fas fa-arrow-left"></i>
+        Volver
+      </button>
+    </div>
+  </div>
+
+  <div class="details-content">
+    <div *ngIf="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <div *ngIf="loading" class="text-center p-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando detalles del activo...</p>
+    </div>
+
+    <div *ngIf="!loading && !error && activo" class="details-grid">
+      <div class="detail-card">
+        <h3>Información General</h3>
+        <div class="detail-item">
+          <span class="label">ID:</span>
+          <span class="value">{{activo.idActivo}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Hardware ID:</span>
+          <span class="value">{{activo.hardwareId}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">ID Secundario:</span>
+          <span class="value">{{activo.idSecundario}}</span>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Clasificación</h3>
+        <div class="detail-item">
+          <span class="label">Criticidad:</span>
+          <span class="value badge" [ngClass]="activo.criticidad.toLowerCase()">
+            {{activo.criticidad}}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Clasificación de INFO:</span>
+          <span class="value badge" [ngClass]="activo.clasificacionDeINFO.toLowerCase()">
+            {{activo.clasificacionDeINFO}}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Estado:</span>
+          <span class="value badge" [ngClass]="activo.estado.toLowerCase()">
+            {{activo.estado}}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Referencias</h3>
+        <div class="detail-item">
+          <span class="label">Tipo de Activo:</span>
+          <span class="value">{{activo.idTipoActivo}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Número de Compra:</span>
+          <span class="value">{{activo.idNumeroCompra}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Item:</span>
+          <span class="value">{{activo.idItem}}</span>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Asignación</h3>
+        <div class="detail-item">
+          <span class="label">Entrega:</span>
+          <span class="value">{{activo.idEntrega}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Ubicación:</span>
+          <span class="value">{{activo.idUbicacion}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Usuario:</span>
+          <span class="value">{{activo.idUsuario}}</span>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Garantía</h3>
+        <div class="detail-item">
+          <span class="label">Servicio de Garantía:</span>
+          <span class="value">{{activo.idServicioGarantia}}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Fecha Fin Garantía:</span>
+          <span class="value">{{activo.fechaFinGarantia | date:'dd/MM/yyyy'}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && !error && !activo" class="alert alert-info">
+      No se encontró el activo solicitado.
+    </div>
+  </div>
+</div> 

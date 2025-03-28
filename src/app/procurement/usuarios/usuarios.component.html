@@ -1,0 +1,183 @@
+<div class="generic-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-users"></i> Gestión de Usuarios</h1>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(usuarioModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Usuario
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando usuarios...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
+                <div class="th-content">
+                  <span>ID</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idUsuario' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idUsuario' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idUsuario'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('cedula')" [class.active]="sortColumn === 'cedula'">
+                <div class="th-content">
+                  <span>Cédula</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'cedula' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'cedula' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'cedula'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
+                <div class="th-content">
+                  <span>Nombre</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'nombre'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('apellido')" [class.active]="sortColumn === 'apellido'">
+                <div class="th-content">
+                  <span>Apellido</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'apellido' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'apellido' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'apellido'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('cargo')" [class.active]="sortColumn === 'cargo'">
+                <div class="th-content">
+                  <span>Cargo</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'cargo' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'cargo' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'cargo'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('unidad')" [class.active]="sortColumn === 'unidad'">
+                <div class="th-content">
+                  <span>Unidad</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'unidad' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'unidad' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'unidad'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let usuario of pagedUsuarios">
+              <td>{{usuario.idUsuario}}</td>
+              <td>{{usuario.cedula}}</td>
+              <td>{{usuario.nombre}}</td>
+              <td>{{usuario.apellido}}</td>
+              <td>{{usuario.cargo}}</td>
+              <td>{{usuario.unidad}}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm" (click)="abrirModal(usuarioModal, usuario)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarUsuario(usuario.idUsuario)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedUsuarios.length === 0" class="alert alert-info">
+        No hay usuarios registrados.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar usuario -->
+<ng-template #usuarioModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Usuario</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="usuarioForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Cédula</label>
+          <input type="text" class="form-control" formControlName="cedula">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-control" formControlName="nombre">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Apellido</label>
+          <input type="text" class="form-control" formControlName="apellido">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Cargo</label>
+          <input type="text" class="form-control" formControlName="cargo">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label class="form-label">Unidad</label>
+          <input type="text" class="form-control" formControlName="unidad">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarUsuario()" [disabled]="!usuarioForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template> 

@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import jsPDF from 'jspdf';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ActivatedRoute } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
@@ -15,6 +15,10 @@ import { Router } from '@angular/router';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AssetEditModalComponent } from '../asset-edit-modal/asset-edit-modal.component';
 import { forkJoin } from 'rxjs';
+import { SoftwareByHardwareService } from '../services/software-by-hardware.service';
+import { UbicacionesService, Ubicacion, TipoUbicacion } from '../services/ubicaciones.service';
+import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
+import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
 import { CpuDetailsComponent } from '../cpu-details/cpu-details.component';
 import { DriveDetailsComponent } from '../drive-details/drive-details.component';
@@ -22,10 +26,7 @@ import { MemoryDetailsComponent } from '../memory-details/memory-details.compone
 import { MonitorDetailsComponent } from '../monitor-details/monitor-details.component';
 import { StorageDetailsComponent } from '../storage-details/storage-details.component';
 import { VideoDetailsComponent } from '../video-details/video-details.component';
-import { UbicacionDetailsComponent } from '../ubicacion-details/ubicacion-details.component';
-import { UbicacionEquipoService } from '../services/ubicacion-equipo.service';
 import { SoftwareDetailsComponent } from '../software-details/software-details.component';
-import { SoftwareByHardwareService } from '../services/software-by-hardware.service';
 
 interface Asset {
   id: number;
@@ -59,7 +60,7 @@ interface Asset {
   standalone: true,
   imports: [
     CommonModule, 
-    NgbModalModule, 
+    NgbModalModule,
     BiosDetailsComponent,
     CpuDetailsComponent,
     DriveDetailsComponent,
@@ -67,9 +68,9 @@ interface Asset {
     MonitorDetailsComponent,
     StorageDetailsComponent,
     VideoDetailsComponent,
-    UbicacionDetailsComponent,
     SoftwareDetailsComponent
   ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [
     BiosService,
     CpuService,
@@ -78,8 +79,8 @@ interface Asset {
     MonitorService,
     StorageService,
     VideoService,
-    UbicacionEquipoService,
-    SoftwareByHardwareService
+    SoftwareByHardwareService,
+    UbicacionesService
   ],
   templateUrl: './assetdetails.component.html',
   styleUrls: ['./assetdetails.component.css']
@@ -88,6 +89,10 @@ export class AssetdetailsComponent implements OnInit {
   asset: Asset | null = null;
   activeTab: string = 'general';
   componentData: any = {};
+  ubicacionActual?: Ubicacion;
+  loading: boolean = false;
+  error: string | null = null;
+  ubicacionesDisponibles: Ubicacion[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -102,7 +107,8 @@ export class AssetdetailsComponent implements OnInit {
     private location: Location,
     private router: Router,
     private modalService: NgbModal,
-    private softwareByHardwareService: SoftwareByHardwareService
+    private softwareByHardwareService: SoftwareByHardwareService,
+    private ubicacionesService: UbicacionesService
   ) { }
 
   ngOnInit(): void {
@@ -122,6 +128,10 @@ export class AssetdetailsComponent implements OnInit {
               ['bios', 'cpu', 'drive', 'memory', 'monitor', 'storage', 'video'].forEach(tab => {
                 this.loadComponentData(tab);
               });
+
+              if (this.asset?.id) {
+                this.cargarUbicacion();
+              }
             },
             (error) => {
               console.error('Error al obtener el asset:', error);
@@ -545,6 +555,115 @@ export class AssetdetailsComponent implements OnInit {
       }
     }, (reason) => {
       console.log('Modal cerrado sin guardar cambios');
+    });
+  }
+
+  cargarUbicacion() {
+    if (this.asset?.id) {
+      this.loading = true;
+      this.ubicacionesService.getUbicacionByHardwareId(this.asset.id).subscribe({
+        next: (ubicacion: Ubicacion) => {
+          this.ubicacionActual = ubicacion;
+          this.error = null;
+          this.loading = false;
+        },
+        error: (error: any) => {
+          if (error.status === 404) {
+            this.ubicacionActual = undefined;
+            this.error = null;
+          } else {
+            console.error('Error cargando ubicación:', error);
+            this.error = 'Error al cargar la ubicación';
+          }
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  seleccionarUbicacion() {
+    this.loading = true;
+    this.ubicacionesService.getUbicaciones().subscribe({
+      next: (ubicaciones) => {
+        this.ubicacionesDisponibles = ubicaciones;
+        const modalRef = this.modalService.open(AssetLocationPickerModalComponent, { 
+          size: 'lg',
+          backdrop: 'static',
+          keyboard: false
+        });
+        
+        modalRef.componentInstance.ubicaciones = this.ubicacionesDisponibles;
+        
+        modalRef.result.then(
+          (ubicacionSeleccionada: Ubicacion) => {
+            if (ubicacionSeleccionada && this.asset?.id) {
+              // Validaciones
+              if (!ubicacionSeleccionada.idUbicacion) {
+                console.error('La ubicación seleccionada no tiene ID');
+                this.error = 'Error: La ubicación seleccionada no es válida';
+                return;
+              }
+
+              if (typeof ubicacionSeleccionada.idUbicacion !== 'number') {
+                console.error('El ID de ubicación debe ser un número');
+                this.error = 'Error: ID de ubicación inválido';
+                return;
+              }
+
+              // Preparar datos
+              const tipoUbicacion: TipoUbicacion = {
+                idUbicacion: Number(ubicacionSeleccionada.idUbicacion),
+                tipo: 'EQUIPO',
+                hardwareId: this.asset.id
+              };
+
+              // Logs de depuración
+              console.log('Ubicación seleccionada:', ubicacionSeleccionada);
+              console.log('Datos a enviar:', tipoUbicacion);
+
+              if (this.ubicacionActual) {
+                console.log('Actualizando ubicación existente:');
+                console.log('ID ubicación actual:', this.ubicacionActual.idUbicacion);
+                console.log('Nueva ubicación seleccionada:', ubicacionSeleccionada);
+
+                // Actualizar la asignación existente
+                this.ubicacionesService.actualizarTipoUbicacion(
+                  ubicacionSeleccionada.idUbicacion!,
+                  tipoUbicacion
+                ).subscribe({
+                  next: () => {
+                    this.cargarUbicacion();
+                  },
+                  error: (error) => {
+                    console.error('Error actualizando ubicación:', error);
+                    this.error = 'Error al actualizar la ubicación';
+                  }
+                });
+              } else {
+                // Crear nueva asignación
+                this.ubicacionesService.crearTipoUbicacion(tipoUbicacion).subscribe({
+                  next: () => {
+                    this.cargarUbicacion();
+                  },
+                  error: (error) => {
+                    console.error('Error creando ubicación:', error);
+                    this.error = 'Error al asignar la ubicación';
+                  }
+                });
+              }
+            }
+          },
+          () => {
+            console.log('Modal cerrado sin selección');
+          }
+        );
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando ubicaciones:', error);
+        this.error = 'Error al cargar las ubicaciones disponibles';
+        this.loading = false;
+      }
     });
   }
 }

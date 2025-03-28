@@ -1,0 +1,332 @@
+<div class="generic-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-box"></i> Gestión de Activos</h1>
+        <div class="stats-pills">
+          <div class="stat-pill" (click)="filterByCriticidad('ALTA')" [class.active]="currentFilter === 'ALTA'">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{altaCount}} Alta</span>
+          </div>
+          <div class="stat-pill" (click)="filterByCriticidad('MEDIA')" [class.active]="currentFilter === 'MEDIA'">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{mediaCount}} Media</span>
+          </div>
+          <div class="stat-pill" (click)="filterByCriticidad('BAJA')" [class.active]="currentFilter === 'BAJA'">
+            <i class="fas fa-info-circle"></i>
+            <span>{{bajaCount}} Baja</span>
+          </div>
+          <div class="stat-pill total" (click)="filterByCriticidad('')" [class.active]="currentFilter === ''">
+            <i class="fas fa-boxes"></i>
+            <span>{{totalActivos}} Total</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(activoModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Activo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando activos...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idNumeroCompra')" [class.active]="sortColumn === 'idNumeroCompra'">
+                <div class="th-content">
+                  <span>Número de Compra</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idNumeroCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idNumeroCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idNumeroCompra'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
+                <div class="th-content">
+                  <span>Usuario</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idUsuario' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idUsuario' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idUsuario'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('idUbicacion')" [class.active]="sortColumn === 'idUbicacion'">
+                <div class="th-content">
+                  <span>Ubicación</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idUbicacion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idUbicacion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idUbicacion'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('criticidad')" [class.active]="sortColumn === 'criticidad'">
+                <div class="th-content">
+                  <span>Criticidad</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'criticidad' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'criticidad' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'criticidad'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('estado')" [class.active]="sortColumn === 'estado'">
+                <div class="th-content">
+                  <span>Estado</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'estado' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'estado' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'estado'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let activo of pagedActivos" class="activo-row">
+              <td>{{activo.idNumeroCompra}}</td>
+              <td>{{activo.idUsuario}}</td>
+              <td>
+                <span class="ubicacion-link" (click)="verDetallesUbicacion(activo.idUbicacion, ubicacionModal)">
+                  {{getUbicacionInfo(activo.idUbicacion)}}
+                </span>
+              </td>
+              <td>
+                <span class="criticidad-badge" [ngClass]="activo.criticidad.toLowerCase()">
+                  {{activo.criticidad}}
+                </span>
+              </td>
+              <td>
+                <span class="estado-badge" [ngClass]="activo.estado.toLowerCase()">
+                  {{activo.estado}}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="verDetalles(activo)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(activoModal, activo)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarActivo(activo.idActivo)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedActivos.length === 0" class="alert alert-info">
+        No hay activos registrados.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar activo -->
+<ng-template #activoModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="activoForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Hardware ID</label>
+          <input type="number" class="form-control" formControlName="hardwareId">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Criticidad</label>
+          <select class="form-select" formControlName="criticidad">
+            <option value="ALTA">Alta</option>
+            <option value="MEDIA">Media</option>
+            <option value="BAJA">Baja</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Clasificación de INFO</label>
+          <select class="form-select" formControlName="clasificacionDeINFO">
+            <option value="CONFIDENCIAL">Confidencial</option>
+            <option value="INTERNO">Interno</option>
+            <option value="PUBLICO">Público</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Estado</label>
+          <select class="form-select" formControlName="estado">
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+            <option value="MANTENIMIENTO">Mantenimiento</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID Secundario</label>
+          <input type="text" class="form-control" formControlName="idSecundario">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Fecha Fin Garantía</label>
+          <input type="date" class="form-control" formControlName="fechaFinGarantia">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Tipo de Activo</label>
+          <input type="number" class="form-control" formControlName="idTipoActivo">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Número de Compra</label>
+          <input type="number" class="form-control" formControlName="idNumeroCompra">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Item</label>
+          <input type="number" class="form-control" formControlName="idItem">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Entrega</label>
+          <input type="number" class="form-control" formControlName="idEntrega">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Ubicación</label>
+          <input type="number" class="form-control" formControlName="idUbicacion">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Usuario</label>
+          <input type="number" class="form-control" formControlName="idUsuario">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-3">
+          <label class="form-label">Servicio de Garantía</label>
+          <input type="number" class="form-control" formControlName="idServicioGarantia">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarActivo()" [disabled]="!activoForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de ubicación -->
+<ng-template #ubicacionModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-map-marker-alt me-2"></i>
+      Detalles de Ubicación
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="activoSeleccionado">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Gerencia
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.nombreGerencia}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-door-open"></i>
+          Oficina
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.nombreOficina}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-city"></i>
+          Ciudad
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.ciudad}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-map"></i>
+          Departamento
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.departamento}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-street-view"></i>
+          Dirección
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.direccion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Piso
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.piso}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-door-closed"></i>
+          Puerta
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.numeroPuerta}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-phone"></i>
+          Interno
+        </div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.interno}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template> 

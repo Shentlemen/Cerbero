@@ -210,9 +210,18 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   onChartPointClick(filterType: string, e: any) {
     const filterValue = e.dataPoint.label;
-    this.router.navigate(['/menu/assets'], { 
-      queryParams: { filterType, filterValue }
-    });
+    
+    if (filterType === 'type') {
+      // Si es un clic en la gráfica de dispositivos, navegamos a devices
+      this.router.navigate(['/menu/devices'], { 
+        queryParams: { filterType, filterValue }
+      });
+    } else {
+      // Para otros tipos de filtros, mantenemos la navegación a assets
+      this.router.navigate(['/menu/assets'], { 
+        queryParams: { filterType, filterValue }
+      });
+    }
   }
 
   checkHardwareChanges(): void {
@@ -272,7 +281,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         ...commonOptions.data[0],
         type: "pie",
         startAngle: -90,
-        dataPoints: dataPoints
+        dataPoints: dataPoints,
+        click: this.onChartPointClick.bind(this, 'type')
       }]
     };
   }

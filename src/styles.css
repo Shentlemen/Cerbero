@@ -1,5 +1,27 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* Estilos base y variables */
+:root {
+  --primary-color: #41A1AF;
+  --primary-dark: #3A8F9C;
+  --danger-color: #e74c3c;
+  --danger-dark: #c0392b;
+  --background-color: #f0f4f8;
+  --text-color: #2c3e50;
+  --border-radius: 12px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --transition: all 0.3s ease;
+}
+
+body {
+  background: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  line-height: 1.6;
+}
+
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 body {
@@ -107,4 +129,666 @@ ngb-pagination {
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+}
+
+/* Agregar los nuevos estilos de paginación globales */
+.pagination-container {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+body ngb-pagination.custom-pagination {
+  margin: 2rem 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination {
+  margin: 0 !important;
+  gap: 8px !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item .page-link {
+  width: 38px !important;
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  border: 2px solid transparent !important;
+  background-color: #f0f4f8 !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item:first-child .page-link,
+body ngb-pagination.custom-pagination ul.pagination .page-item:last-child .page-link {
+  width: auto !important;
+  padding: 0 15px !important;
+  font-size: 0.9rem !important;
+  background-color: #e8eef7 !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item .page-link:hover {
+  background-color: #e2e8f0 !important;
+  color: #3498db !important;
+  transform: translateY(-1px) !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item.active .page-link {
+  background-color: #3498db !important;
+  color: white !important;
+  border-color: #3498db !important;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25) !important;
+}
+
+body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-link {
+  background-color: #f8fafc !important;
+  color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+@media (max-width: 768px) {
+  body ngb-pagination.custom-pagination .page-item .page-link {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  body ngb-pagination.custom-pagination .page-item:first-child .page-link,
+  body ngb-pagination.custom-pagination .page-item:last-child .page-link {
+    padding: 0 12px !important;
+  }
+}
+
+/* Estilos unificados para botones de acción */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Estilos base para botones */
+.btn-primary {
+  background: #41A1AF;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #3A8F9C;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+}
+
+/* Variante pequeña del botón */
+.btn-primary.btn-sm {
+  background: #41A1AF;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.btn-primary.btn-sm:hover {
+  background: #3A8F9C;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+}
+
+.btn-danger {
+  background: #e74c3c;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
+}
+
+/* Variante pequeña del botón danger */
+.btn-danger.btn-sm {
+  background: #e74c3c;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.btn-danger.btn-sm:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
+}
+
+.btn-export {
+  background: #41A1AF;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.btn-export:hover {
+  background: #3A8F9C;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+}
+
+/* Ajuste responsive para botones */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+
+/* Estilos de contenedor comunes */
+.generic-container {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Estilos de header comunes */
+.header-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.title-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.title-wrapper h1 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-wrapper h1 i {
+  color: #41A1AF;
+  font-size: 2rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* Estilos de contenido comunes */
+.content-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+/* Estilos de tabla comunes */
+.generic-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: white;
+}
+
+.generic-table th {
+  background: #f8f9fa;
+  padding: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.th-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.generic-table th:hover {
+  background: #edf2f7;
+}
+
+.generic-table th.active {
+  color: #41A1AF;
+}
+
+.generic-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #edf2f7;
+  color: #2c3e50;
+}
+
+.generic-row {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.generic-row:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Media queries comunes */
+@media (max-width: 768px) {
+  .generic-container {
+    padding: 1rem;
+  }
+
+  .header-section {
+    padding: 1rem;
+  }
+
+  .content-section {
+    padding: 1rem;
+  }
+}
+
+/* Estilos comunes para modales */
+.modal-header {
+  background: #f8f9fa;
+  border-radius: 15px 15px 0 0;
+  padding: 1.5rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.modal-title {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #edf2f7;
+}
+
+/* Estilos comunes para formularios */
+.form-label {
+  color: #2c3e50;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #41A1AF;
+  box-shadow: 0 0 0 3px rgba(65, 161, 175, 0.1);
+}
+
+.form-control.ng-invalid.ng-touched {
+  border-color: #e74c3c;
+}
+
+.invalid-feedback {
+  color: #e74c3c;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Estilos comunes para badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Estilos comunes para stats-pills */
+.stats-pills {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.stat-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: #e2e8f0;
+}
+
+.stat-pill.active {
+  background: #41A1AF;
+  color: white;
+  border-color: #41A1AF;
+}
+
+.stat-pill.active i {
+  color: white;
+}
+
+.stat-pill.total {
+  background: #41A1AF;
+  color: white;
+  border-color: #41A1AF;
+}
+
+.stat-pill.total i {
+  color: white;
+}
+
+/* Estilos comunes para nombres de items */
+.item-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.item-name i {
+  font-size: 1.2rem;
+  color: #41A1AF;
+}
+
+/* Estilos comunes para listas */
+.list-group-item {
+  background-color: #f9f9f9;
+  border: 1px solid #dddddd;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  padding: 0.5rem;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.list-group-item strong {
+  color: #5a9bd5;
+}
+
+/* Mejoras en el contenedor genérico */
+.generic-container {
+  padding: 2rem;
+  min-height: calc(100vh - 4rem);
+  background: var(--background-color);
+}
+
+/* Mejoras en la sección de encabezado */
+.header-section {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.title-wrapper h1 {
+  font-size: 1.85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.title-wrapper h1 i {
+  color: var(--primary-color);
+  font-size: 2rem;
+  opacity: 0.9;
+}
+
+/* Mejoras en la sección de contenido */
+.content-section {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Mejoras en las tablas */
+.generic-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.generic-table th {
+  background: #f8fafc;
+  padding: 1.25rem 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+}
+
+.generic-table td {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid #edf2f7;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.generic-row:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Mejoras en los botones */
+.btn {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.675rem 1.25rem;
+  border-radius: 8px;
+  transition: var(--transition);
+  border: none;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+}
+
+.btn-danger {
+  background: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: var(--danger-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
+}
+
+.btn-export {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+/* Mejoras en los formularios */
+.form-control {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(65, 161, 175, 0.1);
+}
+
+/* Mejoras en los modales */
+.modal-content {
+  border-radius: var(--border-radius);
+  border: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #edf2f7;
+  background: #f8fafc;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Mejoras en la paginación */
+ngb-pagination.custom-pagination {
+  margin: 2rem 0;
+}
+
+.custom-pagination .page-link {
+  border-radius: 8px;
+  margin: 0 4px;
+  border: none;
+  background: #f0f4f8;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.custom-pagination .page-link:hover {
+  background: #e2e8f0;
+  color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.custom-pagination .active .page-link {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+}
+
+/* Mejoras en los badges y pills */
+.status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-section {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Mejoras responsive */
+@media (max-width: 768px) {
+  .generic-container {
+    padding: 1rem;
+  }
+
+  .header-section,
+  .content-section {
+    padding: 1.25rem;
+  }
+
+  .title-wrapper h1 {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+  }
 }

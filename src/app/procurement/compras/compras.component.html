@@ -1,0 +1,211 @@
+<div class="generic-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-wrapper">
+        <h1><i class="fas fa-shopping-cart"></i> Gestión de Compras</h1>
+        <div class="stats-pills">
+          <div class="stat-pill" (click)="filterForm.patchValue({ moneda: 'USD' })" [class.active]="filterForm.get('moneda')?.value === 'USD'">
+            <i class="fas fa-dollar-sign"></i>
+            <span>USD</span>
+          </div>
+          <div class="stat-pill" (click)="filterForm.patchValue({ moneda: 'EUR' })" [class.active]="filterForm.get('moneda')?.value === 'EUR'">
+            <i class="fas fa-euro-sign"></i>
+            <span>EUR</span>
+          </div>
+          <div class="stat-pill total" (click)="filterForm.patchValue({ moneda: '' })" [class.active]="!filterForm.get('moneda')?.value">
+            <i class="fas fa-boxes"></i>
+            <span>{{collectionSize}} Total</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-export" (click)="abrirModal(compraModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nueva Compra
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando compras...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && !error">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th (click)="sortData('idCompra')" [class.active]="sortColumn === 'idCompra'">
+                <div class="th-content">
+                  <span>ID</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idCompra'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
+                <div class="th-content">
+                  <span>Descripción</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'descripcion'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('fechaInicio')" [class.active]="sortColumn === 'fechaInicio'">
+                <div class="th-content">
+                  <span>Fecha Inicio</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'fechaInicio' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'fechaInicio' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'fechaInicio'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('fechaFinal')" [class.active]="sortColumn === 'fechaFinal'">
+                <div class="th-content">
+                  <span>Fecha Final</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'fechaFinal' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'fechaFinal' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'fechaFinal'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('monto')" [class.active]="sortColumn === 'monto'">
+                <div class="th-content">
+                  <span>Monto</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'monto' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'monto' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'monto'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('moneda')" [class.active]="sortColumn === 'moneda'">
+                <div class="th-content">
+                  <span>Moneda</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'moneda' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'moneda' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'moneda'
+                  }"></i>
+                </div>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let compra of pagedCompras" class="compra-row">
+              <td>{{compra.idCompra}}</td>
+              <td>{{compra.descripcion}}</td>
+              <td>{{formatearFecha(compra.fechaInicio)}}</td>
+              <td>{{formatearFecha(compra.fechaFinal)}}</td>
+              <td>{{formatearMoneda(compra.monto, compra.moneda)}}</td>
+              <td>
+                <span class="moneda-badge" [ngClass]="compra.moneda.toLowerCase()">
+                  {{compra.moneda}}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(compraModal, compra)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminarCompra(compra.idCompra)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !error && pagedCompras.length === 0" class="alert alert-info">
+        No hay compras registradas.
+      </div>
+    </div>
+
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar compra -->
+<ng-template #compraModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nueva'}} Compra</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="compraForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Tipo de Compra</label>
+          <input type="number" class="form-control" formControlName="idTipoCompra">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Moneda</label>
+          <select class="form-select" formControlName="moneda">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-control" formControlName="descripcion">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" formControlName="fechaInicio">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Fecha Final</label>
+          <input type="date" class="form-control" formControlName="fechaFinal">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label class="form-label">Monto</label>
+          <input type="number" class="form-control" formControlName="monto" step="0.01">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarCompra()" [disabled]="!compraForm.valid">
+      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template> 

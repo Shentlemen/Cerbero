@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
 
 export interface SubnetDTO {
-  id: string;
-  netId: string;
-  name: string;
+  pk: number;      // ID numérico que se usa para idSubnet
+  netId: string;   // Dirección de red (ej: "192.168.1.0")
+  name: string;    // Nombre descriptivo
+  id: string;      // Identificador textual (ej: "RED-001")
 }
 
 export interface SubnetCoordinatesDTO {

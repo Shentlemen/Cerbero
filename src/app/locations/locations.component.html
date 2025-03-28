@@ -1,0 +1,68 @@
+<div class="generic-container">
+  <div class="header-section">
+    <div class="header-content">
+      <h1><i class="fas fa-map-marker-alt"></i> Ubicaciones</h1>
+      <div class="actions">
+        <button class="btn btn-primary" (click)="openNewLocationModal()">
+          <i class="fas fa-plus me-2"></i>
+          Nueva Ubicación
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando ubicaciones...</p>
+      </div>
+
+      <table class="generic-table" *ngIf="!loading && !error">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Gerencia</th>
+            <th>Oficina</th>
+            <th>Ciudad</th>
+            <th>Departamento</th>
+            <th>Dirección</th>
+            <th>Piso</th>
+            <th>Puerta</th>
+            <th>Interno</th>
+            <th>Subnet</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ubicacion of ubicaciones">
+            <td>{{ubicacion.idUbicacion}}</td>
+            <td>{{ubicacion.nombreGerencia}}</td>
+            <td>{{ubicacion.nombreOficina}}</td>
+            <td>{{ubicacion.ciudad}}</td>
+            <td>{{ubicacion.departamento}}</td>
+            <td>{{ubicacion.direccion}}</td>
+            <td>{{ubicacion.piso}}</td>
+            <td>{{ubicacion.numeroPuerta}}</td>
+            <td>{{ubicacion.interno}}</td>
+            <td>{{getSubnetName(ubicacion.idSubnet)}}</td>
+            <td>
+              <button class="btn btn-danger btn-sm" (click)="confirmarEliminar(ubicacion)">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="!loading && !error && ubicaciones.length === 0" class="alert alert-info">
+        No hay ubicaciones registradas.
+      </div>
+    </div>
+  </div>
+</div> 
