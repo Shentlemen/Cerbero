@@ -1,4 +1,4 @@
-<div class="entregas-container">
+<div class="generic-container">
   <div class="header-section">
     <div class="header-content">
       <div class="title-wrapper">
@@ -19,7 +19,7 @@
     </div>
   </div>
 
-  <div class="entregas-content">
+  <div class="content-section">
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -33,26 +33,16 @@
       </div>
 
       <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="entregas-table">
+        <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('idEntrega')" [class.active]="sortColumn === 'idEntrega'">
+              <th (click)="sortData('loteDescripcion')" [class.active]="sortColumn === 'loteDescripcion'">
                 <div class="th-content">
-                  <span>ID</span>
+                  <span>Item</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idEntrega' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idEntrega' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idEntrega'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('idItem')" [class.active]="sortColumn === 'idItem'">
-                <div class="th-content">
-                  <span>ID Item</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idItem' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idItem' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idItem'
+                    'fa-sort-up': sortColumn === 'loteDescripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'loteDescripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'loteDescripcion'
                   }"></i>
                 </div>
               </th>
@@ -100,9 +90,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let entrega of pagedEntregas" class="entrega-row">
-              <td>{{entrega.idEntrega}}</td>
-              <td>{{entrega.idItem}}</td>
+            <tr *ngFor="let entrega of pagedEntregas" class="generic-row">
+              <td>{{entrega.loteDescripcion}}</td>
               <td>{{entrega.cantidad}}</td>
               <td>{{entrega.descripcion}}</td>
               <td>{{formatearFecha(entrega.fechaPedido)}}</td>
@@ -152,12 +141,26 @@
     <form [formGroup]="entregaForm">
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">ID Item</label>
-          <input type="number" class="form-control" formControlName="idItem">
+          <label class="form-label">Item</label>
+          <select class="form-select" formControlName="idItem">
+            <option value="">Seleccione un item</option>
+            <option *ngFor="let lote of lotesList" [value]="lote.idItem">
+              {{lote.descripcion}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="entregaForm.get('idItem')?.errors?.['required'] && entregaForm.get('idItem')?.touched">
+            Debe seleccionar un item.
+          </div>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Cantidad</label>
           <input type="number" class="form-control" formControlName="cantidad" min="1">
+          <div class="invalid-feedback" *ngIf="entregaForm.get('cantidad')?.errors?.['required'] && entregaForm.get('cantidad')?.touched">
+            La cantidad es requerida.
+          </div>
+          <div class="invalid-feedback" *ngIf="entregaForm.get('cantidad')?.errors?.['min'] && entregaForm.get('cantidad')?.touched">
+            La cantidad debe ser mayor a 0.
+          </div>
         </div>
       </div>
 

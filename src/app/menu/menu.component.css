@@ -19,6 +19,7 @@ html, body {
   transition: all 0.3s ease;
   overflow-y: auto; /* Permite scroll vertical */
   overflow-x: hidden; /* Evita scroll horizontal */
+  z-index: 2; /* Aseguramos que el menú esté por encima del contenido principal */
 }
 
 /* Estilo para la barra de scroll */
@@ -84,6 +85,8 @@ html, body {
   padding: 15px;
   min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
   background-color: #ecf0f1;
+  position: relative;
+  z-index: 1; /* Mantenemos un z-index bajo para el contenido principal */
 }
 
 /* Para un efecto de colapso en la barra lateral */
@@ -93,8 +96,10 @@ html, body {
 
 /* Estilo para el contenedor del logo */
 .logo-container {
-  text-align: center;
-  padding: 20px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
   margin-bottom: 20px;
 }
 

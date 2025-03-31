@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
+import { map } from 'rxjs/operators';
 
 export interface ServicioGarantiaDTO {
   idServicioGarantia: number;
@@ -10,6 +11,7 @@ export interface ServicioGarantiaDTO {
   telefonoDeContacto: string;
   nombreComercial: string;
   RUC: string;
+  ruc?: string; // Campo opcional para compatibilidad con el backend
 }
 
 @Injectable({
@@ -26,7 +28,12 @@ export class ServiciosGarantiaService {
   }
 
   getServiciosGarantia(): Observable<ServicioGarantiaDTO[]> {
-    return this.http.get<ServicioGarantiaDTO[]>(this.apiUrl);
+    return this.http.get<ServicioGarantiaDTO[]>(this.apiUrl).pipe(
+      map(servicios => servicios.map(servicio => ({
+        ...servicio,
+        RUC: servicio.ruc || servicio.RUC // Maneja ambos casos
+      })))
+    );
   }
 
   getServicioGarantia(id: number): Observable<ServicioGarantiaDTO> {

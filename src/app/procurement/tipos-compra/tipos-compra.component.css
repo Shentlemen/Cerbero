@@ -36,7 +36,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #41A1AF;
+  color: #3498db;
   font-size: 2rem;
 }
 
@@ -111,60 +111,6 @@
   gap: 0.5rem;
 }
 
-.btn-primary {
-  background: #41A1AF;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #3A8F9C;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
-}
-
-.btn-danger {
-  background: #e74c3c;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #c0392b;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
-}
-
-.btn-export {
-  background: #41A1AF;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  color: white;
-}
-
-.btn-export:hover {
-  background: #3A8F9C;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
-}
-
 /* Estilos para el modal */
 .modal-header {
   background: #f8f9fa;
@@ -204,19 +150,6 @@
 .modal-footer {
   padding: 1.5rem;
   border-top: 1px solid #edf2f7;
-}
-
-.btn-secondary {
-  background: #e2e8f0;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-  background: #cbd5e0;
-  transform: translateY(-2px);
 }
 
 @media (max-width: 768px) {

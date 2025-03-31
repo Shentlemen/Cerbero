@@ -5,6 +5,7 @@ import { ActivosService, ActivoDTO } from '../../services/activos.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
 import { UbicacionesService, Ubicacion } from '../../services/ubicaciones.service';
+import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
 
 @Component({
   selector: 'app-activos',
@@ -28,6 +29,7 @@ export class ActivosComponent implements OnInit {
   modoEdicion: boolean = false;
   activoSeleccionado: ActivoDTO | null = null;
   ubicaciones: Map<number, Ubicacion> = new Map();
+  usuarios: Map<number, UsuarioDTO> = new Map();
   
   // Paginación
   page = 1;
@@ -48,6 +50,7 @@ export class ActivosComponent implements OnInit {
   constructor(
     private activosService: ActivosService,
     private ubicacionesService: UbicacionesService,
+    private usuariosService: UsuariosService,
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router
@@ -71,7 +74,28 @@ export class ActivosComponent implements OnInit {
 
   ngOnInit() {
     this.cargarUbicaciones();
+    this.cargarUsuarios();
     this.cargarActivos();
+  }
+
+  cargarUsuarios() {
+    this.usuariosService.getUsuarios().subscribe({
+      next: (usuarios) => {
+        usuarios.forEach(usuario => {
+          if (usuario.idUsuario) {
+            this.usuarios.set(usuario.idUsuario, usuario);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al cargar usuarios:', error);
+      }
+    });
+  }
+
+  getUsuarioInfo(idUsuario: number): string {
+    const usuario = this.usuarios.get(idUsuario);
+    return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'No asignado';
   }
 
   cargarUbicaciones() {

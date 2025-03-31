@@ -36,16 +36,6 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('idProveedores')" [class.active]="sortColumn === 'idProveedores'">
-                <div class="th-content">
-                  <span>ID</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idProveedores' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idProveedores' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idProveedores'
-                  }"></i>
-                </div>
-              </th>
               <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
                 <div class="th-content">
                   <span>Nombre</span>
@@ -53,16 +43,6 @@
                     'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
                     'fa-sort': sortColumn !== 'nombre'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('nombreComercial')" [class.active]="sortColumn === 'nombreComercial'">
-                <div class="th-content">
-                  <span>Nombre Comercial</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'nombreComercial' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'nombreComercial' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'nombreComercial'
                   }"></i>
                 </div>
               </th>
@@ -76,35 +56,26 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('correoContacto')" [class.active]="sortColumn === 'correoContacto'">
+              <th (click)="sortData('nombreComercial')" [class.active]="sortColumn === 'nombreComercial'">
                 <div class="th-content">
-                  <span>Correo</span>
+                  <span>Nombre Comercial</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'correoContacto' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'correoContacto' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'correoContacto'
+                    'fa-sort-up': sortColumn === 'nombreComercial' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'nombreComercial' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'nombreComercial'
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('telefonoContacto')" [class.active]="sortColumn === 'telefonoContacto'">
-                <div class="th-content">
-                  <span>Teléfono</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'telefonoContacto' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'telefonoContacto' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'telefonoContacto'
-                  }"></i>
-                </div>
-              </th>
+              <th>Correo de Contacto</th>
+              <th>Teléfono de Contacto</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
-              <td>{{proveedor.idProveedores}}</td>
               <td>{{proveedor.nombre}}</td>
-              <td>{{proveedor.nombreComercial}}</td>
               <td>{{proveedor.RUC}}</td>
+              <td>{{proveedor.nombreComercial}}</td>
               <td>{{proveedor.correoContacto}}</td>
               <td>{{proveedor.telefonoContacto}}</td>
               <td>

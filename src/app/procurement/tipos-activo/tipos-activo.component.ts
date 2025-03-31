@@ -1,27 +1,30 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
+import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
 
 @Component({
   selector: 'app-tipos-activo',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './tipos-activo.component.html',
-  styleUrls: ['./tipos-activo.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./tipos-activo.component.css']
 })
 export class TiposActivoComponent implements OnInit {
+  @ViewChild('tipoActivoModal') tipoActivoModal: any;
+
   tiposActivoList: TipoDeActivoDTO[] = [];
   tiposActivoFiltrados: TipoDeActivoDTO[] = [];
+  usuarios: Map<number, UsuarioDTO> = new Map();
   tipoActivoForm: FormGroup;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 11;
+  pageSize = 10;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -30,33 +33,51 @@ export class TiposActivoComponent implements OnInit {
 
   constructor(
     private tiposActivoService: TiposActivoService,
-    private fb: FormBuilder,
-    private modalService: NgbModal
+    private usuariosService: UsuariosService,
+    private modalService: NgbModal,
+    private fb: FormBuilder
   ) {
     this.tipoActivoForm = this.fb.group({
-      descripcion: ['', Validators.required],
-      idUsuario: ['', [Validators.required, Validators.min(1)]]
+      nombre: ['', [Validators.required]],
+      descripcion: ['', [Validators.required]]
     });
   }
 
   ngOnInit(): void {
-    this.loadTiposActivo();
+    this.cargarUsuarios();
+    this.cargarTiposActivo();
   }
 
-  loadTiposActivo(): void {
+  cargarUsuarios(): void {
+    this.usuariosService.getUsuarios().subscribe({
+      next: (usuarios) => {
+        usuarios.forEach(usuario => {
+          this.usuarios.set(usuario.idUsuario, usuario);
+        });
+      },
+      error: (error) => {
+        console.error('Error al cargar usuarios:', error);
+      }
+    });
+  }
+
+  getNombreUsuario(idUsuario: number): string {
+    const usuario = this.usuarios.get(idUsuario);
+    return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'No asignado';
+  }
+
+  cargarTiposActivo(): void {
     this.loading = true;
     this.error = null;
-    
     this.tiposActivoService.getTiposActivo().subscribe({
-      next: (tiposActivo) => {
-        this.tiposActivoList = tiposActivo;
+      next: (data) => {
+        this.tiposActivoList = data;
         this.tiposActivoFiltrados = [...this.tiposActivoList];
         this.collectionSize = this.tiposActivoFiltrados.length;
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error al cargar los tipos de activo:', error);
-        this.error = 'Error al cargar los tipos de activo. Por favor, intente nuevamente.';
+        this.error = 'Error al cargar los tipos de activo';
         this.loading = false;
       }
     });
@@ -96,63 +117,59 @@ export class TiposActivoComponent implements OnInit {
     });
   }
 
-  abrirModal(modal: any, tipoActivo?: TipoDeActivoDTO): void {
-    if (tipoActivo) {
-      this.modoEdicion = true;
-      this.tipoActivoSeleccionado = tipoActivo;
-      this.tipoActivoForm.patchValue(tipoActivo);
-    } else {
-      this.modoEdicion = false;
-      this.tipoActivoSeleccionado = null;
-      this.tipoActivoForm.reset();
-    }
-    this.modalService.open(modal, { size: 'lg' });
+  openNewTipoActivoModal(): void {
+    this.modoEdicion = false;
+    this.tipoActivoSeleccionado = null;
+    this.tipoActivoForm.reset();
+    this.modalService.open(this.tipoActivoModal);
   }
 
-  guardarTipoActivo(): void {
+  editTipoActivo(tipo: TipoDeActivoDTO): void {
+    this.modoEdicion = true;
+    this.tipoActivoSeleccionado = tipo;
+    this.tipoActivoForm.patchValue({
+      nombre: tipo.nombre,
+      descripcion: tipo.descripcion
+    });
+    this.modalService.open(this.tipoActivoModal);
+  }
+
+  saveTipoActivo(): void {
     if (this.tipoActivoForm.valid) {
-      const tipoActivoData = this.tipoActivoForm.value;
-      
+      const tipoActivo = this.tipoActivoForm.value;
       if (this.modoEdicion && this.tipoActivoSeleccionado) {
-        const tipoActivoActualizado: TipoDeActivoDTO = {
-          ...tipoActivoData,
-          idActivo: this.tipoActivoSeleccionado.idActivo
-        };
-        
-        this.tiposActivoService.actualizarTipoActivo(this.tipoActivoSeleccionado.idActivo, tipoActivoActualizado).subscribe({
+        tipoActivo.idActivo = this.tipoActivoSeleccionado.idActivo;
+        this.tiposActivoService.actualizarTipoActivo(this.tipoActivoSeleccionado.idActivo, tipoActivo).subscribe({
           next: () => {
-            this.loadTiposActivo();
             this.modalService.dismissAll();
+            this.cargarTiposActivo();
           },
           error: (error) => {
-            console.error('Error al actualizar el tipo de activo:', error);
-            this.error = 'Error al actualizar el tipo de activo. Por favor, intente nuevamente.';
+            this.error = 'Error al actualizar el tipo de activo';
           }
         });
       } else {
-        this.tiposActivoService.crearTipoActivo(tipoActivoData).subscribe({
+        this.tiposActivoService.crearTipoActivo(tipoActivo).subscribe({
           next: () => {
-            this.loadTiposActivo();
             this.modalService.dismissAll();
+            this.cargarTiposActivo();
           },
           error: (error) => {
-            console.error('Error al crear el tipo de activo:', error);
-            this.error = 'Error al crear el tipo de activo. Por favor, intente nuevamente.';
+            this.error = 'Error al crear el tipo de activo';
           }
         });
       }
     }
   }
 
-  eliminarTipoActivo(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar este tipo de activo?')) {
+  deleteTipoActivo(id: number): void {
+    if (confirm('¿Está seguro de que desea eliminar este tipo de activo?')) {
       this.tiposActivoService.eliminarTipoActivo(id).subscribe({
         next: () => {
-          this.loadTiposActivo();
+          this.cargarTiposActivo();
         },
         error: (error) => {
-          console.error('Error al eliminar el tipo de activo:', error);
-          this.error = 'Error al eliminar el tipo de activo. Por favor, intente nuevamente.';
+          this.error = 'Error al eliminar el tipo de activo';
         }
       });
     }

@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
+import { LotesService, LoteDTO } from '../../services/lotes.service';
 
 @Component({
   selector: 'app-entregas',
@@ -17,6 +18,7 @@ import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 export class EntregasComponent implements OnInit {
   entregasList: EntregaDTO[] = [];
   entregasFiltradas: EntregaDTO[] = [];
+  lotesList: LoteDTO[] = [];
   filterForm: FormGroup;
   entregaForm: FormGroup;
   sortColumn: string = '';
@@ -30,6 +32,7 @@ export class EntregasComponent implements OnInit {
 
   constructor(
     private entregasService: EntregasService,
+    private lotesService: LotesService,
     private fb: FormBuilder,
     private modalService: NgbModal
   ) {
@@ -50,6 +53,19 @@ export class EntregasComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEntregas();
+    this.loadLotes();
+  }
+
+  loadLotes(): void {
+    this.lotesService.getLotes().subscribe({
+      next: (lotes) => {
+        this.lotesList = lotes;
+      },
+      error: (error) => {
+        console.error('Error al cargar los lotes:', error);
+        this.error = 'Error al cargar los lotes. Por favor, intente nuevamente.';
+      }
+    });
   }
 
   loadEntregas(): void {

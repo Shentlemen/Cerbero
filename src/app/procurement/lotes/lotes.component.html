@@ -36,19 +36,9 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('idItem')" [class.active]="sortColumn === 'idItem'">
-                <div class="th-content">
-                  <span>ID</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idItem' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idItem' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idItem'
-                  }"></i>
-                </div>
-              </th>
               <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
-                  <span>Descripción</span>
+                  <span>Item</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
@@ -56,13 +46,13 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('idCompra')" [class.active]="sortColumn === 'idCompra'">
+              <th (click)="sortData('compraDescripcion')" [class.active]="sortColumn === 'compraDescripcion'">
                 <div class="th-content">
                   <span>Compra</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idCompra' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idCompra' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idCompra'
+                    'fa-sort-up': sortColumn === 'compraDescripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'compraDescripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'compraDescripcion'
                   }"></i>
                 </div>
               </th>
@@ -91,9 +81,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let lote of pagedLotes" class="lote-row">
-              <td>{{lote.idItem}}</td>
               <td>{{lote.descripcion}}</td>
-              <td>{{lote.idCompra}}</td>
+              <td>{{lote.compraDescripcion}}</td>
               <td>{{lote.cantidad}}</td>
               <td>{{lote.mesesGarantia}}</td>
               <td>
@@ -151,13 +140,15 @@
           </div>
         </div>
         <div class="col-md-6 mb-3">
-          <label class="form-label">ID de Proveedor</label>
-          <input type="number" class="form-control" formControlName="idProveedor" min="1">
+          <label class="form-label">Proveedor</label>
+          <select class="form-control" formControlName="idProveedor">
+            <option value="">Seleccione un proveedor</option>
+            <option *ngFor="let proveedor of proveedoresList" [value]="proveedor.idProveedores">
+              {{proveedor.nombreComercial}}
+            </option>
+          </select>
           <div class="invalid-feedback" *ngIf="loteForm.get('idProveedor')?.errors?.['required'] && loteForm.get('idProveedor')?.touched">
-            El ID de proveedor es requerido.
-          </div>
-          <div class="invalid-feedback" *ngIf="loteForm.get('idProveedor')?.errors?.['min'] && loteForm.get('idProveedor')?.touched">
-            El ID de proveedor debe ser mayor a 0.
+            El proveedor es requerido.
           </div>
         </div>
       </div>

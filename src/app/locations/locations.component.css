@@ -10,9 +10,6 @@
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .header-section h1 {
@@ -23,8 +20,8 @@
   gap: 1rem;
 }
 
-.header-section i {
-  color: #41A1AF;
+.header-section h1 i {
+  color: #3498db;
   font-size: 2rem;
 }
 
@@ -57,7 +54,7 @@
   vertical-align: middle;
 }
 
-/* Estilos para el modal */
+/* Estilos específicos para el modal */
 :host ::ng-deep .modal-content {
   border-radius: 15px;
   border: none;
@@ -112,15 +109,6 @@ select.form-control {
   margin-top: 0.25rem;
 }
 
-/* Nueva regla para el ícono */
-.btn-primary i {
-  color: white;
-}
-
-.btn-danger i {
-  color: white;
-}
-
 @media (max-width: 768px) {
   .locations-container {
     padding: 1rem;
@@ -128,8 +116,6 @@ select.form-control {
 
   .header-section {
     padding: 1rem;
-    flex-direction: column;
-    gap: 1rem;
   }
 
   .table th, .table td {

@@ -59,6 +59,8 @@ export class ProveedoresComponent implements OnInit {
     
     this.proveedoresService.getProveedores().subscribe({
       next: (proveedores) => {
+        console.log('Datos recibidos del servidor:', proveedores);
+        console.log('Estructura del primer proveedor:', JSON.stringify(proveedores[0], null, 2));
         this.proveedoresList = proveedores;
         this.proveedoresFiltrados = [...this.proveedoresList];
         this.collectionSize = this.proveedoresFiltrados.length;

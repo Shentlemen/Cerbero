@@ -5,6 +5,7 @@ import { ConfigService } from './config.service';
 
 export interface TipoDeActivoDTO {
     idActivo: number;      // ID único del tipo de activo
+    nombre: string;        // Nombre del tipo de activo
     descripcion: string;   // Descripción del tipo de activo
     idUsuario: number;     // ID del usuario responsable (FK a usuario)
 }

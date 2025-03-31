@@ -1,18 +1,17 @@
-<div class="tipos-activo-container">
+<div class="generic-container">
   <div class="header-section">
     <div class="header-content">
       <div class="title-wrapper">
         <h1><i class="fas fa-tags"></i> Tipos de Activo</h1>
       </div>
       <div class="actions">
-        <button class="btn btn-export" (click)="abrirModal(tipoActivoModal)">
+        <button class="btn btn-export" (click)="openNewTipoActivoModal()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Tipo de Activo
         </button>
       </div>
     </div>
   </div>
-
   <div class="content-section">
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
@@ -27,53 +26,26 @@
       </div>
 
       <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="table">
+        <table class="tipos-activo-table">
           <thead>
             <tr>
-              <th (click)="sortData('idActivo')" [class.active]="sortColumn === 'idActivo'">
-                <div class="th-content">
-                  <span>ID</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idActivo' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idActivo' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idActivo'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
-                <div class="th-content">
-                  <span>Descripción</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'descripcion'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
-                <div class="th-content">
-                  <span>Usuario Responsable</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idUsuario' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idUsuario' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idUsuario'
-                  }"></i>
-                </div>
-              </th>
+              <th>ID</th>
+              <th>Descripción</th>
+              <th>Usuario Responsable</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let tipoActivo of pagedTiposActivo">
-              <td>{{tipoActivo.idActivo}}</td>
-              <td>{{tipoActivo.descripcion}}</td>
-              <td>{{tipoActivo.idUsuario}}</td>
+            <tr *ngFor="let tipo of tiposActivoList" class="tipos-activo-row">
+              <td>{{tipo.idActivo}}</td>
+              <td>{{tipo.descripcion}}</td>
+              <td>{{getNombreUsuario(tipo.idUsuario)}}</td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-primary btn-sm" (click)="abrirModal(tipoActivoModal, tipoActivo)">
+                  <button class="btn btn-primary btn-sm me-2" (click)="editTipoActivo(tipo)">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarTipoActivo(tipoActivo.idActivo)">
+                  <button class="btn btn-danger btn-sm" (click)="deleteTipoActivo(tipo.idActivo)">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </div>
@@ -83,7 +55,7 @@
         </table>
       </div>
 
-      <div *ngIf="!loading && !error && pagedTiposActivo.length === 0" class="alert alert-info">
+      <div *ngIf="!loading && !error && tiposActivoList.length === 0" class="alert alert-info">
         No hay tipos de activo registrados.
       </div>
     </div>
@@ -113,22 +85,21 @@
     <form [formGroup]="tipoActivoForm">
       <div class="row">
         <div class="col-md-12 mb-3">
-          <label class="form-label">Descripción</label>
-          <input type="text" class="form-control" formControlName="descripcion">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-control" formControlName="nombre">
         </div>
       </div>
-
       <div class="row">
         <div class="col-md-12 mb-3">
-          <label class="form-label">Usuario Responsable</label>
-          <input type="number" class="form-control" formControlName="idUsuario">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-control" formControlName="descripcion" rows="3"></textarea>
         </div>
       </div>
     </form>
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardarTipoActivo()" [disabled]="!tipoActivoForm.valid">
+    <button type="button" class="btn btn-primary" (click)="saveTipoActivo()" [disabled]="!tipoActivoForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>

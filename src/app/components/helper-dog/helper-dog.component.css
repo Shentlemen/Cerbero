@@ -2,13 +2,32 @@
   position: fixed;
   bottom: 20px;
   left: 20px;
-  z-index: 999999999;
+  z-index: 9999;
 }
 
 .helper-dog img {
   width: 150px;
   cursor: pointer;
   transition: all 0.3s ease;
+  opacity: 0;
+  transform: scale(0);
+  z-index: 9999;
+}
+
+.helper-dog.active img {
+  width: 150px;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.helper-dog:not(.active) img {
+  width: 40px;
+  height: 40px;
+  opacity: 1;
+  transform: scale(1);
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
 .helper-dog.active img {
@@ -24,12 +43,20 @@
   border-radius: 20px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   width: 250px;
-  z-index: 999999999;
+  z-index: 10000;
   animation: popIn 0.3s ease-out;
   font-size: 0.95rem;
   line-height: 1.4;
   color: #2c3e50;
   pointer-events: auto;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.helper-dog.active .speech-bubble {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .speech-bubble::before {

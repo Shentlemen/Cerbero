@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
+import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 
 @Component({
   selector: 'app-lotes',
@@ -17,6 +18,7 @@ import { LotesService, LoteDTO } from '../../services/lotes.service';
 export class LotesComponent implements OnInit {
   lotesList: LoteDTO[] = [];
   lotesFiltrados: LoteDTO[] = [];
+  proveedoresList: ProveedorDTO[] = [];
   filterForm: FormGroup;
   loteForm: FormGroup;
   sortColumn: string = '';
@@ -31,6 +33,7 @@ export class LotesComponent implements OnInit {
 
   constructor(
     private lotesService: LotesService,
+    private proveedoresService: ProveedoresService,
     private fb: FormBuilder,
     private modalService: NgbModal
   ) {
@@ -52,6 +55,7 @@ export class LotesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLotes();
+    this.loadProveedores();
   }
 
   loadLotes(): void {
@@ -69,6 +73,18 @@ export class LotesComponent implements OnInit {
         console.error('Error al cargar los lotes:', error);
         this.error = 'Error al cargar los lotes. Por favor, intente nuevamente.';
         this.loading = false;
+      }
+    });
+  }
+
+  loadProveedores(): void {
+    this.proveedoresService.getProveedores().subscribe({
+      next: (proveedores) => {
+        this.proveedoresList = proveedores;
+      },
+      error: (error) => {
+        console.error('Error al cargar los proveedores:', error);
+        this.error = 'Error al cargar los proveedores. Por favor, intente nuevamente.';
       }
     });
   }

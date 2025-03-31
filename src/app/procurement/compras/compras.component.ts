@@ -48,6 +48,11 @@ export class ComprasComponent implements OnInit {
       fechaFinal: ['', Validators.required],
       monto: ['', [Validators.required, Validators.min(0)]]
     });
+
+    // Suscribirse a cambios en el formulario de filtro
+    this.filterForm.valueChanges.subscribe(() => {
+      this.aplicarFiltros();
+    });
   }
 
   ngOnInit(): void {

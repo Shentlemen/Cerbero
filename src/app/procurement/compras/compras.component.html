@@ -4,11 +4,11 @@
       <div class="title-wrapper">
         <h1><i class="fas fa-shopping-cart"></i> Gestión de Compras</h1>
         <div class="stats-pills">
-          <div class="stat-pill" (click)="filterForm.patchValue({ moneda: 'USD' })" [class.active]="filterForm.get('moneda')?.value === 'USD'">
+          <div class="stat-pill usd" (click)="filterForm.patchValue({ moneda: 'USD' })" [class.active]="filterForm.get('moneda')?.value === 'USD'">
             <i class="fas fa-dollar-sign"></i>
             <span>USD</span>
           </div>
-          <div class="stat-pill" (click)="filterForm.patchValue({ moneda: 'EUR' })" [class.active]="filterForm.get('moneda')?.value === 'EUR'">
+          <div class="stat-pill eur" (click)="filterForm.patchValue({ moneda: 'EUR' })" [class.active]="filterForm.get('moneda')?.value === 'EUR'">
             <i class="fas fa-euro-sign"></i>
             <span>EUR</span>
           </div>

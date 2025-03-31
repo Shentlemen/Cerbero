@@ -36,7 +36,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #41A1AF;
+  color: #3498db;
   font-size: 2rem;
 }
 
@@ -97,26 +97,6 @@
   background: #f8f9fa;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.btn-primary {
-  background-color: #41A1AF;
-  border-color: #41A1AF;
-}
-
-.btn-primary:hover {
-  background-color: #3a919e;
-  border-color: #3a919e;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
-
-.btn-danger:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
 }
 
 .modal-header {

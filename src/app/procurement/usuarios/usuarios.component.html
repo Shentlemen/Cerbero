@@ -30,16 +30,6 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
-                <div class="th-content">
-                  <span>ID</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idUsuario' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idUsuario' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idUsuario'
-                  }"></i>
-                </div>
-              </th>
               <th (click)="sortData('cedula')" [class.active]="sortColumn === 'cedula'">
                 <div class="th-content">
                   <span>Cédula</span>
@@ -95,7 +85,6 @@
           </thead>
           <tbody>
             <tr *ngFor="let usuario of pagedUsuarios">
-              <td>{{usuario.idUsuario}}</td>
               <td>{{usuario.cedula}}</td>
               <td>{{usuario.nombre}}</td>
               <td>{{usuario.apellido}}</td>

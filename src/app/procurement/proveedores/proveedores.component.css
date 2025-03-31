@@ -36,7 +36,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #41A1AF;
+  color: #3498db;
   font-size: 2rem;
 }
 
@@ -79,16 +79,6 @@
 }
 
 .stat-pill.active i {
-  color: white;
-}
-
-.stat-pill.total {
-  background: #41A1AF;
-  color: white;
-  border-color: #41A1AF;
-}
-
-.stat-pill.total i {
   color: white;
 }
 

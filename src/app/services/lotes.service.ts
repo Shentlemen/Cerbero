@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map, switchMap, forkJoin } from 'rxjs';
 import { ConfigService } from './config.service';
+import { ComprasService, CompraDTO } from './compras.service';
+import { ProveedoresService, ProveedorDTO } from './proveedores.service';
 
 export interface LoteDTO {
   idItem: number;          // ID único del lote
@@ -11,6 +13,8 @@ export interface LoteDTO {
   mesesGarantia: number;   // Duración de la garantía en meses
   idProveedor: number;     // ID del proveedor
   idServicioGarantia: number; // ID del servicio de garantía
+  compraDescripcion?: string; // Descripción de la compra asociada
+  proveedorNombreComercial?: string; // Nombre comercial del proveedor
 }
 
 @Injectable({
@@ -21,25 +25,64 @@ export class LotesService {
 
   constructor(
     private http: HttpClient,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private comprasService: ComprasService,
+    private proveedoresService: ProveedoresService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/lotes`;
   }
 
+  private enrichLoteWithCompraInfo(lote: LoteDTO): Observable<LoteDTO> {
+    return this.comprasService.getCompraById(lote.idCompra).pipe(
+      switchMap(compra => 
+        this.proveedoresService.getProveedor(lote.idProveedor).pipe(
+          map(proveedor => ({
+            ...lote,
+            compraDescripcion: compra.descripcion,
+            proveedorNombreComercial: proveedor.nombreComercial
+          }))
+        )
+      )
+    );
+  }
+
   getLotes(): Observable<LoteDTO[]> {
-    return this.http.get<LoteDTO[]>(this.apiUrl);
+    return this.http.get<LoteDTO[]>(this.apiUrl).pipe(
+      switchMap(lotes => {
+        const enrichedLotes = lotes.map(lote => 
+          this.enrichLoteWithCompraInfo(lote)
+        );
+        return forkJoin(enrichedLotes);
+      })
+    );
   }
 
   getLote(id: number): Observable<LoteDTO> {
-    return this.http.get<LoteDTO>(`${this.apiUrl}/${id}`);
+    return this.http.get<LoteDTO>(`${this.apiUrl}/${id}`).pipe(
+      switchMap(lote => this.enrichLoteWithCompraInfo(lote))
+    );
   }
 
   getLotesByCompra(idCompra: number): Observable<LoteDTO[]> {
-    return this.http.get<LoteDTO[]>(`${this.apiUrl}/by-compra/${idCompra}`);
+    return this.http.get<LoteDTO[]>(`${this.apiUrl}/by-compra/${idCompra}`).pipe(
+      switchMap(lotes => {
+        const enrichedLotes = lotes.map(lote => 
+          this.enrichLoteWithCompraInfo(lote)
+        );
+        return forkJoin(enrichedLotes);
+      })
+    );
   }
 
   getLotesByProveedor(idProveedor: number): Observable<LoteDTO[]> {
-    return this.http.get<LoteDTO[]>(`${this.apiUrl}/by-proveedor/${idProveedor}`);
+    return this.http.get<LoteDTO[]>(`${this.apiUrl}/by-proveedor/${idProveedor}`).pipe(
+      switchMap(lotes => {
+        const enrichedLotes = lotes.map(lote => 
+          this.enrichLoteWithCompraInfo(lote)
+        );
+        return forkJoin(enrichedLotes);
+      })
+    );
   }
 
   crearLote(lote: Omit<LoteDTO, 'idItem'>): Observable<string> {
