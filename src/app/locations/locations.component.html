@@ -54,6 +54,9 @@
               <td>{{getSubnetName(ubicacion.idSubnet)}}</td>
               <td>
                 <div class="action-buttons">
+                  <button class="btn btn-primary btn-sm me-2" (click)="editarUbicacion(ubicacion)">
+                    <i class="fas fa-edit"></i>
+                  </button>
                   <button class="btn btn-danger btn-sm" (click)="confirmarEliminar(ubicacion)">
                     <i class="fas fa-trash-alt"></i>
                   </button>

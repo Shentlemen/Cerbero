@@ -6,6 +6,8 @@ import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
 import { UbicacionesService, Ubicacion } from '../../services/ubicaciones.service';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
+import { ComprasService, CompraDTO } from '../../services/compras.service';
+import { HardwareService } from '../../services/hardware.service';
 
 @Component({
   selector: 'app-activos',
@@ -28,8 +30,12 @@ export class ActivosComponent implements OnInit {
   activoForm: FormGroup;
   modoEdicion: boolean = false;
   activoSeleccionado: ActivoDTO | null = null;
+  usuarioSeleccionado: UsuarioDTO | null = null;
+  compraSeleccionada: CompraDTO | null = null;
   ubicaciones: Map<number, Ubicacion> = new Map();
   usuarios: Map<number, UsuarioDTO> = new Map();
+  compras: Map<number, CompraDTO> = new Map();
+  hardwareMap: Map<number, any> = new Map();
   
   // Paginación
   page = 1;
@@ -51,6 +57,8 @@ export class ActivosComponent implements OnInit {
     private activosService: ActivosService,
     private ubicacionesService: UbicacionesService,
     private usuariosService: UsuariosService,
+    private comprasService: ComprasService,
+    private hardwareService: HardwareService,
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router
@@ -75,6 +83,7 @@ export class ActivosComponent implements OnInit {
   ngOnInit() {
     this.cargarUbicaciones();
     this.cargarUsuarios();
+    this.cargarCompras();
     this.cargarActivos();
   }
 
@@ -126,6 +135,37 @@ export class ActivosComponent implements OnInit {
     }
   }
 
+  verDetallesUsuario(idUsuario: number, usuarioModal: any) {
+    const usuario = this.usuarios.get(idUsuario);
+    if (usuario) {
+      this.usuarioSeleccionado = usuario;
+      this.modalService.open(usuarioModal, { size: 'lg' });
+    }
+  }
+
+  cargarCompras() {
+    this.comprasService.getCompras().subscribe({
+      next: (compras) => {
+        compras.forEach(compra => {
+          if (compra.idCompra) {
+            this.compras.set(compra.idCompra, compra);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al cargar compras:', error);
+      }
+    });
+  }
+
+  verDetallesCompra(idCompra: number, compraModal: any) {
+    const compra = this.compras.get(idCompra);
+    if (compra) {
+      this.compraSeleccionada = compra;
+      this.modalService.open(compraModal, { size: 'lg' });
+    }
+  }
+
   cargarActivos() {
     this.loading = true;
     this.error = null;
@@ -136,6 +176,7 @@ export class ActivosComponent implements OnInit {
         this.activosFiltrados = [...this.activos];
         this.collectionSize = this.activosFiltrados.length;
         this.updateSummary();
+        this.cargarHardwareInfo();
         this.loading = false;
       },
       error: (error) => {
@@ -143,6 +184,29 @@ export class ActivosComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  cargarHardwareInfo() {
+    const hardwareIds = this.activos.map(activo => activo.hardwareId);
+    this.hardwareService.getHardwareByIds(hardwareIds).subscribe({
+      next: (hardwareList) => {
+        hardwareList.forEach(hardware => {
+          this.hardwareMap.set(hardware.id, hardware);
+        });
+      },
+      error: (error) => {
+        console.error('Error al cargar información de hardware:', error);
+      }
+    });
+  }
+
+  getHardwareName(hardwareId: number): string {
+    const hardware = this.hardwareMap.get(hardwareId);
+    return hardware ? hardware.name : `PC-${hardwareId}`;
+  }
+
+  verDetallesHardware(hardwareId: number): void {
+    this.router.navigate(['/menu/asset-details', hardwareId]);
   }
 
   get pagedActivos(): ActivoDTO[] {

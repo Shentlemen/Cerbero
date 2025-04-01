@@ -32,8 +32,10 @@
           <span class="value">{{activo.idActivo}}</span>
         </div>
         <div class="detail-item">
-          <span class="label">Hardware ID:</span>
-          <span class="value">{{activo.hardwareId}}</span>
+          <span class="label">Nombre del PC:</span>
+          <span class="value hardware-link" (click)="verDetallesHardware(activo.hardwareId)">
+            {{hardwareName}}
+          </span>
         </div>
         <div class="detail-item">
           <span class="label">ID Secundario:</span>
@@ -67,15 +69,21 @@
         <h3>Referencias</h3>
         <div class="detail-item">
           <span class="label">Tipo de Activo:</span>
-          <span class="value">{{activo.idTipoActivo}}</span>
+          <span class="value tipo-activo-link" (click)="verDetallesTipoActivo(activo.idTipoActivo, tipoActivoModal)">
+            {{tipoActivoInfo}}
+          </span>
         </div>
         <div class="detail-item">
           <span class="label">Número de Compra:</span>
-          <span class="value">{{activo.idNumeroCompra}}</span>
+          <span class="value compra-link" (click)="verDetallesCompra(activo.idNumeroCompra, compraModal)">
+            {{activo.idNumeroCompra}}
+          </span>
         </div>
         <div class="detail-item">
           <span class="label">Item:</span>
-          <span class="value">{{activo.idItem}}</span>
+          <span class="value item-link" (click)="verDetallesLote(activo.idItem, loteModal)">
+            {{activo.idItem}}
+          </span>
         </div>
       </div>
 
@@ -83,15 +91,21 @@
         <h3>Asignación</h3>
         <div class="detail-item">
           <span class="label">Entrega:</span>
-          <span class="value">{{activo.idEntrega}}</span>
+          <span class="value entrega-link" (click)="verDetallesEntrega(activo.idEntrega, entregaModal)">
+            {{activo.idEntrega}}
+          </span>
         </div>
         <div class="detail-item">
           <span class="label">Ubicación:</span>
-          <span class="value">{{activo.idUbicacion}}</span>
+          <span class="value ubicacion-link" (click)="verDetallesUbicacion(activo.idUbicacion, ubicacionModal)">
+            {{ubicacionInfo}}
+          </span>
         </div>
         <div class="detail-item">
           <span class="label">Usuario:</span>
-          <span class="value">{{activo.idUsuario}}</span>
+          <span class="value usuario-link" (click)="verDetallesUsuario(activo.idUsuario, usuarioModal)">
+            {{usuarioInfo}}
+          </span>
         </div>
       </div>
 
@@ -99,7 +113,9 @@
         <h3>Garantía</h3>
         <div class="detail-item">
           <span class="label">Servicio de Garantía:</span>
-          <span class="value">{{activo.idServicioGarantia}}</span>
+          <span class="value servicio-garantia-link" (click)="verDetallesServicioGarantia(activo.idServicioGarantia, servicioGarantiaModal)">
+            {{servicioGarantiaInfo}}
+          </span>
         </div>
         <div class="detail-item">
           <span class="label">Fecha Fin Garantía:</span>
@@ -112,4 +128,424 @@
       No se encontró el activo solicitado.
     </div>
   </div>
-</div> 
+</div>
+
+<!-- Modal para detalles de entrega -->
+<ng-template #entregaModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-truck me-2"></i>
+      Detalles de la Entrega
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="entregaSeleccionada">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID Entrega
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.idEntrega}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-box"></i>
+          ID Item
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.idItem}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-hashtag"></i>
+          Cantidad
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.cantidad}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-align-left"></i>
+          Descripción
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.descripcion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-alt"></i>
+          Fecha Pedido
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.fechaPedido | date:'dd/MM/yyyy'}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-check"></i>
+          Fecha Fin Garantía
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.fechaFinGarantia | date:'dd/MM/yyyy'}}</div>
+      </div>
+      <div class="detail-row" *ngIf="entregaSeleccionada.loteDescripcion">
+        <div class="detail-label">
+          <i class="fas fa-boxes"></i>
+          Lote
+        </div>
+        <div class="detail-value">{{entregaSeleccionada.loteDescripcion}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de ubicación -->
+<ng-template #ubicacionModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-map-marker-alt me-2"></i>
+      Detalles de Ubicación
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="ubicacionSeleccionada">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Gerencia
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.nombreGerencia}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-door-open"></i>
+          Oficina
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.nombreOficina}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-city"></i>
+          Ciudad
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.ciudad}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-map"></i>
+          Departamento
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.departamento}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-street-view"></i>
+          Dirección
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.direccion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Piso
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.piso}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-door-closed"></i>
+          Puerta
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.numeroPuerta}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-phone"></i>
+          Interno
+        </div>
+        <div class="detail-value">{{ubicacionSeleccionada.interno}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de usuario -->
+<ng-template #usuarioModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-user me-2"></i>
+      Detalles del Usuario
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="usuarioSeleccionado">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.idUsuario}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-user"></i>
+          Nombre
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.nombre}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-user"></i>
+          Apellido
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.apellido}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-briefcase"></i>
+          Cargo
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.cargo}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Unidad
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.unidad}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de tipo de activo -->
+<ng-template #tipoActivoModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-tag me-2"></i>
+      Detalles del Tipo de Activo
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="tipoActivoSeleccionado">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID
+        </div>
+        <div class="detail-value">{{tipoActivoSeleccionado.idActivo}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-align-left"></i>
+          Descripción
+        </div>
+        <div class="detail-value">{{tipoActivoSeleccionado.descripcion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-user"></i>
+          Usuario Responsable
+        </div>
+        <div class="detail-value">{{usuarioResponsable?.nombre}} {{usuarioResponsable?.apellido}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de compra -->
+<ng-template #compraModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-shopping-cart me-2"></i>
+      Detalles de la Compra
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="compraSeleccionada">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID Compra
+        </div>
+        <div class="detail-value">{{compraSeleccionada.idCompra}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-tag"></i>
+          Tipo de Compra
+        </div>
+        <div class="detail-value">{{compraSeleccionada.idTipoCompra}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-align-left"></i>
+          Descripción
+        </div>
+        <div class="detail-value">{{compraSeleccionada.descripcion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-alt"></i>
+          Fecha Inicio
+        </div>
+        <div class="detail-value">{{compraSeleccionada.fechaInicio | date:'dd/MM/yyyy'}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-check"></i>
+          Fecha Final
+        </div>
+        <div class="detail-value">{{compraSeleccionada.fechaFinal | date:'dd/MM/yyyy'}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-dollar-sign"></i>
+          Monto
+        </div>
+        <div class="detail-value">{{compraSeleccionada.monto}} {{compraSeleccionada.moneda}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de lote -->
+<ng-template #loteModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-boxes me-2"></i>
+      Detalles del Lote
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="loteSeleccionado">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID Item
+        </div>
+        <div class="detail-value">{{loteSeleccionado.idItem}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-shopping-cart"></i>
+          ID Compra
+        </div>
+        <div class="detail-value">{{loteSeleccionado.idCompra}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-align-left"></i>
+          Descripción
+        </div>
+        <div class="detail-value">{{loteSeleccionado.descripcion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-hashtag"></i>
+          Cantidad
+        </div>
+        <div class="detail-value">{{loteSeleccionado.cantidad}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-check"></i>
+          Meses de Garantía
+        </div>
+        <div class="detail-value">{{loteSeleccionado.mesesGarantia}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-truck"></i>
+          Proveedor
+        </div>
+        <div class="detail-value">{{loteSeleccionado.proveedorNombreComercial}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-tools"></i>
+          Servicio de Garantía
+        </div>
+        <div class="detail-value">{{loteSeleccionado.idServicioGarantia}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de servicio de garantía -->
+<ng-template #servicioGarantiaModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-tools me-2"></i>
+      Detalles del Servicio de Garantía
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="servicioGarantiaSeleccionado">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID
+        </div>
+        <div class="detail-value">{{servicioGarantiaSeleccionado.idServicioGarantia}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Nombre Comercial
+        </div>
+        <div class="detail-value">{{servicioGarantiaSeleccionado.nombreComercial}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-align-left"></i>
+          Nombre
+        </div>
+        <div class="detail-value">{{servicioGarantiaSeleccionado.nombre}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-envelope"></i>
+          Correo de Contacto
+        </div>
+        <div class="detail-value">{{servicioGarantiaSeleccionado.correoDeContacto}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-phone"></i>
+          Teléfono de Contacto
+        </div>
+        <div class="detail-value">{{servicioGarantiaSeleccionado.telefonoDeContacto}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-badge"></i>
+          RUC
+        </div>
+        <div class="detail-value">{{servicioGarantiaSeleccionado.RUC}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template> 

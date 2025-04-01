@@ -156,6 +156,102 @@
   color: #d97706;
 }
 
+.entrega-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.entrega-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.ubicacion-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.ubicacion-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.usuario-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.usuario-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.tipo-activo-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.tipo-activo-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.compra-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.compra-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.item-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.item-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.servicio-garantia-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.servicio-garantia-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
+.hardware-link {
+  color: #41A1AF;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.hardware-link:hover {
+  color: #3A8F9C;
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .activo-details-container {
     padding: 1rem;

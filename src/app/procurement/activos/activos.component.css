@@ -49,14 +49,14 @@
 }
 
 .ubicacion-link {
-  color: #41A1AF;
+  color: #2c3e50;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .ubicacion-link:hover {
-  color: #3A8F9C;
+  color: #1a202c;
   text-decoration: underline;
 }
 
@@ -64,6 +64,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 1rem;
 }
 
 .detail-row {
@@ -74,6 +75,7 @@
   background: #f8f9fa;
   border-radius: 8px;
   transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
 }
 
 .detail-row:last-child {
@@ -82,6 +84,7 @@
 
 .detail-row:hover {
   background: #edf2f7;
+  transform: translateX(5px);
 }
 
 .detail-label {
@@ -96,11 +99,35 @@
 .detail-label i {
   color: #41A1AF;
   width: 20px;
+  font-size: 1.1rem;
 }
 
 .detail-value {
   color: #2c3e50;
   flex: 1;
+  font-size: 1rem;
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+.modal-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
 }
 
 @media (max-width: 768px) {
@@ -113,4 +140,46 @@
   .detail-label {
     min-width: auto;
   }
+}
+
+.usuario-link {
+  color: #2c3e50;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.usuario-link:hover {
+  color: #1a202c;
+  text-decoration: underline;
+}
+
+.compra-link {
+  color: #2c3e50;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.compra-link:hover {
+  color: #1a202c;
+  text-decoration: underline;
+}
+
+.hardware-name {
+  color: #2c3e50;
+  font-weight: 500;
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #f1f5f9;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.hardware-name:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+  color: #1a202c;
+  text-decoration: underline;
 }

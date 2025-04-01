@@ -130,4 +130,27 @@ export class LocationsComponent implements OnInit {
       });
     }
   }
+
+  editarUbicacion(ubicacion: Ubicacion) {
+    const modalRef = this.modalService.open(LocationSelectorModalComponent, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    // Pasar la ubicación al modal para edición
+    modalRef.componentInstance.ubicacion = ubicacion;
+    
+    modalRef.result.then(
+      (result) => {
+        if (result) {
+          console.log('Ubicación actualizada exitosamente');
+          this.cargarUbicaciones();
+        }
+      },
+      (reason) => {
+        console.log('Modal cerrado por:', reason);
+      }
+    );
+  }
 } 

@@ -2,8 +2,8 @@
 
 /* Estilos base y variables */
 :root {
-  --primary-color: #41A1AF;
-  --primary-dark: #3A8F9C;
+  --primary-color: #3498db;
+  --primary-dark: #2980b9;
   --danger-color: #e74c3c;
   --danger-dark: #c0392b;
   --background-color: #f0f4f8;
@@ -209,7 +209,7 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   }
 }
 
-/* Estilos unificados para botones de acción */
+/* Estilos unificados para botones */
 .action-buttons {
   display: flex;
   gap: 0.25rem;
@@ -220,22 +220,24 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-weight: 400;
-  transition: all 0.2s ease;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
   border: none;
   cursor: pointer;
   min-width: 32px;
-  height: 32px;
+  height: auto;
   box-shadow: none;
+  gap: 0.5rem;
 }
 
 .btn i {
   font-size: 0.9rem;
+  line-height: 1;
 }
 
-/* Estilos para botón primario (editar) */
+/* Estilos para botón primario */
 .btn-primary,
 .action-buttons .btn-primary,
 .btn.btn-primary {
@@ -248,7 +250,15 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 .action-buttons .btn-primary:hover,
 .btn.btn-primary:hover {
   background-color: #2980b9;
-  border: none;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+}
+
+.btn-primary:disabled {
+  background: #E2E8F0;
+  color: #94A3B8;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Estilos para botón de eliminar */
@@ -268,12 +278,10 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 
 /* Estilos para botones pequeños */
 .btn-sm {
+  padding: 0.5rem 1rem;
   min-width: 28px;
-  height: 32px;
-  padding: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  height: auto;
+  font-size: 0.875rem;
 }
 
 .btn-sm i {
@@ -288,10 +296,12 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
     gap: 0.15rem;
   }
   
+  .btn {
+    padding: 0.5rem 1rem;
+  }
+  
   .btn-sm {
-    padding: 0.4rem;
-    min-width: 28px;
-    height: 28px;
+    padding: 0.4rem 0.8rem;
   }
 }
 
@@ -388,7 +398,7 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 .generic-table th.active {
-  color: #41A1AF;
+  color: #3498db;
 }
 
 .generic-table td {
@@ -424,6 +434,12 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 /* Estilos comunes para modales */
+.modal-content {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
 .modal-header {
   background: #f8f9fa;
   border-radius: 15px 15px 0 0;
@@ -435,6 +451,13 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   color: #2c3e50;
   font-weight: 600;
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-title i {
+  color: #3498db;
 }
 
 .modal-body {
@@ -444,6 +467,65 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 .modal-footer {
   padding: 1.5rem;
   border-top: 1px solid #edf2f7;
+}
+
+.ubicacion-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-row:hover {
+  background: #edf2f7;
+  transform: translateX(5px);
+}
+
+.detail-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2c3e50;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.detail-label i {
+  color: #3498db;
+  width: 20px;
+  font-size: 1.1rem;
+}
+
+.detail-value {
+  color: #2c3e50;
+  flex: 1;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .detail-label {
+    min-width: auto;
+  }
 }
 
 /* Estilos comunes para formularios */
@@ -461,8 +543,8 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: #41A1AF;
-  box-shadow: 0 0 0 3px rgba(65, 161, 175, 0.1);
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .form-control.ng-invalid.ng-touched {
@@ -512,9 +594,9 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 .stat-pill.active {
-  background: #41A1AF;
+  background: #3498db;
   color: white;
-  border-color: #41A1AF;
+  border-color: #3498db;
 }
 
 .stat-pill.active i {
@@ -553,7 +635,7 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 
 .item-name i {
   font-size: 1.2rem;
-  color: #41A1AF;
+  color: #3498db;
 }
 
 /* Estilos comunes para listas */
@@ -680,7 +762,7 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 .btn-export {
-  background: #41A1AF;
+  background: #3498db;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
@@ -692,9 +774,9 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 .btn-export:hover {
-  background: #3A8F9C;
+  background: #2980b9;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
 }
 
 /* Mejoras en los formularios */
@@ -707,8 +789,8 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 }
 
 .form-control:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(65, 161, 175, 0.1);
+  border-color: #3498db;
+  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
 }
 
 /* Mejoras en los modales */
@@ -747,14 +829,14 @@ ngb-pagination.custom-pagination {
 
 .custom-pagination .page-link:hover {
   background: #e2e8f0;
-  color: var(--primary-color);
+  color: #3498db;
   transform: translateY(-2px);
 }
 
 .custom-pagination .active .page-link {
-  background: var(--primary-color);
+  background: #3498db;
   color: white;
-  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
 }
 
 /* Mejoras en los badges y pills */
@@ -887,7 +969,7 @@ ngb-pagination.custom-pagination {
 }
 
 .generic-table th.active {
-  color: #41A1AF;
+  color: #3498db;
 }
 
 .generic-table td {
@@ -944,7 +1026,7 @@ ngb-pagination.custom-pagination {
 }
 
 .btn-export {
-  background: #41A1AF;
+  background: #3498db;
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
@@ -954,9 +1036,9 @@ ngb-pagination.custom-pagination {
 }
 
 .btn-export:hover {
-  background: #3A8F9C;
+  background: #2980b9;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
 }
 
 /* Estilos comunes para formularios */
@@ -968,8 +1050,8 @@ ngb-pagination.custom-pagination {
 }
 
 .form-control:focus {
-  border-color: #41A1AF;
-  box-shadow: 0 0 0 3px rgba(65, 161, 175, 0.1);
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 /* Estilos comunes para modales */
@@ -990,6 +1072,9 @@ ngb-pagination.custom-pagination {
   color: #2c3e50;
   font-weight: 600;
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .modal-title i {
@@ -1042,9 +1127,9 @@ ngb-pagination.custom-pagination {
 }
 
 .stat-pill.active {
-  background: #41A1AF;
+  background: #3498db;
   color: white;
-  border-color: #41A1AF;
+  border-color: #3498db;
 }
 
 .stat-pill.active i {

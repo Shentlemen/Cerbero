@@ -69,7 +69,7 @@ import { Ubicacion } from '../../services/ubicaciones.service';
   `,
   styles: [`
     .modal-header {
-      background: #f8f9fa;
+      background-color: #f8f9fa;
       border-bottom: 1px solid #dee2e6;
     }
     .modal-title {
@@ -79,27 +79,46 @@ import { Ubicacion } from '../../services/ubicaciones.service';
     .form-select {
       border-radius: 8px;
       border: 1px solid #ced4da;
-      padding: 0.75rem;
+      padding: 0.5rem;
     }
     .card {
       border-radius: 8px;
-      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .card-title {
       color: #2c3e50;
+      font-size: 1.1rem;
       font-weight: 600;
-      margin-bottom: 1rem;
     }
     .btn {
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
     }
     .btn-primary {
-      background: #3498db;
+      background: #41A1AF;
       border: none;
     }
     .btn-primary:disabled {
-      background: #bdc3c7;
+      background: #E2E8F0;
+      color: #94A3B8;
+    }
+    .btn-primary:not(:disabled):hover {
+      background: #3A8F9C;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+    }
+    .btn-secondary {
+      background: #6c757d;
+      border: none;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
     }
   `]
 })

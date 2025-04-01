@@ -106,6 +106,9 @@ import { SubnetService, SubnetDTO } from '../../services/subnet.service';
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
       transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     .btn-primary {
       background: #41A1AF;
@@ -119,6 +122,15 @@ import { SubnetService, SubnetDTO } from '../../services/subnet.service';
       background: #3A8F9C;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+    }
+    .btn-secondary {
+      background: #6c757d;
+      border: none;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
     }
   `]
 })

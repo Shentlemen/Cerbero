@@ -58,6 +58,11 @@
                   }"></i>
                 </div>
               </th>
+              <th>
+                <div class="th-content">
+                  <span>Nombre del PC</span>
+                </div>
+              </th>
               <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
                 <div class="th-content">
                   <span>Usuario</span>
@@ -103,8 +108,21 @@
           </thead>
           <tbody>
             <tr *ngFor="let activo of pagedActivos" class="activo-row">
-              <td>{{activo.idNumeroCompra}}</td>
-              <td>{{getUsuarioInfo(activo.idUsuario)}}</td>
+              <td>
+                <span class="compra-link" (click)="verDetallesCompra(activo.idNumeroCompra, compraModal)">
+                  {{activo.idNumeroCompra}}
+                </span>
+              </td>
+              <td>
+                <span class="hardware-name" (click)="verDetallesHardware(activo.hardwareId)">
+                  {{getHardwareName(activo.hardwareId)}}
+                </span>
+              </td>
+              <td>
+                <span class="usuario-link" (click)="verDetallesUsuario(activo.idUsuario, usuarioModal)">
+                  {{getUsuarioInfo(activo.idUsuario)}}
+                </span>
+              </td>
               <td>
                 <span class="ubicacion-link" (click)="verDetallesUbicacion(activo.idUbicacion, ubicacionModal)">
                   {{getUbicacionInfo(activo.idUbicacion)}}
@@ -328,6 +346,126 @@
           Interno
         </div>
         <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.interno}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de usuario -->
+<ng-template #usuarioModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-user me-2"></i>
+      Detalles del Usuario
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="usuarioSeleccionado">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.idUsuario}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-badge"></i>
+          Cédula
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.cedula}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-user"></i>
+          Nombre
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.nombre}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-user"></i>
+          Apellido
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.apellido}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-briefcase"></i>
+          Cargo
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.cargo}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-building"></i>
+          Unidad
+        </div>
+        <div class="detail-value">{{usuarioSeleccionado.unidad}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+  </div>
+</ng-template>
+
+<!-- Modal para detalles de compra -->
+<ng-template #compraModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-shopping-cart me-2"></i>
+      Detalles de la Compra
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="ubicacion-details" *ngIf="compraSeleccionada">
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-id-card"></i>
+          ID Compra
+        </div>
+        <div class="detail-value">{{compraSeleccionada.idCompra}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-tag"></i>
+          Tipo de Compra
+        </div>
+        <div class="detail-value">{{compraSeleccionada.idTipoCompra}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-align-left"></i>
+          Descripción
+        </div>
+        <div class="detail-value">{{compraSeleccionada.descripcion}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-alt"></i>
+          Fecha Inicio
+        </div>
+        <div class="detail-value">{{compraSeleccionada.fechaInicio | date:'dd/MM/yyyy'}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-calendar-check"></i>
+          Fecha Final
+        </div>
+        <div class="detail-value">{{compraSeleccionada.fechaFinal | date:'dd/MM/yyyy'}}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">
+          <i class="fas fa-dollar-sign"></i>
+          Monto
+        </div>
+        <div class="detail-value">{{compraSeleccionada.monto}} {{compraSeleccionada.moneda}}</div>
       </div>
     </div>
   </div>

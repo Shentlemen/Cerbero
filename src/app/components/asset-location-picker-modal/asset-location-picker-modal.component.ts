@@ -82,15 +82,34 @@ import { Ubicacion } from '../../services/ubicaciones.service';
       font-weight: 600;
     }
     .btn {
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
     }
     .btn-primary {
-      background-color: #3498db;
+      background: #41A1AF;
       border: none;
     }
     .btn-primary:disabled {
-      background-color: #bdc3c7;
+      background: #E2E8F0;
+      color: #94A3B8;
+    }
+    .btn-primary:not(:disabled):hover {
+      background: #3A8F9C;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+    }
+    .btn-secondary {
+      background: #6c757d;
+      border: none;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
     }
   `]
 })
