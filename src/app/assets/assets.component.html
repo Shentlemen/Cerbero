@@ -90,6 +90,11 @@
                 }"></i>
               </div>
             </th>
+            <th>
+              <div class="th-content">
+                <span>Nro. Compra</span>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -117,6 +122,11 @@
             <td>
               <span class="type-badge" [ngClass]="asset.biosType?.toLowerCase()">
                 {{ asset.biosType || 'Desconocido' }}
+              </span>
+            </td>
+            <td>
+              <span class="compra-link" (click)="verDetallesActivo(asset.id); $event.stopPropagation()">
+                {{getNumeroCompra(asset.id)}}
               </span>
             </td>
           </tr>

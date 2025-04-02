@@ -28,6 +28,8 @@ export class ProveedoresComponent implements OnInit {
   error: string | null = null;
   modoEdicion = false;
   proveedorSeleccionado: ProveedorDTO | null = null;
+  showConfirmDialog = false;
+  proveedorToDelete: number | null = null;
 
   constructor(
     private proveedoresService: ProveedoresService,
@@ -187,17 +189,31 @@ export class ProveedoresComponent implements OnInit {
   }
 
   eliminarProveedor(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar este proveedor?')) {
-      this.proveedoresService.eliminarProveedor(id).subscribe({
+    this.proveedorToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.proveedorToDelete) {
+      this.proveedoresService.eliminarProveedor(this.proveedorToDelete).subscribe({
         next: (mensaje) => {
           console.log(mensaje);
           this.loadProveedores();
+          this.showConfirmDialog = false;
+          this.proveedorToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar el proveedor:', error);
           this.error = 'Error al eliminar el proveedor. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.proveedorToDelete = null;
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.proveedorToDelete = null;
   }
 } 

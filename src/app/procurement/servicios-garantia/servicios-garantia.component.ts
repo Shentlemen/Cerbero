@@ -27,6 +27,8 @@ export class ServiciosGarantiaComponent implements OnInit {
   loading = false;
   error: string | null = null;
   modoEdicion = false;
+  showConfirmDialog = false;
+  servicioToDelete: number | null = null;
 
   constructor(
     private serviciosGarantiaService: ServiciosGarantiaService,
@@ -175,10 +177,17 @@ export class ServiciosGarantiaComponent implements OnInit {
   }
 
   eliminarServicioGarantia(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar este servicio de garantía?')) {
-      this.serviciosGarantiaService.eliminarServicioGarantia(id).subscribe({
+    this.servicioToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.servicioToDelete) {
+      this.serviciosGarantiaService.eliminarServicioGarantia(this.servicioToDelete).subscribe({
         next: () => {
           this.loadServiciosGarantia();
+          this.showConfirmDialog = false;
+          this.servicioToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar el servicio de garantía:', error);
@@ -186,5 +195,10 @@ export class ServiciosGarantiaComponent implements OnInit {
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.servicioToDelete = null;
   }
 } 

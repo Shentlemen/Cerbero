@@ -27,6 +27,8 @@ export class ComprasComponent implements OnInit {
   loading = false;
   error: string | null = null;
   modoEdicion = false;
+  showConfirmDialog = false;
+  compraToDelete: number | null = null;
 
   constructor(
     private comprasService: ComprasService,
@@ -187,17 +189,31 @@ export class ComprasComponent implements OnInit {
   }
 
   eliminarCompra(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar esta compra?')) {
-      this.comprasService.eliminarCompra(id).subscribe({
+    this.compraToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.compraToDelete) {
+      this.comprasService.eliminarCompra(this.compraToDelete).subscribe({
         next: () => {
           this.loadCompras();
+          this.showConfirmDialog = false;
+          this.compraToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar la compra:', error);
           this.error = 'Error al eliminar la compra. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.compraToDelete = null;
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.compraToDelete = null;
   }
 
   formatearMoneda(monto: number, moneda: string): string {

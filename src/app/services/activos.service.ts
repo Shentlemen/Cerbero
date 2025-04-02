@@ -47,4 +47,8 @@ export class ActivosService {
   eliminarActivo(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  getActivoByHardwareId(hardwareId: number): Observable<ActivoDTO> {
+    return this.http.get<ActivoDTO>(`${this.apiUrl}/by-hardware/${hardwareId}`);
+  }
 } 

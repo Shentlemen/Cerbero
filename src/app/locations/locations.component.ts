@@ -23,6 +23,8 @@ export class LocationsComponent implements OnInit {
   subnets: SubnetDTO[] = [];
   loading: boolean = false;
   error: string | null = null;
+  showConfirmDialog = false;
+  ubicacionToDelete: Ubicacion | null = null;
 
   constructor(
     private ubicacionesService: UbicacionesService,
@@ -109,18 +111,19 @@ export class LocationsComponent implements OnInit {
   }
 
   confirmarEliminar(ubicacion: Ubicacion) {
-    if (confirm(`¿Está seguro que desea eliminar la ubicación "${ubicacion.nombreGerencia || ''} - ${ubicacion.ciudad}"? Esta acción no se puede deshacer.`)) {
-      this.eliminarUbicacion(ubicacion);
-    }
+    this.ubicacionToDelete = ubicacion;
+    this.showConfirmDialog = true;
   }
 
-  eliminarUbicacion(ubicacion: Ubicacion) {
-    if (ubicacion.idUbicacion) {
+  confirmarEliminacion(): void {
+    if (this.ubicacionToDelete?.idUbicacion) {
       this.loading = true;
-      this.ubicacionesService.eliminarUbicacion(ubicacion.idUbicacion).subscribe({
+      this.ubicacionesService.eliminarUbicacion(this.ubicacionToDelete.idUbicacion).subscribe({
         next: () => {
           console.log('Ubicación eliminada exitosamente');
-          this.cargarUbicaciones(); // Recargar la lista
+          this.cargarUbicaciones();
+          this.showConfirmDialog = false;
+          this.ubicacionToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar la ubicación:', error);
@@ -129,6 +132,11 @@ export class LocationsComponent implements OnInit {
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.ubicacionToDelete = null;
   }
 
   editarUbicacion(ubicacion: Ubicacion) {

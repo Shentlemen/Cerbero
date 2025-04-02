@@ -212,8 +212,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const filterValue = e.dataPoint.label;
     
     if (filterType === 'type') {
-      // Si es un clic en la gráfica de dispositivos, navegamos a devices
-      this.router.navigate(['/menu/devices'], { 
+      // Si es un clic en la gráfica de dispositivos, navegamos a assets
+      this.router.navigate(['/menu/assets'], { 
         queryParams: { filterType, filterValue }
       });
     } else {

@@ -27,6 +27,8 @@ export class TiposCompraComponent implements OnInit {
   error: string | null = null;
   modoEdicion = false;
   tipoCompraSeleccionado: TipoDeCompraDTO | null = null;
+  showConfirmDialog = false;
+  tipoCompraToDelete: number | null = null;
 
   constructor(
     private tiposCompraService: TiposCompraService,
@@ -146,11 +148,18 @@ export class TiposCompraComponent implements OnInit {
   }
 
   eliminarTipoCompra(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar este tipo de compra?')) {
-      this.tiposCompraService.eliminarTipoCompra(id).subscribe({
+    this.tipoCompraToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.tipoCompraToDelete) {
+      this.tiposCompraService.eliminarTipoCompra(this.tipoCompraToDelete).subscribe({
         next: (mensaje) => {
           console.log(mensaje);
           this.loadTiposCompra();
+          this.showConfirmDialog = false;
+          this.tipoCompraToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar el tipo de compra:', error);
@@ -158,5 +167,10 @@ export class TiposCompraComponent implements OnInit {
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.tipoCompraToDelete = null;
   }
 } 

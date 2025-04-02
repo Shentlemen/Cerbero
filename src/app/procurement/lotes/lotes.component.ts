@@ -30,6 +30,8 @@ export class LotesComponent implements OnInit {
   error: string | null = null;
   modoEdicion = false;
   loteSeleccionado: LoteDTO | null = null;
+  showConfirmDialog = false;
+  loteToDelete: number | null = null;
 
   constructor(
     private lotesService: LotesService,
@@ -202,17 +204,31 @@ export class LotesComponent implements OnInit {
   }
 
   eliminarLote(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar este lote?')) {
-      this.lotesService.eliminarLote(id).subscribe({
+    this.loteToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.loteToDelete) {
+      this.lotesService.eliminarLote(this.loteToDelete).subscribe({
         next: (mensaje) => {
           console.log(mensaje);
           this.loadLotes();
+          this.showConfirmDialog = false;
+          this.loteToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar el lote:', error);
           this.error = 'Error al eliminar el lote. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.loteToDelete = null;
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.loteToDelete = null;
   }
 } 

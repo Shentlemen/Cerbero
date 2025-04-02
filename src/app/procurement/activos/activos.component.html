@@ -56,6 +56,17 @@
                     'fa-sort-down': sortColumn === 'idNumeroCompra' && sortDirection === 'desc',
                     'fa-sort': sortColumn !== 'idNumeroCompra'
                   }"></i>
+                  <i class="fas fa-search search-icon" (click)="toggleFilter('idNumeroCompra'); $event.stopPropagation()"></i>
+                  <div *ngIf="activeFilter === 'idNumeroCompra'" class="filter-input-container" (click)="$event.stopPropagation()">
+                    <input 
+                      type="text" 
+                      [value]="filterValues['idNumeroCompra']"
+                      (input)="applyColumnFilter($event)"
+                      (keyup)="handleKeyPress($event)"
+                      placeholder="Buscar..."
+                      class="filter-input"
+                      autofocus>
+                  </div>
                 </div>
               </th>
               <th>

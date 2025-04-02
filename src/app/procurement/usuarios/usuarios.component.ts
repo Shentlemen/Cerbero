@@ -28,6 +28,8 @@ export class UsuariosComponent implements OnInit {
   error: string | null = null;
   modoEdicion = false;
   usuarioSeleccionado: UsuarioDTO | null = null;
+  showConfirmDialog = false;
+  usuarioToDelete: number | null = null;
 
   constructor(
     private usuariosService: UsuariosService,
@@ -197,18 +199,32 @@ export class UsuariosComponent implements OnInit {
   }
 
   eliminarUsuario(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar este usuario?')) {
-      this.usuariosService.eliminarUsuario(id).subscribe({
+    this.usuarioToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.usuarioToDelete) {
+      this.usuariosService.eliminarUsuario(this.usuarioToDelete).subscribe({
         next: (mensaje) => {
           console.log(mensaje);
           this.cargarUsuarios();
+          this.showConfirmDialog = false;
+          this.usuarioToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar el usuario:', error);
           this.error = 'Error al eliminar el usuario. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.usuarioToDelete = null;
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.usuarioToDelete = null;
   }
 
   buscarPorCedula(cedula: string): void {

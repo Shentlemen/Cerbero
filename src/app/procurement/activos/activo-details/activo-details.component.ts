@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { ActivosService, ActivoDTO } from '../../../services/activos.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { EntregasService, EntregaDTO } from '../../../services/entregas.service';
@@ -36,10 +37,12 @@ export class ActivoDetailsComponent implements OnInit {
   usuarioInfo: string = '';
   tipoActivoInfo: string = '';
   hardwareName: string = '';
+  previousUrl: string = '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
     private activosService: ActivosService,
     private entregasService: EntregasService,
     private ubicacionesService: UbicacionesService,
@@ -245,6 +248,6 @@ export class ActivoDetailsComponent implements OnInit {
   }
 
   volver() {
-    this.router.navigate(['/menu/procurement/activos']);
+    this.location.back();
   }
 } 

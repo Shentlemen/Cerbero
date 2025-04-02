@@ -29,6 +29,8 @@ export class EntregasComponent implements OnInit {
   loading = false;
   error: string | null = null;
   modoEdicion = false;
+  showConfirmDialog = false;
+  entregaToDelete: number | null = null;
 
   constructor(
     private entregasService: EntregasService,
@@ -191,17 +193,31 @@ export class EntregasComponent implements OnInit {
   }
 
   eliminarEntrega(id: number): void {
-    if (confirm('¿Está seguro que desea eliminar esta entrega?')) {
-      this.entregasService.eliminarEntrega(id).subscribe({
+    this.entregaToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.entregaToDelete) {
+      this.entregasService.eliminarEntrega(this.entregaToDelete).subscribe({
         next: () => {
           this.loadEntregas();
+          this.showConfirmDialog = false;
+          this.entregaToDelete = null;
         },
         error: (error) => {
           console.error('Error al eliminar la entrega:', error);
           this.error = 'Error al eliminar la entrega. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.entregaToDelete = null;
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.entregaToDelete = null;
   }
 
   formatearFecha(fecha: string): string {

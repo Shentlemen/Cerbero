@@ -9,6 +9,7 @@ import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { BiosService } from '../services/bios.service';
 import { forkJoin } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
+import { ActivosService } from '../services/activos.service';
 
 @Component({
   selector: 'app-assets',
@@ -22,6 +23,7 @@ export class AssetsComponent implements OnInit {
 
   assetsList: any[] = [];
   assetsFiltrados: any[] = [];
+  activosMap: Map<number, any> = new Map(); // Para almacenar los activos por hardwareId
   filterForm: FormGroup;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -46,6 +48,7 @@ export class AssetsComponent implements OnInit {
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private softwareService: SoftwareService,
+    private activosService: ActivosService,
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute
@@ -104,13 +107,25 @@ export class AssetsComponent implements OnInit {
         this.assetsFiltrados = [...this.originalAssetsList];
         this.collectionSize = this.assetsFiltrados.length;
         this.updateSummary();
-
-        // Para debug
-        console.log('Tipos cargados:', [...new Set(this.assetsList.map(a => a.biosType))]);
+        this.cargarActivosInfo();
       },
       error: (error) => {
         console.error('Error al cargar los assets:', error);
       }
+    });
+  }
+
+  cargarActivosInfo(): void {
+    // Cargar la información de activos para cada hardware
+    this.assetsList.forEach(asset => {
+      this.activosService.getActivoByHardwareId(asset.id).subscribe({
+        next: (activo) => {
+          this.activosMap.set(asset.id, activo);
+        },
+        error: (error) => {
+          console.error(`Error al cargar activo para hardware ${asset.id}:`, error);
+        }
+      });
     });
   }
 
@@ -276,6 +291,18 @@ export class AssetsComponent implements OnInit {
       console.error('Asset ID is undefined or null', asset);
       // Optionally, you can show an error message to the user
     }
+  }
+
+  verDetallesActivo(hardwareId: number): void {
+    const activo = this.activosMap.get(hardwareId);
+    if (activo) {
+      this.router.navigate(['/menu/procurement/activos', activo.idActivo]);
+    }
+  }
+
+  getNumeroCompra(hardwareId: number): string {
+    const activo = this.activosMap.get(hardwareId);
+    return activo ? activo.idNumeroCompra.toString() : 'No asignado';
   }
 
   sortData(column: string): void {

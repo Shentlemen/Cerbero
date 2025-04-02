@@ -30,6 +30,8 @@ export class TiposActivoComponent implements OnInit {
   error: string | null = null;
   modoEdicion = false;
   tipoActivoSeleccionado: TipoDeActivoDTO | null = null;
+  showConfirmDialog = false;
+  tipoActivoToDelete: number | null = null;
 
   constructor(
     private tiposActivoService: TiposActivoService,
@@ -163,15 +165,27 @@ export class TiposActivoComponent implements OnInit {
   }
 
   deleteTipoActivo(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar este tipo de activo?')) {
-      this.tiposActivoService.eliminarTipoActivo(id).subscribe({
+    this.tipoActivoToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.tipoActivoToDelete) {
+      this.tiposActivoService.eliminarTipoActivo(this.tipoActivoToDelete).subscribe({
         next: () => {
           this.cargarTiposActivo();
+          this.showConfirmDialog = false;
+          this.tipoActivoToDelete = null;
         },
         error: (error) => {
           this.error = 'Error al eliminar el tipo de activo';
         }
       });
     }
+  }
+
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.tipoActivoToDelete = null;
   }
 } 

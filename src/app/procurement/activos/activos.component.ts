@@ -53,6 +53,12 @@ export class ActivosComponent implements OnInit {
   bajaCount: number = 0;
   totalActivos: number = 0;
 
+  // Propiedades para el filtrado
+  activeFilter: string | null = null;
+  filterValues: { [key: string]: string } = {
+    'idNumeroCompra': ''
+  };
+
   constructor(
     private activosService: ActivosService,
     private ubicacionesService: UbicacionesService,
@@ -347,6 +353,39 @@ export class ActivosComponent implements OnInit {
           this.error = 'Error al eliminar el activo';
         }
       });
+    }
+  }
+
+  toggleFilter(column: string): void {
+    if (this.activeFilter === column) {
+      this.activeFilter = null;
+    } else {
+      this.activeFilter = column;
+    }
+  }
+
+  applyColumnFilter(event: Event): void {
+    const value = (event.target as HTMLInputElement).value.toLowerCase();
+    if (this.activeFilter) {
+      this.filterValues[this.activeFilter] = value;
+    }
+    
+    if (!this.activeFilter || !value) {
+      this.activosFiltrados = [...this.activos];
+    } else {
+      this.activosFiltrados = this.activos.filter(activo => {
+        const fieldValue = activo[this.activeFilter as keyof ActivoDTO]?.toString().toLowerCase() || '';
+        return fieldValue.includes(value);
+      });
+    }
+    
+    this.collectionSize = this.activosFiltrados.length;
+    this.page = 1;
+  }
+
+  handleKeyPress(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      this.activeFilter = null;
     }
   }
 } 

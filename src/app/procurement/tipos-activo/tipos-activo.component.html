@@ -103,4 +103,25 @@
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>
-</ng-template> 
+</ng-template>
+
+<!-- Diálogo de confirmación -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar este tipo de activo? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div> 
