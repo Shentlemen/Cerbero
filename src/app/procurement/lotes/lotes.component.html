@@ -46,9 +46,19 @@
                   }"></i>
                 </div>
               </th>
+              <th (click)="sortData('idCompra')" [class.active]="sortColumn === 'idCompra'">
+                <div class="th-content">
+                  <span>ID Compra</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'idCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'idCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'idCompra'
+                  }"></i>
+                </div>
+              </th>
               <th (click)="sortData('compraDescripcion')" [class.active]="sortColumn === 'compraDescripcion'">
                 <div class="th-content">
-                  <span>Compra</span>
+                  <span>Descripción Compra</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'compraDescripcion' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'compraDescripcion' && sortDirection === 'desc',
@@ -76,15 +86,38 @@
                   }"></i>
                 </div>
               </th>
+              <th (click)="sortData('proveedorNombreComercial')" [class.active]="sortColumn === 'proveedorNombreComercial'">
+                <div class="th-content">
+                  <span>Proveedor</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'proveedorNombreComercial' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'proveedorNombreComercial' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'proveedorNombreComercial'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('servicioGarantiaNombreComercial')" [class.active]="sortColumn === 'servicioGarantiaNombreComercial'">
+                <div class="th-content">
+                  <span>Servicio de Garantía</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'servicioGarantiaNombreComercial' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'servicioGarantiaNombreComercial' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'servicioGarantiaNombreComercial'
+                  }"></i>
+                </div>
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let lote of pagedLotes" class="lote-row">
               <td>{{lote.descripcion}}</td>
+              <td>{{lote.idCompra}}</td>
               <td>{{lote.compraDescripcion}}</td>
               <td>{{lote.cantidad}}</td>
               <td>{{lote.mesesGarantia}}</td>
+              <td>{{lote.proveedorNombreComercial}}</td>
+              <td>{{lote.servicioGarantiaNombreComercial}}</td>
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(loteModal, lote)">
@@ -188,13 +221,15 @@
 
       <div class="row">
         <div class="col-12 mb-3">
-          <label class="form-label">ID de Servicio de Garantía</label>
-          <input type="number" class="form-control" formControlName="idServicioGarantia" min="1">
+          <label class="form-label">Servicio de Garantía</label>
+          <select class="form-control" formControlName="idServicioGarantia">
+            <option value="">Seleccione un servicio de garantía</option>
+            <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
+              {{servicio.nombreComercial}}
+            </option>
+          </select>
           <div class="invalid-feedback" *ngIf="loteForm.get('idServicioGarantia')?.errors?.['required'] && loteForm.get('idServicioGarantia')?.touched">
-            El ID de servicio de garantía es requerido.
-          </div>
-          <div class="invalid-feedback" *ngIf="loteForm.get('idServicioGarantia')?.errors?.['min'] && loteForm.get('idServicioGarantia')?.touched">
-            El ID de servicio de garantía debe ser mayor a 0.
+            El servicio de garantía es requerido.
           </div>
         </div>
       </div>

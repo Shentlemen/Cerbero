@@ -220,3 +220,34 @@
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
 }
+
+.selected-assets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.selected-asset-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e9ecef;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.selected-asset-badge span {
+  margin-right: 0.5rem;
+}
+
+.selected-asset-badge .btn-close {
+  font-size: 0.75rem;
+  padding: 0.25rem;
+  margin-left: 0.25rem;
+  opacity: 0.5;
+}
+
+.selected-asset-badge .btn-close:hover {
+  opacity: 1;
+}

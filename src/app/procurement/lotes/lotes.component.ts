@@ -6,6 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
+import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
 
 @Component({
   selector: 'app-lotes',
@@ -19,6 +20,7 @@ export class LotesComponent implements OnInit {
   lotesList: LoteDTO[] = [];
   lotesFiltrados: LoteDTO[] = [];
   proveedoresList: ProveedorDTO[] = [];
+  serviciosGarantiaList: ServicioGarantiaDTO[] = [];
   filterForm: FormGroup;
   loteForm: FormGroup;
   sortColumn: string = '';
@@ -36,6 +38,7 @@ export class LotesComponent implements OnInit {
   constructor(
     private lotesService: LotesService,
     private proveedoresService: ProveedoresService,
+    private serviciosGarantiaService: ServiciosGarantiaService,
     private fb: FormBuilder,
     private modalService: NgbModal
   ) {
@@ -58,6 +61,19 @@ export class LotesComponent implements OnInit {
   ngOnInit(): void {
     this.loadLotes();
     this.loadProveedores();
+    this.loadServiciosGarantia();
+  }
+
+  loadServiciosGarantia(): void {
+    this.serviciosGarantiaService.getServiciosGarantia().subscribe({
+      next: (servicios) => {
+        this.serviciosGarantiaList = servicios;
+      },
+      error: (error) => {
+        console.error('Error al cargar los servicios de garantía:', error);
+        this.error = 'Error al cargar los servicios de garantía. Por favor, intente nuevamente.';
+      }
+    });
   }
 
   loadLotes(): void {

@@ -3,6 +3,14 @@
     <div class="header-content">
       <div class="title-wrapper">
         <h1><i class="fas fa-box"></i> Gestión de Activos</h1>
+        <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ successMessage }}
+          <button type="button" class="btn-close" (click)="successMessage = null"></button>
+        </div>
+        <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ errorMessage }}
+          <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+        </div>
         <div class="stats-pills">
           <div class="stat-pill alta" (click)="filterByCriticidad('ALTA')" [class.active]="currentFilter === 'ALTA'">
             <i class="fas fa-exclamation-triangle"></i>
@@ -197,8 +205,16 @@
     <form [formGroup]="activoForm">
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Hardware ID</label>
-          <input type="number" class="form-control" formControlName="hardwareId">
+          <label class="form-label">Hardware</label>
+          <select class="form-select" formControlName="hardwareId">
+            <option value="">Seleccione un hardware</option>
+            <option *ngFor="let hardware of hardwareList" [value]="hardware.id">
+              {{hardware.name}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('hardwareId')?.errors?.['required'] && activoForm.get('hardwareId')?.touched">
+            El hardware es requerido.
+          </div>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Criticidad</label>
@@ -207,6 +223,9 @@
             <option value="MEDIA">Media</option>
             <option value="BAJA">Baja</option>
           </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched">
+            La criticidad es requerida.
+          </div>
         </div>
       </div>
 
@@ -218,6 +237,9 @@
             <option value="INTERNO">Interno</option>
             <option value="PUBLICO">Público</option>
           </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
+            La clasificación es requerida.
+          </div>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Estado</label>
@@ -226,45 +248,68 @@
             <option value="INACTIVO">Inactivo</option>
             <option value="MANTENIMIENTO">Mantenimiento</option>
           </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched">
+            El estado es requerido.
+          </div>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">ID Secundario</label>
-          <input type="text" class="form-control" formControlName="idSecundario">
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Fecha Fin Garantía</label>
-          <input type="date" class="form-control" formControlName="fechaFinGarantia">
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Tipo de Activo</label>
-          <input type="number" class="form-control" formControlName="idTipoActivo">
-        </div>
-        <div class="col-md-4 mb-3">
           <label class="form-label">Número de Compra</label>
-          <input type="number" class="form-control" formControlName="idNumeroCompra">
+          <select class="form-select" formControlName="idNumeroCompra">
+            <option value="">Seleccione una compra</option>
+            <option *ngFor="let compra of comprasList" [value]="compra.idCompra">
+              {{compra.idCompra}} - {{compra.descripcion}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched">
+            El número de compra es requerido.
+          </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-6 mb-3">
           <label class="form-label">Item</label>
-          <input type="number" class="form-control" formControlName="idItem">
+          <select class="form-select" formControlName="idItem">
+            <option value="">Seleccione un item</option>
+            <option *ngFor="let lote of lotesList" [value]="lote.idItem">
+              {{lote.descripcion}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched">
+            El item es requerido.
+          </div>
         </div>
       </div>
 
       <div class="row">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-6 mb-3">
           <label class="form-label">Entrega</label>
-          <input type="number" class="form-control" formControlName="idEntrega">
+          <select class="form-select" formControlName="idEntrega">
+            <option value="">Seleccione una entrega</option>
+            <option *ngFor="let entrega of entregasList" [value]="entrega.idEntrega">
+              Entrega #{{entrega.idEntrega}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched">
+            La entrega es requerida.
+          </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-6 mb-3">
           <label class="form-label">Ubicación</label>
-          <input type="number" class="form-control" formControlName="idUbicacion">
+          <select class="form-select" formControlName="idUbicacion">
+            <option value="">Seleccione una ubicación</option>
+            <option *ngFor="let ubicacion of ubicacionesList" [value]="ubicacion.idUbicacion">
+              {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idUbicacion')?.errors?.['required'] && activoForm.get('idUbicacion')?.touched">
+            La ubicación es requerida.
+          </div>
         </div>
-        <div class="col-md-4 mb-3">
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
           <label class="form-label">Usuario</label>
           <select class="form-select" formControlName="idUsuario">
             <option value="">Seleccione un usuario</option>
@@ -272,13 +317,65 @@
               {{usuario.value.nombre}} {{usuario.value.apellido}}
             </option>
           </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched">
+            El usuario es requerido.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID Secundario</label>
+          <input type="text" class="form-control" formControlName="idSecundario">
+          <div class="invalid-feedback" *ngIf="activoForm.get('idSecundario')?.errors?.['required'] && activoForm.get('idSecundario')?.touched">
+            El ID secundario es requerido.
+          </div>
         </div>
       </div>
 
       <div class="row">
-        <div class="col-12 mb-3">
+        <div class="col-md-6 mb-3">
           <label class="form-label">Servicio de Garantía</label>
-          <input type="number" class="form-control" formControlName="idServicioGarantia">
+          <select class="form-select" formControlName="idServicioGarantia">
+            <option value="">Seleccione un servicio de garantía</option>
+            <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
+              {{servicio.nombreComercial}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched">
+            El servicio de garantía es requerido.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Fecha Fin Garantía</label>
+          <input type="date" class="form-control" formControlName="fechaFinGarantia">
+          <div class="invalid-feedback" *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required'] && activoForm.get('fechaFinGarantia')?.touched">
+            La fecha de fin de garantía es requerida.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label class="form-label">Activos Relacionados</label>
+          <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">
+            <div class="selected-asset-badge" *ngFor="let assetId of selectedRelatedAssets">
+              <span>{{getAssetDescription(assetId)}}</span>
+              <button type="button" class="btn-close" (click)="removeRelatedAsset(assetId)"></button>
+            </div>
+          </div>
+          <div class="input-group">
+            <select class="form-select" #assetSelect>
+              <option value="">Seleccione un activo para relacionar</option>
+              <option *ngFor="let activo of activos" [value]="activo.idActivo" 
+                      [disabled]="isAssetRelated(activo.idActivo)">
+                {{getAssetDescription(activo.idActivo)}}
+              </option>
+            </select>
+            <button class="btn btn-outline-primary" type="button" 
+                    (click)="addRelatedAsset(assetSelect.value)" 
+                    [disabled]="!assetSelect.value">
+              <i class="fas fa-plus"></i> Agregar
+            </button>
+          </div>
+          <small class="text-muted">Puede seleccionar múltiples activos para relacionar</small>
         </div>
       </div>
     </form>

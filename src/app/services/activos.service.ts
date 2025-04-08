@@ -18,6 +18,7 @@ export interface ActivoDTO {
   idSecundario: string;
   idServicioGarantia: number;
   fechaFinGarantia: string;
+  activosRelacionados?: number[];
 }
 
 @Injectable({
@@ -50,5 +51,19 @@ export class ActivosService {
 
   getActivoByHardwareId(hardwareId: number): Observable<ActivoDTO> {
     return this.http.get<ActivoDTO>(`${this.apiUrl}/by-hardware/${hardwareId}`);
+  }
+
+  getActivosRelacionados(idActivo: number): Observable<number[]> {
+    return this.http.get<number[]>(`${this.apiUrl}/${idActivo}/relaciones`);
+  }
+
+  agregarRelacion(idActivo: number, idActivoDestino: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${idActivo}/relaciones`, { idActivoDestino });
+  }
+
+  eliminarRelacion(idActivo: number, idActivoDestino: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${idActivo}/relaciones`, { 
+      body: { idActivoDestino }
+    });
   }
 } 

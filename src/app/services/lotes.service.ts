@@ -4,6 +4,7 @@ import { Observable, map, switchMap, forkJoin } from 'rxjs';
 import { ConfigService } from './config.service';
 import { ComprasService, CompraDTO } from './compras.service';
 import { ProveedoresService, ProveedorDTO } from './proveedores.service';
+import { ServiciosGarantiaService, ServicioGarantiaDTO } from './servicios-garantia.service';
 
 export interface LoteDTO {
   idItem: number;          // ID único del lote
@@ -15,6 +16,7 @@ export interface LoteDTO {
   idServicioGarantia: number; // ID del servicio de garantía
   compraDescripcion?: string; // Descripción de la compra asociada
   proveedorNombreComercial?: string; // Nombre comercial del proveedor
+  servicioGarantiaNombreComercial?: string; // Nombre comercial del servicio de garantía
 }
 
 @Injectable({
@@ -27,7 +29,8 @@ export class LotesService {
     private http: HttpClient,
     private configService: ConfigService,
     private comprasService: ComprasService,
-    private proveedoresService: ProveedoresService
+    private proveedoresService: ProveedoresService,
+    private serviciosGarantiaService: ServiciosGarantiaService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/lotes`;
   }
@@ -36,11 +39,16 @@ export class LotesService {
     return this.comprasService.getCompraById(lote.idCompra).pipe(
       switchMap(compra => 
         this.proveedoresService.getProveedor(lote.idProveedor).pipe(
-          map(proveedor => ({
-            ...lote,
-            compraDescripcion: compra.descripcion,
-            proveedorNombreComercial: proveedor.nombreComercial
-          }))
+          switchMap(proveedor =>
+            this.serviciosGarantiaService.getServicioGarantia(lote.idServicioGarantia).pipe(
+              map(servicioGarantia => ({
+                ...lote,
+                compraDescripcion: compra.descripcion,
+                proveedorNombreComercial: proveedor.nombreComercial,
+                servicioGarantiaNombreComercial: servicioGarantia.nombreComercial
+              }))
+            )
+          )
         )
       )
     );
