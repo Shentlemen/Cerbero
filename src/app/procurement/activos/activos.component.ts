@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
@@ -28,6 +28,8 @@ import { importProvidersFrom } from '@angular/core';
   encapsulation: ViewEncapsulation.None
 })
 export class ActivosComponent implements OnInit {
+  @ViewChild('modalActivo') modalActivo: any;
+  @ViewChild('modalConfirmacion') modalConfirmacion: any;
   activos: ActivoDTO[] = [];
   activosFiltrados: ActivoDTO[] = [];
   loading: boolean = false;
@@ -72,11 +74,15 @@ export class ActivosComponent implements OnInit {
   ubicacionesList: Ubicacion[] = [];
   serviciosGarantiaList: ServicioGarantiaDTO[] = [];
 
+  selectedAssetId: number | null = null;
   selectedRelatedAssets: number[] = [];
-  activosRelacionados = new Map<number, number[]>();
 
   successMessage: string | null = null;
   errorMessage: string | null = null;
+
+  activosRelacionados: ActivoDTO[] = [];
+
+  activoAEliminar: any = null;
 
   constructor(
     private activosService: ActivosService,
@@ -298,33 +304,19 @@ export class ActivosComponent implements OnInit {
   }
 
   updateSummary(): void {
-    console.log('Actualizando resumen...');
-    console.log('Activos totales:', this.activos);
-    
     this.totalActivos = this.activos.length;
     
-    // Asegurarnos de que la comparación sea exacta y en mayúsculas
-    this.altaCount = this.activos.filter(a => {
-      console.log('Contando ALTA:', a.criticidad);
-      return a.criticidad?.trim().toUpperCase() === 'ALTA';
-    }).length;
+    this.altaCount = this.activos.filter(a => 
+      a.criticidad?.trim().toUpperCase() === 'ALTA'
+    ).length;
     
-    this.mediaCount = this.activos.filter(a => {
-      console.log('Contando MEDIA:', a.criticidad);
-      return a.criticidad?.trim().toUpperCase() === 'MEDIA';
-    }).length;
+    this.mediaCount = this.activos.filter(a => 
+      a.criticidad?.trim().toUpperCase() === 'MEDIA'
+    ).length;
     
-    this.bajaCount = this.activos.filter(a => {
-      console.log('Contando BAJA:', a.criticidad);
-      return a.criticidad?.trim().toUpperCase() === 'BAJA';
-    }).length;
-    
-    console.log('Resumen final:', {
-      total: this.totalActivos,
-      alta: this.altaCount,
-      media: this.mediaCount,
-      baja: this.bajaCount
-    });
+    this.bajaCount = this.activos.filter(a => 
+      a.criticidad?.trim().toUpperCase() === 'BAJA'
+    ).length;
   }
 
   verDetalles(activo: ActivoDTO): void {
@@ -333,112 +325,72 @@ export class ActivosComponent implements OnInit {
 
   private async actualizarRelaciones(idActivo: number) {
     try {
-      console.log('Actualizando relaciones para activo:', idActivo);
-      console.log('Activos relacionados seleccionados:', this.selectedRelatedAssets);
-
       // Obtener relaciones actuales
-      const responseRelaciones = await fetch(`/api/activos/${idActivo}/relaciones`, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!responseRelaciones.ok) {
-        const errorText = await responseRelaciones.text();
-        throw new Error(`HTTP error! status: ${responseRelaciones.status}, response: ${errorText}`);
-      }
-      const relacionesActuales = await responseRelaciones.json();
-      console.log('Relaciones actuales:', relacionesActuales);
+      const relacionesActuales = await firstValueFrom(
+        this.activosService.getActivosRelacionados(idActivo)
+      );
 
       // Eliminar relaciones que ya no existen
       for (const idRelacionado of relacionesActuales) {
         if (!this.selectedRelatedAssets.includes(idRelacionado)) {
-          console.log('Eliminando relación:', idRelacionado);
-          const deleteResponse = await fetch(`/api/activos/${idActivo}/relaciones`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idActivoDestino: idRelacionado })
-          });
-          if (!deleteResponse.ok) {
-            const errorText = await deleteResponse.text();
-            throw new Error(`Error al eliminar relación: ${deleteResponse.status}, response: ${errorText}`);
-          }
+          await firstValueFrom(
+            this.activosService.eliminarRelacion(idActivo, idRelacionado)
+          );
         }
       }
 
       // Agregar nuevas relaciones
       for (const idRelacionado of this.selectedRelatedAssets) {
         if (!relacionesActuales.includes(idRelacionado)) {
-          console.log('Agregando nueva relación:', idRelacionado);
-          const addResponse = await fetch(`/api/activos/${idActivo}/relaciones`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idActivoDestino: idRelacionado })
-          });
-          if (!addResponse.ok) {
-            const errorText = await addResponse.text();
-            throw new Error(`Error al agregar relación: ${addResponse.status}, response: ${errorText}`);
-          }
+          await firstValueFrom(
+            this.activosService.agregarRelacion(idActivo, idRelacionado)
+          );
         }
       }
-    } catch (error: unknown) {
-      console.error('Error detallado al actualizar relaciones:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Error al actualizar las relaciones de activos: ${errorMessage}`);
+    } catch (error) {
+      console.error('Error al actualizar relaciones:', error);
+      throw error;
     }
   }
 
   async abrirModal(modal: any, activo?: any) {
     this.modoEdicion = !!activo;
+    this.errorMessage = null;
+    this.successMessage = null;
+    
     if (activo) {
-      this.activoForm.patchValue({
-        hardwareId: activo.hardwareId.toString(),
-        criticidad: activo.criticidad.toUpperCase(),
-        clasificacionDeINFO: activo.clasificacionDeINFO.toUpperCase(),
-        estado: activo.estado.toUpperCase(),
-        idNumeroCompra: activo.idNumeroCompra.toString(),
-        idItem: activo.idItem.toString(),
-        idEntrega: activo.idEntrega.toString(),
-        idUbicacion: activo.idUbicacion.toString(),
-        idUsuario: activo.idUsuario.toString(),
-        idSecundario: activo.idSecundario,
-        idServicioGarantia: activo.idServicioGarantia.toString(),
-        fechaFinGarantia: activo.fechaFinGarantia
-      });
-      
-      // Cargar activos relacionados
+      this.activoSeleccionado = activo;
       try {
-        console.log('Intentando cargar activos relacionados para:', activo.idActivo);
-        const url = `/api/activos/${activo.idActivo}/relaciones`;
-        console.log('URL de la petición:', url);
-        const response = await fetch(url, {
-          headers: { 'Content-Type': 'application/json' }
+        // Cargar datos del activo
+        this.activoForm.patchValue({
+          hardwareId: activo.hardwareId?.toString() || '',
+          criticidad: activo.criticidad?.toUpperCase() || '',
+          clasificacionDeINFO: activo.clasificacionDeINFO || '',
+          estado: activo.estado?.toUpperCase() || '',
+          idTipoActivo: activo.idTipoActivo?.toString() || '',
+          idNumeroCompra: activo.idNumeroCompra?.toString() || '',
+          idItem: activo.idItem?.toString() || '',
+          idEntrega: activo.idEntrega?.toString() || '',
+          idUbicacion: activo.idUbicacion?.toString() || '',
+          idUsuario: activo.idUsuario?.toString() || '',
+          idSecundario: activo.idSecundario || '',
+          idServicioGarantia: activo.idServicioGarantia?.toString() || '',
+          fechaFinGarantia: activo.fechaFinGarantia || ''
         });
-        console.log('Status:', response.status);
-        console.log('Status Text:', response.statusText);
         
-        // Obtener el texto de la respuesta antes de intentar parsearlo como JSON
-        const responseText = await response.text();
-        console.log('Response Text (primeros 500 caracteres):', responseText.substring(0, 500));
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}, response: ${responseText}`);
-        }
-        
-        try {
-          const relacionados = JSON.parse(responseText);
-          console.log('Activos relacionados cargados:', relacionados);
-          this.selectedRelatedAssets = relacionados;
-        } catch (parseError) {
-          console.error('Error al parsear JSON:', parseError);
-          throw new Error(`Error al parsear respuesta como JSON: ${responseText}`);
-        }
-      } catch (error: any) {
-        console.error('Error detallado al cargar activos relacionados:', error);
-        this.errorMessage = `Error al cargar activos relacionados: ${error.message || 'Error desconocido'}`;
-        setTimeout(() => this.errorMessage = null, 5000);
+        // Cargar activos relacionados
+        this.selectedRelatedAssets = await firstValueFrom(
+          this.activosService.getActivosRelacionados(activo.idActivo)
+        );
+      } catch (error) {
+        console.error('Error al cargar datos del activo:', error);
+        this.errorMessage = 'Error al cargar los datos del activo';
         this.selectedRelatedAssets = [];
       }
     } else {
       this.activoForm.reset();
       this.selectedRelatedAssets = [];
+      this.activoSeleccionado = null;
     }
     
     setTimeout(() => {
@@ -448,10 +400,12 @@ export class ActivosComponent implements OnInit {
     this.modalService.open(modal, { size: 'lg' });
   }
 
-  addRelatedAsset(idActivo: string) {
-    const id = parseInt(idActivo);
-    if (id && !this.selectedRelatedAssets.includes(id)) {
-      this.selectedRelatedAssets.push(id);
+  addRelatedAsset(idActivo: number | null) {
+    if (!idActivo) return;
+
+    if (!this.selectedRelatedAssets.includes(idActivo)) {
+      this.selectedRelatedAssets.push(idActivo);
+      this.selectedAssetId = null;
     }
   }
 
@@ -494,17 +448,23 @@ export class ActivosComponent implements OnInit {
         if (this.modoEdicion && this.activoSeleccionado) {
           response = await firstValueFrom(this.activosService.actualizarActivo(this.activoSeleccionado.idActivo, activo));
           await this.actualizarRelaciones(this.activoSeleccionado.idActivo);
+          
+          this.modalService.dismissAll();
+          this.cargarActivos();
+          this.successMessage = 'Activo actualizado con éxito';
+          setTimeout(() => this.successMessage = null, 3000);
         } else {
           response = await firstValueFrom(this.activosService.crearActivo(activo));
+          
           if (response.idActivo) {
             await this.actualizarRelaciones(response.idActivo);
+            
+            this.modalService.dismissAll();
+            this.cargarActivos();
+            this.successMessage = 'Activo creado con éxito';
+            setTimeout(() => this.successMessage = null, 3000);
           }
         }
-
-        this.modalService.dismissAll();
-        this.cargarActivos();
-        this.successMessage = this.modoEdicion ? 'Activo actualizado con éxito' : 'Activo creado con éxito';
-        setTimeout(() => this.successMessage = null, 3000);
       } catch (error) {
         console.error('Error al guardar activo:', error);
         this.errorMessage = 'Error al guardar el activo';
@@ -513,20 +473,28 @@ export class ActivosComponent implements OnInit {
     }
   }
 
-  eliminarActivo(id: number) {
-    if (confirm('¿Está seguro que desea eliminar este activo?')) {
-      this.activosService.eliminarActivo(id).subscribe({
-        next: () => {
+  eliminarActivo(activo: any) {
+    this.activoAEliminar = activo;
+    this.modalConfirmacion.nativeElement.modal('show');
+  }
+
+  cancelarEliminacion() {
+    this.activoAEliminar = null;
+    this.modalConfirmacion.nativeElement.modal('hide');
+  }
+
+  confirmarEliminacion() {
+    if (this.activoAEliminar) {
+      this.activosService.eliminarActivo(this.activoAEliminar.idActivo).subscribe(
+        () => {
           this.cargarActivos();
-          this.successMessage = 'Activo eliminado con éxito';
-          setTimeout(() => this.successMessage = null, 3000);
+          this.modalConfirmacion.nativeElement.modal('hide');
+          this.activoAEliminar = null;
         },
-        error: (error) => {
-          console.error('Error al eliminar activo:', error);
-          this.errorMessage = 'Error al eliminar el activo';
-          setTimeout(() => this.errorMessage = null, 3000);
+        error => {
+          console.error('Error al eliminar el activo:', error);
         }
-      });
+      );
     }
   }
 

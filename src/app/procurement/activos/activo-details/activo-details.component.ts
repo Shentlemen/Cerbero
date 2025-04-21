@@ -38,6 +38,11 @@ export class ActivoDetailsComponent implements OnInit {
   tipoActivoInfo: string = '';
   hardwareName: string = '';
   previousUrl: string = '';
+  activosRelacionados: ActivoDTO[] = [];
+  hardwareMap: Map<number, any> = new Map();
+  loadingRelacionados: boolean = false;
+  errorRelacionados: string | null = null;
+  private tipoActivoMap: Map<number, string> | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -73,6 +78,7 @@ export class ActivoDetailsComponent implements OnInit {
         this.cargarTipoActivoInfo(activo.idTipoActivo);
         this.cargarServicioGarantiaInfo(activo.idServicioGarantia);
         this.cargarHardwareInfo(activo.hardwareId);
+        this.cargarActivosRelacionados(activo.idActivo);
         this.loading = false;
       },
       error: (error) => {
@@ -80,6 +86,93 @@ export class ActivoDetailsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  cargarActivosRelacionados(idActivo: number): void {
+    this.loadingRelacionados = true;
+    this.errorRelacionados = null;
+    this.activosRelacionados = [];
+    
+    this.activosService.getActivosRelacionados(idActivo).subscribe({
+      next: (ids: number[]) => {
+        if (ids.length > 0) {
+          const idsUnicos = [...new Set(ids.filter(id => id > 0))];
+          
+          if (idsUnicos.length > 0) {
+            // Hacer llamadas individuales para cada activo relacionado
+            const cargasActivos = idsUnicos.map(id => 
+              this.activosService.getActivo(id).toPromise()
+            );
+
+            Promise.all(cargasActivos)
+              .then(activos => {
+                // Filtrar los activos que se cargaron correctamente
+                this.activosRelacionados = activos.filter(activo => activo !== null) as ActivoDTO[];
+                
+                // Cargar información del tipo de activo para cada activo relacionado
+                this.activosRelacionados.forEach(activo => {
+                  if (activo.idTipoActivo) {
+                    this.cargarTipoActivoInfoRelacionado(activo.idTipoActivo, activo.idActivo);
+                  }
+                });
+                
+                this.loadingRelacionados = false;
+              })
+              .catch(error => {
+                console.error('Error al cargar detalles de activos relacionados:', error);
+                this.errorRelacionados = 'No se pudieron cargar los detalles de los activos relacionados';
+                this.activosRelacionados = [];
+                this.loadingRelacionados = false;
+              });
+          } else {
+            this.activosRelacionados = [];
+            this.loadingRelacionados = false;
+          }
+        } else {
+          this.activosRelacionados = [];
+          this.loadingRelacionados = false;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error al cargar IDs de activos relacionados:', error);
+        this.errorRelacionados = 'No se pudieron cargar los activos relacionados';
+        this.activosRelacionados = [];
+        this.loadingRelacionados = false;
+      }
+    });
+  }
+
+  cargarTipoActivoInfoRelacionado(idTipoActivo: number, idActivo: number): void {
+    this.tiposActivoService.getTipoActivo(idTipoActivo).subscribe({
+      next: (tipoActivo) => {
+        if (tipoActivo) {
+          const activo = this.activosRelacionados.find(a => a.idActivo === idActivo);
+          if (activo) {
+            // Usar un Map para almacenar las descripciones de los tipos de activo
+            if (!this.tipoActivoMap) {
+              this.tipoActivoMap = new Map();
+            }
+            this.tipoActivoMap.set(idActivo, tipoActivo.descripcion);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar información del tipo de activo:', error);
+      }
+    });
+  }
+
+  getTipoActivoDescripcion(activo: ActivoDTO): string {
+    return this.tipoActivoMap?.get(activo.idActivo) || 'Tipo de activo no disponible';
+  }
+
+  verDetallesActivoRelacionado(idActivoRelacionado: number): void {
+    // Navegar a la nueva ruta y recargar los datos
+    this.router.navigate(['/menu/procurement/activos', idActivoRelacionado])
+      .then(() => {
+        // Recargar los datos del nuevo activo
+        this.cargarActivo(idActivoRelacionado);
+      });
   }
 
   cargarHardwareInfo(hardwareId: number) {

@@ -57,13 +57,23 @@ export class ActivosService {
     return this.http.get<number[]>(`${this.apiUrl}/${idActivo}/relaciones`);
   }
 
-  agregarRelacion(idActivo: number, idActivoDestino: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${idActivo}/relaciones`, { idActivoDestino });
+  getActivosByIds(ids: number[]): Observable<ActivoDTO[]> {
+    return this.http.get<ActivoDTO[]>(`${this.apiUrl}/by-ids`, { params: { ids: ids.join(',') } });
   }
 
-  eliminarRelacion(idActivo: number, idActivoDestino: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${idActivo}/relaciones`, { 
-      body: { idActivoDestino }
+  agregarRelacion(idActivo: number, idActivoDestino: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${idActivo}/relaciones`, {
+      idActivoOrigen: idActivo,
+      idActivoDestino: idActivoDestino
+    });
+  }
+
+  eliminarRelacion(idActivo: number, idActivoDestino: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${idActivo}/relaciones`, {
+      body: {
+        idActivoOrigen: idActivo,
+        idActivoDestino: idActivoDestino
+      }
     });
   }
 } 

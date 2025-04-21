@@ -122,6 +122,38 @@
           <span class="value">{{activo.fechaFinGarantia | date:'dd/MM/yyyy'}}</span>
         </div>
       </div>
+
+      <div class="detail-card">
+        <h3>Activos Relacionados</h3>
+        <div *ngIf="loadingRelacionados" class="text-center p-2">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Cargando activos relacionados...</span>
+          </div>
+          <p class="mt-1 small">Cargando activos relacionados...</p>
+        </div>
+
+        <div *ngIf="errorRelacionados" class="alert alert-danger p-2 mt-2">
+          {{ errorRelacionados }}
+        </div>
+
+        <div *ngIf="!loadingRelacionados && !errorRelacionados">
+          <div *ngIf="activosRelacionados.length > 0; else noRelaciones">
+            <div class="detail-item" *ngFor="let relacionado of activosRelacionados">
+              <span class="label">Activo #{{relacionado.idActivo}}:</span>
+              <div class="value">
+                <span class="tipo-activo-link" (click)="verDetallesActivoRelacionado(relacionado.idActivo)">
+                  {{getTipoActivoDescripcion(relacionado)}}
+                </span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noRelaciones>
+            <div class="detail-item">
+              <span class="text-muted">No hay activos relacionados</span>
+            </div>
+          </ng-template>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="!loading && !error && !activo" class="alert alert-info">

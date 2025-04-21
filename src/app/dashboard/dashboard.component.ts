@@ -87,7 +87,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             indexLabel: "{label}: {y}",
             startAngle: -90,
             dataPoints: typeData,
-            click: this.onChartPointClick.bind(this, 'type')
+            click: this.onChartPointClick.bind(this, 'terminales')
           }]
         };
 
@@ -211,9 +211,17 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   onChartPointClick(filterType: string, e: any) {
     const filterValue = e.dataPoint.label;
     
-    if (filterType === 'type') {
-      // Si es un clic en la gráfica de dispositivos, navegamos a assets
+    if (filterType === 'terminales') {
+      // Si es un clic en la gráfica de terminales, navegamos a assets
       this.router.navigate(['/menu/assets'], { 
+        queryParams: { 
+          filterType: 'type',
+          filterValue: filterValue 
+        }
+      });
+    } else if (filterType === 'dispositivos') {
+      // Si es un clic en la gráfica de dispositivos, navegamos a devices
+      this.router.navigate(['/menu/devices'], { 
         queryParams: { filterType, filterValue }
       });
     } else {
@@ -282,7 +290,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         type: "pie",
         startAngle: -90,
         dataPoints: dataPoints,
-        click: this.onChartPointClick.bind(this, 'type')
+        click: this.onChartPointClick.bind(this, 'dispositivos')
       }]
     };
   }

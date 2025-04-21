@@ -233,9 +233,9 @@
         <div class="col-md-6 mb-3">
           <label class="form-label">Clasificación de INFO</label>
           <select class="form-select" formControlName="clasificacionDeINFO">
-            <option value="CONFIDENCIAL">Confidencial</option>
-            <option value="INTERNO">Interno</option>
-            <option value="PUBLICO">Público</option>
+            <option value="Confidencial">Confidencial</option>
+            <option value="No confidencial">No confidencial</option>
+            <option value="Pública">Pública</option>
           </select>
           <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
             La clasificación es requerida.
@@ -362,16 +362,16 @@
             </div>
           </div>
           <div class="input-group">
-            <select class="form-select" #assetSelect>
-              <option value="">Seleccione un activo para relacionar</option>
+            <select class="form-select" [(ngModel)]="selectedAssetId" [ngModelOptions]="{standalone: true}">
+              <option [ngValue]="null">Seleccione un activo para relacionar</option>
               <option *ngFor="let activo of activos" [value]="activo.idActivo" 
                       [disabled]="isAssetRelated(activo.idActivo)">
                 {{getAssetDescription(activo.idActivo)}}
               </option>
             </select>
             <button class="btn btn-outline-primary" type="button" 
-                    (click)="addRelatedAsset(assetSelect.value)" 
-                    [disabled]="!assetSelect.value">
+                    (click)="addRelatedAsset(selectedAssetId)" 
+                    [disabled]="!selectedAssetId">
               <i class="fas fa-plus"></i> Agregar
             </button>
           </div>
