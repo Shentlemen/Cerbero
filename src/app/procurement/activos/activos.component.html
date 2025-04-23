@@ -197,23 +197,48 @@
 
 <!-- Modal para crear/editar activo -->
 <ng-template #activoModal let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-  </div>
-  <div class="modal-body">
-    <form [formGroup]="activoForm">
+  <form [formGroup]="activoForm" (ngSubmit)="guardarActivo()">
+    <div class="modal-header">
+      <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
+      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="errorMessage" class="alert alert-danger">
+        <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
+      </div>
       <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Hardware</label>
-          <select class="form-select" formControlName="hardwareId">
-            <option value="">Seleccione un hardware</option>
-            <option *ngFor="let hardware of hardwareList" [value]="hardware.id">
-              {{hardware.name}}
-            </option>
-          </select>
+          <input type="text" class="form-control" formControlName="hardwareId" placeholder="Ingrese el ID del hardware">
           <div class="invalid-feedback" *ngIf="activoForm.get('hardwareId')?.errors?.['required'] && activoForm.get('hardwareId')?.touched">
             El hardware es requerido.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Tipo de Activo</label>
+          <select class="form-select" formControlName="idTipoActivo">
+            <option value="">Seleccione un tipo de activo</option>
+            <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">
+              {{tipo.nombre}} - {{tipo.descripcion}}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched">
+            El tipo de activo es requerido.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Clasificación de INFO</label>
+          <select class="form-select" formControlName="clasificacionDeINFO">
+            <option value="">Seleccione una clasificación</option>
+            <option value="Confidencial">Confidencial</option>
+            <option value="No confidencial">No confidencial</option>
+            <option value="Pública">Pública</option>
+          </select>
+          <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
+            La clasificación es requerida.
           </div>
         </div>
         <div class="col-md-6 mb-3">
@@ -231,17 +256,6 @@
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Clasificación de INFO</label>
-          <select class="form-select" formControlName="clasificacionDeINFO">
-            <option value="Confidencial">Confidencial</option>
-            <option value="No confidencial">No confidencial</option>
-            <option value="Pública">Pública</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
-            La clasificación es requerida.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
           <label class="form-label">Estado</label>
           <select class="form-select" formControlName="estado">
             <option value="ACTIVO">Activo</option>
@@ -252,9 +266,6 @@
             El estado es requerido.
           </div>
         </div>
-      </div>
-
-      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Número de Compra</label>
           <select class="form-select" formControlName="idNumeroCompra">
@@ -267,6 +278,9 @@
             El número de compra es requerido.
           </div>
         </div>
+      </div>
+
+      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Item</label>
           <select class="form-select" formControlName="idItem">
@@ -279,9 +293,6 @@
             El item es requerido.
           </div>
         </div>
-      </div>
-
-      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Entrega</label>
           <select class="form-select" formControlName="idEntrega">
@@ -294,6 +305,9 @@
             La entrega es requerida.
           </div>
         </div>
+      </div>
+
+      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Ubicación</label>
           <select class="form-select" formControlName="idUbicacion">
@@ -306,9 +320,6 @@
             La ubicación es requerida.
           </div>
         </div>
-      </div>
-
-      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Usuario</label>
           <select class="form-select" formControlName="idUsuario">
@@ -321,6 +332,9 @@
             El usuario es requerido.
           </div>
         </div>
+      </div>
+
+      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">ID Secundario</label>
           <input type="text" class="form-control" formControlName="idSecundario">
@@ -328,9 +342,6 @@
             El ID secundario es requerido.
           </div>
         </div>
-      </div>
-
-      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Servicio de Garantía</label>
           <select class="form-select" formControlName="idServicioGarantia">
@@ -343,6 +354,9 @@
             El servicio de garantía es requerido.
           </div>
         </div>
+      </div>
+
+      <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Fecha Fin Garantía</label>
           <input type="date" class="form-control" formControlName="fechaFinGarantia">
@@ -378,14 +392,12 @@
           <small class="text-muted">Puede seleccionar múltiples activos para relacionar</small>
         </div>
       </div>
-    </form>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardarActivo()" [disabled]="!activoForm.valid">
-      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
-    </button>
-  </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Guardar</button>
+    </div>
+  </form>
 </ng-template>
 
 <!-- Modal para detalles de ubicación -->

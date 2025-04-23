@@ -11,6 +11,7 @@ import { HardwareService } from '../../services/hardware.service';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
+import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
 import { firstValueFrom } from 'rxjs';
 import { importProvidersFrom } from '@angular/core';
 
@@ -73,6 +74,7 @@ export class ActivosComponent implements OnInit {
   entregasList: EntregaDTO[] = [];
   ubicacionesList: Ubicacion[] = [];
   serviciosGarantiaList: ServicioGarantiaDTO[] = [];
+  tiposActivoList: TipoDeActivoDTO[] = [];
 
   selectedAssetId: number | null = null;
   selectedRelatedAssets: number[] = [];
@@ -93,6 +95,7 @@ export class ActivosComponent implements OnInit {
     private lotesService: LotesService,
     private entregasService: EntregasService,
     private serviciosGarantiaService: ServiciosGarantiaService,
+    private tiposActivoService: TiposActivoService,
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router
@@ -123,6 +126,7 @@ export class ActivosComponent implements OnInit {
     this.cargarLotes();
     this.cargarEntregas();
     this.cargarServiciosGarantia();
+    this.cargarTiposActivo();
   }
 
   cargarUsuarios() {
@@ -354,11 +358,14 @@ export class ActivosComponent implements OnInit {
   }
 
   async abrirModal(modal: any, activo?: any) {
+    console.log('Abriendo modal:', activo ? 'Editar' : 'Nuevo');
+    console.log('Modal recibido:', modal);
     this.modoEdicion = !!activo;
     this.errorMessage = null;
     this.successMessage = null;
     
     if (activo) {
+      console.log('Configurando modal para editar activo:', activo);
       this.activoSeleccionado = activo;
       try {
         // Cargar datos del activo
@@ -388,7 +395,23 @@ export class ActivosComponent implements OnInit {
         this.selectedRelatedAssets = [];
       }
     } else {
-      this.activoForm.reset();
+      console.log('Configurando modal para nuevo activo');
+      // Resetear el formulario con valores por defecto
+      this.activoForm.reset({
+        hardwareId: '',
+        criticidad: '',
+        clasificacionDeINFO: '',
+        estado: '',
+        idTipoActivo: '',
+        idNumeroCompra: '',
+        idItem: '',
+        idEntrega: '',
+        idUbicacion: '',
+        idUsuario: '',
+        idSecundario: '',
+        idServicioGarantia: '',
+        fechaFinGarantia: ''
+      });
       this.selectedRelatedAssets = [];
       this.activoSeleccionado = null;
     }
@@ -424,6 +447,10 @@ export class ActivosComponent implements OnInit {
   }
 
   async guardarActivo() {
+    console.log('Método guardarActivo llamado');
+    console.log('Formulario válido:', this.activoForm.valid);
+    console.log('Valores del formulario:', this.activoForm.value);
+    
     if (this.activoForm.valid) {
       const formData = this.activoForm.value;
       const activo: ActivoDTO = {
@@ -443,9 +470,12 @@ export class ActivosComponent implements OnInit {
         fechaFinGarantia: formData.fechaFinGarantia
       };
 
+      console.log('Datos a enviar:', activo);
+
       try {
         let response: ActivoDTO;
         if (this.modoEdicion && this.activoSeleccionado) {
+          console.log('Actualizando activo existente');
           response = await firstValueFrom(this.activosService.actualizarActivo(this.activoSeleccionado.idActivo, activo));
           await this.actualizarRelaciones(this.activoSeleccionado.idActivo);
           
@@ -454,7 +484,9 @@ export class ActivosComponent implements OnInit {
           this.successMessage = 'Activo actualizado con éxito';
           setTimeout(() => this.successMessage = null, 3000);
         } else {
+          console.log('Creando nuevo activo');
           response = await firstValueFrom(this.activosService.crearActivo(activo));
+          console.log('Respuesta del servidor:', response);
           
           if (response.idActivo) {
             await this.actualizarRelaciones(response.idActivo);
@@ -470,6 +502,14 @@ export class ActivosComponent implements OnInit {
         this.errorMessage = 'Error al guardar el activo';
         setTimeout(() => this.errorMessage = null, 3000);
       }
+    } else {
+      console.log('Formulario inválido. Errores:', this.activoForm.errors);
+      Object.keys(this.activoForm.controls).forEach(key => {
+        const control = this.activoForm.get(key);
+        if (control?.errors) {
+          console.log(`Errores en ${key}:`, control.errors);
+        }
+      });
     }
   }
 
@@ -517,6 +557,9 @@ export class ActivosComponent implements OnInit {
     } else {
       this.activosFiltrados = this.activos.filter(activo => {
         const fieldValue = activo[this.activeFilter as keyof ActivoDTO]?.toString().toLowerCase() || '';
+        if (this.activeFilter === 'idNumeroCompra') {
+          return fieldValue === value;
+        }
         return fieldValue.includes(value);
       });
     }
@@ -575,6 +618,19 @@ export class ActivosComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar servicios de garantía:', error);
+      }
+    });
+  }
+
+  cargarTiposActivo() {
+    console.log('Cargando tipos de activo...');
+    this.tiposActivoService.getTiposActivo().subscribe({
+      next: (tipos) => {
+        console.log('Tipos de activo cargados:', tipos);
+        this.tiposActivoList = tipos;
+      },
+      error: (error) => {
+        console.error('Error al cargar tipos de activo:', error);
       }
     });
   }
