@@ -38,16 +38,16 @@ export class ProveedoresComponent implements OnInit {
   ) {
     this.filterForm = this.fb.group({
       nombre: [''],
-      RUC: [''],
+      ruc: [''],
       nombreComercial: ['']
     });
 
     this.proveedorForm = this.fb.group({
-      nombre: ['', [Validators.required]],
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
       correoContacto: ['', [Validators.required, Validators.email]],
       telefonoContacto: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
-      nombreComercial: ['', [Validators.required]],
-      RUC: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]]
+      nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
+      ruc: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]]
     });
   }
 
@@ -61,8 +61,6 @@ export class ProveedoresComponent implements OnInit {
     
     this.proveedoresService.getProveedores().subscribe({
       next: (proveedores) => {
-        console.log('Datos recibidos del servidor:', proveedores);
-        console.log('Estructura del primer proveedor:', JSON.stringify(proveedores[0], null, 2));
         this.proveedoresList = proveedores;
         this.proveedoresFiltrados = [...this.proveedoresList];
         this.collectionSize = this.proveedoresFiltrados.length;
@@ -126,37 +124,87 @@ export class ProveedoresComponent implements OnInit {
   guardarProveedor(): void {
     if (this.proveedorForm.valid) {
       const proveedorData = this.proveedorForm.value;
+      console.log('Datos del formulario:', proveedorData);
       
+      // Validar que el RUC no esté vacío
+      if (!proveedorData.ruc || proveedorData.ruc.trim() === '') {
+        this.error = 'El RUC es obligatorio';
+        return;
+      }
+
+      // Validar que el RUC tenga 11 dígitos
+      if (proveedorData.ruc.length !== 11) {
+        this.error = 'El RUC debe tener 11 dígitos';
+        return;
+      }
+
+      // Validar que el teléfono tenga 9 dígitos
+      if (proveedorData.telefonoContacto && proveedorData.telefonoContacto.length !== 9) {
+        this.error = 'El teléfono debe tener 9 dígitos';
+        return;
+      }
+
+      // Validar formato de correo electrónico
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(proveedorData.correoContacto)) {
+        this.error = 'El correo electrónico no tiene un formato válido';
+        return;
+      }
+
       if (this.modoEdicion && this.proveedorSeleccionado) {
+        if (!this.proveedorSeleccionado.idProveedores || isNaN(this.proveedorSeleccionado.idProveedores)) {
+          this.error = 'ID de proveedor no válido';
+          return;
+        }
+
         const proveedorActualizado: ProveedorDTO = {
           ...proveedorData,
           idProveedores: this.proveedorSeleccionado.idProveedores
         };
         
+        console.log('Actualizando proveedor:', proveedorActualizado);
         this.proveedoresService.actualizarProveedor(this.proveedorSeleccionado.idProveedores, proveedorActualizado).subscribe({
-          next: (mensaje) => {
-            console.log(mensaje);
+          next: (proveedorActualizado) => {
+            console.log('Proveedor actualizado exitosamente:', proveedorActualizado);
             this.loadProveedores();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al actualizar el proveedor:', error);
-            this.error = 'Error al actualizar el proveedor. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar el proveedor';
+          },
+          complete: () => {
+            this.proveedorForm.reset();
           }
         });
       } else {
+        console.log('Creando nuevo proveedor:', proveedorData);
         this.proveedoresService.crearProveedor(proveedorData).subscribe({
-          next: (mensaje) => {
-            console.log(mensaje);
+          next: (proveedorCreado) => {
+            console.log('Proveedor creado exitosamente:', proveedorCreado);
             this.loadProveedores();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al crear el proveedor:', error);
-            this.error = 'Error al crear el proveedor. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear el proveedor';
+          },
+          complete: () => {
+            this.proveedorForm.reset();
           }
         });
       }
+    } else {
+      // Marcar todos los campos como touched para mostrar los errores
+      Object.keys(this.proveedorForm.controls).forEach(key => {
+        const control = this.proveedorForm.get(key);
+        control?.markAsTouched();
+      });
+      
+      // Mostrar mensaje de error general
+      this.error = 'Por favor, complete todos los campos requeridos correctamente';
     }
   }
 
@@ -171,9 +219,9 @@ export class ProveedoresComponent implements OnInit {
           proveedor.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
       }
 
-      if (filtros.RUC && proveedor.RUC) {
+      if (filtros.ruc && proveedor.ruc) {
         cumpleFiltros = cumpleFiltros && 
-          proveedor.RUC.includes(filtros.RUC);
+          proveedor.ruc.includes(filtros.ruc);
       }
 
       if (filtros.nombreComercial && proveedor.nombreComercial) {
@@ -196,15 +244,15 @@ export class ProveedoresComponent implements OnInit {
   confirmarEliminacion(): void {
     if (this.proveedorToDelete) {
       this.proveedoresService.eliminarProveedor(this.proveedorToDelete).subscribe({
-        next: (mensaje) => {
-          console.log(mensaje);
+        next: () => {
           this.loadProveedores();
           this.showConfirmDialog = false;
           this.proveedorToDelete = null;
+          this.error = null;
         },
         error: (error) => {
           console.error('Error al eliminar el proveedor:', error);
-          this.error = 'Error al eliminar el proveedor. Por favor, intente nuevamente.';
+          this.error = error.message;
           this.showConfirmDialog = false;
           this.proveedorToDelete = null;
         }

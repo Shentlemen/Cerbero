@@ -8,8 +8,15 @@ import { forkJoin } from 'rxjs';
 import { AlertService, Alerta } from '../services/alert.service';
 import { finalize } from 'rxjs/operators';
 import { NetworkInfoService } from '../services/network-info.service';
+import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 
 declare var bootstrap: any;
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -57,6 +64,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         const typeData = this.prepareHardwareTypeData(hardware, biosMap);
         const brandData = this.prepareBrandData(bios);
         const osData = this.prepareChartData(hardware, 'osName');
+
+        // Procesar datos de red
+        let networkData: NetworkInfoDTO[] = [];
+        if (network && 'success' in network && network.success) {
+          networkData = network.data || [];
+        }
 
         // Configuración común para todas las gráficas
         const commonOptions = {
@@ -126,7 +139,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           }]
         };
 
-        this.prepareNetworkChart(network, commonOptions);
+        this.prepareNetworkChart(networkData, commonOptions);
       },
       (error) => {
         console.error('Error al cargar los datos', error);
@@ -263,8 +276,37 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       });
   }
 
-  private prepareNetworkChart(networkData: any[], commonOptions: any): void {
-    const devicesByType = networkData.reduce((acc: Record<string, any[]>, device: any) => {
+  private prepareNetworkChart(networkData: NetworkInfoDTO[], commonOptions: any): void {
+    console.log('Datos de red recibidos:', networkData);
+    
+    // Asegurarnos de que networkData sea un array
+    const networkArray = Array.isArray(networkData) ? networkData : [];
+    console.log('Array de red procesado:', networkArray);
+    
+    // Si no hay datos, mostrar un mensaje en la gráfica
+    if (networkArray.length === 0) {
+      this.lineChartOptions = {
+        ...commonOptions,
+        title: {
+          ...commonOptions.title,
+          text: "Dispositivos de Red"
+        },
+        data: [{
+          ...commonOptions.data[0],
+          type: "pie",
+          startAngle: -90,
+          dataPoints: [{
+            label: "Sin datos",
+            y: 1,
+            indexLabel: "Sin dispositivos de red"
+          }]
+        }]
+      };
+      return;
+    }
+
+    const devicesByType = networkArray.reduce((acc: Record<string, any[]>, device: NetworkInfoDTO) => {
+      // Asegurarnos de que el dispositivo tenga un tipo válido
       const type = device.type || 'Desconocido';
       if (!acc[type]) {
         acc[type] = [];
@@ -273,17 +315,21 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       return acc;
     }, {});
 
+    console.log('Dispositivos agrupados por tipo:', devicesByType);
+
     const dataPoints = Object.entries(devicesByType).map(([type, devices]) => ({
       label: type,
       y: devices.length,
       indexLabel: `${type}: {y}`
     }));
 
+    console.log('Puntos de datos para la gráfica:', dataPoints);
+
     this.lineChartOptions = {
       ...commonOptions,
       title: {
         ...commonOptions.title,
-        text: "Dispositivos"
+        text: "Dispositivos de Red"
       },
       data: [{
         ...commonOptions.data[0],

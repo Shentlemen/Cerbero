@@ -112,38 +112,58 @@ export class TiposCompraComponent implements OnInit {
 
   guardarTipoCompra(): void {
     if (this.tipoCompraForm.valid) {
-      const tipoCompraData = this.tipoCompraForm.value;
+      const descripcion = this.tipoCompraForm.get('descripcion')?.value;
+      
+      if (!descripcion || descripcion.trim() === '') {
+        this.error = 'La descripción es obligatoria';
+        return;
+      }
+
+      const tipoCompraData = { descripcion: descripcion.trim() };
+      console.log('Datos a enviar:', tipoCompraData);
       
       if (this.modoEdicion && this.tipoCompraSeleccionado) {
+        if (!this.tipoCompraSeleccionado.idTipoCompra || isNaN(this.tipoCompraSeleccionado.idTipoCompra)) {
+          this.error = 'ID de tipo de compra no válido';
+          return;
+        }
+
         const tipoCompraActualizado: TipoDeCompraDTO = {
           ...tipoCompraData,
           idTipoCompra: this.tipoCompraSeleccionado.idTipoCompra
         };
         
         this.tiposCompraService.actualizarTipoCompra(this.tipoCompraSeleccionado.idTipoCompra, tipoCompraActualizado).subscribe({
-          next: (mensaje) => {
-            console.log(mensaje);
+          next: (tipoActualizado) => {
+            console.log('Tipo de compra actualizado:', tipoActualizado);
             this.loadTiposCompra();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al actualizar el tipo de compra:', error);
-            this.error = 'Error al actualizar el tipo de compra. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar el tipo de compra. Por favor, intente nuevamente.';
           }
         });
       } else {
         this.tiposCompraService.crearTipoCompra(tipoCompraData).subscribe({
-          next: (mensaje) => {
-            console.log(mensaje);
+          next: (tipoCreado) => {
+            console.log('Tipo de compra creado:', tipoCreado);
             this.loadTiposCompra();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al crear el tipo de compra:', error);
-            this.error = 'Error al crear el tipo de compra. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear el tipo de compra. Por favor, intente nuevamente.';
           }
         });
       }
+    } else {
+      Object.keys(this.tipoCompraForm.controls).forEach(key => {
+        const control = this.tipoCompraForm.get(key);
+        control?.markAsTouched();
+      });
     }
   }
 
@@ -155,15 +175,17 @@ export class TiposCompraComponent implements OnInit {
   confirmarEliminacion(): void {
     if (this.tipoCompraToDelete) {
       this.tiposCompraService.eliminarTipoCompra(this.tipoCompraToDelete).subscribe({
-        next: (mensaje) => {
-          console.log(mensaje);
+        next: () => {
           this.loadTiposCompra();
           this.showConfirmDialog = false;
           this.tipoCompraToDelete = null;
+          this.error = null;
         },
         error: (error) => {
           console.error('Error al eliminar el tipo de compra:', error);
-          this.error = 'Error al eliminar el tipo de compra. Por favor, intente nuevamente.';
+          this.error = error.message || 'Error al eliminar el tipo de compra. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.tipoCompraToDelete = null;
         }
       });
     }

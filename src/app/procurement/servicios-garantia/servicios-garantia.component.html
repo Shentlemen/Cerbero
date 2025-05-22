@@ -40,13 +40,13 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('RUC')" [class.active]="sortColumn === 'RUC'">
+              <th (click)="sortData('ruc')" [class.active]="sortColumn === 'ruc'">
                 <div class="th-content">
                   <span>RUC</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'RUC' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'RUC' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'RUC'
+                    'fa-sort-up': sortColumn === 'ruc' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'ruc' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'ruc'
                   }"></i>
                 </div>
               </th>
@@ -68,16 +68,20 @@
           <tbody>
             <tr *ngFor="let servicio of pagedServicios">
               <td>{{servicio.nombre}}</td>
-              <td>{{servicio.RUC}}</td>
+              <td>{{servicio.ruc}}</td>
               <td>{{servicio.nombreComercial}}</td>
               <td>{{servicio.correoDeContacto}}</td>
               <td>{{servicio.telefonoDeContacto}}</td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-primary btn-sm" (click)="abrirModal(modalServicio, servicio)">
+                  <button class="btn btn-primary btn-sm" 
+                          (click)="abrirModal(modalServicio, servicio)"
+                          [disabled]="!servicio.idServicioGarantia">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarServicioGarantia(servicio.idServicioGarantia)">
+                  <button class="btn btn-danger btn-sm" 
+                          (click)="eliminarServicioGarantia(servicio.idServicioGarantia)"
+                          [disabled]="!servicio.idServicioGarantia">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </div>
@@ -115,35 +119,40 @@
         <label for="nombre" class="form-label">Nombre</label>
         <input type="text" class="form-control" id="nombre" formControlName="nombre">
         <div *ngIf="servicioForm.get('nombre')?.invalid && servicioForm.get('nombre')?.touched" class="text-danger">
-          El nombre es requerido
+          <small *ngIf="servicioForm.get('nombre')?.errors?.['required']">El nombre es requerido</small>
+          <small *ngIf="servicioForm.get('nombre')?.errors?.['minlength']">El nombre debe tener al menos 3 caracteres</small>
         </div>
       </div>
       <div class="mb-3">
         <label for="correoDeContacto" class="form-label">Correo de Contacto</label>
         <input type="email" class="form-control" id="correoDeContacto" formControlName="correoDeContacto">
         <div *ngIf="servicioForm.get('correoDeContacto')?.invalid && servicioForm.get('correoDeContacto')?.touched" class="text-danger">
-          Ingrese un correo electrónico válido
+          <small *ngIf="servicioForm.get('correoDeContacto')?.errors?.['required']">El correo es requerido</small>
+          <small *ngIf="servicioForm.get('correoDeContacto')?.errors?.['email']">Ingrese un correo electrónico válido</small>
         </div>
       </div>
       <div class="mb-3">
         <label for="telefonoDeContacto" class="form-label">Teléfono de Contacto</label>
         <input type="text" class="form-control" id="telefonoDeContacto" formControlName="telefonoDeContacto">
         <div *ngIf="servicioForm.get('telefonoDeContacto')?.invalid && servicioForm.get('telefonoDeContacto')?.touched" class="text-danger">
-          El teléfono de contacto es requerido
+          <small *ngIf="servicioForm.get('telefonoDeContacto')?.errors?.['required']">El teléfono es requerido</small>
+          <small *ngIf="servicioForm.get('telefonoDeContacto')?.errors?.['pattern']">El teléfono debe tener entre 7 y 10 dígitos</small>
         </div>
       </div>
       <div class="mb-3">
         <label for="nombreComercial" class="form-label">Nombre Comercial</label>
         <input type="text" class="form-control" id="nombreComercial" formControlName="nombreComercial">
         <div *ngIf="servicioForm.get('nombreComercial')?.invalid && servicioForm.get('nombreComercial')?.touched" class="text-danger">
-          El nombre comercial es requerido
+          <small *ngIf="servicioForm.get('nombreComercial')?.errors?.['required']">El nombre comercial es requerido</small>
+          <small *ngIf="servicioForm.get('nombreComercial')?.errors?.['minlength']">El nombre comercial debe tener al menos 3 caracteres</small>
         </div>
       </div>
       <div class="mb-3">
-        <label for="RUC" class="form-label">RUC</label>
-        <input type="text" class="form-control" id="RUC" formControlName="RUC">
-        <div *ngIf="servicioForm.get('RUC')?.invalid && servicioForm.get('RUC')?.touched" class="text-danger">
-          El RUC es requerido
+        <label for="ruc" class="form-label">RUC</label>
+        <input type="text" class="form-control" id="ruc" formControlName="ruc" maxlength="11">
+        <div *ngIf="servicioForm.get('ruc')?.invalid && servicioForm.get('ruc')?.touched" class="text-danger">
+          <small *ngIf="servicioForm.get('ruc')?.errors?.['required']">El RUC es requerido</small>
+          <small *ngIf="servicioForm.get('ruc')?.errors?.['pattern']">El RUC debe tener 11 dígitos</small>
         </div>
       </div>
     </form>

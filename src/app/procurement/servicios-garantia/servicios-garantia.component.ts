@@ -37,16 +37,17 @@ export class ServiciosGarantiaComponent implements OnInit {
   ) {
     this.filterForm = this.fb.group({
       nombre: [''],
-      RUC: [''],
+      ruc: [''],
       nombreComercial: ['']
     });
 
     this.servicioForm = this.fb.group({
-      nombre: ['', Validators.required],
+      idServicioGarantia: [null],
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
       correoDeContacto: ['', [Validators.required, Validators.email]],
-      telefonoDeContacto: ['', Validators.required],
-      nombreComercial: ['', Validators.required],
-      RUC: ['', Validators.required]
+      telefonoDeContacto: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
+      nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
+      ruc: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]]
     });
   }
 
@@ -109,8 +110,19 @@ export class ServiciosGarantiaComponent implements OnInit {
 
   abrirModal(modal: any, servicio?: ServicioGarantiaDTO): void {
     if (servicio) {
+      if (!servicio.idServicioGarantia || isNaN(servicio.idServicioGarantia)) {
+        this.error = 'ID de servicio no válido';
+        return;
+      }
       this.modoEdicion = true;
-      this.servicioForm.patchValue(servicio);
+      this.servicioForm.patchValue({
+        idServicioGarantia: servicio.idServicioGarantia,
+        nombre: servicio.nombre,
+        correoDeContacto: servicio.correoDeContacto,
+        telefonoDeContacto: servicio.telefonoDeContacto,
+        nombreComercial: servicio.nombreComercial,
+        ruc: servicio.ruc
+      });
     } else {
       this.modoEdicion = false;
       this.servicioForm.reset();
@@ -122,29 +134,57 @@ export class ServiciosGarantiaComponent implements OnInit {
     if (this.servicioForm.valid) {
       const servicioData = this.servicioForm.value;
       
+      if (!servicioData.ruc || servicioData.ruc.length !== 11) {
+        this.error = 'El RUC debe tener 11 dígitos';
+        return;
+      }
+
+      if (!servicioData.telefonoDeContacto || servicioData.telefonoDeContacto.length !== 9) {
+        this.error = 'El teléfono debe tener 9 dígitos';
+        return;
+      }
+
       if (this.modoEdicion) {
-        this.serviciosGarantiaService.actualizarServicioGarantia(servicioData.idServicioGarantia, servicioData).subscribe({
-          next: () => {
+        if (!servicioData.idServicioGarantia || isNaN(servicioData.idServicioGarantia)) {
+          this.error = 'ID de servicio no válido';
+          return;
+        }
+
+        const { idServicioGarantia, ...servicioToUpdate } = servicioData;
+
+        this.serviciosGarantiaService.actualizarServicioGarantia(idServicioGarantia, servicioToUpdate).subscribe({
+          next: (servicioActualizado) => {
+            console.log('Servicio actualizado:', servicioActualizado);
             this.loadServiciosGarantia();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al actualizar el servicio de garantía:', error);
-            this.error = 'Error al actualizar el servicio de garantía. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar el servicio de garantía. Por favor, intente nuevamente.';
           }
         });
       } else {
-        this.serviciosGarantiaService.crearServicioGarantia(servicioData).subscribe({
-          next: () => {
+        const { idServicioGarantia, ...servicioToCreate } = servicioData;
+        
+        this.serviciosGarantiaService.crearServicioGarantia(servicioToCreate).subscribe({
+          next: (servicioCreado) => {
+            console.log('Servicio creado:', servicioCreado);
             this.loadServiciosGarantia();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al crear el servicio de garantía:', error);
-            this.error = 'Error al crear el servicio de garantía. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear el servicio de garantía. Por favor, intente nuevamente.';
           }
         });
       }
+    } else {
+      Object.keys(this.servicioForm.controls).forEach(key => {
+        const control = this.servicioForm.get(key);
+        control?.markAsTouched();
+      });
     }
   }
 
@@ -159,9 +199,9 @@ export class ServiciosGarantiaComponent implements OnInit {
           servicio.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
       }
 
-      if (filtros.RUC && servicio.RUC) {
+      if (filtros.ruc && servicio.ruc) {
         cumpleFiltros = cumpleFiltros && 
-          servicio.RUC.toLowerCase().includes(filtros.RUC.toLowerCase());
+          servicio.ruc.toLowerCase().includes(filtros.ruc.toLowerCase());
       }
 
       if (filtros.nombreComercial && servicio.nombreComercial) {
@@ -188,10 +228,13 @@ export class ServiciosGarantiaComponent implements OnInit {
           this.loadServiciosGarantia();
           this.showConfirmDialog = false;
           this.servicioToDelete = null;
+          this.error = null;
         },
         error: (error) => {
           console.error('Error al eliminar el servicio de garantía:', error);
-          this.error = 'Error al eliminar el servicio de garantía. Por favor, intente nuevamente.';
+          this.error = error.message || 'Error al eliminar el servicio de garantía. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.servicioToDelete = null;
         }
       });
     }

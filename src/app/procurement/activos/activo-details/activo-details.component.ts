@@ -5,13 +5,15 @@ import { Location } from '@angular/common';
 import { ActivosService, ActivoDTO } from '../../../services/activos.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { EntregasService, EntregaDTO } from '../../../services/entregas.service';
-import { UbicacionesService, Ubicacion } from '../../../services/ubicaciones.service';
+import { UbicacionesService } from '../../../services/ubicaciones.service';
+import { UbicacionDTO } from '../../../interfaces/ubicacion.interface';
 import { UsuariosService, UsuarioDTO } from '../../../services/usuarios.service';
 import { TiposActivoService, TipoDeActivoDTO } from '../../../services/tipos-activo.service';
 import { ComprasService, CompraDTO } from '../../../services/compras.service';
 import { LotesService, LoteDTO } from '../../../services/lotes.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../../services/servicios-garantia.service';
 import { HardwareService } from '../../../services/hardware.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-activo-details',
@@ -23,7 +25,7 @@ import { HardwareService } from '../../../services/hardware.service';
 export class ActivoDetailsComponent implements OnInit {
   activo: ActivoDTO | null = null;
   entregaSeleccionada: EntregaDTO | null = null;
-  ubicacionSeleccionada: Ubicacion | null = null;
+  ubicacionSeleccionada: UbicacionDTO | null = null;
   usuarioSeleccionado: UsuarioDTO | null = null;
   tipoActivoSeleccionado: TipoDeActivoDTO | null = null;
   usuarioResponsable: UsuarioDTO | null = null;
@@ -72,16 +74,20 @@ export class ActivoDetailsComponent implements OnInit {
     this.error = null;
     this.activosService.getActivo(id).subscribe({
       next: (activo) => {
+        console.log('Respuesta del activo:', activo);
         this.activo = activo;
-        this.cargarUbicacionInfo(activo.idUbicacion);
-        this.cargarUsuarioInfo(activo.idUsuario);
-        this.cargarTipoActivoInfo(activo.idTipoActivo);
-        this.cargarServicioGarantiaInfo(activo.idServicioGarantia);
-        this.cargarHardwareInfo(activo.hardwareId);
-        this.cargarActivosRelacionados(activo.idActivo);
+        if (this.activo) {
+          this.cargarUbicacionInfo(this.activo.idUbicacion);
+          this.cargarUsuarioInfo(this.activo.idUsuario);
+          this.cargarTipoActivoInfo(this.activo.idTipoActivo);
+          this.cargarServicioGarantiaInfo(this.activo.idServicioGarantia);
+          this.cargarHardwareInfo(this.activo.hardwareId);
+          this.cargarActivosRelacionados(this.activo.idActivo);
+        }
         this.loading = false;
       },
       error: (error) => {
+        console.error('Error al cargar activo:', error);
         this.error = 'Error al cargar los detalles del activo';
         this.loading = false;
       }
@@ -95,45 +101,39 @@ export class ActivoDetailsComponent implements OnInit {
     
     this.activosService.getActivosRelacionados(idActivo).subscribe({
       next: (ids: number[]) => {
-        if (ids.length > 0) {
-          const idsUnicos = [...new Set(ids.filter(id => id > 0))];
-          
-          if (idsUnicos.length > 0) {
-            // Hacer llamadas individuales para cada activo relacionado
-            const cargasActivos = idsUnicos.map(id => 
-              this.activosService.getActivo(id).toPromise()
-            );
+        if (ids && ids.length > 0) {
+          // Hacer llamadas individuales para cada activo relacionado
+          const cargasActivos = ids.map(id => 
+            this.activosService.getActivo(id)
+          );
 
-            Promise.all(cargasActivos)
-              .then(activos => {
-                // Filtrar los activos que se cargaron correctamente
-                this.activosRelacionados = activos.filter(activo => activo !== null) as ActivoDTO[];
-                
-                // Cargar información del tipo de activo para cada activo relacionado
-                this.activosRelacionados.forEach(activo => {
-                  if (activo.idTipoActivo) {
-                    this.cargarTipoActivoInfoRelacionado(activo.idTipoActivo, activo.idActivo);
-                  }
-                });
-                
-                this.loadingRelacionados = false;
-              })
-              .catch(error => {
-                console.error('Error al cargar detalles de activos relacionados:', error);
-                this.errorRelacionados = 'No se pudieron cargar los detalles de los activos relacionados';
-                this.activosRelacionados = [];
-                this.loadingRelacionados = false;
+          // Usar forkJoin para manejar múltiples observables
+          forkJoin(cargasActivos).subscribe({
+            next: (activos) => {
+              this.activosRelacionados = activos.filter(activo => activo !== null);
+              
+              // Cargar información del tipo de activo para cada activo relacionado
+              this.activosRelacionados.forEach(activo => {
+                if (activo.idTipoActivo) {
+                  this.cargarTipoActivoInfoRelacionado(activo.idTipoActivo, activo.idActivo);
+                }
               });
-          } else {
-            this.activosRelacionados = [];
-            this.loadingRelacionados = false;
-          }
+              
+              this.loadingRelacionados = false;
+            },
+            error: (error) => {
+              console.error('Error al cargar detalles de activos relacionados:', error);
+              this.errorRelacionados = 'No se pudieron cargar los detalles de los activos relacionados';
+              this.activosRelacionados = [];
+              this.loadingRelacionados = false;
+            }
+          });
         } else {
           this.activosRelacionados = [];
           this.loadingRelacionados = false;
         }
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error al cargar IDs de activos relacionados:', error);
         this.errorRelacionados = 'No se pudieron cargar los activos relacionados';
         this.activosRelacionados = [];
@@ -188,12 +188,12 @@ export class ActivoDetailsComponent implements OnInit {
   }
 
   cargarUbicacionInfo(idUbicacion: number) {
-    this.ubicacionesService.getUbicacionByHardwareId(idUbicacion).subscribe({
-      next: (ubicacion) => {
+    this.ubicacionesService.getUbicacionEquipo(idUbicacion).subscribe({
+      next: (ubicacion: UbicacionDTO) => {
         this.ubicacionSeleccionada = ubicacion;
         this.ubicacionInfo = `${ubicacion.nombreGerencia} - ${ubicacion.nombreOficina}`;
       },
-      error: (error) => {
+      error: (error: any) => {
         this.ubicacionInfo = 'No disponible';
         console.error('Error al cargar la información de la ubicación:', error);
       }
@@ -264,12 +264,12 @@ export class ActivoDetailsComponent implements OnInit {
   }
 
   verDetallesUbicacion(idUbicacion: number, ubicacionModal: any) {
-    this.ubicacionesService.getUbicacionByHardwareId(idUbicacion).subscribe({
-      next: (ubicacion) => {
+    this.ubicacionesService.getUbicacionEquipo(idUbicacion).subscribe({
+      next: (ubicacion: UbicacionDTO) => {
         this.ubicacionSeleccionada = ubicacion;
         this.modalService.open(ubicacionModal, { size: 'lg' });
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error = 'Error al cargar los detalles de la ubicación';
       }
     });

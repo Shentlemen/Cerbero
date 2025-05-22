@@ -2,7 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { Ubicacion } from '../../services/ubicaciones.service';
+import { UbicacionesService } from '../../services/ubicaciones.service';
+import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
 
 @Component({
   selector: 'app-asset-location-picker-modal',
@@ -10,7 +11,10 @@ import { Ubicacion } from '../../services/ubicaciones.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="modal-header">
-      <h4 class="modal-title">Seleccionar Ubicación</h4>
+      <h4 class="modal-title">
+        <i class="fas fa-map-marker-alt me-2"></i>
+        Seleccionar Ubicación
+      </h4>
       <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
     </div>
     <div class="modal-body">
@@ -39,21 +43,73 @@ import { Ubicacion } from '../../services/ubicaciones.service';
         <div *ngIf="ubicacionSeleccionada" class="card mt-3">
           <div class="card-body">
             <h5 class="card-title">Detalles de la ubicación seleccionada</h5>
-            <p><strong>Gerencia:</strong> {{ubicacionSeleccionada.nombreGerencia}}</p>
-            <p><strong>Oficina:</strong> {{ubicacionSeleccionada.nombreOficina}}</p>
-            <p><strong>Ciudad:</strong> {{ubicacionSeleccionada.ciudad}}</p>
-            <p><strong>Departamento:</strong> {{ubicacionSeleccionada.departamento}}</p>
-            <p><strong>Dirección:</strong> {{ubicacionSeleccionada.direccion}}</p>
-            <p><strong>Piso:</strong> {{ubicacionSeleccionada.piso}}</p>
-            <p><strong>Puerta:</strong> {{ubicacionSeleccionada.numeroPuerta}}</p>
-            <p><strong>Interno:</strong> {{ubicacionSeleccionada.interno}}</p>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-building"></i>
+                Gerencia
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.nombreGerencia}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-door-open"></i>
+                Oficina
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.nombreOficina}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-city"></i>
+                Ciudad
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.ciudad}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-map"></i>
+                Departamento
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.departamento}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-street-view"></i>
+                Dirección
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.direccion}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-building"></i>
+                Piso
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.piso}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-door-closed"></i>
+                Puerta
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.numeroPuerta}}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                <i class="fas fa-phone"></i>
+                Interno
+              </div>
+              <div class="detail-value">{{ubicacionSeleccionada.interno}}</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+        <i class="fas fa-times me-2"></i>
+        Cancelar
+      </button>
       <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="!ubicacionSeleccionada">
+        <i class="fas fa-check me-2"></i>
         Guardar
       </button>
     </div>
@@ -62,24 +118,54 @@ import { Ubicacion } from '../../services/ubicaciones.service';
     .modal-header {
       background-color: #f8f9fa;
       border-bottom: 1px solid #dee2e6;
+      padding: 1rem;
     }
     .modal-title {
       color: #2c3e50;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     .form-select {
       border-radius: 8px;
       border: 1px solid #ced4da;
-      padding: 0.5rem;
+      padding: 0.75rem;
+      font-size: 1rem;
     }
     .card {
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: none;
+    }
+    .card-body {
+      padding: 1.5rem;
     }
     .card-title {
       color: #2c3e50;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: 600;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    .detail-row {
+      display: flex;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .detail-label {
+      flex: 0 0 150px;
+      color: #6c757d;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .detail-value {
+      flex: 1;
+      color: #2c3e50;
+      font-weight: 500;
     }
     .btn {
       padding: 0.75rem 1.5rem;
@@ -88,6 +174,7 @@ import { Ubicacion } from '../../services/ubicaciones.service';
       align-items: center;
       gap: 0.5rem;
       transition: all 0.3s ease;
+      font-weight: 500;
     }
     .btn-primary {
       background: #41A1AF;
@@ -111,15 +198,27 @@ import { Ubicacion } from '../../services/ubicaciones.service';
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
     }
+    .alert {
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+    }
   `]
 })
 export class AssetLocationPickerModalComponent implements OnInit {
-  @Input() ubicaciones: Ubicacion[] = [];
-  ubicacionSeleccionada: Ubicacion | null = null;
+  @Input() ubicaciones: UbicacionDTO[] = [];
+  ubicacionSeleccionada: UbicacionDTO | null = null;
   loading: boolean = false;
   error: string | null = null;
 
-  constructor(public modal: NgbActiveModal) {}
+  constructor(
+    public modal: NgbActiveModal,
+    private ubicacionesService: UbicacionesService
+  ) {}
 
   ngOnInit(): void {
     this.loading = false;

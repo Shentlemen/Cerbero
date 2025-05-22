@@ -34,15 +34,15 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/locations',
     '/menu/procurement/tipos-activo',
     '/menu/procurement/tipos-compra',
-    '/menu/procurement/servicios-garantia'
+    '/menu/procurement/servicios-garantia',
+    '/menu/procurement/usuarios'
   ];
   private procurementRoutes = [
     '/menu/procurement/activos',
     '/menu/procurement/compras',
     '/menu/procurement/entregas',
     '/menu/procurement/lotes',
-    '/menu/procurement/proveedores',
-    '/menu/procurement/usuarios'
+    '/menu/procurement/proveedores'
   ];
 
   constructor(

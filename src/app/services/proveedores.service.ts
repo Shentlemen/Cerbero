@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
 import { ConfigService } from './config.service';
-import { map } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
+import { ApiResponse } from '../interfaces/api-response.interface';
 
 export interface ProveedorDTO {
     idProveedores: number;     // ID único del proveedor
@@ -10,8 +11,7 @@ export interface ProveedorDTO {
     correoContacto: string;    // Correo electrónico de contacto
     telefonoContacto: string;  // Teléfono de contacto
     nombreComercial: string;   // Nombre comercial del proveedor
-    RUC: string;              // RUC del proveedor
-    ruc?: string; // Campo opcional para compatibilidad con el backend
+    ruc: string;              // RUC del proveedor
 }
 
 @Injectable({
@@ -25,36 +25,149 @@ export class ProveedoresService {
     private configService: ConfigService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/proveedores`;
-    console.log('URL base para proveedores:', this.apiUrl);
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    // Si el error tiene una respuesta del servidor con el formato ApiResponse
+    if (error.error && typeof error.error === 'object' && 'success' in error.error) {
+      return throwError(() => new Error(error.error.message));
+    }
+    
+    // Para otros tipos de errores
+    let errorMessage = 'Ha ocurrido un error en la operación';
+    
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = error.error.message;
+    } else {
+      switch (error.status) {
+        case 404:
+          errorMessage = 'El proveedor no fue encontrado';
+          break;
+        case 400:
+          errorMessage = error.error?.message || 'Datos inválidos para el proveedor';
+          break;
+        case 500:
+          errorMessage = 'Error interno del servidor';
+          break;
+      }
+    }
+    
+    return throwError(() => new Error(errorMessage));
   }
 
   getProveedores(): Observable<ProveedorDTO[]> {
-    console.log('Haciendo petición GET a:', this.apiUrl);
-    return this.http.get<ProveedorDTO[]>(this.apiUrl).pipe(
-      map(proveedores => proveedores.map(proveedor => ({
-        ...proveedor,
-        RUC: proveedor.ruc || proveedor.RUC // Maneja ambos casos
-      })))
+    return this.http.get<ApiResponse<ProveedorDTO[]>>(this.apiUrl).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        }
+        throw new Error(response.message);
+      }),
+      catchError(this.handleError)
     );
   }
 
   getProveedor(id: number): Observable<ProveedorDTO> {
-    return this.http.get<ProveedorDTO>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        }
+        throw new Error(response.message);
+      }),
+      catchError(this.handleError)
+    );
   }
 
   getProveedorByRuc(ruc: string): Observable<ProveedorDTO> {
-    return this.http.get<ProveedorDTO>(`${this.apiUrl}/by-ruc/${ruc}`);
+    return this.http.get<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/by-ruc/${ruc}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        }
+        throw new Error(response.message);
+      }),
+      catchError(this.handleError)
+    );
   }
 
-  crearProveedor(proveedor: Omit<ProveedorDTO, 'idProveedores'>): Observable<string> {
-    return this.http.post<string>(this.apiUrl, proveedor);
+  crearProveedor(proveedor: Omit<ProveedorDTO, 'idProveedores'>): Observable<ProveedorDTO> {
+    return this.http.post<ApiResponse<ProveedorDTO>>(this.apiUrl, proveedor, { 
+      observe: 'response',
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    }).pipe(
+      map(response => {
+        if (response.status === 201 || response.status === 200) {
+          const apiResponse = response.body;
+          if (apiResponse && apiResponse.success) {
+            return apiResponse.data;
+          }
+          throw new Error(apiResponse?.message || 'Error al crear el proveedor');
+        }
+        throw new Error(response.body?.message || 'Error al crear el proveedor');
+      }),
+      catchError(error => {
+        if (error.error && typeof error.error === 'object') {
+          return throwError(() => new Error(error.error.message || 'Error al crear el proveedor'));
+        }
+        return throwError(() => new Error('Error al crear el proveedor'));
+      })
+    );
   }
 
-  actualizarProveedor(id: number, proveedor: ProveedorDTO): Observable<string> {
-    return this.http.put<string>(`${this.apiUrl}/${id}`, proveedor);
+  actualizarProveedor(id: number, proveedor: ProveedorDTO): Observable<ProveedorDTO> {
+    return this.http.put<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/${id}`, proveedor, { 
+      observe: 'response',
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    }).pipe(
+      map(response => {
+        if (response.status === 200) {
+          const apiResponse = response.body;
+          if (apiResponse && apiResponse.success) {
+            return apiResponse.data;
+          }
+          throw new Error(apiResponse?.message || 'Error al actualizar el proveedor');
+        }
+        throw new Error(response.body?.message || 'Error al actualizar el proveedor');
+      }),
+      catchError(error => {
+        if (error.error && typeof error.error === 'object') {
+          return throwError(() => new Error(error.error.message || 'Error al actualizar el proveedor'));
+        }
+        return throwError(() => new Error('Error al actualizar el proveedor'));
+      })
+    );
   }
 
-  eliminarProveedor(id: number): Observable<string> {
-    return this.http.delete<string>(`${this.apiUrl}/${id}`);
+  eliminarProveedor(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`, { 
+      observe: 'response',
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    }).pipe(
+      map(response => {
+        // El backend puede devolver 200 OK o 204 No Content
+        if (response.status === 200 || response.status === 204) {
+          const apiResponse = response.body;
+          // Si no hay body (204) o si hay éxito en la respuesta
+          if (!apiResponse || (apiResponse && apiResponse.success)) {
+            return;
+          }
+          throw new Error(apiResponse?.message || 'Error al eliminar el proveedor');
+        }
+        throw new Error(response.body?.message || 'Error al eliminar el proveedor');
+      }),
+      catchError(error => {
+        if (error.error && typeof error.error === 'object') {
+          return throwError(() => new Error(error.error.message || 'Error al eliminar el proveedor'));
+        }
+        return throwError(() => new Error('Error al eliminar el proveedor'));
+      })
+    );
   }
 } 

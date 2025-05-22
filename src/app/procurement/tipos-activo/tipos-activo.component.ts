@@ -19,7 +19,7 @@ export class TiposActivoComponent implements OnInit {
 
   tiposActivoList: TipoDeActivoDTO[] = [];
   tiposActivoFiltrados: TipoDeActivoDTO[] = [];
-  usuarios: Map<number, UsuarioDTO> = new Map();
+  usuariosList: UsuarioDTO[] = [];
   tipoActivoForm: FormGroup;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -40,8 +40,8 @@ export class TiposActivoComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.tipoActivoForm = this.fb.group({
-      nombre: ['', [Validators.required]],
-      descripcion: ['', [Validators.required]]
+      descripcion: ['', [Validators.required]],
+      idUsuario: ['', [Validators.required]]
     });
   }
 
@@ -53,18 +53,17 @@ export class TiposActivoComponent implements OnInit {
   cargarUsuarios(): void {
     this.usuariosService.getUsuarios().subscribe({
       next: (usuarios) => {
-        usuarios.forEach(usuario => {
-          this.usuarios.set(usuario.idUsuario, usuario);
-        });
+        this.usuariosList = usuarios;
       },
       error: (error) => {
         console.error('Error al cargar usuarios:', error);
+        this.error = 'Error al cargar los usuarios. Por favor, intente nuevamente.';
       }
     });
   }
 
   getNombreUsuario(idUsuario: number): string {
-    const usuario = this.usuarios.get(idUsuario);
+    const usuario = this.usuariosList.find(u => u.idUsuario === idUsuario);
     return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'No asignado';
   }
 
@@ -130,8 +129,8 @@ export class TiposActivoComponent implements OnInit {
     this.modoEdicion = true;
     this.tipoActivoSeleccionado = tipo;
     this.tipoActivoForm.patchValue({
-      nombre: tipo.nombre,
-      descripcion: tipo.descripcion
+      descripcion: tipo.descripcion,
+      idUsuario: tipo.idUsuario
     });
     this.modalService.open(this.tipoActivoModal);
   }
@@ -140,27 +139,43 @@ export class TiposActivoComponent implements OnInit {
     if (this.tipoActivoForm.valid) {
       const tipoActivo = this.tipoActivoForm.value;
       if (this.modoEdicion && this.tipoActivoSeleccionado) {
+        if (!this.tipoActivoSeleccionado.idActivo || isNaN(this.tipoActivoSeleccionado.idActivo)) {
+          this.error = 'ID de tipo de activo no válido';
+          return;
+        }
+
         tipoActivo.idActivo = this.tipoActivoSeleccionado.idActivo;
         this.tiposActivoService.actualizarTipoActivo(this.tipoActivoSeleccionado.idActivo, tipoActivo).subscribe({
-          next: () => {
+          next: (tipoActualizado) => {
+            console.log('Tipo de activo actualizado:', tipoActualizado);
             this.modalService.dismissAll();
             this.cargarTiposActivo();
+            this.error = null;
           },
           error: (error) => {
-            this.error = 'Error al actualizar el tipo de activo';
+            console.error('Error al actualizar el tipo de activo:', error);
+            this.error = error.message || 'Error al actualizar el tipo de activo. Por favor, intente nuevamente.';
           }
         });
       } else {
         this.tiposActivoService.crearTipoActivo(tipoActivo).subscribe({
-          next: () => {
+          next: (tipoCreado) => {
+            console.log('Tipo de activo creado:', tipoCreado);
             this.modalService.dismissAll();
             this.cargarTiposActivo();
+            this.error = null;
           },
           error: (error) => {
-            this.error = 'Error al crear el tipo de activo';
+            console.error('Error al crear el tipo de activo:', error);
+            this.error = error.message || 'Error al crear el tipo de activo. Por favor, intente nuevamente.';
           }
         });
       }
+    } else {
+      Object.keys(this.tipoActivoForm.controls).forEach(key => {
+        const control = this.tipoActivoForm.get(key);
+        control?.markAsTouched();
+      });
     }
   }
 
@@ -176,9 +191,13 @@ export class TiposActivoComponent implements OnInit {
           this.cargarTiposActivo();
           this.showConfirmDialog = false;
           this.tipoActivoToDelete = null;
+          this.error = null;
         },
         error: (error) => {
-          this.error = 'Error al eliminar el tipo de activo';
+          console.error('Error al eliminar el tipo de activo:', error);
+          this.error = error.message || 'Error al eliminar el tipo de activo. Por favor, intente nuevamente.';
+          this.showConfirmDialog = false;
+          this.tipoActivoToDelete = null;
         }
       });
     }

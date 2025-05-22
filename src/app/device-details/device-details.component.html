@@ -76,22 +76,23 @@
                 <div *ngIf="ubicacionActual; else sinUbicacion">
                   <div class="row">
                     <div class="col-md-6">
-                      <p><strong>Gerencia:</strong> {{ubicacionActual.nombreGerencia}}</p>
-                      <p><strong>Oficina:</strong> {{ubicacionActual.nombreOficina}}</p>
-                      <p><strong>Ciudad:</strong> {{ubicacionActual.ciudad}}</p>
-                      <p><strong>Departamento:</strong> {{ubicacionActual.departamento}}</p>
+                      <p><strong>Gerencia:</strong> {{ubicacionActual.nombreGerencia || 'No especificada'}}</p>
+                      <p><strong>Oficina:</strong> {{ubicacionActual.nombreOficina || 'No especificada'}}</p>
+                      <p><strong>Ciudad:</strong> {{ubicacionActual.ciudad || 'No especificada'}}</p>
+                      <p><strong>Departamento:</strong> {{ubicacionActual.departamento || 'No especificada'}}</p>
                     </div>
                     <div class="col-md-6">
-                      <p><strong>Dirección:</strong> {{ubicacionActual.direccion}}</p>
-                      <p><strong>Piso:</strong> {{ubicacionActual.piso}}</p>
-                      <p><strong>Puerta:</strong> {{ubicacionActual.numeroPuerta}}</p>
-                      <p><strong>Interno:</strong> {{ubicacionActual.interno}}</p>
+                      <p><strong>Dirección:</strong> {{ubicacionActual.direccion || 'No especificada'}}</p>
+                      <p><strong>Piso:</strong> {{ubicacionActual.piso || 'No especificado'}}</p>
+                      <p><strong>Puerta:</strong> {{ubicacionActual.numeroPuerta || 'No especificada'}}</p>
+                      <p><strong>Interno:</strong> {{ubicacionActual.interno || 'No especificado'}}</p>
                     </div>
                   </div>
                 </div>
                 <ng-template #sinUbicacion>
                   <div class="alert alert-info">
-                    Este dispositivo no tiene una ubicación asignada.
+                    <i class="fas fa-info-circle me-2"></i>
+                    Este dispositivo no tiene una ubicación asignada. Puede asignar una ubicación usando el botón "Asignar Ubicación".
                   </div>
                 </ng-template>
               </div>

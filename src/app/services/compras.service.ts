@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
+import { ApiResponse } from '../interfaces/api-response.interface';
+import { map } from 'rxjs/operators';
 
 export interface CompraDTO {
   idCompra: number;
@@ -27,22 +29,62 @@ export class ComprasService {
   }
 
   getCompras(): Observable<CompraDTO[]> {
-    return this.http.get<CompraDTO[]>(this.apiUrl);
+    return this.http.get<ApiResponse<CompraDTO[]>>(this.apiUrl).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 
   getCompraById(id: number): Observable<CompraDTO> {
-    return this.http.get<CompraDTO>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<CompraDTO>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 
-  crearCompra(compra: CompraDTO): Observable<CompraDTO> {
-    return this.http.post<CompraDTO>(this.apiUrl, compra);
+  crearCompra(compra: CompraDTO): Observable<string> {
+    return this.http.post<ApiResponse<null>>(this.apiUrl, compra).pipe(
+      map(response => {
+        if (response.success) {
+          return response.message;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 
-  actualizarCompra(id: number, compra: CompraDTO): Observable<CompraDTO> {
-    return this.http.put<CompraDTO>(`${this.apiUrl}/${id}`, compra);
+  actualizarCompra(id: number, compra: CompraDTO): Observable<string> {
+    return this.http.put<ApiResponse<null>>(`${this.apiUrl}/${id}`, compra).pipe(
+      map(response => {
+        if (response.success) {
+          return response.message;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 
-  eliminarCompra(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  eliminarCompra(id: number): Observable<string> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.message;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 } 

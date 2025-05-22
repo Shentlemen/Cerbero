@@ -5,6 +5,7 @@ import { ConfigService } from './config.service';
 import { ComprasService, CompraDTO } from './compras.service';
 import { ProveedoresService, ProveedorDTO } from './proveedores.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from './servicios-garantia.service';
+import { ApiResponse } from '../interfaces/api-response.interface';
 
 export interface LoteDTO {
   idItem: number;          // ID único del lote
@@ -55,19 +56,29 @@ export class LotesService {
   }
 
   getLotes(): Observable<LoteDTO[]> {
-    return this.http.get<LoteDTO[]>(this.apiUrl).pipe(
-      switchMap(lotes => {
-        const enrichedLotes = lotes.map(lote => 
-          this.enrichLoteWithCompraInfo(lote)
-        );
-        return forkJoin(enrichedLotes);
+    return this.http.get<ApiResponse<LoteDTO[]>>(this.apiUrl).pipe(
+      switchMap(response => {
+        if (response.success) {
+          const enrichedLotes = response.data.map(lote => 
+            this.enrichLoteWithCompraInfo(lote)
+          );
+          return forkJoin(enrichedLotes);
+        } else {
+          throw new Error(response.message);
+        }
       })
     );
   }
 
   getLote(id: number): Observable<LoteDTO> {
-    return this.http.get<LoteDTO>(`${this.apiUrl}/${id}`).pipe(
-      switchMap(lote => this.enrichLoteWithCompraInfo(lote))
+    return this.http.get<ApiResponse<LoteDTO>>(`${this.apiUrl}/${id}`).pipe(
+      switchMap(response => {
+        if (response.success) {
+          return this.enrichLoteWithCompraInfo(response.data);
+        } else {
+          throw new Error(response.message);
+        }
+      })
     );
   }
 

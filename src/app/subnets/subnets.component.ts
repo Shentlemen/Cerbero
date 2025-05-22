@@ -36,6 +36,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   private lines: L.Polyline[] = [];
   public sortColumn: string = '';
   public sortDirection: 'asc' | 'desc' = 'asc';
+  public loading: boolean = false;
+  public errorMessage: string | null = null;
 
   private montevideoCenter = {
     lat: -34.9011,
@@ -45,18 +47,12 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   constructor(private subnetService: SubnetService) {}
 
   ngOnInit(): void {
-    console.log('Iniciando componente SubnetsComponent');
     this.loadResources()
-      .then(() => {
-        console.log('Recursos cargados, iniciando mapa...');
-        return this.initMap();
-      })
-      .then(() => {
-        console.log('Mapa iniciado, cargando subredes...');
-        this.loadSubnets();
-      })
+      .then(() => this.initMap())
+      .then(() => this.loadSubnets())
       .catch(error => {
         console.error('Error en la inicialización:', error);
+        this.errorMessage = 'Error al inicializar el componente: ' + error.message;
       });
   }
 
@@ -65,36 +61,35 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   }
 
   private loadSubnets(): void {
-    console.log('Cargando subredes...');
-    this.subnetService.getSubnets().subscribe({
-      next: (subnets) => {
-        console.log('Subredes recibidas:', subnets);
-        forkJoin({
-          subnets: this.subnetService.getSubnets(),
-          coordinates: this.subnetService.getAllSubnetCoordinates()
-        }).subscribe({
-          next: ({ subnets, coordinates }: { subnets: SubnetDTO[], coordinates: SubnetCoordinatesDTO[] }) => {
-            const coordMap = new Map(coordinates.map(c => [c.netId, c]));
-            
-            this.subnets = subnets.map(subnet => {
-              const coords = coordMap.get(subnet.netId);
-              return {
-                ...subnet,
-                latitud: coords?.latitud,
-                longitud: coords?.longitud,
-                hasCoordinates: !!coords,
-                editing: false
-              };
-            });
-            
-            this.addMarkersToMap();
-          },
-          error: (error) => {
-            console.error('Error al cargar datos:', error);
-          }
+    this.loading = true;
+    this.errorMessage = null;
+
+    forkJoin({
+      subnets: this.subnetService.getSubnets(),
+      coordinates: this.subnetService.getAllSubnetCoordinates()
+    }).subscribe({
+      next: ({ subnets, coordinates }) => {
+        const coordMap = new Map(coordinates.map(c => [c.netId, c]));
+        
+        this.subnets = subnets.map(subnet => {
+          const coords = coordMap.get(subnet.netId);
+          return {
+            ...subnet,
+            latitud: coords?.latitud,
+            longitud: coords?.longitud,
+            hasCoordinates: !!coords,
+            editing: false
+          };
         });
+        
+        this.addMarkersToMap();
+        this.loading = false;
       },
-      error: (error) => console.error('Error cargando subredes:', error)
+      error: (error) => {
+        console.error('Error al cargar datos:', error);
+        this.errorMessage = 'Error al cargar las subredes: ' + error.message;
+        this.loading = false;
+      }
     });
   }
 
@@ -106,16 +101,25 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   }
 
   saveCoordinates(subnet: ExtendedSubnet): void {
-    if (!this.isValidCoordinates(subnet)) return;
+    if (!this.isValidCoordinates(subnet)) {
+      this.errorMessage = 'Las coordenadas no son válidas';
+      return;
+    }
     
+    this.loading = true;
+    this.errorMessage = null;
+
     this.subnetService.saveSubnetCoordinates(subnet.netId, subnet.latitud!, subnet.longitud!)
       .subscribe({
         next: () => {
           subnet.hasCoordinates = true;
           this.addMarkersToMap();
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error al guardar coordenadas:', error);
+          this.errorMessage = 'Error al guardar las coordenadas: ' + error.message;
+          this.loading = false;
         }
       });
   }
@@ -125,26 +129,42 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   }
 
   updateCoordinates(subnet: ExtendedSubnet): void {
-    if (!this.isValidCoordinates(subnet)) return;
+    if (!this.isValidCoordinates(subnet)) {
+      this.errorMessage = 'Las coordenadas no son válidas';
+      return;
+    }
     
+    this.loading = true;
+    this.errorMessage = null;
+
     this.subnetService.updateSubnetCoordinates(subnet.netId, subnet.latitud!, subnet.longitud!)
       .subscribe({
         next: () => {
           subnet.editing = false;
           this.addMarkersToMap();
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error al actualizar coordenadas:', error);
+          this.errorMessage = 'Error al actualizar las coordenadas: ' + error.message;
+          this.loading = false;
         }
       });
   }
 
   cancelEdit(subnet: ExtendedSubnet): void {
     subnet.editing = false;
-    // Recargar las coordenadas originales
-    this.subnetService.getSubnetCoordinates(subnet.netId).subscribe((coords: SubnetCoordinatesDTO) => {
-      subnet.latitud = coords.latitud;
-      subnet.longitud = coords.longitud;
+    this.errorMessage = null;
+    
+    this.subnetService.getSubnetCoordinates(subnet.netId).subscribe({
+      next: (coords) => {
+        subnet.latitud = coords.latitud;
+        subnet.longitud = coords.longitud;
+      },
+      error: (error) => {
+        console.error('Error al recuperar coordenadas:', error);
+        this.errorMessage = 'Error al recuperar las coordenadas: ' + error.message;
+      }
     });
   }
 

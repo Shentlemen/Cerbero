@@ -337,3 +337,44 @@
     padding: 0.75rem 0.3rem;
   }
 }
+
+.search-box {
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-box .input-group {
+  background: white;
+  border-radius: 25px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.search-box .input-group:focus-within {
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+  transform: translateY(-1px);
+}
+
+.search-box .input-group-text {
+  background: transparent;
+  border: none;
+  color: #3498db;
+  padding-left: 1.25rem;
+}
+
+.search-box .form-control {
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  color: #2c3e50;
+}
+
+.search-box .form-control:focus {
+  box-shadow: none;
+}
+
+.search-box .form-control::placeholder {
+  color: #94a3b8;
+}

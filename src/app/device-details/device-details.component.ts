@@ -5,7 +5,8 @@ import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { NgbNavModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Location } from '@angular/common';
-import { UbicacionesService, Ubicacion, TipoUbicacion } from '../services/ubicaciones.service';
+import { UbicacionesService } from '../services/ubicaciones.service';
+import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { LocationPickerModalComponent } from '../components/location-picker-modal/location-picker-modal.component';
 
 @Component({
@@ -18,8 +19,8 @@ import { LocationPickerModalComponent } from '../components/location-picker-moda
 export class DeviceDetailsComponent implements OnInit {
   device?: NetworkInfoDTO;
   activeTab = 1;
-  ubicacionActual?: Ubicacion;
-  ubicacionesDisponibles: Ubicacion[] = [];
+  ubicacionActual?: UbicacionDTO;
+  ubicacionesDisponibles: UbicacionDTO[] = [];
   loading: boolean = false;
   error: string | null = null;
 
@@ -34,16 +35,23 @@ export class DeviceDetailsComponent implements OnInit {
   ngOnInit(): void {
     const mac = this.route.snapshot.paramMap.get('mac');
     if (mac) {
+      this.loading = true;
       this.networkInfoService.getNetworkInfoByMac(mac).subscribe({
-        next: (device) => {
-          this.device = device;
-          if (this.device?.mac) {
-            this.cargarUbicacion();
+        next: (response) => {
+          if (response.success) {
+            this.device = response.data;
+            if (this.device?.mac) {
+              this.cargarUbicacion();
+            }
+          } else {
+            this.error = response.message || 'Error al cargar el dispositivo';
           }
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error al obtener el dispositivo:', error);
-          this.error = 'Error al cargar el dispositivo';
+          this.error = 'Error al cargar el dispositivo. Por favor, intente nuevamente.';
+          this.loading = false;
         }
       });
     }
@@ -52,18 +60,19 @@ export class DeviceDetailsComponent implements OnInit {
   cargarUbicacion() {
     if (this.device?.mac) {
       this.loading = true;
-      this.ubicacionesService.getUbicacionByMacaddr(this.device.mac).subscribe({
-        next: (ubicacion: Ubicacion) => {
+      this.error = null;
+      this.ubicacionesService.getUbicacionDispositivo(this.device.mac).subscribe({
+        next: (ubicacion) => {
           this.ubicacionActual = ubicacion;
           this.loading = false;
         },
-        error: (error: any) => {
-          if (error.status === 404) {
+        error: (error) => {
+          if (error.status === 404 || error.message?.includes('no encontrada')) {
             this.ubicacionActual = undefined;
             this.error = null;
           } else {
-            console.error('Error cargando ubicación:', error);
-            this.error = 'Error al cargar la ubicación';
+            console.error('Error al cargar ubicación:', error);
+            this.error = 'Error al cargar la ubicación. Por favor, intente nuevamente.';
           }
           this.loading = false;
         }
@@ -71,8 +80,43 @@ export class DeviceDetailsComponent implements OnInit {
     }
   }
 
+  actualizarUbicacion() {
+    if (this.ubicacionActual && this.device?.mac) {
+      this.loading = true;
+      this.error = null;
+
+      if (this.ubicacionActual.id) {
+        this.ubicacionesService.actualizarUbicacionDispositivo(this.device.mac, this.ubicacionActual).subscribe({
+          next: (response) => {
+            console.log('Ubicación actualizada:', response);
+            this.cargarUbicacion();
+          },
+          error: (error: any) => {
+            console.error('Error al actualizar ubicación:', error);
+            this.error = 'Error al actualizar la ubicación. Por favor, intente nuevamente.';
+            this.loading = false;
+          }
+        });
+      } else {
+        this.ubicacionesService.crearUbicacionDispositivo(this.ubicacionActual).subscribe({
+          next: (response) => {
+            console.log('Ubicación creada:', response);
+            this.cargarUbicacion();
+          },
+          error: (error: any) => {
+            console.error('Error al crear ubicación:', error);
+            this.error = 'Error al asignar la ubicación. Por favor, intente nuevamente.';
+            this.loading = false;
+          }
+        });
+      }
+    }
+  }
+
   seleccionarUbicacion() {
     this.loading = true;
+    this.error = null;
+    
     this.ubicacionesService.getUbicaciones().subscribe({
       next: (ubicaciones) => {
         this.ubicacionesDisponibles = ubicaciones;
@@ -85,79 +129,48 @@ export class DeviceDetailsComponent implements OnInit {
         modalRef.componentInstance.ubicaciones = this.ubicacionesDisponibles;
         
         modalRef.result.then(
-          (ubicacionSeleccionada: Ubicacion) => {
+          (ubicacionSeleccionada: UbicacionDTO) => {
             if (ubicacionSeleccionada && this.device?.mac) {
               // Validaciones
-              if (!ubicacionSeleccionada.idUbicacion) {
+              if (!ubicacionSeleccionada.id) {
                 console.error('La ubicación seleccionada no tiene ID');
                 this.error = 'Error: La ubicación seleccionada no es válida';
                 return;
               }
 
-              if (typeof ubicacionSeleccionada.idUbicacion !== 'number') {
+              if (typeof ubicacionSeleccionada.id !== 'number') {
                 console.error('El ID de ubicación debe ser un número');
                 this.error = 'Error: ID de ubicación inválido';
                 return;
               }
 
               // Preparar datos
-              const tipoUbicacion: TipoUbicacion = {
-                idUbicacion: Number(ubicacionSeleccionada.idUbicacion),
+              this.ubicacionActual = {
+                ...ubicacionSeleccionada,
                 tipo: 'DISPOSITIVO',
-                macaddr: this.device.mac
+                macaddr: this.device.mac,
+                hardwareId: null
               };
 
               // Logs de depuración
-              console.log('Ubicación seleccionada:', ubicacionSeleccionada);
-              console.log('Datos a enviar:', tipoUbicacion);
+              console.log('Ubicación seleccionada:', this.ubicacionActual);
 
-              if (this.ubicacionActual) {
-                console.log('Actualizando ubicación existente:');
-                console.log('ID ubicación actual:', this.ubicacionActual.idUbicacion);
-                console.log('Nueva ubicación seleccionada:', ubicacionSeleccionada);
-
-                // Actualizar ubicación existente
-                this.ubicacionesService.actualizarTipoUbicacion(
-                  ubicacionSeleccionada.idUbicacion!,
-                  tipoUbicacion
-                ).subscribe({
-                  next: (response) => {
-                    console.log('Respuesta de actualización:', response);
-                    this.cargarUbicacion();
-                  },
-                  error: (error) => {
-                    console.error('Error actualizando ubicación:', error);
-                    console.error('Detalles del error:', {
-                      status: error.status,
-                      message: error.message,
-                      error: error.error
-                    });
-                    this.error = 'Error al actualizar la ubicación';
-                  }
-                });
-              } else {
-                // Crear nueva asignación
-                this.ubicacionesService.crearTipoUbicacion(tipoUbicacion).subscribe({
-                  next: () => {
-                    this.cargarUbicacion();
-                  },
-                  error: (error) => {
-                    console.error('Error creando ubicación:', error);
-                    this.error = 'Error al asignar la ubicación';
-                  }
-                });
-              }
+              this.actualizarUbicacion();
             }
           },
           () => {
             console.log('Modal cerrado sin selección');
+            this.loading = false;
           }
-        );
-        this.loading = false;
+        ).catch(error => {
+          console.error('Error en el modal:', error);
+          this.error = 'Error al seleccionar la ubicación';
+          this.loading = false;
+        });
       },
       error: (error) => {
         console.error('Error cargando ubicaciones:', error);
-        this.error = 'Error al cargar las ubicaciones disponibles';
+        this.error = 'Error al cargar las ubicaciones disponibles. Por favor, intente nuevamente.';
         this.loading = false;
       }
     });

@@ -6,7 +6,23 @@
       </h2>
     </div>
     <div class="card-body">
-      <div class="table-responsive mb-4">
+      <!-- Mensaje de error -->
+      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = null" aria-label="Close"></button>
+      </div>
+
+      <!-- Indicador de carga -->
+      <div *ngIf="loading" class="text-center my-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando datos...</p>
+      </div>
+
+      <!-- Tabla de subredes -->
+      <div *ngIf="!loading" class="table-responsive mb-4">
         <table class="table table-hover">
           <thead>
             <tr>
@@ -47,8 +63,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let subnet of subnets">
-              <td>{{subnet['name']}}</td>
-              <td>{{subnet['id']}}</td>
+              <td>{{subnet.name}}</td>
+              <td>{{subnet.id}}</td>
               <td>{{subnet.netId}}</td>
               <td>
                 <input 
@@ -77,26 +93,28 @@
                   *ngIf="!subnet.hasCoordinates"
                   class="btn btn-sm btn-primary me-2"
                   (click)="saveCoordinates(subnet)"
-                  [disabled]="!isValidCoordinates(subnet)">
+                  [disabled]="!isValidCoordinates(subnet) || loading">
                   <i class="fas fa-save"></i> Guardar
                 </button>
                 <button 
                   *ngIf="subnet.hasCoordinates && !subnet.editing"
                   class="btn btn-sm btn-warning me-2"
-                  (click)="editCoordinates(subnet)">
+                  (click)="editCoordinates(subnet)"
+                  [disabled]="loading">
                   <i class="fas fa-edit"></i> Editar
                 </button>
                 <button 
                   *ngIf="subnet.hasCoordinates && subnet.editing"
                   class="btn btn-sm btn-success me-2"
                   (click)="updateCoordinates(subnet)"
-                  [disabled]="!isValidCoordinates(subnet)">
+                  [disabled]="!isValidCoordinates(subnet) || loading">
                   <i class="fas fa-check"></i> Actualizar
                 </button>
                 <button 
                   *ngIf="subnet.editing"
                   class="btn btn-sm btn-secondary"
-                  (click)="cancelEdit(subnet)">
+                  (click)="cancelEdit(subnet)"
+                  [disabled]="loading">
                   <i class="fas fa-times"></i> Cancelar
                 </button>
               </td>

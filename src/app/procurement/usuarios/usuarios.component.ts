@@ -132,35 +132,48 @@ export class UsuariosComponent implements OnInit {
       const usuarioData = this.usuarioForm.value;
       
       if (this.modoEdicion && this.usuarioSeleccionado) {
+        if (!this.usuarioSeleccionado.idUsuario || isNaN(this.usuarioSeleccionado.idUsuario)) {
+          this.error = 'ID de usuario no válido';
+          return;
+        }
+
         const usuarioActualizado: UsuarioDTO = {
           ...usuarioData,
           idUsuario: this.usuarioSeleccionado.idUsuario
         };
         
         this.usuariosService.actualizarUsuario(this.usuarioSeleccionado.idUsuario, usuarioActualizado).subscribe({
-          next: (mensaje) => {
-            console.log(mensaje);
+          next: (usuarioActualizado) => {
+            console.log('Usuario actualizado:', usuarioActualizado);
             this.cargarUsuarios();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al actualizar el usuario:', error);
-            this.error = 'Error al actualizar el usuario. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar el usuario. Por favor, intente nuevamente.';
           }
         });
       } else {
         this.usuariosService.crearUsuario(usuarioData).subscribe({
-          next: (mensaje) => {
-            console.log(mensaje);
+          next: (usuarioCreado) => {
+            console.log('Usuario creado:', usuarioCreado);
             this.cargarUsuarios();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al crear el usuario:', error);
-            this.error = 'Error al crear el usuario. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear el usuario. Por favor, intente nuevamente.';
           }
         });
       }
+    } else {
+      // Marcar todos los campos como touched para mostrar los errores
+      Object.keys(this.usuarioForm.controls).forEach(key => {
+        const control = this.usuarioForm.get(key);
+        control?.markAsTouched();
+      });
     }
   }
 
@@ -206,15 +219,15 @@ export class UsuariosComponent implements OnInit {
   confirmarEliminacion(): void {
     if (this.usuarioToDelete) {
       this.usuariosService.eliminarUsuario(this.usuarioToDelete).subscribe({
-        next: (mensaje) => {
-          console.log(mensaje);
+        next: () => {
           this.cargarUsuarios();
           this.showConfirmDialog = false;
           this.usuarioToDelete = null;
+          this.error = null;
         },
         error: (error) => {
           console.error('Error al eliminar el usuario:', error);
-          this.error = 'Error al eliminar el usuario. Por favor, intente nuevamente.';
+          this.error = error.message || 'Error al eliminar el usuario. Por favor, intente nuevamente.';
           this.showConfirmDialog = false;
           this.usuarioToDelete = null;
         }
@@ -234,13 +247,16 @@ export class UsuariosComponent implements OnInit {
           this.usuariosFiltrados = usuario ? [usuario] : [];
           this.collectionSize = this.usuariosFiltrados.length;
           this.page = 1;
+          this.error = null;
         },
         error: (error) => {
           if (error.status === 404) {
             this.usuariosFiltrados = [];
             this.collectionSize = 0;
+            this.error = 'No se encontró ningún usuario con esa cédula';
           } else {
             console.error('Error al buscar usuario por cédula:', error);
+            this.error = error.message || 'Error al buscar el usuario. Por favor, intente nuevamente.';
           }
         }
       });

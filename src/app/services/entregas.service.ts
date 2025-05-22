@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, switchMap, forkJoin } from 'rxjs';
 import { ConfigService } from './config.service';
 import { LotesService, LoteDTO } from './lotes.service';
+import { ApiResponse } from '../interfaces/api-response.interface';
 
 export interface EntregaDTO {
   idEntrega: number;
@@ -38,19 +39,29 @@ export class EntregasService {
   }
 
   getEntregas(): Observable<EntregaDTO[]> {
-    return this.http.get<EntregaDTO[]>(this.apiUrl).pipe(
-      switchMap(entregas => {
-        const enrichedEntregas = entregas.map(entrega => 
-          this.enrichEntregaWithLoteInfo(entrega)
-        );
-        return forkJoin(enrichedEntregas);
+    return this.http.get<ApiResponse<EntregaDTO[]>>(this.apiUrl).pipe(
+      switchMap(response => {
+        if (response.success) {
+          const enrichedEntregas = response.data.map(entrega => 
+            this.enrichEntregaWithLoteInfo(entrega)
+          );
+          return forkJoin(enrichedEntregas);
+        } else {
+          throw new Error(response.message);
+        }
       })
     );
   }
 
   getEntrega(id: number): Observable<EntregaDTO> {
-    return this.http.get<EntregaDTO>(`${this.apiUrl}/${id}`).pipe(
-      switchMap(entrega => this.enrichEntregaWithLoteInfo(entrega))
+    return this.http.get<ApiResponse<EntregaDTO>>(`${this.apiUrl}/${id}`).pipe(
+      switchMap(response => {
+        if (response.success) {
+          return this.enrichEntregaWithLoteInfo(response.data);
+        } else {
+          throw new Error(response.message);
+        }
+      })
     );
   }
 

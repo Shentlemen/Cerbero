@@ -85,14 +85,19 @@
     <form [formGroup]="tipoActivoForm">
       <div class="row">
         <div class="col-md-12 mb-3">
-          <label class="form-label">Nombre</label>
-          <input type="text" class="form-control" formControlName="nombre">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-control" formControlName="descripcion" rows="3"></textarea>
         </div>
       </div>
       <div class="row">
         <div class="col-md-12 mb-3">
-          <label class="form-label">Descripción</label>
-          <textarea class="form-control" formControlName="descripcion" rows="3"></textarea>
+          <label class="form-label">Usuario Responsable</label>
+          <select class="form-select" formControlName="idUsuario">
+            <option value="">Seleccione un usuario</option>
+            <option *ngFor="let usuario of usuariosList" [value]="usuario.idUsuario">
+              {{usuario.nombre}} {{usuario.apellido}} - {{usuario.cargo}}
+            </option>
+          </select>
         </div>
       </div>
     </form>

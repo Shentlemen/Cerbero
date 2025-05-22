@@ -1336,3 +1336,44 @@ ngb-pagination.custom-pagination {
     width: 100%;
   }
 }
+
+/* Estilos personalizados para el loader */
+.spinner-border {
+  display: none !important; /* Ocultamos el spinner original */
+}
+
+.text-center.my-4 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.text-center.my-4::before {
+  content: '';
+  width: 120px; /* Reducido de 200px a 120px */
+  height: 120px; /* Reducido de 200px a 120px */
+  background-image: url('/assets/loadcat.gif');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  animation: bounce 0.5s infinite alternate; /* Agregamos una animación de rebote */
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+.text-center.my-4 p {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  font-weight: 500;
+  margin-top: 1rem;
+}

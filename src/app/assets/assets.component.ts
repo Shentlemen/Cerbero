@@ -51,7 +51,7 @@ export class AssetsComponent implements OnInit {
     private activosService: ActivosService,
     private fb: FormBuilder,
     private router: Router,
-    private route: ActivatedRoute
+    public route: ActivatedRoute
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -64,54 +64,71 @@ export class AssetsComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
+      const softwareId = params['softwareId'];
+      const softwareName = params['softwareName'];
       const filterType = params['filterType'];
       const filterValue = params['filterValue'];
 
-      console.log('Filter Type:', filterType);
-      console.log('Filter Value:', filterValue);
-
-      if (filterType === 'software') {
-        try {
-          const softwareInfo = JSON.parse(filterValue);
-          this.loadAssetsForSoftware(softwareInfo);
-        } catch (error) {
-          console.error('Error parsing software filter:', error);
-          this.loadAssets();
-        }
-      } else if (filterType && filterValue) {
-        const formControlName = filterType === 'marca' ? 'smanufacturer' : 
-                              filterType === 'type' ? 'biosType' : filterType;
-        
-        this.filterForm.patchValue({ [formControlName]: filterValue });
-        this.aplicarFiltros();
+      if (softwareId) {
+        this.loadAssetsForSoftware(softwareId);
       } else {
-        this.loadAssets();
+        this.loadAssets().then(() => {
+          if (filterType && filterValue) {
+            this.applyFilterFromParams(filterType, filterValue);
+          }
+        });
       }
     });
   }
 
-  loadAssets(): void {
-    forkJoin([
-      this.hardwareService.getHardware(),
-      this.biosService.getAllBios()
-    ]).subscribe({
-      next: ([hardwareList, biosList]) => {
-        const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
-        
-        this.assetsList = hardwareList.map(h => ({
-          ...h,
-          biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase()
-        }));
-        
-        this.originalAssetsList = this.assetsList;
-        this.assetsFiltrados = [...this.originalAssetsList];
-        this.collectionSize = this.assetsFiltrados.length;
-        this.updateSummary();
-        this.cargarActivosInfo();
-      },
-      error: (error) => {
-        console.error('Error al cargar los assets:', error);
-      }
+  private applyFilterFromParams(filterType: string, filterValue: string): void {
+    switch (filterType) {
+      case 'type':
+        this.filterByType(filterValue);
+        break;
+      case 'marca':
+        this.assetsFiltrados = this.originalAssetsList.filter(asset => 
+          asset.smanufacturer?.toUpperCase() === filterValue.toUpperCase()
+        );
+        break;
+      case 'osName':
+        this.assetsFiltrados = this.originalAssetsList.filter(asset => 
+          asset.osName?.toUpperCase() === filterValue.toUpperCase()
+        );
+        break;
+    }
+    this.collectionSize = this.assetsFiltrados.length;
+    this.page = 1;
+    this.updateSummary();
+  }
+
+  loadAssets(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      forkJoin([
+        this.hardwareService.getHardware(),
+        this.biosService.getAllBios()
+      ]).subscribe({
+        next: ([hardwareList, biosList]) => {
+          const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
+          
+          this.assetsList = hardwareList.map(h => ({
+            ...h,
+            biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase(),
+            smanufacturer: biosMap.get(h.id)?.smanufacturer || 'DESCONOCIDO'
+          }));
+          
+          this.originalAssetsList = this.assetsList;
+          this.assetsFiltrados = [...this.originalAssetsList];
+          this.collectionSize = this.assetsFiltrados.length;
+          this.updateSummary();
+          this.cargarActivosInfo();
+          resolve();
+        },
+        error: (error) => {
+          console.error('Error al cargar los assets:', error);
+          reject(error);
+        }
+      });
     });
   }
 
@@ -120,18 +137,21 @@ export class AssetsComponent implements OnInit {
     this.assetsList.forEach(asset => {
       this.activosService.getActivoByHardwareId(asset.id).subscribe({
         next: (activo) => {
-          this.activosMap.set(asset.id, activo);
+          if (activo) {
+            this.activosMap.set(asset.id, activo);
+            console.log(`Activo cargado para hardware ${asset.id}:`, activo);
+          }
         },
         error: (error) => {
           console.error(`Error al cargar activo para hardware ${asset.id}:`, error);
+          // No establecemos el activo en el mapa si hay error
         }
       });
     });
   }
 
-  loadAssetsForSoftware(softwareInfo: any): void {
-    // Primero obtenemos los IDs de hardware que tienen este software
-    this.softwareService.getHardwaresBySoftware(softwareInfo).subscribe({
+  loadAssetsForSoftware(softwareId: number): void {
+    this.softwareService.getHardwaresBySoftware({ idSoftware: softwareId } as any).subscribe({
       next: (hardwareIds) => {
         forkJoin([
           this.hardwareService.getHardware(),
@@ -152,6 +172,7 @@ export class AssetsComponent implements OnInit {
             this.assetsFiltrados = [...this.originalAssetsList];
             this.collectionSize = this.assetsFiltrados.length;
             this.updateSummary();
+            this.cargarActivosInfo();
           },
           error: (error) => {
             console.error('Error al cargar los assets:', error);
@@ -160,7 +181,7 @@ export class AssetsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al obtener hardware IDs:', error);
-        this.loadAssets(); // Cargar todos los assets si hay error
+        this.loadAssets();
       }
     });
   }

@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { UbicacionesService, Ubicacion } from '../../services/ubicaciones.service';
+import { UbicacionesService } from '../../services/ubicaciones.service';
+import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../../services/subnet.service';
 
 @Component({
@@ -135,6 +136,8 @@ import { SubnetService, SubnetDTO } from '../../services/subnet.service';
   `]
 })
 export class LocationSelectorModalComponent implements OnInit {
+  @Input() ubicacion?: UbicacionDTO;
+  @Output() ubicacionSeleccionada = new EventEmitter<UbicacionDTO>();
   ubicacionForm: FormGroup;
   subnets: SubnetDTO[] = [];
 
@@ -158,40 +161,62 @@ export class LocationSelectorModalComponent implements OnInit {
   }
 
   ngOnInit() {
+    console.log('Iniciando LocationSelectorModalComponent');
     this.cargarSubnets();
+    if (this.ubicacion) {
+      console.log('Cargando datos de ubicación:', this.ubicacion);
+      // Si estamos en modo edición, cargar los datos de la ubicación
+      this.ubicacionForm.patchValue({
+        nombreGerencia: this.ubicacion.nombreGerencia,
+        nombreOficina: this.ubicacion.nombreOficina,
+        ciudad: this.ubicacion.ciudad,
+        departamento: this.ubicacion.departamento,
+        direccion: this.ubicacion.direccion,
+        piso: this.ubicacion.piso,
+        numeroPuerta: this.ubicacion.numeroPuerta,
+        interno: this.ubicacion.interno,
+        idSubnet: this.ubicacion.idSubnet
+      });
+      console.log('Formulario actualizado:', this.ubicacionForm.value);
+    }
   }
 
   cargarSubnets() {
     this.subnetService.getSubnets().subscribe({
       next: (subnets) => {
+        console.log('Subnets cargadas:', subnets);
         this.subnets = subnets;
       },
       error: (error) => {
         console.error('Error al cargar subnets:', error);
+        alert('Error al cargar las subnets. Por favor, intente nuevamente.');
       }
     });
   }
 
   guardarUbicacion() {
     if (this.ubicacionForm.valid) {
-      const nuevaUbicacion: Ubicacion = {
-        nombreGerencia: this.ubicacionForm.get('nombreGerencia')?.value?.trim(),
-        nombreOficina: this.ubicacionForm.get('nombreOficina')?.value?.trim(),
-        ciudad: this.ubicacionForm.get('ciudad')?.value?.trim(),
-        departamento: this.ubicacionForm.get('departamento')?.value?.trim(),
-        direccion: this.ubicacionForm.get('direccion')?.value?.trim(),
-        piso: this.ubicacionForm.get('piso')?.value?.trim(),
-        numeroPuerta: this.ubicacionForm.get('numeroPuerta')?.value?.trim(),
-        interno: this.ubicacionForm.get('interno')?.value?.trim(),
+      const nuevaUbicacion: Omit<UbicacionDTO, 'id' | 'deviceName'> = {
+        tipo: 'EQUIPO',
+        hardwareId: 0,
+        macaddr: '',
+        ciudad: this.ubicacionForm.get('ciudad')?.value?.trim() || '',
+        departamento: this.ubicacionForm.get('departamento')?.value?.trim() || '',
+        direccion: this.ubicacionForm.get('direccion')?.value?.trim() || '',
+        interno: this.ubicacionForm.get('interno')?.value?.trim() || '',
+        nombreGerencia: this.ubicacionForm.get('nombreGerencia')?.value?.trim() || '',
+        nombreOficina: this.ubicacionForm.get('nombreOficina')?.value?.trim() || '',
+        piso: this.ubicacionForm.get('piso')?.value?.trim() || '',
+        numeroPuerta: this.ubicacionForm.get('numeroPuerta')?.value?.trim() || '',
         idSubnet: this.ubicacionForm.get('idSubnet')?.value
       };
 
-      this.ubicacionesService.crearUbicacionSimple(nuevaUbicacion).subscribe({
-        next: (ubicacion) => {
+      this.ubicacionesService.crearUbicacionEquipo(nuevaUbicacion).subscribe({
+        next: (ubicacion: UbicacionDTO) => {
           console.log('Ubicación creada:', ubicacion);
           this.activeModal.close(ubicacion);
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error al crear ubicación:', error);
           alert('Error al crear la ubicación. Por favor, intente nuevamente.');
         }

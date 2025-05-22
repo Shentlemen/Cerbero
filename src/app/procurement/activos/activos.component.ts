@@ -4,7 +4,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
-import { UbicacionesService, Ubicacion } from '../../services/ubicaciones.service';
+import { UbicacionesService } from '../../services/ubicaciones.service';
+import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
 import { ComprasService, CompraDTO } from '../../services/compras.service';
 import { HardwareService } from '../../services/hardware.service';
@@ -40,7 +41,7 @@ export class ActivosComponent implements OnInit {
   activoSeleccionado: ActivoDTO | null = null;
   usuarioSeleccionado: UsuarioDTO | null = null;
   compraSeleccionada: CompraDTO | null = null;
-  ubicaciones: Map<number, Ubicacion> = new Map();
+  ubicaciones = new Map<number, UbicacionDTO>();
   usuarios: Map<number, UsuarioDTO> = new Map();
   compras: Map<number, CompraDTO> = new Map();
   hardwareMap: Map<number, any> = new Map();
@@ -72,7 +73,7 @@ export class ActivosComponent implements OnInit {
   comprasList: CompraDTO[] = [];
   lotesList: LoteDTO[] = [];
   entregasList: EntregaDTO[] = [];
-  ubicacionesList: Ubicacion[] = [];
+  ubicacionesList: UbicacionDTO[] = [];
   serviciosGarantiaList: ServicioGarantiaDTO[] = [];
   tiposActivoList: TipoDeActivoDTO[] = [];
 
@@ -151,16 +152,18 @@ export class ActivosComponent implements OnInit {
 
   cargarUbicaciones() {
     this.ubicacionesService.getUbicaciones().subscribe({
-      next: (ubicaciones) => {
+      next: (ubicaciones: UbicacionDTO[]) => {
+        this.ubicaciones.clear();
         this.ubicacionesList = ubicaciones;
         ubicaciones.forEach(ubicacion => {
-          if (ubicacion.idUbicacion) {
-            this.ubicaciones.set(ubicacion.idUbicacion, ubicacion);
+          if (ubicacion.id) {
+            this.ubicaciones.set(ubicacion.id, ubicacion);
           }
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar ubicaciones:', error);
+        this.errorMessage = 'Error al cargar las ubicaciones. Por favor, intente nuevamente.';
       }
     });
   }
@@ -226,6 +229,7 @@ export class ActivosComponent implements OnInit {
       error: (error) => {
         this.error = 'Error al cargar los activos';
         this.loading = false;
+        console.error('Error al cargar activos:', error);
       }
     });
   }
@@ -358,69 +362,56 @@ export class ActivosComponent implements OnInit {
   }
 
   async abrirModal(modal: any, activo?: any) {
-    console.log('Abriendo modal:', activo ? 'Editar' : 'Nuevo');
-    console.log('Modal recibido:', modal);
-    this.modoEdicion = !!activo;
-    this.errorMessage = null;
-    this.successMessage = null;
-    
-    if (activo) {
-      console.log('Configurando modal para editar activo:', activo);
-      this.activoSeleccionado = activo;
-      try {
-        // Cargar datos del activo
+    try {
+      // Asegurarse de que las ubicaciones estén cargadas
+      if (this.ubicacionesList.length === 0) {
+        await firstValueFrom(this.ubicacionesService.getUbicaciones());
+      }
+
+      this.modoEdicion = !!activo;
+      this.activoSeleccionado = activo || null;
+      this.errorMessage = null;
+      this.successMessage = null;
+
+      if (this.modoEdicion && activo) {
+        // Cargar datos del activo en el formulario
         this.activoForm.patchValue({
-          hardwareId: activo.hardwareId?.toString() || '',
-          criticidad: activo.criticidad?.toUpperCase() || '',
-          clasificacionDeINFO: activo.clasificacionDeINFO || '',
-          estado: activo.estado?.toUpperCase() || '',
-          idTipoActivo: activo.idTipoActivo?.toString() || '',
-          idNumeroCompra: activo.idNumeroCompra?.toString() || '',
-          idItem: activo.idItem?.toString() || '',
-          idEntrega: activo.idEntrega?.toString() || '',
-          idUbicacion: activo.idUbicacion?.toString() || '',
-          idUsuario: activo.idUsuario?.toString() || '',
-          idSecundario: activo.idSecundario || '',
-          idServicioGarantia: activo.idServicioGarantia?.toString() || '',
-          fechaFinGarantia: activo.fechaFinGarantia || ''
+          hardwareId: activo.hardwareId,
+          criticidad: activo.criticidad,
+          clasificacionDeINFO: activo.clasificacionDeINFO,
+          estado: activo.estado,
+          idTipoActivo: activo.idTipoActivo,
+          idNumeroCompra: activo.idNumeroCompra,
+          idItem: activo.idItem,
+          idEntrega: activo.idEntrega,
+          idUbicacion: activo.idUbicacion,
+          idUsuario: activo.idUsuario,
+          idSecundario: activo.idSecundario,
+          idServicioGarantia: activo.idServicioGarantia,
+          fechaFinGarantia: activo.fechaFinGarantia
         });
-        
+
         // Cargar activos relacionados
-        this.selectedRelatedAssets = await firstValueFrom(
-          this.activosService.getActivosRelacionados(activo.idActivo)
-        );
-      } catch (error) {
-        console.error('Error al cargar datos del activo:', error);
-        this.errorMessage = 'Error al cargar los datos del activo';
+        try {
+          const activosRelacionados = await firstValueFrom(
+            this.activosService.getActivosRelacionados(activo.idActivo)
+          );
+          this.selectedRelatedAssets = activosRelacionados || [];
+          console.log('Activos relacionados cargados:', this.selectedRelatedAssets);
+        } catch (error) {
+          console.error('Error al cargar activos relacionados:', error);
+          this.selectedRelatedAssets = [];
+        }
+      } else {
+        this.activoForm.reset();
         this.selectedRelatedAssets = [];
       }
-    } else {
-      console.log('Configurando modal para nuevo activo');
-      // Resetear el formulario con valores por defecto
-      this.activoForm.reset({
-        hardwareId: '',
-        criticidad: '',
-        clasificacionDeINFO: '',
-        estado: '',
-        idTipoActivo: '',
-        idNumeroCompra: '',
-        idItem: '',
-        idEntrega: '',
-        idUbicacion: '',
-        idUsuario: '',
-        idSecundario: '',
-        idServicioGarantia: '',
-        fechaFinGarantia: ''
-      });
-      this.selectedRelatedAssets = [];
-      this.activoSeleccionado = null;
-    }
-    
-    setTimeout(() => {
-      this.activoForm.updateValueAndValidity();
-    });
 
-    this.modalService.open(modal, { size: 'lg' });
+      this.modalService.open(modal, { size: 'lg' });
+    } catch (error) {
+      console.error('Error al abrir el modal:', error);
+      this.errorMessage = 'Error al cargar los datos necesarios. Por favor, intente nuevamente.';
+    }
   }
 
   addRelatedAsset(idActivo: number | null) {

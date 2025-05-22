@@ -46,13 +46,13 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('RUC')" [class.active]="sortColumn === 'RUC'">
+              <th (click)="sortData('ruc')" [class.active]="sortColumn === 'ruc'">
                 <div class="th-content">
                   <span>RUC</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'RUC' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'RUC' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'RUC'
+                    'fa-sort-up': sortColumn === 'ruc' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'ruc' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'ruc'
                   }"></i>
                 </div>
               </th>
@@ -74,7 +74,7 @@
           <tbody>
             <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
               <td>{{proveedor.nombre}}</td>
-              <td>{{proveedor.RUC}}</td>
+              <td>{{proveedor.ruc}}</td>
               <td>{{proveedor.nombreComercial}}</td>
               <td>{{proveedor.correoContacto}}</td>
               <td>{{proveedor.telefonoContacto}}</td>
@@ -141,11 +141,11 @@
       <div class="row">
         <div class="col-12 mb-3">
           <label class="form-label">RUC</label>
-          <input type="text" class="form-control" formControlName="RUC" maxlength="11">
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('RUC')?.errors?.['required'] && proveedorForm.get('RUC')?.touched">
+          <input type="text" class="form-control" formControlName="ruc" maxlength="11">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('ruc')?.errors?.['required'] && proveedorForm.get('ruc')?.touched">
             El RUC es requerido.
           </div>
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('RUC')?.errors?.['pattern'] && proveedorForm.get('RUC')?.touched">
+          <div class="invalid-feedback" *ngIf="proveedorForm.get('ruc')?.errors?.['pattern'] && proveedorForm.get('ruc')?.touched">
             El RUC debe tener 11 dígitos numéricos.
           </div>
         </div>

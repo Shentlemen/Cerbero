@@ -16,7 +16,8 @@ import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AssetEditModalComponent } from '../asset-edit-modal/asset-edit-modal.component';
 import { forkJoin } from 'rxjs';
 import { SoftwareByHardwareService } from '../services/software-by-hardware.service';
-import { UbicacionesService, Ubicacion, TipoUbicacion } from '../services/ubicaciones.service';
+import { UbicacionesService } from '../services/ubicaciones.service';
+import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
 import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
@@ -89,10 +90,10 @@ export class AssetdetailsComponent implements OnInit {
   asset: Asset | null = null;
   activeTab: string = 'general';
   componentData: any = {};
-  ubicacionActual?: Ubicacion;
+  ubicacionActual?: UbicacionDTO;
   loading: boolean = false;
   error: string | null = null;
-  ubicacionesDisponibles: Ubicacion[] = [];
+  ubicacionesDisponibles: UbicacionDTO[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -560,24 +561,38 @@ export class AssetdetailsComponent implements OnInit {
 
   cargarUbicacion() {
     if (this.asset?.id) {
-      this.loading = true;
-      this.ubicacionesService.getUbicacionByHardwareId(this.asset.id).subscribe({
-        next: (ubicacion: Ubicacion) => {
+      this.ubicacionesService.getUbicacionEquipo(this.asset.id).subscribe({
+        next: (ubicacion) => {
           this.ubicacionActual = ubicacion;
-          this.error = null;
-          this.loading = false;
         },
         error: (error: any) => {
-          if (error.status === 404) {
-            this.ubicacionActual = undefined;
-            this.error = null;
-          } else {
-            console.error('Error cargando ubicación:', error);
-            this.error = 'Error al cargar la ubicación';
-          }
-          this.loading = false;
+          console.error('Error al cargar ubicación:', error);
         }
       });
+    }
+  }
+
+  actualizarUbicacion() {
+    if (this.ubicacionActual && this.asset?.id) {
+      if (this.ubicacionActual.id) {
+        this.ubicacionesService.actualizarUbicacionEquipo(this.asset.id, this.ubicacionActual).subscribe({
+          next: (response) => {
+            console.log('Ubicación actualizada:', response);
+          },
+          error: (error: any) => {
+            console.error('Error al actualizar ubicación:', error);
+          }
+        });
+      } else {
+        this.ubicacionesService.crearUbicacionEquipo(this.ubicacionActual).subscribe({
+          next: (response) => {
+            console.log('Ubicación creada:', response);
+          },
+          error: (error: any) => {
+            console.error('Error al crear ubicación:', error);
+          }
+        });
+      }
     }
   }
 
@@ -595,62 +610,28 @@ export class AssetdetailsComponent implements OnInit {
         modalRef.componentInstance.ubicaciones = this.ubicacionesDisponibles;
         
         modalRef.result.then(
-          (ubicacionSeleccionada: Ubicacion) => {
+          (ubicacionSeleccionada: UbicacionDTO) => {
             if (ubicacionSeleccionada && this.asset?.id) {
               // Validaciones
-              if (!ubicacionSeleccionada.idUbicacion) {
+              if (!ubicacionSeleccionada.id) {
                 console.error('La ubicación seleccionada no tiene ID');
                 this.error = 'Error: La ubicación seleccionada no es válida';
                 return;
               }
 
-              if (typeof ubicacionSeleccionada.idUbicacion !== 'number') {
+              if (typeof ubicacionSeleccionada.id !== 'number') {
                 console.error('El ID de ubicación debe ser un número');
                 this.error = 'Error: ID de ubicación inválido';
                 return;
               }
 
               // Preparar datos
-              const tipoUbicacion: TipoUbicacion = {
-                idUbicacion: Number(ubicacionSeleccionada.idUbicacion),
-                tipo: 'EQUIPO',
-                hardwareId: this.asset.id
-              };
+              this.ubicacionActual = ubicacionSeleccionada;
 
               // Logs de depuración
               console.log('Ubicación seleccionada:', ubicacionSeleccionada);
-              console.log('Datos a enviar:', tipoUbicacion);
 
-              if (this.ubicacionActual) {
-                console.log('Actualizando ubicación existente:');
-                console.log('ID ubicación actual:', this.ubicacionActual.idUbicacion);
-                console.log('Nueva ubicación seleccionada:', ubicacionSeleccionada);
-
-                // Actualizar la asignación existente
-                this.ubicacionesService.actualizarTipoUbicacion(
-                  ubicacionSeleccionada.idUbicacion!,
-                  tipoUbicacion
-                ).subscribe({
-                  next: () => {
-                    this.cargarUbicacion();
-                  },
-                  error: (error) => {
-                    console.error('Error actualizando ubicación:', error);
-                    this.error = 'Error al actualizar la ubicación';
-                  }
-                });
-              } else {
-                // Crear nueva asignación
-                this.ubicacionesService.crearTipoUbicacion(tipoUbicacion).subscribe({
-                  next: () => {
-                    this.cargarUbicacion();
-                  },
-                  error: (error) => {
-                    console.error('Error creando ubicación:', error);
-                    this.error = 'Error al asignar la ubicación';
-                  }
-                });
-              }
+              this.actualizarUbicacion();
             }
           },
           () => {
@@ -659,7 +640,7 @@ export class AssetdetailsComponent implements OnInit {
         );
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error cargando ubicaciones:', error);
         this.error = 'Error al cargar las ubicaciones disponibles';
         this.loading = false;

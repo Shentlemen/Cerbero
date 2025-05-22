@@ -31,13 +31,12 @@
             <tr>
               <th>Gerencia</th>
               <th>Oficina</th>
+              <th>Piso</th>
+              <th>Puerta</th>
               <th>Ciudad</th>
               <th>Departamento</th>
               <th>Dirección</th>
-              <th>Piso</th>
-              <th>Puerta</th>
               <th>Interno</th>
-              <th>Subnet</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -45,13 +44,12 @@
             <tr *ngFor="let ubicacion of ubicaciones" class="generic-row">
               <td>{{ubicacion.nombreGerencia}}</td>
               <td>{{ubicacion.nombreOficina}}</td>
-              <td>{{ubicacion.ciudad}}</td>
-              <td>{{ubicacion.departamento}}</td>
-              <td>{{ubicacion.direccion}}</td>
-              <td>{{ubicacion.piso}}</td>
-              <td>{{ubicacion.numeroPuerta}}</td>
-              <td>{{ubicacion.interno}}</td>
-              <td>{{getSubnetName(ubicacion.idSubnet)}}</td>
+              <td>{{ubicacion.piso || 'N/A'}}</td>
+              <td>{{ubicacion.numeroPuerta || 'N/A'}}</td>
+              <td>{{ubicacion.ciudad || 'N/A'}}</td>
+              <td>{{ubicacion.departamento || 'N/A'}}</td>
+              <td>{{ubicacion.direccion || 'N/A'}}</td>
+              <td>{{ubicacion.interno || 'N/A'}}</td>
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-primary btn-sm me-2" (click)="editarUbicacion(ubicacion)">
@@ -82,7 +80,7 @@
       Confirmar Eliminación
     </div>
     <div class="confirm-dialog-message">
-      ¿Está seguro que desea eliminar la ubicación "{{ubicacionToDelete?.nombreGerencia || ''}} - {{ubicacionToDelete?.ciudad}}"?
+      ¿Está seguro que desea eliminar la ubicación "{{ubicacionToDelete?.nombreGerencia || ''}} - {{ubicacionToDelete?.nombreOficina}}"?
       Esta acción no se puede deshacer.
     </div>
     <div class="confirm-dialog-buttons">

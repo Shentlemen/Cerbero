@@ -2,7 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { Ubicacion } from '../../services/ubicaciones.service';
+import { UbicacionesService } from '../../services/ubicaciones.service';
+import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
 
 @Component({
   selector: 'app-location-picker-modal',
@@ -34,7 +35,7 @@ import { Ubicacion } from '../../services/ubicaciones.service';
           <select class="form-select" id="ubicacion" [(ngModel)]="ubicacionSeleccionada">
             <option [ngValue]="null">Seleccione una ubicación...</option>
             <option *ngFor="let ubicacion of ubicaciones" [ngValue]="ubicacion">
-              {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}} - {{ubicacion.ciudad}}
+              {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}} - {{ubicacion.piso}}
             </option>
           </select>
         </div>
@@ -46,14 +47,12 @@ import { Ubicacion } from '../../services/ubicaciones.service';
               <div class="col-md-6">
                 <p><strong>Gerencia:</strong> {{ubicacionSeleccionada.nombreGerencia}}</p>
                 <p><strong>Oficina:</strong> {{ubicacionSeleccionada.nombreOficina}}</p>
-                <p><strong>Ciudad:</strong> {{ubicacionSeleccionada.ciudad}}</p>
-                <p><strong>Departamento:</strong> {{ubicacionSeleccionada.departamento}}</p>
+                <p><strong>Piso:</strong> {{ubicacionSeleccionada.piso}}</p>
+                <p><strong>Tipo:</strong> {{ubicacionSeleccionada.tipo}}</p>
               </div>
               <div class="col-md-6">
-                <p><strong>Dirección:</strong> {{ubicacionSeleccionada.direccion}}</p>
-                <p><strong>Piso:</strong> {{ubicacionSeleccionada.piso}}</p>
-                <p><strong>Puerta:</strong> {{ubicacionSeleccionada.numeroPuerta}}</p>
-                <p><strong>Interno:</strong> {{ubicacionSeleccionada.interno}}</p>
+                <p><strong>Hardware ID:</strong> {{ubicacionSeleccionada.hardwareId || 'N/A'}}</p>
+                <p><strong>MAC Address:</strong> {{ubicacionSeleccionada.macaddr || 'N/A'}}</p>
               </div>
             </div>
           </div>
@@ -123,8 +122,8 @@ import { Ubicacion } from '../../services/ubicaciones.service';
   `]
 })
 export class LocationPickerModalComponent implements OnInit {
-  @Input() ubicaciones: Ubicacion[] = [];
-  ubicacionSeleccionada: Ubicacion | null = null;
+  @Input() ubicaciones: UbicacionDTO[] = [];
+  ubicacionSeleccionada: UbicacionDTO | null = null;
   loading: boolean = false;
   error: string | null = null;
 

@@ -233,9 +233,9 @@
           <label class="form-label">Clasificación de INFO</label>
           <select class="form-select" formControlName="clasificacionDeINFO">
             <option value="">Seleccione una clasificación</option>
-            <option value="Confidencial">Confidencial</option>
-            <option value="No confidencial">No confidencial</option>
-            <option value="Pública">Pública</option>
+            <option value="CONFIDENCIAL">Confidencial</option>
+            <option value="NO CONFIDENCIAL">No confidencial</option>
+            <option value="PUBLICA">Pública</option>
           </select>
           <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
             La clasificación es requerida.
@@ -312,7 +312,7 @@
           <label class="form-label">Ubicación</label>
           <select class="form-select" formControlName="idUbicacion">
             <option value="">Seleccione una ubicación</option>
-            <option *ngFor="let ubicacion of ubicacionesList" [value]="ubicacion.idUbicacion">
+            <option *ngFor="let ubicacion of ubicacionesList" [value]="ubicacion.id">
               {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}}
             </option>
           </select>
