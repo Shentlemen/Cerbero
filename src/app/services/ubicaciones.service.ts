@@ -60,7 +60,7 @@ export class UbicacionesService {
     );
   }
 
-  crearUbicacionEquipo(ubicacion: Omit<UbicacionDTO, 'id' | 'deviceName'>): Observable<UbicacionDTO> {
+  crearUbicacionEquipo(ubicacion: { id: number; hardwareId: number; tipo: 'EQUIPO' }): Observable<UbicacionDTO> {
     return this.http.post<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/equipos`, ubicacion).pipe(
       map(response => {
         if (response.success) {

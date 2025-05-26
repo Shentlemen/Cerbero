@@ -196,19 +196,10 @@ export class LocationSelectorModalComponent implements OnInit {
 
   guardarUbicacion() {
     if (this.ubicacionForm.valid) {
-      const nuevaUbicacion: Omit<UbicacionDTO, 'id' | 'deviceName'> = {
-        tipo: 'EQUIPO',
-        hardwareId: 0,
-        macaddr: '',
-        ciudad: this.ubicacionForm.get('ciudad')?.value?.trim() || '',
-        departamento: this.ubicacionForm.get('departamento')?.value?.trim() || '',
-        direccion: this.ubicacionForm.get('direccion')?.value?.trim() || '',
-        interno: this.ubicacionForm.get('interno')?.value?.trim() || '',
-        nombreGerencia: this.ubicacionForm.get('nombreGerencia')?.value?.trim() || '',
-        nombreOficina: this.ubicacionForm.get('nombreOficina')?.value?.trim() || '',
-        piso: this.ubicacionForm.get('piso')?.value?.trim() || '',
-        numeroPuerta: this.ubicacionForm.get('numeroPuerta')?.value?.trim() || '',
-        idSubnet: this.ubicacionForm.get('idSubnet')?.value
+      const nuevaUbicacion = {
+        id: this.ubicacion?.id || 0,
+        hardwareId: this.ubicacion?.hardwareId || 0,
+        tipo: 'EQUIPO' as const
       };
 
       this.ubicacionesService.crearUbicacionEquipo(nuevaUbicacion).subscribe({
