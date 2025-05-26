@@ -54,6 +54,16 @@
                   }"></i>
                 </div>
               </th>
+              <th (click)="sortData('tipoCompraDescripcion')" [class.active]="sortColumn === 'tipoCompraDescripcion'">
+                <div class="th-content">
+                  <span>Tipo de Compra</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'tipoCompraDescripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'tipoCompraDescripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'tipoCompraDescripcion'
+                  }"></i>
+                </div>
+              </th>
               <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
                   <span>Descripción</span>
@@ -110,6 +120,7 @@
           <tbody>
             <tr *ngFor="let compra of pagedCompras" class="compra-row">
               <td>{{compra.idCompra}}</td>
+              <td>{{compra.tipoCompraDescripcion}}</td>
               <td>{{compra.descripcion}}</td>
               <td>{{formatearFecha(compra.fechaInicio)}}</td>
               <td>{{formatearFecha(compra.fechaFinal)}}</td>
@@ -165,7 +176,12 @@
       <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Tipo de Compra</label>
-          <input type="number" class="form-control" formControlName="idTipoCompra">
+          <select class="form-select" formControlName="idTipoCompra">
+            <option value="">Seleccione un tipo de compra</option>
+            <option *ngFor="let tipo of tiposCompraList" [value]="tipo.idTipoCompra">
+              {{tipo.descripcion}}
+            </option>
+          </select>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Moneda</label>

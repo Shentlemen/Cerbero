@@ -45,11 +45,12 @@ export class EntregasComponent implements OnInit {
     });
 
     this.entregaForm = this.fb.group({
-      idItem: ['', Validators.required],
+      idEntrega: [null],
+      idItem: ['', [Validators.required, Validators.min(1)]],
       cantidad: ['', [Validators.required, Validators.min(1)]],
-      descripcion: ['', Validators.required],
-      fechaPedido: ['', Validators.required],
-      fechaFinGarantia: ['', Validators.required]
+      descripcion: ['', [Validators.required]],
+      fechaPedido: ['', [Validators.required]],
+      fechaFinGarantia: ['', [Validators.required]]
     });
   }
 
@@ -126,11 +127,21 @@ export class EntregasComponent implements OnInit {
   abrirModal(modal: any, entrega?: EntregaDTO): void {
     if (entrega) {
       this.modoEdicion = true;
-      this.entregaForm.patchValue(entrega);
+      this.entregaForm.get('idEntrega')?.setValidators([Validators.required, Validators.min(1)]);
+      this.entregaForm.patchValue({
+        idEntrega: entrega.idEntrega,
+        idItem: entrega.idItem,
+        cantidad: entrega.cantidad,
+        descripcion: entrega.descripcion,
+        fechaPedido: entrega.fechaPedido,
+        fechaFinGarantia: entrega.fechaFinGarantia
+      });
     } else {
       this.modoEdicion = false;
+      this.entregaForm.get('idEntrega')?.clearValidators();
       this.entregaForm.reset();
     }
+    this.entregaForm.get('idEntrega')?.updateValueAndValidity();
     this.modalService.open(modal, { size: 'lg' });
   }
 
@@ -139,25 +150,34 @@ export class EntregasComponent implements OnInit {
       const entregaData = this.entregaForm.value;
       
       if (this.modoEdicion) {
+        if (!entregaData.idEntrega || isNaN(entregaData.idEntrega)) {
+          this.error = 'Error: ID de entrega no válido';
+          return;
+        }
+
         this.entregasService.actualizarEntrega(entregaData.idEntrega, entregaData).subscribe({
-          next: () => {
+          next: (response) => {
             this.loadEntregas();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al actualizar la entrega:', error);
-            this.error = 'Error al actualizar la entrega. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar la entrega. Por favor, intente nuevamente.';
           }
         });
       } else {
-        this.entregasService.crearEntrega(entregaData).subscribe({
-          next: () => {
+        const { idEntrega, ...nuevaEntrega } = entregaData;
+        
+        this.entregasService.crearEntrega(nuevaEntrega).subscribe({
+          next: (response) => {
             this.loadEntregas();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al crear la entrega:', error);
-            this.error = 'Error al crear la entrega. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear la entrega. Por favor, intente nuevamente.';
           }
         });
       }
@@ -193,6 +213,10 @@ export class EntregasComponent implements OnInit {
   }
 
   eliminarEntrega(id: number): void {
+    if (!id || isNaN(id)) {
+      this.error = 'Error: ID de entrega no válido';
+      return;
+    }
     this.entregaToDelete = id;
     this.showConfirmDialog = true;
   }
@@ -204,10 +228,11 @@ export class EntregasComponent implements OnInit {
           this.loadEntregas();
           this.showConfirmDialog = false;
           this.entregaToDelete = null;
+          this.error = null;
         },
         error: (error) => {
           console.error('Error al eliminar la entrega:', error);
-          this.error = 'Error al eliminar la entrega. Por favor, intente nuevamente.';
+          this.error = error.message || 'Error al eliminar la entrega. Por favor, intente nuevamente.';
           this.showConfirmDialog = false;
           this.entregaToDelete = null;
         }

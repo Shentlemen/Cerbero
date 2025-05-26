@@ -5,6 +5,11 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ComprasService, CompraDTO } from '../../services/compras.service';
+import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
+
+interface CompraConTipo extends CompraDTO {
+  tipoCompraDescripcion?: string;
+}
 
 @Component({
   selector: 'app-compras',
@@ -15,8 +20,9 @@ import { ComprasService, CompraDTO } from '../../services/compras.service';
   encapsulation: ViewEncapsulation.None
 })
 export class ComprasComponent implements OnInit {
-  comprasList: CompraDTO[] = [];
-  comprasFiltradas: CompraDTO[] = [];
+  comprasList: CompraConTipo[] = [];
+  comprasFiltradas: CompraConTipo[] = [];
+  tiposCompraList: TipoDeCompraDTO[] = [];
   filterForm: FormGroup;
   compraForm: FormGroup;
   sortColumn: string = '';
@@ -32,6 +38,7 @@ export class ComprasComponent implements OnInit {
 
   constructor(
     private comprasService: ComprasService,
+    private tiposCompraService: TiposCompraService,
     private fb: FormBuilder,
     private modalService: NgbModal
   ) {
@@ -43,6 +50,7 @@ export class ComprasComponent implements OnInit {
     });
 
     this.compraForm = this.fb.group({
+      idCompra: [null],
       idTipoCompra: ['', Validators.required],
       moneda: ['', Validators.required],
       descripcion: ['', Validators.required],
@@ -59,6 +67,19 @@ export class ComprasComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCompras();
+    this.loadTiposCompra();
+  }
+
+  loadTiposCompra(): void {
+    this.tiposCompraService.getTiposCompra().subscribe({
+      next: (tiposCompra) => {
+        this.tiposCompraList = tiposCompra;
+      },
+      error: (error) => {
+        console.error('Error al cargar los tipos de compra:', error);
+        this.error = 'Error al cargar los tipos de compra. Por favor, intente nuevamente.';
+      }
+    });
   }
 
   loadCompras(): void {
@@ -67,7 +88,10 @@ export class ComprasComponent implements OnInit {
     
     this.comprasService.getCompras().subscribe({
       next: (compras) => {
-        this.comprasList = compras;
+        this.comprasList = compras.map(compra => ({
+          ...compra,
+          tipoCompraDescripcion: this.getTipoCompraDescripcion(compra.idTipoCompra)
+        }));
         this.comprasFiltradas = [...this.comprasList];
         this.collectionSize = this.comprasFiltradas.length;
         this.loading = false;
@@ -80,7 +104,12 @@ export class ComprasComponent implements OnInit {
     });
   }
 
-  get pagedCompras(): CompraDTO[] {
+  getTipoCompraDescripcion(idTipoCompra: number): string {
+    const tipoCompra = this.tiposCompraList.find(tipo => tipo.idTipoCompra === idTipoCompra);
+    return tipoCompra ? tipoCompra.descripcion : 'Tipo no encontrado';
+  }
+
+  get pagedCompras(): CompraConTipo[] {
     const startItem = (this.page - 1) * this.pageSize;
     const endItem = this.page * this.pageSize;
     return this.comprasFiltradas.slice(startItem, endItem);
@@ -95,8 +124,8 @@ export class ComprasComponent implements OnInit {
     }
 
     this.comprasFiltradas.sort((a, b) => {
-      let valueA = a[column as keyof CompraDTO];
-      let valueB = b[column as keyof CompraDTO];
+      let valueA = a[column as keyof CompraConTipo];
+      let valueB = b[column as keyof CompraConTipo];
 
       if (valueA === null || valueA === undefined) valueA = '';
       if (valueB === null || valueB === undefined) valueB = '';
@@ -114,10 +143,18 @@ export class ComprasComponent implements OnInit {
     });
   }
 
-  abrirModal(modal: any, compra?: CompraDTO): void {
+  abrirModal(modal: any, compra?: CompraConTipo): void {
     if (compra) {
       this.modoEdicion = true;
-      this.compraForm.patchValue(compra);
+      this.compraForm.patchValue({
+        idCompra: compra.idCompra,
+        idTipoCompra: compra.idTipoCompra,
+        moneda: compra.moneda,
+        descripcion: compra.descripcion,
+        fechaInicio: compra.fechaInicio,
+        fechaFinal: compra.fechaFinal,
+        monto: compra.monto
+      });
     } else {
       this.modoEdicion = false;
       this.compraForm.reset();
@@ -130,6 +167,11 @@ export class ComprasComponent implements OnInit {
       const compraData = this.compraForm.value;
       
       if (this.modoEdicion) {
+        if (!compraData.idCompra) {
+          this.error = 'Error: ID de compra no válido';
+          return;
+        }
+
         this.comprasService.actualizarCompra(compraData.idCompra, compraData).subscribe({
           next: () => {
             this.loadCompras();
@@ -141,7 +183,9 @@ export class ComprasComponent implements OnInit {
           }
         });
       } else {
-        this.comprasService.crearCompra(compraData).subscribe({
+        const { idCompra, ...nuevaCompra } = compraData;
+        
+        this.comprasService.crearCompra(nuevaCompra).subscribe({
           next: () => {
             this.loadCompras();
             this.modalService.dismissAll();

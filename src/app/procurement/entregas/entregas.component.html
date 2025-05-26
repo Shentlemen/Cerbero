@@ -101,7 +101,7 @@
                   <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(entregaModal, entrega)">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarEntrega(entrega.idEntrega)">
+                  <button class="btn btn-danger btn-sm" (click)="eliminarEntrega(entrega.idEntrega!)" *ngIf="entrega.idEntrega">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </div>
@@ -168,6 +168,9 @@
         <div class="col-md-12 mb-3">
           <label class="form-label">Descripción</label>
           <input type="text" class="form-control" formControlName="descripcion">
+          <div class="invalid-feedback" *ngIf="entregaForm.get('descripcion')?.errors?.['required'] && entregaForm.get('descripcion')?.touched">
+            La descripción es requerida.
+          </div>
         </div>
       </div>
 
@@ -175,10 +178,16 @@
         <div class="col-md-6 mb-3">
           <label class="form-label">Fecha Pedido</label>
           <input type="date" class="form-control" formControlName="fechaPedido">
+          <div class="invalid-feedback" *ngIf="entregaForm.get('fechaPedido')?.errors?.['required'] && entregaForm.get('fechaPedido')?.touched">
+            La fecha de pedido es requerida.
+          </div>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Fecha Fin Garantía</label>
           <input type="date" class="form-control" formControlName="fechaFinGarantia">
+          <div class="invalid-feedback" *ngIf="entregaForm.get('fechaFinGarantia')?.errors?.['required'] && entregaForm.get('fechaFinGarantia')?.touched">
+            La fecha de fin de garantía es requerida.
+          </div>
         </div>
       </div>
     </form>
@@ -188,6 +197,16 @@
     <button type="button" class="btn btn-primary" (click)="guardarEntrega()" [disabled]="!entregaForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
+  </div>
+  <div *ngIf="!entregaForm.valid" class="alert alert-warning m-3">
+    <p class="mb-0">Por favor complete todos los campos requeridos:</p>
+    <ul class="mb-0">
+      <li *ngIf="entregaForm.get('idItem')?.errors?.['required']">Seleccione un item</li>
+      <li *ngIf="entregaForm.get('cantidad')?.errors?.['required']">Ingrese una cantidad</li>
+      <li *ngIf="entregaForm.get('descripcion')?.errors?.['required']">Ingrese una descripción</li>
+      <li *ngIf="entregaForm.get('fechaPedido')?.errors?.['required']">Seleccione una fecha de pedido</li>
+      <li *ngIf="entregaForm.get('fechaFinGarantia')?.errors?.['required']">Seleccione una fecha de fin de garantía</li>
+    </ul>
   </div>
 </ng-template>
 

@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, switchMap, forkJoin } from 'rxjs';
+import { Observable, map, switchMap, forkJoin, throwError } from 'rxjs';
 import { ConfigService } from './config.service';
 import { LotesService, LoteDTO } from './lotes.service';
 import { ApiResponse } from '../interfaces/api-response.interface';
 
 export interface EntregaDTO {
-  idEntrega: number;
+  idEntrega?: number;
   idItem: number;
   cantidad: number;
   descripcion: string;
@@ -29,6 +29,10 @@ export class EntregasService {
     this.apiUrl = `${this.configService.getApiUrl()}/entregas`;
   }
 
+  private validateId(id: number): boolean {
+    return id !== undefined && id !== null && !isNaN(id) && id > 0;
+  }
+
   private enrichEntregaWithLoteInfo(entrega: EntregaDTO): Observable<EntregaDTO> {
     return this.lotesService.getLote(entrega.idItem).pipe(
       map((lote: LoteDTO) => ({
@@ -47,19 +51,23 @@ export class EntregasService {
           );
           return forkJoin(enrichedEntregas);
         } else {
-          throw new Error(response.message);
+          return throwError(() => new Error(response.message));
         }
       })
     );
   }
 
   getEntrega(id: number): Observable<EntregaDTO> {
+    if (!this.validateId(id)) {
+      return throwError(() => new Error('ID de entrega no válido'));
+    }
+
     return this.http.get<ApiResponse<EntregaDTO>>(`${this.apiUrl}/${id}`).pipe(
       switchMap(response => {
         if (response.success) {
           return this.enrichEntregaWithLoteInfo(response.data);
         } else {
-          throw new Error(response.message);
+          return throwError(() => new Error(response.message));
         }
       })
     );
@@ -77,18 +85,47 @@ export class EntregasService {
   }
 
   crearEntrega(entrega: Omit<EntregaDTO, 'idEntrega'>): Observable<EntregaDTO> {
-    return this.http.post<EntregaDTO>(this.apiUrl, entrega).pipe(
-      switchMap(newEntrega => this.enrichEntregaWithLoteInfo(newEntrega))
+    return this.http.post<ApiResponse<EntregaDTO>>(this.apiUrl, entrega).pipe(
+      switchMap(response => {
+        if (response.success) {
+          return this.enrichEntregaWithLoteInfo(response.data);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
+      })
     );
   }
 
-  actualizarEntrega(id: number, entrega: Omit<EntregaDTO, 'idEntrega'>): Observable<EntregaDTO> {
-    return this.http.put<EntregaDTO>(`${this.apiUrl}/${id}`, entrega).pipe(
-      switchMap(updatedEntrega => this.enrichEntregaWithLoteInfo(updatedEntrega))
+  actualizarEntrega(id: number, entrega: EntregaDTO): Observable<EntregaDTO> {
+    if (!this.validateId(id)) {
+      return throwError(() => new Error('ID de entrega no válido'));
+    }
+
+    // Removemos el idEntrega del body si existe
+    const { idEntrega, ...entregaSinId } = entrega;
+
+    return this.http.put<ApiResponse<EntregaDTO>>(`${this.apiUrl}/${id}`, entregaSinId).pipe(
+      switchMap(response => {
+        if (response.success) {
+          return this.enrichEntregaWithLoteInfo(response.data);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
+      })
     );
   }
 
   eliminarEntrega(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    if (!this.validateId(id)) {
+      return throwError(() => new Error('ID de entrega no válido'));
+    }
+
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 } 

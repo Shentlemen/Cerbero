@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, switchMap, forkJoin } from 'rxjs';
+import { Observable, map, switchMap, forkJoin, throwError } from 'rxjs';
 import { ConfigService } from './config.service';
 import { ComprasService, CompraDTO } from './compras.service';
 import { ProveedoresService, ProveedorDTO } from './proveedores.service';
@@ -9,6 +9,7 @@ import { ApiResponse } from '../interfaces/api-response.interface';
 
 export interface LoteDTO {
   idItem: number;          // ID único del lote
+  nombreItem: string;      // Nombre del ítem (nuevo campo requerido)
   idCompra: number;        // ID de la compra asociada
   descripcion: string;     // Descripción del lote
   cantidad: number;        // Cantidad de items en el lote
@@ -34,6 +35,10 @@ export class LotesService {
     private serviciosGarantiaService: ServiciosGarantiaService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/lotes`;
+  }
+
+  private validateId(id: number): boolean {
+    return id !== undefined && id !== null && !isNaN(id) && id > 0;
   }
 
   private enrichLoteWithCompraInfo(lote: LoteDTO): Observable<LoteDTO> {
@@ -64,17 +69,71 @@ export class LotesService {
           );
           return forkJoin(enrichedLotes);
         } else {
-          throw new Error(response.message);
+          return throwError(() => new Error(response.message));
         }
       })
     );
   }
 
   getLote(id: number): Observable<LoteDTO> {
+    if (!this.validateId(id)) {
+      return throwError(() => new Error('ID de lote no válido'));
+    }
+
     return this.http.get<ApiResponse<LoteDTO>>(`${this.apiUrl}/${id}`).pipe(
       switchMap(response => {
         if (response.success) {
           return this.enrichLoteWithCompraInfo(response.data);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
+      })
+    );
+  }
+
+  getLotesByCompra(idCompra: number): Observable<LoteDTO[]> {
+    if (!this.validateId(idCompra)) {
+      return throwError(() => new Error('ID de compra no válido'));
+    }
+
+    return this.http.get<ApiResponse<LoteDTO[]>>(`${this.apiUrl}/by-compra/${idCompra}`).pipe(
+      switchMap(response => {
+        if (response.success) {
+          const enrichedLotes = response.data.map(lote => 
+            this.enrichLoteWithCompraInfo(lote)
+          );
+          return forkJoin(enrichedLotes);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
+      })
+    );
+  }
+
+  getLotesByProveedor(idProveedor: number): Observable<LoteDTO[]> {
+    if (!this.validateId(idProveedor)) {
+      return throwError(() => new Error('ID de proveedor no válido'));
+    }
+
+    return this.http.get<ApiResponse<LoteDTO[]>>(`${this.apiUrl}/by-proveedor/${idProveedor}`).pipe(
+      switchMap(response => {
+        if (response.success) {
+          const enrichedLotes = response.data.map(lote => 
+            this.enrichLoteWithCompraInfo(lote)
+          );
+          return forkJoin(enrichedLotes);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
+      })
+    );
+  }
+
+  crearLote(lote: Omit<LoteDTO, 'idItem'>): Observable<LoteDTO> {
+    return this.http.post<ApiResponse<LoteDTO>>(this.apiUrl, lote).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
         } else {
           throw new Error(response.message);
         }
@@ -82,37 +141,33 @@ export class LotesService {
     );
   }
 
-  getLotesByCompra(idCompra: number): Observable<LoteDTO[]> {
-    return this.http.get<LoteDTO[]>(`${this.apiUrl}/by-compra/${idCompra}`).pipe(
-      switchMap(lotes => {
-        const enrichedLotes = lotes.map(lote => 
-          this.enrichLoteWithCompraInfo(lote)
-        );
-        return forkJoin(enrichedLotes);
+  actualizarLote(id: number, lote: Omit<LoteDTO, 'idItem'>): Observable<LoteDTO> {
+    if (!this.validateId(id)) {
+      return throwError(() => new Error('ID de lote no válido'));
+    }
+
+    return this.http.put<ApiResponse<LoteDTO>>(`${this.apiUrl}/${id}`, lote).pipe(
+      switchMap(response => {
+        if (response.success) {
+          return this.enrichLoteWithCompraInfo(response.data);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
       })
     );
   }
 
-  getLotesByProveedor(idProveedor: number): Observable<LoteDTO[]> {
-    return this.http.get<LoteDTO[]>(`${this.apiUrl}/by-proveedor/${idProveedor}`).pipe(
-      switchMap(lotes => {
-        const enrichedLotes = lotes.map(lote => 
-          this.enrichLoteWithCompraInfo(lote)
-        );
-        return forkJoin(enrichedLotes);
+  eliminarLote(id: number): Observable<void> {
+    if (!this.validateId(id)) {
+      return throwError(() => new Error('ID de lote no válido'));
+    }
+
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
       })
     );
-  }
-
-  crearLote(lote: Omit<LoteDTO, 'idItem'>): Observable<string> {
-    return this.http.post<string>(this.apiUrl, lote);
-  }
-
-  actualizarLote(id: number, lote: LoteDTO): Observable<string> {
-    return this.http.put<string>(`${this.apiUrl}/${id}`, lote);
-  }
-
-  eliminarLote(id: number): Observable<string> {
-    return this.http.delete<string>(`${this.apiUrl}/${id}`);
   }
 } 

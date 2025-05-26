@@ -36,13 +36,13 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
+              <th (click)="sortData('nombreItem')" [class.active]="sortColumn === 'nombreItem'">
                 <div class="th-content">
-                  <span>Item</span>
+                  <span>Nombre del Ítem</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'descripcion'
+                    'fa-sort-up': sortColumn === 'nombreItem' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'nombreItem' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'nombreItem'
                   }"></i>
                 </div>
               </th>
@@ -53,16 +53,6 @@
                     'fa-sort-up': sortColumn === 'idCompra' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'idCompra' && sortDirection === 'desc',
                     'fa-sort': sortColumn !== 'idCompra'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('compraDescripcion')" [class.active]="sortColumn === 'compraDescripcion'">
-                <div class="th-content">
-                  <span>Descripción Compra</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'compraDescripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'compraDescripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'compraDescripcion'
                   }"></i>
                 </div>
               </th>
@@ -111,9 +101,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let lote of pagedLotes" class="lote-row">
-              <td>{{lote.descripcion}}</td>
+              <td>{{lote.nombreItem}}</td>
               <td>{{lote.idCompra}}</td>
-              <td>{{lote.compraDescripcion}}</td>
               <td>{{lote.cantidad}}</td>
               <td>{{lote.mesesGarantia}}</td>
               <td>{{lote.proveedorNombreComercial}}</td>
@@ -163,25 +152,37 @@
     <form [formGroup]="loteForm">
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">ID de Compra</label>
-          <input type="number" class="form-control" formControlName="idCompra" min="1">
+          <label class="form-label">Compra</label>
+          <select class="form-select" formControlName="idCompra">
+            <option value="">Seleccione una compra</option>
+            <option *ngFor="let compra of comprasList" [value]="compra.idCompra">
+              {{compra.descripcion}}
+            </option>
+          </select>
           <div class="invalid-feedback" *ngIf="loteForm.get('idCompra')?.errors?.['required'] && loteForm.get('idCompra')?.touched">
-            El ID de compra es requerido.
-          </div>
-          <div class="invalid-feedback" *ngIf="loteForm.get('idCompra')?.errors?.['min'] && loteForm.get('idCompra')?.touched">
-            El ID de compra debe ser mayor a 0.
+            Debe seleccionar una compra.
           </div>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Proveedor</label>
-          <select class="form-control" formControlName="idProveedor">
+          <select class="form-select" formControlName="idProveedores">
             <option value="">Seleccione un proveedor</option>
             <option *ngFor="let proveedor of proveedoresList" [value]="proveedor.idProveedores">
               {{proveedor.nombreComercial}}
             </option>
           </select>
-          <div class="invalid-feedback" *ngIf="loteForm.get('idProveedor')?.errors?.['required'] && loteForm.get('idProveedor')?.touched">
-            El proveedor es requerido.
+          <div class="invalid-feedback" *ngIf="loteForm.get('idProveedores')?.errors?.['required'] && loteForm.get('idProveedores')?.touched">
+            Debe seleccionar un proveedor.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Nombre del Ítem</label>
+          <input type="text" class="form-control" formControlName="nombreItem">
+          <div class="invalid-feedback" *ngIf="loteForm.get('nombreItem')?.errors?.['required'] && loteForm.get('nombreItem')?.touched">
+            El nombre del ítem es requerido.
           </div>
         </div>
       </div>

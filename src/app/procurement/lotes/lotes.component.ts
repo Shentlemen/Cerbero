@@ -7,6 +7,7 @@ import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
+import { ComprasService, CompraDTO } from '../../services/compras.service';
 
 @Component({
   selector: 'app-lotes',
@@ -21,6 +22,7 @@ export class LotesComponent implements OnInit {
   lotesFiltrados: LoteDTO[] = [];
   proveedoresList: ProveedorDTO[] = [];
   serviciosGarantiaList: ServicioGarantiaDTO[] = [];
+  comprasList: CompraDTO[] = [];
   filterForm: FormGroup;
   loteForm: FormGroup;
   sortColumn: string = '';
@@ -39,6 +41,7 @@ export class LotesComponent implements OnInit {
     private lotesService: LotesService,
     private proveedoresService: ProveedoresService,
     private serviciosGarantiaService: ServiciosGarantiaService,
+    private comprasService: ComprasService,
     private fb: FormBuilder,
     private modalService: NgbModal
   ) {
@@ -50,10 +53,11 @@ export class LotesComponent implements OnInit {
 
     this.loteForm = this.fb.group({
       idCompra: ['', [Validators.required, Validators.min(1)]],
+      nombreItem: ['', [Validators.required]],
       descripcion: ['', Validators.required],
       cantidad: ['', [Validators.required, Validators.min(1)]],
       mesesGarantia: ['', [Validators.required, Validators.min(0)]],
-      idProveedor: ['', [Validators.required, Validators.min(1)]],
+      idProveedores: ['', [Validators.required, Validators.min(1)]],
       idServicioGarantia: ['', [Validators.required, Validators.min(1)]]
     });
   }
@@ -62,6 +66,19 @@ export class LotesComponent implements OnInit {
     this.loadLotes();
     this.loadProveedores();
     this.loadServiciosGarantia();
+    this.loadCompras();
+  }
+
+  loadCompras(): void {
+    this.comprasService.getCompras().subscribe({
+      next: (compras) => {
+        this.comprasList = compras;
+      },
+      error: (error) => {
+        console.error('Error al cargar las compras:', error);
+        this.error = 'Error al cargar las compras. Por favor, intente nuevamente.';
+      }
+    });
   }
 
   loadServiciosGarantia(): void {
@@ -145,7 +162,10 @@ export class LotesComponent implements OnInit {
     if (lote) {
       this.modoEdicion = true;
       this.loteSeleccionado = lote;
-      this.loteForm.patchValue(lote);
+      this.loteForm.patchValue({
+        ...lote,
+        idProveedores: lote.idProveedor
+      });
     } else {
       this.modoEdicion = false;
       this.loteSeleccionado = null;
@@ -156,7 +176,19 @@ export class LotesComponent implements OnInit {
 
   guardarLote(): void {
     if (this.loteForm.valid) {
-      const loteData = this.loteForm.value;
+      const formData = this.loteForm.value;
+      const loteData = {
+        nombreItem: formData.nombreItem,
+        idCompra: Number(formData.idCompra),
+        descripcion: formData.descripcion,
+        cantidad: Number(formData.cantidad),
+        mesesGarantia: Number(formData.mesesGarantia),
+        idProveedor: Number(formData.idProveedores),
+        idServicioGarantia: Number(formData.idServicioGarantia)
+      };
+      
+      console.log('Datos del formulario:', formData);
+      console.log('Datos a enviar al backend:', loteData);
       
       if (this.modoEdicion && this.loteSeleccionado) {
         const loteActualizado: LoteDTO = {
@@ -166,25 +198,27 @@ export class LotesComponent implements OnInit {
         
         this.lotesService.actualizarLote(this.loteSeleccionado.idItem, loteActualizado).subscribe({
           next: (mensaje) => {
-            console.log(mensaje);
+            console.log('Lote actualizado exitosamente');
             this.loadLotes();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al actualizar el lote:', error);
-            this.error = 'Error al actualizar el lote. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar el lote. Por favor, intente nuevamente.';
           }
         });
       } else {
         this.lotesService.crearLote(loteData).subscribe({
           next: (mensaje) => {
-            console.log(mensaje);
+            console.log('Lote creado exitosamente');
             this.loadLotes();
             this.modalService.dismissAll();
+            this.error = null;
           },
           error: (error) => {
             console.error('Error al crear el lote:', error);
-            this.error = 'Error al crear el lote. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear el lote. Por favor, intente nuevamente.';
           }
         });
       }
