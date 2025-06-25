@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
@@ -99,10 +99,11 @@ export class ActivosComponent implements OnInit {
     private tiposActivoService: TiposActivoService,
     private modalService: NgbModal,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
     this.activoForm = this.fb.group({
-      hardwareId: ['', Validators.required],
+      name: ['', Validators.required],
       criticidad: ['', Validators.required],
       clasificacionDeINFO: ['', Validators.required],
       estado: ['', Validators.required],
@@ -223,7 +224,6 @@ export class ActivosComponent implements OnInit {
         this.activosFiltrados = [...this.activos];
         this.collectionSize = this.activosFiltrados.length;
         this.updateSummary();
-        this.cargarHardwareInfo();
         this.loading = false;
       },
       error: (error) => {
@@ -232,99 +232,6 @@ export class ActivosComponent implements OnInit {
         console.error('Error al cargar activos:', error);
       }
     });
-  }
-
-  cargarHardwareInfo() {
-    const hardwareIds = this.activos.map(activo => activo.hardwareId);
-    this.hardwareService.getHardwareByIds(hardwareIds).subscribe({
-      next: (hardwareList) => {
-        hardwareList.forEach(hardware => {
-          this.hardwareMap.set(hardware.id, hardware);
-        });
-      },
-      error: (error) => {
-        console.error('Error al cargar información de hardware:', error);
-      }
-    });
-  }
-
-  getHardwareName(hardwareId: number): string {
-    const hardware = this.hardwareMap.get(hardwareId);
-    return hardware ? hardware.name : `PC-${hardwareId}`;
-  }
-
-  verDetallesHardware(hardwareId: number): void {
-    this.router.navigate(['/menu/asset-details', hardwareId]);
-  }
-
-  get pagedActivos(): ActivoDTO[] {
-    const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.activosFiltrados.slice(startItem, endItem);
-  }
-
-  sortData(column: string): void {
-    if (this.sortColumn === column) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortColumn = column;
-      this.sortDirection = 'asc';
-    }
-
-    this.activosFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof ActivoDTO];
-      let valueB = b[column as keyof ActivoDTO];
-
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
-
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
-
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }
-
-  filterByCriticidad(criticidad: string): void {
-    console.log('Filtrando por criticidad:', criticidad);
-    console.log('Activos antes del filtro:', this.activos);
-    
-    this.currentFilter = criticidad;
-    if (criticidad === '') {
-      this.activosFiltrados = [...this.activos];
-    } else {
-      this.activosFiltrados = this.activos.filter(activo => {
-        console.log('Comparando:', activo.criticidad, 'con', criticidad);
-        return activo.criticidad?.trim().toUpperCase() === criticidad.trim().toUpperCase();
-      });
-    }
-    
-    console.log('Activos después del filtro:', this.activosFiltrados);
-    this.collectionSize = this.activosFiltrados.length;
-    this.page = 1;
-    this.updateSummary();
-  }
-
-  updateSummary(): void {
-    this.totalActivos = this.activos.length;
-    
-    this.altaCount = this.activos.filter(a => 
-      a.criticidad?.trim().toUpperCase() === 'ALTA'
-    ).length;
-    
-    this.mediaCount = this.activos.filter(a => 
-      a.criticidad?.trim().toUpperCase() === 'MEDIA'
-    ).length;
-    
-    this.bajaCount = this.activos.filter(a => 
-      a.criticidad?.trim().toUpperCase() === 'BAJA'
-    ).length;
   }
 
   verDetalles(activo: ActivoDTO): void {
@@ -374,12 +281,27 @@ export class ActivosComponent implements OnInit {
       this.successMessage = null;
 
       if (this.modoEdicion && activo) {
+        console.log('Datos del activo a editar:', activo);
+        console.log('clasificacionDeINFO:', activo.clasificacionDeINFO);
+        console.log('estado:', activo.estado);
+        
+        // Normalizar valores para asegurar que coincidan con las opciones del select
+        const clasificacionNormalizada = this.normalizarClasificacion(activo.clasificacionDeINFO);
+        const estadoNormalizado = this.normalizarEstado(activo.estado);
+        const criticidadNormalizada = this.normalizarCriticidad(activo.criticidad);
+        
+        console.log('Valores normalizados:', {
+          clasificacion: clasificacionNormalizada,
+          estado: estadoNormalizado,
+          criticidad: criticidadNormalizada
+        });
+        
         // Cargar datos del activo en el formulario
         this.activoForm.patchValue({
-          hardwareId: activo.hardwareId,
-          criticidad: activo.criticidad,
-          clasificacionDeINFO: activo.clasificacionDeINFO,
-          estado: activo.estado,
+          name: activo.name,
+          criticidad: criticidadNormalizada,
+          clasificacionDeINFO: clasificacionNormalizada,
+          estado: estadoNormalizado,
           idTipoActivo: activo.idTipoActivo,
           idNumeroCompra: activo.idNumeroCompra,
           idItem: activo.idItem,
@@ -390,6 +312,11 @@ export class ActivosComponent implements OnInit {
           idServicioGarantia: activo.idServicioGarantia,
           fechaFinGarantia: activo.fechaFinGarantia
         });
+
+        console.log('Valores del formulario después de patchValue:', this.activoForm.value);
+
+        // Forzar la detección de cambios
+        this.changeDetectorRef.detectChanges();
 
         // Cargar activos relacionados
         try {
@@ -414,6 +341,39 @@ export class ActivosComponent implements OnInit {
     }
   }
 
+  private normalizarClasificacion(clasificacion: string): string {
+    if (!clasificacion) return '';
+    
+    const clasificacionUpper = clasificacion.toUpperCase().trim();
+    if (clasificacionUpper.includes('CONFIDENCIAL')) return 'CONFIDENCIAL';
+    if (clasificacionUpper.includes('NO CONFIDENCIAL') || clasificacionUpper.includes('NO CONFIDENCIAL')) return 'NO CONFIDENCIAL';
+    if (clasificacionUpper.includes('PUBLICA') || clasificacionUpper.includes('PÚBLICA')) return 'PUBLICA';
+    
+    return clasificacionUpper;
+  }
+
+  private normalizarEstado(estado: string): string {
+    if (!estado) return '';
+    
+    const estadoUpper = estado.toUpperCase().trim();
+    if (estadoUpper.includes('ACTIVO')) return 'ACTIVO';
+    if (estadoUpper.includes('INACTIVO')) return 'INACTIVO';
+    if (estadoUpper.includes('MANTENIMIENTO')) return 'MANTENIMIENTO';
+    
+    return estadoUpper;
+  }
+
+  private normalizarCriticidad(criticidad: string): string {
+    if (!criticidad) return '';
+    
+    const criticidadUpper = criticidad.toUpperCase().trim();
+    if (criticidadUpper.includes('ALTA')) return 'ALTA';
+    if (criticidadUpper.includes('MEDIA')) return 'MEDIA';
+    if (criticidadUpper.includes('BAJA')) return 'BAJA';
+    
+    return criticidadUpper;
+  }
+
   addRelatedAsset(idActivo: number | null) {
     if (!idActivo) return;
 
@@ -434,7 +394,7 @@ export class ActivosComponent implements OnInit {
   getAssetDescription(idActivo: number): string {
     const activo = this.activos.find(a => a.idActivo === idActivo);
     if (!activo) return `Activo #${idActivo}`;
-    return `#${idActivo} - ${this.getHardwareName(activo.hardwareId)}`;
+    return `#${idActivo} - ${activo.name}`;
   }
 
   async guardarActivo() {
@@ -446,7 +406,7 @@ export class ActivosComponent implements OnInit {
       const formData = this.activoForm.value;
       const activo: ActivoDTO = {
         idActivo: this.modoEdicion && this.activoSeleccionado ? this.activoSeleccionado.idActivo : 0,
-        hardwareId: parseInt(formData.hardwareId),
+        name: formData.name,
         criticidad: formData.criticidad,
         clasificacionDeINFO: formData.clasificacionDeINFO,
         estado: formData.estado,
@@ -622,6 +582,77 @@ export class ActivosComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar tipos de activo:', error);
+      }
+    });
+  }
+
+  updateSummary(): void {
+    this.totalActivos = this.activos.length;
+    this.altaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'ALTA').length;
+    this.mediaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'MEDIA').length;
+    this.bajaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'BAJA').length;
+  }
+
+  filterByCriticidad(criticidad: string): void {
+    this.currentFilter = criticidad;
+    if (criticidad === '') {
+      this.activosFiltrados = [...this.activos];
+    } else {
+      this.activosFiltrados = this.activos.filter(activo =>
+        activo.criticidad?.trim().toUpperCase() === criticidad.trim().toUpperCase()
+      );
+    }
+    this.collectionSize = this.activosFiltrados.length;
+    this.page = 1;
+    this.updateSummary();
+  }
+
+  sortData(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+
+    this.activosFiltrados.sort((a, b) => {
+      let valueA = a[column as keyof typeof a];
+      let valueB = b[column as keyof typeof b];
+
+      if (valueA === null || valueA === undefined) valueA = '';
+      if (valueB === null || valueB === undefined) valueB = '';
+
+      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+
+      if (valueA < valueB) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  get pagedActivos(): ActivoDTO[] {
+    const startItem = (this.page - 1) * this.pageSize;
+    const endItem = this.page * this.pageSize;
+    return this.activosFiltrados.slice(startItem, endItem);
+  }
+
+  verDetallesHardware(name: string): void {
+    this.hardwareService.getHardware().subscribe({
+      next: (hardwareList) => {
+        const hardware = hardwareList.find((h: any) => h.name === name);
+        if (hardware) {
+          this.router.navigate(['/menu/asset-details', hardware.id]);
+        } else {
+          alert('No se encontró el hardware correspondiente.');
+        }
+      },
+      error: () => {
+        alert('Error al buscar el hardware.');
       }
     });
   }

@@ -11,7 +11,13 @@ export interface SoftwareDTO {
   publisher: string;
   version: string;
   hidden: boolean;
+  forbidden: boolean;
+  hardwareId?: number;
   count?: number;
+}
+
+export interface SoftwareWithCountDTO extends SoftwareDTO {
+  count: number;
 }
 
 @Injectable({
@@ -25,6 +31,19 @@ export class SoftwareService {
     private configService: ConfigService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/software`;
+  }
+
+  // Obtener lista de software
+  getSoftwareList(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(this.apiUrl)
+      .pipe(
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
+          }
+          return response.data;
+        })
+      );
   }
 
   // Obtener todos los software con conteo de hardware
@@ -93,53 +112,81 @@ export class SoftwareService {
   }
 
   // Obtener lista de hardware por software
-  getHardwaresBySoftware(software: SoftwareDTO): Observable<number[]> {
-    return this.http.get<ApiResponse<number[]>>(`${this.apiUrl}/${software.idSoftware}/hardware`).pipe(
-      map(response => {
-        if (response.success) {
-          return response.data;
-        } else {
-          throw new Error(response.message);
-        }
-      })
-    );
+  getHardwaresBySoftware(softwareInfo: { idSoftware: number }): Observable<number[]> {
+    return this.http.get<ApiResponse<number[]>>(`${this.apiUrl}/${softwareInfo.idSoftware}/hardware`)
+      .pipe(
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
+          }
+          return response.data || [];
+        })
+      );
   }
 
   // Crear software
-  createSoftware(software: Omit<SoftwareDTO, 'idSoftware' | 'count'>): Observable<SoftwareDTO> {
-    return this.http.post<ApiResponse<SoftwareDTO>>(this.apiUrl, software).pipe(
-      map(response => {
-        if (response.success) {
+  crearSoftware(software: Omit<SoftwareDTO, 'idSoftware'>): Observable<SoftwareDTO> {
+    return this.http.post<ApiResponse<SoftwareDTO>>(this.apiUrl, software)
+      .pipe(
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
+          }
           return response.data;
-        } else {
-          throw new Error(response.message);
-        }
-      })
-    );
+        })
+      );
   }
 
   // Actualizar software
-  updateSoftware(id: number, software: Omit<SoftwareDTO, 'idSoftware' | 'count'>): Observable<SoftwareDTO> {
-    return this.http.put<ApiResponse<SoftwareDTO>>(`${this.apiUrl}/${id}`, software).pipe(
-      map(response => {
-        if (response.success) {
+  actualizarSoftware(id: number, software: SoftwareDTO): Observable<SoftwareDTO> {
+    return this.http.put<ApiResponse<SoftwareDTO>>(`${this.apiUrl}/${id}`, software)
+      .pipe(
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
+          }
           return response.data;
-        } else {
-          throw new Error(response.message);
-        }
-      })
-    );
+        })
+      );
   }
 
   // Eliminar software
+  eliminarSoftware(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`)
+      .pipe(
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
+          }
+          return;
+        })
+      );
+  }
+
+  // Toggle hidden
+  toggleHidden(id: number): Observable<SoftwareDTO> {
+    return this.http.put<ApiResponse<SoftwareDTO>>(`${this.apiUrl}/${id}/toggle-hidden`, {})
+      .pipe(
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
+          }
+          return response.data;
+        })
+      );
+  }
+
+  // Métodos legacy para compatibilidad
+  createSoftware(software: Omit<SoftwareDTO, 'idSoftware' | 'count'>): Observable<SoftwareDTO> {
+    return this.crearSoftware(software);
+  }
+
+  updateSoftware(id: number, software: Omit<SoftwareDTO, 'idSoftware' | 'count'>): Observable<SoftwareDTO> {
+    return this.actualizarSoftware(id, software as SoftwareDTO);
+  }
+
   deleteSoftware(id: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error(response.message);
-        }
-      })
-    );
+    return this.eliminarSoftware(id);
   }
 
   // Actualizar visibilidad
@@ -151,6 +198,18 @@ export class SoftwareService {
         }
         // Devolvemos el software actualizado con el nuevo estado de hidden
         return { ...software, hidden };
+      })
+    );
+  }
+
+  // Alternar estado prohibido
+  toggleSoftwareForbidden(software: SoftwareDTO): Observable<SoftwareWithCountDTO> {
+    return this.http.put<ApiResponse<SoftwareWithCountDTO>>(`${this.apiUrl}/${software.idSoftware}/toggle-forbidden`, {}).pipe(
+      map(response => {
+        if (!response || !response.success) {
+          throw new Error(response?.message || 'Error al alternar el estado prohibido');
+        }
+        return response.data;
       })
     );
   }

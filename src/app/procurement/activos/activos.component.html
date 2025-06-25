@@ -133,8 +133,8 @@
                 </span>
               </td>
               <td>
-                <span class="hardware-name" (click)="verDetallesHardware(activo.hardwareId)">
-                  {{getHardwareName(activo.hardwareId)}}
+                <span class="hardware-name" (click)="verDetallesHardware(activo.name)" style="cursor:pointer; text-decoration:underline;">
+                  {{activo.name}}
                 </span>
               </td>
               <td>
@@ -208,10 +208,10 @@
       </div>
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Hardware</label>
-          <input type="text" class="form-control" formControlName="hardwareId" placeholder="Ingrese el ID del hardware">
-          <div class="invalid-feedback" *ngIf="activoForm.get('hardwareId')?.errors?.['required'] && activoForm.get('hardwareId')?.touched">
-            El hardware es requerido.
+          <label class="form-label">Nombre del PC</label>
+          <input type="text" class="form-control" formControlName="name" placeholder="Ingrese el nombre del PC">
+          <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched">
+            El nombre del PC es requerido.
           </div>
         </div>
         <div class="col-md-6 mb-3">
@@ -244,6 +244,7 @@
         <div class="col-md-6 mb-3">
           <label class="form-label">Criticidad</label>
           <select class="form-select" formControlName="criticidad">
+            <option value="">Seleccione una criticidad</option>
             <option value="ALTA">Alta</option>
             <option value="MEDIA">Media</option>
             <option value="BAJA">Baja</option>
@@ -258,6 +259,7 @@
         <div class="col-md-6 mb-3">
           <label class="form-label">Estado</label>
           <select class="form-select" formControlName="estado">
+            <option value="">Seleccione un estado</option>
             <option value="ACTIVO">Activo</option>
             <option value="INACTIVO">Inactivo</option>
             <option value="MANTENIMIENTO">Mantenimiento</option>

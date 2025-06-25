@@ -52,6 +52,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private networkInfoService: NetworkInfoService
   ) {}
 
+  private getResponsiveFontSize(base: number): number {
+    const width = window.innerWidth;
+    if (width < 600) return Math.round(base * 0.7);
+    if (width < 992) return Math.round(base * 0.85);
+    if (width < 1200) return Math.round(base * 0.95);
+    return base;
+  }
+
   ngOnInit(): void {
     this.loadAlertas();
     forkJoin({
@@ -77,11 +85,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           exportEnabled: true,
           theme: "light2",
           title: {
-            fontSize: 16,
+            fontSize: this.getResponsiveFontSize(16),
             padding: 10
           },
           data: [{
-            indexLabelFontSize: 11,
+            indexLabelFontSize: this.getResponsiveFontSize(11),
             indexLabelMaxWidth: 100,
             indexLabelWrap: true,
             showInLegend: false,
@@ -96,11 +104,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           },
           data: [{
             ...commonOptions.data[0],
-            type: "pie",
+            type: "doughnut",
             indexLabel: "{label}: {y}",
             startAngle: -90,
             dataPoints: typeData,
-            click: this.onChartPointClick.bind(this, 'terminales')
+            click: this.onChartPointClick.bind(this, 'terminales'),
+            indexLabelFontSize: this.getResponsiveFontSize(13)
           }]
         };
 
@@ -112,14 +121,24 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           },
           axisY: { 
             title: "Cantidad",
-            titleFontSize: 12,
-            labelFontSize: 11
+            titleFontSize: this.getResponsiveFontSize(12),
+            labelFontSize: this.getResponsiveFontSize(11),
+            minimum: 0
           },
           data: [{
             ...commonOptions.data[0],
             type: "column",
-            dataPoints: brandData,
-            click: this.onChartPointClick.bind(this, 'marca')
+            dataPoints: brandData.map(d => {
+              const realY = d.y;
+              return {
+                ...d,
+                y: realY < 5 ? 5 : realY,
+                toolTipContent: `${d.label}: ${realY}`,
+                indexLabel: String(realY)
+              };
+            }),
+            click: this.onChartPointClick.bind(this, 'marca'),
+            indexLabelFontSize: this.getResponsiveFontSize(13)
           }]
         };
 
@@ -129,13 +148,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             ...commonOptions.title,
             text: "S.O." 
           },
+          axisY: { title: "Cantidad", labelFontSize: this.getResponsiveFontSize(11), titleFontSize: this.getResponsiveFontSize(12) },
           data: [{
             ...commonOptions.data[0],
-            type: "pie",
-            indexLabel: "{label}: {y}",
-            startAngle: 0,
+            type: "bar",
             dataPoints: osData,
-            click: this.onChartPointClick.bind(this, 'osName')
+            click: this.onChartPointClick.bind(this, 'osName'),
+            indexLabelFontSize: this.getResponsiveFontSize(13)
           }]
         };
 
@@ -333,10 +352,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       },
       data: [{
         ...commonOptions.data[0],
-        type: "pie",
+        type: "doughnut",
         startAngle: -90,
         dataPoints: dataPoints,
-        click: this.onChartPointClick.bind(this, 'dispositivos')
+        click: this.onChartPointClick.bind(this, 'dispositivos'),
+        indexLabelFontSize: this.getResponsiveFontSize(13)
       }]
     };
   }

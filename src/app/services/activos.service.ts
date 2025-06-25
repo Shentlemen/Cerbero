@@ -7,7 +7,7 @@ import { ApiResponse } from '../interfaces/api-response.interface';
 
 export interface ActivoDTO {
   idActivo: number;
-  hardwareId: number;
+  name: string;
   criticidad: string;
   clasificacionDeINFO: string;
   estado: string;
@@ -70,8 +70,8 @@ export class ActivosService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  getActivoByHardwareId(hardwareId: number): Observable<ActivoDTO> {
-    return this.http.get<ApiResponse<ActivoDTO>>(`${this.apiUrl}/by-hardware/${hardwareId}`).pipe(
+  getActivoByName(name: string): Observable<ActivoDTO> {
+    return this.http.get<ApiResponse<ActivoDTO>>(`${this.apiUrl}/by-name/${name}`).pipe(
       map(response => {
         if (response.success) {
           return response.data;

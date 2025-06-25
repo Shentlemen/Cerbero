@@ -207,6 +207,12 @@
   color: #d35400;
 }
 
+.type-badge.tower {
+  background: #34495e;
+  color: #ecf0f1;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .assets-container {
     padding: 1rem;

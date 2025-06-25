@@ -6,6 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ComprasService, CompraDTO } from '../../services/compras.service';
 import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
+import { forkJoin } from 'rxjs';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
@@ -66,8 +67,37 @@ export class ComprasComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCompras();
-    this.loadTiposCompra();
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.loading = true;
+    this.error = null;
+
+    // Cargar tipos de compra y compras en paralelo
+    forkJoin({
+      tiposCompra: this.tiposCompraService.getTiposCompra(),
+      compras: this.comprasService.getCompras()
+    }).subscribe({
+      next: (data) => {
+        this.tiposCompraList = data.tiposCompra;
+        
+        // Ahora procesar las compras con los tipos ya cargados
+        this.comprasList = data.compras.map(compra => ({
+          ...compra,
+          tipoCompraDescripcion: this.getTipoCompraDescripcion(compra.idTipoCompra)
+        }));
+        
+        this.comprasFiltradas = [...this.comprasList];
+        this.collectionSize = this.comprasFiltradas.length;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar los datos:', error);
+        this.error = 'Error al cargar los datos. Por favor, intente nuevamente.';
+        this.loading = false;
+      }
+    });
   }
 
   loadTiposCompra(): void {
@@ -174,7 +204,7 @@ export class ComprasComponent implements OnInit {
 
         this.comprasService.actualizarCompra(compraData.idCompra, compraData).subscribe({
           next: () => {
-            this.loadCompras();
+            this.loadData();
             this.modalService.dismissAll();
           },
           error: (error) => {
@@ -187,7 +217,7 @@ export class ComprasComponent implements OnInit {
         
         this.comprasService.crearCompra(nuevaCompra).subscribe({
           next: () => {
-            this.loadCompras();
+            this.loadData();
             this.modalService.dismissAll();
           },
           error: (error) => {
@@ -241,7 +271,7 @@ export class ComprasComponent implements OnInit {
     if (this.compraToDelete) {
       this.comprasService.eliminarCompra(this.compraToDelete).subscribe({
         next: () => {
-          this.loadCompras();
+          this.loadData();
           this.showConfirmDialog = false;
           this.compraToDelete = null;
         },

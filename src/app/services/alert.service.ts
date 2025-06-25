@@ -29,6 +29,7 @@ export class AlertService {
         disk: Boolean(alerta.disk),
         ip: Boolean(alerta.ip),
         video: Boolean(alerta.video),
+        softwareForbidden: Boolean(alerta.softwareForbidden),
         confirmada: Boolean(alerta.confirmada),
         new_hardware: alerta.newHardware ? 1 : 0,
         pcName: alerta.pcName || 'Desconocido'
@@ -75,6 +76,7 @@ export interface Alerta {
   disk: boolean;
   ip: boolean;
   video: boolean;
+  softwareForbidden: boolean;
   confirmada: boolean;
   valorAnterior?: string;
   valorNuevo?: string;

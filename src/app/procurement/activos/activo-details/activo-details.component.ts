@@ -41,7 +41,6 @@ export class ActivoDetailsComponent implements OnInit {
   hardwareName: string = '';
   previousUrl: string = '';
   activosRelacionados: ActivoDTO[] = [];
-  hardwareMap: Map<number, any> = new Map();
   loadingRelacionados: boolean = false;
   errorRelacionados: string | null = null;
   private tipoActivoMap: Map<number, string> | null = null;
@@ -58,15 +57,17 @@ export class ActivoDetailsComponent implements OnInit {
     private comprasService: ComprasService,
     private lotesService: LotesService,
     private serviciosGarantiaService: ServiciosGarantiaService,
-    private hardwareService: HardwareService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private hardwareService: HardwareService
   ) {}
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.cargarActivo(parseInt(id));
-    }
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.cargarActivo(parseInt(id));
+      }
+    });
   }
 
   cargarActivo(id: number) {
@@ -81,7 +82,7 @@ export class ActivoDetailsComponent implements OnInit {
           this.cargarUsuarioInfo(this.activo.idUsuario);
           this.cargarTipoActivoInfo(this.activo.idTipoActivo);
           this.cargarServicioGarantiaInfo(this.activo.idServicioGarantia);
-          this.cargarHardwareInfo(this.activo.hardwareId);
+          this.hardwareName = this.activo.name || '';
           this.cargarActivosRelacionados(this.activo.idActivo);
         }
         this.loading = false;
@@ -175,16 +176,8 @@ export class ActivoDetailsComponent implements OnInit {
       });
   }
 
-  cargarHardwareInfo(hardwareId: number) {
-    this.hardwareService.getHardwareById(hardwareId).subscribe({
-      next: (hardware) => {
-        this.hardwareName = hardware.name || `PC-${hardwareId}`;
-      },
-      error: (error) => {
-        this.hardwareName = `PC-${hardwareId}`;
-        console.error('Error al cargar la información del hardware:', error);
-      }
-    });
+  verDetallesActivo(idActivo: number): void {
+    this.router.navigate(['/menu/procurement/activos', idActivo]);
   }
 
   cargarUbicacionInfo(idUbicacion: number) {
@@ -338,6 +331,22 @@ export class ActivoDetailsComponent implements OnInit {
 
   verDetallesHardware(hardwareId: number) {
     this.router.navigate(['/menu/asset-details', hardwareId]);
+  }
+
+  verDetallesHardwarePorNombre(name: string): void {
+    this.hardwareService.getHardware().subscribe({
+      next: (hardwareList) => {
+        const hardware = hardwareList.find((h: any) => h.name === name);
+        if (hardware) {
+          this.router.navigate(['/menu/asset-details', hardware.id]);
+        } else {
+          alert('No se encontró el hardware correspondiente.');
+        }
+      },
+      error: () => {
+        alert('Error al buscar el hardware.');
+      }
+    });
   }
 
   volver() {

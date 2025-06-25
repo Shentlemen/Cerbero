@@ -21,6 +21,10 @@
           <i class="fas fa-laptop"></i>
           <span>{{laptopCount}} Laptops</span>
         </div>
+        <div class="stat-pill" (click)="filterByType('TOWER')" [class.active]="currentFilter === 'TOWER'">
+          <i class="fas fa-server"></i>
+          <span>{{towerCount}} Towers</span>
+        </div>
         <div class="stat-pill total" (click)="filterByType('')" [class.active]="currentFilter === ''">
           <i class="fas fa-boxes"></i>
           <span>{{totalAssets}} Total</span>
@@ -109,8 +113,9 @@
               <div class="asset-name">
                 <i class="fas" [ngClass]="{
                   'fa-desktop': asset.biosType === 'DESKTOP',
-                  'fa-laptop': asset.biosType === 'LAPTOP',
+                  'fa-laptop': asset.biosType === 'LAPTOP' || asset.biosType === 'NOTEBOOK',
                   'fa-tablet-alt': asset.biosType === 'MINI PC',
+                  'fa-server': asset.biosType === 'TOWER',
                   'fa-question-circle': !asset.biosType
                 }"></i>
                 <span>{{ asset.name }}</span>
@@ -126,13 +131,18 @@
               <span class="ip-address">{{ asset.ipAddr || 'No asignada' }}</span>
             </td>
             <td>
-              <span class="type-badge" [ngClass]="asset.biosType?.toLowerCase()">
+              <span class="type-badge" [ngClass]="{
+                'desktop': asset.biosType === 'DESKTOP',
+                'laptop': asset.biosType === 'LAPTOP' || asset.biosType === 'NOTEBOOK',
+                'mini': asset.biosType === 'MINI PC',
+                'tower': asset.biosType === 'TOWER'
+              }">
                 {{ asset.biosType || 'Desconocido' }}
               </span>
             </td>
             <td>
-              <span class="compra-link" (click)="verDetallesActivo(asset.id); $event.stopPropagation()">
-                {{getNumeroCompra(asset.id)}}
+              <span class="compra-link" (click)="verDetallesActivo(asset.name); $event.stopPropagation()">
+                {{getNumeroCompra(asset.name)}}
               </span>
             </td>
           </tr>

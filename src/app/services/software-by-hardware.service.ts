@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
 import { SoftwareDTO } from './software.service';
+import { ApiResponse } from '../interfaces/api-response.interface';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +17,14 @@ export class SoftwareByHardwareService {
 
   getByHardwareId(hardwareId: number): Observable<SoftwareDTO[]> {
     const apiUrl = this.configService.getApiUrl();
-    return this.http.get<SoftwareDTO[]>(`${apiUrl}/software/by-hardware/${hardwareId}`);
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${apiUrl}/software/hardware/${hardwareId}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
   }
 } 

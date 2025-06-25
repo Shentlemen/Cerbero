@@ -120,6 +120,29 @@ export class SoftwareComponent implements OnInit {
     });
   }
 
+  toggleSoftwareForbidden(software: SoftwareDTO, event: Event): void {
+    event.stopPropagation();
+    this.loading = true;
+    this.errorMessage = null;
+
+    this.softwareService.toggleSoftwareForbidden(software).subscribe({
+      next: (updatedSoftware) => {
+        const index = this.softwareList.findIndex(s => s.idSoftware === software.idSoftware);
+        if (index !== -1) {
+          // Siempre conservar el count anterior
+          const count = this.softwareList[index].count;
+          this.softwareList[index] = { ...updatedSoftware, count };
+          this.updateFilteredList();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Error al actualizar el estado prohibido: ' + error.message;
+        this.loading = false;
+      }
+    });
+  }
+
   navigateToAssets(software: SoftwareDTO): void {
     this.router.navigate(['/menu/assets'], { 
       queryParams: { 

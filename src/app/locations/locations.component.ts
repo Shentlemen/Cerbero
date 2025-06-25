@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UbicacionesService } from '../services/ubicaciones.service';
-import { UbicacionSimpleDTO } from '../interfaces/ubicacion.interface';
+import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
@@ -20,12 +20,12 @@ import { LocationSelectorModalComponent } from '../components/location-selector-
   styleUrls: ['./locations.component.css']
 })
 export class LocationsComponent implements OnInit {
-  ubicaciones: UbicacionSimpleDTO[] = [];
+  ubicaciones: UbicacionDTO[] = [];
   subnets: SubnetDTO[] = [];
   loading: boolean = false;
   error: string | null = null;
   showConfirmDialog = false;
-  ubicacionToDelete: UbicacionSimpleDTO | null = null;
+  ubicacionToDelete: UbicacionDTO | null = null;
 
   constructor(
     private ubicacionesService: UbicacionesService,
@@ -44,6 +44,8 @@ export class LocationsComponent implements OnInit {
       backdrop: 'static',
       keyboard: false
     });
+    
+    modalRef.componentInstance.isAssignmentMode = false;
     
     modalRef.result.then(
       (result) => {
@@ -73,15 +75,11 @@ export class LocationsComponent implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.ubicacionesService.getUbicacionesSimple().subscribe({
-      next: (response) => {
-        if (response.success) {
-          console.log('Ubicaciones recibidas del servidor:', response.data);
-          this.ubicaciones = response.data;
-          console.log('Número de ubicaciones cargadas:', response.data.length);
-        } else {
-          this.error = response.message || 'Error al cargar las ubicaciones';
-        }
+    this.ubicacionesService.getUbicacionesData().subscribe({
+      next: (ubicaciones) => {
+        console.log('Ubicaciones recibidas del servidor:', ubicaciones);
+        this.ubicaciones = ubicaciones;
+        console.log('Número de ubicaciones cargadas:', ubicaciones.length);
         this.loading = false;
       },
       error: (error) => {
@@ -96,15 +94,15 @@ export class LocationsComponent implements OnInit {
     return this.subnets.find(s => s.pk === idSubnet)?.name || 'N/A';
   }
 
-  confirmarEliminar(ubicacion: UbicacionSimpleDTO) {
+  confirmarEliminar(ubicacion: UbicacionDTO) {
     this.ubicacionToDelete = ubicacion;
     this.showConfirmDialog = true;
   }
 
   confirmarEliminacion(): void {
-    if (this.ubicacionToDelete?.idUbicacion) {
+    if (this.ubicacionToDelete?.id) {
       this.loading = true;
-      this.ubicacionesService.eliminarUbicacion(this.ubicacionToDelete.idUbicacion).subscribe({
+      this.ubicacionesService.eliminarUbicacionData(this.ubicacionToDelete.id).subscribe({
         next: (response) => {
           if (response.success) {
             console.log('Ubicación eliminada exitosamente');
@@ -130,7 +128,7 @@ export class LocationsComponent implements OnInit {
     this.ubicacionToDelete = null;
   }
 
-  editarUbicacion(ubicacion: UbicacionSimpleDTO) {
+  editarUbicacion(ubicacion: UbicacionDTO) {
     const modalRef = this.modalService.open(LocationSelectorModalComponent, {
       size: 'lg',
       backdrop: 'static',
@@ -138,6 +136,7 @@ export class LocationsComponent implements OnInit {
     });
 
     modalRef.componentInstance.ubicacion = ubicacion;
+    modalRef.componentInstance.isAssignmentMode = false;
     
     modalRef.result.then(
       (result) => {

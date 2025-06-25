@@ -81,7 +81,8 @@
         <tbody>
           <tr *ngFor="let software of filteredSoftwareList" 
               class="software-row"
-              [class.hidden]="software.hidden">
+              [class.hidden]="software.hidden"
+              [class.forbidden]="software.forbidden">
             <td>
               <div class="software-name">
                 <i class="fas fa-cube"></i>
@@ -100,12 +101,21 @@
               </span>
             </td>
             <td>
-              <button class="visibility-button" 
-                      (click)="toggleSoftwareVisibility(software, $event)"
-                      [title]="software.hidden ? 'Mostrar software' : 'Ocultar software'"
-                      [disabled]="loading">
-                <i class="fas" [ngClass]="software.hidden ? 'fa-eye-slash' : 'fa-eye'"></i>
-              </button>
+              <div class="action-buttons">
+                <button class="visibility-button" 
+                        (click)="toggleSoftwareVisibility(software, $event)"
+                        [title]="software.hidden ? 'Mostrar software' : 'Ocultar software'"
+                        [disabled]="loading">
+                  <i class="fas" [ngClass]="software.hidden ? 'fa-eye-slash' : 'fa-eye'"></i>
+                </button>
+                <button class="forbidden-button" 
+                        (click)="toggleSoftwareForbidden(software, $event)"
+                        [title]="software.forbidden ? 'Desmarcar como prohibido' : 'Marcar como prohibido'"
+                        [disabled]="loading"
+                        [class.forbidden]="software.forbidden">
+                  <i class="fas" [ngClass]="software.forbidden ? 'fa-ban' : 'fa-check-circle'"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>

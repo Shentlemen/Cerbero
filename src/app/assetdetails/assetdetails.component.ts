@@ -587,28 +587,52 @@ export class AssetdetailsComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-      // Preparar los datos según el formato requerido
-      const ubicacionData = {
-        id: this.ubicacionActual.id,
-        hardwareId: this.asset.id,
-        tipo: 'EQUIPO' as const
-      };
+      // Si ya existe una ubicación, actualizamos; si no, creamos una nueva
+      if (this.ubicacionActual.id) {
+        // Para actualización, enviamos el ID de la ubicación, hardwareId y tipo
+        const ubicacionData = {
+          id: this.ubicacionActual.id,
+          hardwareId: this.asset.id,
+          tipo: 'EQUIPO' as const
+        };
 
-      // Logs de depuración
-      console.log('Datos a enviar:', ubicacionData);
+        console.log('Datos a enviar para actualización:', ubicacionData);
 
-      this.ubicacionesService.crearUbicacionEquipo(ubicacionData).subscribe({
-        next: (response) => {
-          console.log('Ubicación asignada:', response);
-          this.cargarUbicacion();  // Recargamos la ubicación después de asignar
-          this.loading = false;
-        },
-        error: (error: any) => {
-          console.error('Error al asignar ubicación:', error);
-          this.error = 'Error al asignar la ubicación. Por favor, intente nuevamente.';
-          this.loading = false;
-        }
-      });
+        this.ubicacionesService.actualizarUbicacionEquipo(this.asset.id, ubicacionData).subscribe({
+          next: (response) => {
+            console.log('Ubicación actualizada:', response);
+            this.cargarUbicacion();
+            this.loading = false;
+          },
+          error: (error: any) => {
+            console.error('Error al actualizar ubicación:', error);
+            this.error = error.error?.message || 'Error al actualizar la ubicación. Por favor, intente nuevamente.';
+            this.loading = false;
+          }
+        });
+      } else {
+        // Para creación, enviamos el ID y hardwareId
+        const ubicacionData = {
+          id: this.ubicacionActual.id,
+          hardwareId: this.asset.id,
+          tipo: 'EQUIPO' as const
+        };
+
+        console.log('Datos a enviar para creación:', ubicacionData);
+
+        this.ubicacionesService.crearUbicacionEquipo(ubicacionData).subscribe({
+          next: (response) => {
+            console.log('Ubicación creada:', response);
+            this.cargarUbicacion();
+            this.loading = false;
+          },
+          error: (error: any) => {
+            console.error('Error al crear ubicación:', error);
+            this.error = error.error?.message || 'Error al crear la ubicación. Por favor, intente nuevamente.';
+            this.loading = false;
+          }
+        });
+      }
     }
   }
 
@@ -673,5 +697,29 @@ export class AssetdetailsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  openLocationModal() {
+    const modalRef = this.modalService.open(LocationSelectorModalComponent, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    modalRef.componentInstance.ubicacion = this.ubicacionActual;
+    modalRef.componentInstance.isAssignmentMode = true;
+    
+    modalRef.result.then(
+      (result) => {
+        if (result) {
+          console.log('Ubicación asignada:', result);
+          this.ubicacionActual = result;
+          this.cargarUbicacion();
+        }
+      },
+      (reason) => {
+        console.log('Modal cerrado por:', reason);
+      }
+    );
   }
 }

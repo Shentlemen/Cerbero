@@ -99,6 +99,15 @@
                   en la red
                 </span>
               </div>
+              <div *ngIf="alert.softwareForbidden" class="alert-tag-container software-forbidden">
+                <span class="alert-tag-description">
+                  <i class="fas fa-ban"></i> 
+                  Software prohibido detectado
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorNuevo }}
+                </span>
+              </div>
             </div>
             <span class="alert-date">{{alert.fecha | date:'dd/MM/yyyy HH:mm'}}</span>
           </div>
@@ -106,7 +115,8 @@
         <button 
           class="btn btn-sm btn-primary" 
           (click)="confirmarAlerta(alert)"
-          [disabled]="alert.confirmada">
+          [disabled]="alert.confirmada"
+          *ngIf="!alert.softwareForbidden">
           {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
         </button>
       </div>

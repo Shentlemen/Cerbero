@@ -267,6 +267,40 @@
   color: #3498db;
 }
 
+.forbidden-button {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  height: 32px;
+  margin-left: 0.5rem;
+}
+
+.forbidden-button:hover {
+  background: #f1f5f9;
+  color: #e74c3c;
+}
+
+.forbidden-button.forbidden {
+  color: #e74c3c;
+  background-color: #fee2e2;
+}
+
+.forbidden-button.forbidden:hover {
+  background-color: #fecaca;
+  color: #dc2626;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .software-row.hidden {
   opacity: 0.8;
   background-color: #f1f5f9;
@@ -299,6 +333,49 @@
 .software-row.hidden .visibility-button:hover {
   background-color: #cbd5e1;
   color: #3498db;
+}
+
+.software-row.hidden .forbidden-button {
+  color: #64748b;
+  background-color: #e2e8f0;
+}
+
+.software-row.hidden .forbidden-button:hover {
+  background-color: #cbd5e1;
+  color: #e74c3c;
+}
+
+.software-row.hidden .forbidden-button.forbidden {
+  color: #e74c3c;
+  background-color: #fee2e2;
+}
+
+.software-row.forbidden {
+  border-left: 4px solid #e74c3c;
+  background-color: #fef2f2;
+}
+
+.software-row.forbidden td {
+  color: #dc2626;
+}
+
+.software-row.forbidden .software-name i {
+  color: #e74c3c;
+}
+
+.software-row.forbidden .version-badge {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.software-row.forbidden .count-badge {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.software-row.forbidden .count-badge:hover {
+  background-color: #dc2626;
+  color: white;
 }
 
 @media screen and (max-width: 768px) {

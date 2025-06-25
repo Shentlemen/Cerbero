@@ -28,15 +28,15 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     this.routerSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
-      // Obtener la sección actual de la URL
-      const currentRoute = this.router.url.split('/').pop() || 'dashboard';
+      // Obtener la sección actual de la URL (mejorada para submenús)
+      const currentRoute = this.getHelperSectionFromUrl(this.router.url);
       this.currentTip = this.helperService.getHelpForSection(currentRoute);
     });
   }
 
   ngOnInit() {
-    // Obtener el mensaje inicial
-    const currentRoute = this.router.url.split('/').pop() || 'dashboard';
+    // Obtener el mensaje inicial (mejorada para submenús)
+    const currentRoute = this.getHelperSectionFromUrl(this.router.url);
     this.currentTip = this.helperService.getHelpForSection(currentRoute);
   }
 
@@ -76,5 +76,24 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     if (this.messageTimeout) {
       clearTimeout(this.messageTimeout);
     }
+  }
+
+  // Nueva función para obtener la clave de sección adecuada
+  private getHelperSectionFromUrl(url: string): string {
+    const segments = url.split('/').filter(Boolean);
+    // Buscar primero los dos últimos segmentos (ej: procurement/compras)
+    if (segments.length >= 3) {
+      const lastTwo = segments.slice(-2).join('/');
+      if (this.helperService.hasHelpForSection(lastTwo)) {
+        return lastTwo;
+      }
+    }
+    // Si no, buscar el último segmento
+    const last = segments[segments.length - 1];
+    if (this.helperService.hasHelpForSection(last)) {
+      return last;
+    }
+    // Si no, devolver string vacío para mensaje por defecto
+    return '';
   }
 } 

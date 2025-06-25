@@ -9,7 +9,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let software of softwareData">
+        <tr *ngFor="let software of softwareData" [class]="'software-row' + (software.forbidden ? ' forbidden' : '')">
           <td>
             <div class="software-name">
               <i class="fas fa-cube"></i>

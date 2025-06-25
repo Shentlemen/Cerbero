@@ -8,6 +8,7 @@ import { Location } from '@angular/common';
 import { UbicacionesService } from '../services/ubicaciones.service';
 import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { LocationPickerModalComponent } from '../components/location-picker-modal/location-picker-modal.component';
+import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 
 @Component({
   selector: 'app-device-details',
@@ -85,31 +86,24 @@ export class DeviceDetailsComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-      if (this.ubicacionActual.id) {
-        this.ubicacionesService.actualizarUbicacionDispositivo(this.device.mac, this.ubicacionActual).subscribe({
-          next: (response) => {
-            console.log('Ubicación actualizada:', response);
-            this.cargarUbicacion();
-          },
-          error: (error: any) => {
-            console.error('Error al actualizar ubicación:', error);
-            this.error = 'Error al actualizar la ubicación. Por favor, intente nuevamente.';
-            this.loading = false;
-          }
-        });
-      } else {
-        this.ubicacionesService.crearUbicacionDispositivo(this.ubicacionActual).subscribe({
-          next: (response) => {
-            console.log('Ubicación creada:', response);
-            this.cargarUbicacion();
-          },
-          error: (error: any) => {
-            console.error('Error al crear ubicación:', error);
-            this.error = 'Error al asignar la ubicación. Por favor, intente nuevamente.';
-            this.loading = false;
-          }
-        });
-      }
+      const ubicacionData = {
+        id: this.ubicacionActual.id,
+        macaddr: this.device.mac,
+        tipo: 'DISPOSITIVO' as const
+      };
+
+      // Siempre usamos el endpoint de dispositivos para asignar/actualizar ubicación
+      this.ubicacionesService.actualizarUbicacionDispositivo(this.device.mac, ubicacionData).subscribe({
+        next: (response) => {
+          console.log('Ubicación actualizada:', response);
+          this.cargarUbicacion();
+        },
+        error: (error: any) => {
+          console.error('Error al actualizar ubicación:', error);
+          this.error = error.error?.message || 'Error al actualizar la ubicación. Por favor, intente nuevamente.';
+          this.loading = false;
+        }
+      });
     }
   }
 
@@ -117,10 +111,11 @@ export class DeviceDetailsComponent implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.ubicacionesService.getUbicaciones().subscribe({
+    // Obtenemos todas las ubicaciones disponibles de la tabla ubicaciones
+    this.ubicacionesService.getUbicacionesData().subscribe({
       next: (ubicaciones) => {
         this.ubicacionesDisponibles = ubicaciones;
-        const modalRef = this.modalService.open(LocationPickerModalComponent, { 
+        const modalRef = this.modalService.open(AssetLocationPickerModalComponent, { 
           size: 'lg',
           backdrop: 'static',
           keyboard: false
@@ -138,24 +133,34 @@ export class DeviceDetailsComponent implements OnInit {
                 return;
               }
 
-              if (typeof ubicacionSeleccionada.id !== 'number') {
-                console.error('El ID de ubicación debe ser un número');
-                this.error = 'Error: ID de ubicación inválido';
-                return;
-              }
-
-              // Preparar datos
-              this.ubicacionActual = {
-                ...ubicacionSeleccionada,
-                tipo: 'DISPOSITIVO',
+              // Preparar datos para asignar la ubicación al dispositivo
+              const ubicacionData = {
+                id: ubicacionSeleccionada.id,
                 macaddr: this.device.mac,
-                hardwareId: null
+                tipo: 'DISPOSITIVO' as const
               };
 
-              // Logs de depuración
-              console.log('Ubicación seleccionada:', this.ubicacionActual);
+              console.log('Datos a enviar:', ubicacionData);
 
-              this.actualizarUbicacion();
+              // Asignamos la ubicación al dispositivo usando el endpoint correcto
+              // PUT /api/ubicaciones/dispositivos/{macaddr}
+              this.ubicacionesService.actualizarUbicacionDispositivo(
+                this.device.mac,
+                ubicacionData
+              ).subscribe({
+                next: (ubicacion: UbicacionDTO) => {
+                  console.log('Ubicación asignada exitosamente');
+                  // Actualizamos la ubicación actual con los datos de la respuesta
+                  this.ubicacionActual = ubicacion;
+                  this.loading = false;
+                },
+                error: (error) => {
+                  // En caso de error de red o servidor
+                  console.error('Error al asignar ubicación:', error);
+                  this.error = error.message || 'Error al asignar la ubicación. Por favor, intente nuevamente.';
+                  this.loading = false;
+                }
+              });
             }
           },
           () => {

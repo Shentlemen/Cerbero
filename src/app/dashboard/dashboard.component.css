@@ -595,6 +595,29 @@
   border: 1px solid #c8e6c9;
 }
 
+.alert-tag-container.new-hardware .alert-tag-description,
+.alert-tag-container.new-hardware .alert-tag-value {
+  color: #e67e22;
+}
+
+.alert-tag-container.software-forbidden {
+  background: #fff5f5;
+  border-radius: 6px;
+  border: 1px solid #fad2d2;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-tag-container.software-forbidden .alert-tag-description,
+.alert-tag-container.software-forbidden .alert-tag-value {
+  color: #e74c3c;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
 /* Asegurar que todas las gráficas tengan el mismo tamaño */
 canvasjs-chart {
   width: 100% !important;

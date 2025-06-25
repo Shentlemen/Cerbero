@@ -72,7 +72,7 @@ export class UbicacionesService {
     );
   }
 
-  crearUbicacionDispositivo(ubicacion: Omit<UbicacionDTO, 'id' | 'deviceName'>): Observable<UbicacionDTO> {
+  crearUbicacionDispositivo(ubicacion: { id: number; macaddr: string; tipo: 'DISPOSITIVO' }): Observable<UbicacionDTO> {
     return this.http.post<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/dispositivos`, ubicacion).pipe(
       map(response => {
         if (response.success) {
@@ -84,7 +84,7 @@ export class UbicacionesService {
     );
   }
 
-  actualizarUbicacionEquipo(hardwareId: number, ubicacion: Omit<UbicacionDTO, 'id' | 'tipo' | 'hardwareId' | 'macaddr' | 'deviceName'>): Observable<UbicacionDTO> {
+  actualizarUbicacionEquipo(hardwareId: number, ubicacion: { id: number; hardwareId: number; tipo: 'EQUIPO' }): Observable<UbicacionDTO> {
     return this.http.put<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/equipos/${hardwareId}`, ubicacion).pipe(
       map(response => {
         if (response.success) {
@@ -96,7 +96,7 @@ export class UbicacionesService {
     );
   }
 
-  actualizarUbicacionDispositivo(macaddr: string, ubicacion: Omit<UbicacionDTO, 'id' | 'tipo' | 'hardwareId' | 'macaddr' | 'deviceName'>): Observable<UbicacionDTO> {
+  actualizarUbicacionDispositivo(macaddr: string, ubicacion: { id: number; macaddr: string; tipo: 'DISPOSITIVO' }): Observable<UbicacionDTO> {
     return this.http.put<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/dispositivos/${macaddr}`, ubicacion).pipe(
       map(response => {
         if (response.success) {
@@ -125,5 +125,58 @@ export class UbicacionesService {
   // Actualizar una ubicación
   actualizarUbicacion(idUbicacion: number, ubicacion: Omit<UbicacionSimpleDTO, 'idUbicacion'>): Observable<ApiResponse<UbicacionSimpleDTO>> {
     return this.http.put<ApiResponse<UbicacionSimpleDTO>>(`${this.apiUrl}/ubicaciones/${idUbicacion}`, ubicacion);
+  }
+
+  // GESTIÓN DE UBICACIONES (tabla ubicaciones)
+  getUbicacionesData(): Observable<UbicacionDTO[]> {
+    return this.http.get<ApiResponse<UbicacionDTO[]>>(`${this.apiUrl}/ubicaciones/data`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  getUbicacionDataById(idUbicacion: number): Observable<UbicacionDTO> {
+    return this.http.get<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/data/${idUbicacion}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  crearUbicacionData(ubicacion: Omit<UbicacionDTO, 'id'>): Observable<UbicacionDTO> {
+    return this.http.post<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/data`, ubicacion).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  actualizarUbicacionData(idUbicacion: number, ubicacion: Omit<UbicacionDTO, 'id'>): Observable<UbicacionDTO> {
+    return this.http.put<ApiResponse<UbicacionDTO>>(`${this.apiUrl}/ubicaciones/data/${idUbicacion}`, ubicacion).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  eliminarUbicacionData(idUbicacion: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/ubicaciones/data/${idUbicacion}`);
   }
 } 

@@ -80,6 +80,9 @@ export class MenuComponent implements OnInit, OnDestroy {
       }
       
       this.closeHelper();
+
+      // Siempre hacer scroll al top al cambiar de ruta
+      window.scrollTo({ top: 0, behavior: 'auto' });
     });
   }
 

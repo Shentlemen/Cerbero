@@ -9,6 +9,24 @@
   margin-bottom: 0;
 }
 
+.software-row.forbidden {
+  border-left: 4px solid #e74c3c;
+  background-color: #fef2f2;
+}
+
+.software-row.forbidden td {
+  color: #dc2626;
+}
+
+.software-row.forbidden .software-name i {
+  color: #e74c3c;
+}
+
+.software-row.forbidden .version-badge {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
 .software-name {
   display: flex;
   align-items: center;

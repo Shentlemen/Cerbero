@@ -137,6 +137,7 @@ import { SubnetService, SubnetDTO } from '../../services/subnet.service';
 })
 export class LocationSelectorModalComponent implements OnInit {
   @Input() ubicacion?: UbicacionDTO;
+  @Input() isAssignmentMode: boolean = false;
   @Output() ubicacionSeleccionada = new EventEmitter<UbicacionDTO>();
   ubicacionForm: FormGroup;
   subnets: SubnetDTO[] = [];
@@ -165,7 +166,6 @@ export class LocationSelectorModalComponent implements OnInit {
     this.cargarSubnets();
     if (this.ubicacion) {
       console.log('Cargando datos de ubicación:', this.ubicacion);
-      // Si estamos en modo edición, cargar los datos de la ubicación
       this.ubicacionForm.patchValue({
         nombreGerencia: this.ubicacion.nombreGerencia,
         nombreOficina: this.ubicacion.nombreOficina,
@@ -196,22 +196,66 @@ export class LocationSelectorModalComponent implements OnInit {
 
   guardarUbicacion() {
     if (this.ubicacionForm.valid) {
-      const nuevaUbicacion = {
-        id: this.ubicacion?.id || 0,
-        hardwareId: this.ubicacion?.hardwareId || 0,
-        tipo: 'EQUIPO' as const
-      };
+      if (this.isAssignmentMode) {
+        const ubicacionData = {
+          id: this.ubicacion?.id || 0,
+          hardwareId: this.ubicacion?.hardwareId || 0,
+          tipo: 'EQUIPO' as const
+        };
 
-      this.ubicacionesService.crearUbicacionEquipo(nuevaUbicacion).subscribe({
-        next: (ubicacion: UbicacionDTO) => {
-          console.log('Ubicación creada:', ubicacion);
-          this.activeModal.close(ubicacion);
-        },
-        error: (error: any) => {
-          console.error('Error al crear ubicación:', error);
-          alert('Error al crear la ubicación. Por favor, intente nuevamente.');
+        if (this.ubicacion?.id) {
+          this.ubicacionesService.actualizarUbicacionEquipo(
+            this.ubicacion.hardwareId || 0,
+            ubicacionData
+          ).subscribe({
+            next: (ubicacion: UbicacionDTO) => {
+              console.log('Ubicación asignada:', ubicacion);
+              this.activeModal.close(ubicacion);
+            },
+            error: (error: any) => {
+              console.error('Error al asignar ubicación:', error);
+              alert('Error al asignar la ubicación. Por favor, intente nuevamente.');
+            }
+          });
+        } else {
+          this.ubicacionesService.crearUbicacionEquipo(ubicacionData).subscribe({
+            next: (ubicacion: UbicacionDTO) => {
+              console.log('Ubicación asignada:', ubicacion);
+              this.activeModal.close(ubicacion);
+            },
+            error: (error: any) => {
+              console.error('Error al asignar ubicación:', error);
+              alert('Error al asignar la ubicación. Por favor, intente nuevamente.');
+            }
+          });
         }
-      });
+      } else {
+        const ubicacionData = this.ubicacionForm.value;
+        
+        if (this.ubicacion?.id) {
+          this.ubicacionesService.actualizarUbicacionData(this.ubicacion.id, ubicacionData).subscribe({
+            next: (ubicacion: UbicacionDTO) => {
+              console.log('Ubicación actualizada:', ubicacion);
+              this.activeModal.close(ubicacion);
+            },
+            error: (error: any) => {
+              console.error('Error al actualizar ubicación:', error);
+              alert('Error al actualizar la ubicación. Por favor, intente nuevamente.');
+            }
+          });
+        } else {
+          this.ubicacionesService.crearUbicacionData(ubicacionData).subscribe({
+            next: (ubicacion: UbicacionDTO) => {
+              console.log('Ubicación creada:', ubicacion);
+              this.activeModal.close(ubicacion);
+            },
+            error: (error: any) => {
+              console.error('Error al crear ubicación:', error);
+              alert('Error al crear la ubicación. Por favor, intente nuevamente.');
+            }
+          });
+        }
+      }
     }
   }
 } 

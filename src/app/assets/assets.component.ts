@@ -23,7 +23,7 @@ export class AssetsComponent implements OnInit {
 
   assetsList: any[] = [];
   assetsFiltrados: any[] = [];
-  activosMap: Map<number, any> = new Map(); // Para almacenar los activos por hardwareId
+  activosMap: Map<string, any> = new Map(); // Ahora la clave es el nombre del PC
   filterForm: FormGroup;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -36,6 +36,7 @@ export class AssetsComponent implements OnInit {
   laptopCount: number = 0; // Declaración de la propiedad
   otherCount: number = 0;  // Declaración de la propiedad
   miniPcCount: number = 0; // Añadir esta nueva propiedad
+  towerCount: number = 0;  // Nueva propiedad para Tower
   currentFilter: string = '';
   originalAssetsList: any[] = []; // Para guardar la lista original
   activeFilter: string | null = null;
@@ -133,25 +134,23 @@ export class AssetsComponent implements OnInit {
   }
 
   cargarActivosInfo(): void {
-    // Cargar la información de activos para cada hardware
     this.assetsList.forEach(asset => {
-      this.activosService.getActivoByHardwareId(asset.id).subscribe({
+      this.activosService.getActivoByName(asset.name).subscribe({
         next: (activo) => {
           if (activo) {
-            this.activosMap.set(asset.id, activo);
-            console.log(`Activo cargado para hardware ${asset.id}:`, activo);
+            this.activosMap.set(asset.name, activo);
+            console.log(`Activo cargado para PC ${asset.name}:`, activo);
           }
         },
         error: (error) => {
-          console.error(`Error al cargar activo para hardware ${asset.id}:`, error);
-          // No establecemos el activo en el mapa si hay error
+          console.error(`Error al cargar activo para PC ${asset.name}:`, error);
         }
       });
     });
   }
 
   loadAssetsForSoftware(softwareId: number): void {
-    this.softwareService.getHardwaresBySoftware({ idSoftware: softwareId } as any).subscribe({
+    this.softwareService.getHardwaresBySoftware({ idSoftware: softwareId }).subscribe({
       next: (hardwareIds) => {
         forkJoin([
           this.hardwareService.getHardware(),
@@ -260,6 +259,7 @@ export class AssetsComponent implements OnInit {
     let miniPcCount = 0;
     let laptopCount = 0;
     let otherCount = 0;
+    let towerCount = 0;
 
     // Recorre la lista de assets filtrados y cuenta los tipos
     this.assetsFiltrados.forEach(asset => {
@@ -277,6 +277,9 @@ export class AssetsComponent implements OnInit {
         case 'NOTEBOOK':
           laptopCount++;
           break;
+        case 'TOWER':
+          towerCount++;
+          break;
         default:
           otherCount++;
           break;
@@ -289,13 +292,15 @@ export class AssetsComponent implements OnInit {
     this.miniPcCount = miniPcCount;
     this.laptopCount = laptopCount;
     this.otherCount = otherCount;
+    this.towerCount = towerCount;
 
     console.log('Resumen actualizado:', {
       totalAssets,
       pcCount,
       miniPcCount,
       laptopCount,
-      otherCount
+      otherCount,
+      towerCount
     });
   }
 
@@ -314,16 +319,16 @@ export class AssetsComponent implements OnInit {
     }
   }
 
-  verDetallesActivo(hardwareId: number): void {
-    const activo = this.activosMap.get(hardwareId);
+  verDetallesActivo(name: string): void {
+    const activo = this.activosMap.get(name);
     if (activo) {
       this.router.navigate(['/menu/procurement/activos', activo.idActivo]);
     }
   }
 
-  getNumeroCompra(hardwareId: number): string {
-    const activo = this.activosMap.get(hardwareId);
-    return activo ? activo.idNumeroCompra.toString() : 'No asignado';
+  getNumeroCompra(name: string): string {
+    const activo = this.activosMap.get(name);
+    return activo && activo.idNumeroCompra ? activo.idNumeroCompra.toString() : 'No asignado';
   }
 
   sortData(column: string): void {
@@ -372,6 +377,12 @@ export class AssetsComponent implements OnInit {
     this.currentFilter = type;
     if (this.currentFilter === '') {
       this.assetsFiltrados = [...this.originalAssetsList];
+    } else if (this.currentFilter === 'LAPTOP') {
+      // Filtrar tanto LAPTOP como NOTEBOOK
+      this.assetsFiltrados = this.originalAssetsList.filter(asset => {
+        const assetType = (asset.biosType || '').trim().toUpperCase();
+        return assetType === 'LAPTOP' || assetType === 'NOTEBOOK';
+      });
     } else {
       this.assetsFiltrados = this.originalAssetsList.filter(asset => 
         (asset.biosType || '').trim().toUpperCase() === this.currentFilter.trim().toUpperCase()
