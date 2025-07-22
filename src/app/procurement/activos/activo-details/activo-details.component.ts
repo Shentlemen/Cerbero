@@ -14,6 +14,7 @@ import { LotesService, LoteDTO } from '../../../services/lotes.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../../services/servicios-garantia.service';
 import { HardwareService } from '../../../services/hardware.service';
 import { forkJoin } from 'rxjs';
+import { TiposCompraService } from '../../../services/tipos-compra.service';
 
 @Component({
   selector: 'app-activo-details',
@@ -44,6 +45,13 @@ export class ActivoDetailsComponent implements OnInit {
   loadingRelacionados: boolean = false;
   errorRelacionados: string | null = null;
   private tipoActivoMap: Map<number, string> | null = null;
+  numeroCompraInfo: string = '';
+  tipoCompraDescripcion: string = '';
+  nombreItemInfo: string = '';
+  numeroCompraLoteInfo: string = '';
+  nombreComercialServicioInfo: string = '';
+  descripcionEntregaInfo: string = '';
+  nombreItemEntregaInfo: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -58,7 +66,8 @@ export class ActivoDetailsComponent implements OnInit {
     private lotesService: LotesService,
     private serviciosGarantiaService: ServiciosGarantiaService,
     private modalService: NgbModal,
-    private hardwareService: HardwareService
+    private hardwareService: HardwareService,
+    private tiposCompraService: TiposCompraService
   ) {}
 
   ngOnInit() {
@@ -84,6 +93,9 @@ export class ActivoDetailsComponent implements OnInit {
           this.cargarServicioGarantiaInfo(this.activo.idServicioGarantia);
           this.hardwareName = this.activo.name || '';
           this.cargarActivosRelacionados(this.activo.idActivo);
+          this.cargarNumeroCompraInfo(this.activo.idNumeroCompra);
+          this.cargarNombreItemInfo(this.activo.idItem);
+          this.cargarDescripcionEntregaInfo(this.activo.idEntrega);
         }
         this.loading = false;
       },
@@ -244,14 +256,83 @@ export class ActivoDetailsComponent implements OnInit {
     });
   }
 
+  cargarNumeroCompraInfo(idCompra: number) {
+    if (!idCompra) {
+      this.numeroCompraInfo = '';
+      return;
+    }
+    this.comprasService.getCompraById(idCompra).subscribe({
+      next: (compra) => {
+        this.numeroCompraInfo = compra && compra.numeroCompra ? compra.numeroCompra : idCompra.toString();
+      },
+      error: (error) => {
+        this.numeroCompraInfo = idCompra.toString();
+        console.error('Error al cargar el número de compra:', error);
+      }
+    });
+  }
+
+  cargarNombreItemInfo(idItem: number) {
+    if (!idItem) {
+      this.nombreItemInfo = '';
+      return;
+    }
+    this.lotesService.getLote(idItem).subscribe({
+      next: (lote) => {
+        this.nombreItemInfo = lote && lote.nombreItem ? lote.nombreItem : idItem.toString();
+      },
+      error: (error) => {
+        this.nombreItemInfo = idItem.toString();
+        console.error('Error al cargar el nombre del item:', error);
+      }
+    });
+  }
+
+  cargarDescripcionEntregaInfo(idEntrega: number) {
+    if (!idEntrega) {
+      this.descripcionEntregaInfo = '';
+      return;
+    }
+    this.entregasService.getEntrega(idEntrega).subscribe({
+      next: (entrega) => {
+        this.descripcionEntregaInfo = entrega && entrega.descripcion ? entrega.descripcion : idEntrega.toString();
+      },
+      error: (error) => {
+        this.descripcionEntregaInfo = idEntrega.toString();
+        console.error('Error al cargar la descripción de la entrega:', error);
+      }
+    });
+  }
+
   verDetallesEntrega(idEntrega: number, entregaModal: any) {
     this.entregasService.getEntrega(idEntrega).subscribe({
       next: (entrega) => {
         this.entregaSeleccionada = entrega;
-        this.modalService.open(entregaModal, { size: 'lg' });
+        this.cargarNombreItemEntregaInfo(entrega.idItem, () => {
+          this.modalService.open(entregaModal, { size: 'lg' });
+        });
       },
       error: (error) => {
         this.error = 'Error al cargar los detalles de la entrega';
+      }
+    });
+  }
+
+  cargarNombreItemEntregaInfo(idItem: number, callback?: () => void) {
+    if (!idItem) {
+      this.nombreItemEntregaInfo = '';
+      if (callback) callback();
+      return;
+    }
+    this.lotesService.getLote(idItem).subscribe({
+      next: (lote) => {
+        this.nombreItemEntregaInfo = lote && lote.nombreItem ? lote.nombreItem : idItem.toString();
+        if (callback) callback();
+      },
+      error: (error) => {
+        this.nombreItemEntregaInfo = idItem.toString();
+        if (callback) callback();
+        console.error('Error al cargar el nombre del item de la entrega:', error);
       }
     });
   }
@@ -297,7 +378,24 @@ export class ActivoDetailsComponent implements OnInit {
     this.comprasService.getCompraById(idCompra).subscribe({
       next: (compra) => {
         this.compraSeleccionada = compra;
-        this.modalService.open(compraModal, { size: 'lg' });
+        // Mostrar el numeroCompra
+        this.numeroCompraInfo = compra && compra.numeroCompra ? compra.numeroCompra : idCompra.toString();
+        // Cargar la descripción del tipo de compra desde TiposCompraService
+        if (compra && compra.idTipoCompra) {
+          this.tiposCompraService.getTipoCompra(compra.idTipoCompra).subscribe({
+            next: (tipo) => {
+              this.tipoCompraDescripcion = tipo && tipo.descripcion ? tipo.descripcion : compra.idTipoCompra.toString();
+              this.modalService.open(compraModal, { size: 'lg' });
+            },
+            error: () => {
+              this.tipoCompraDescripcion = compra.idTipoCompra.toString();
+              this.modalService.open(compraModal, { size: 'lg' });
+            }
+          });
+        } else {
+          this.tipoCompraDescripcion = '';
+          this.modalService.open(compraModal, { size: 'lg' });
+        }
       },
       error: (error) => {
         this.error = 'Error al cargar los detalles de la compra';
@@ -309,12 +407,51 @@ export class ActivoDetailsComponent implements OnInit {
     this.lotesService.getLote(idLote).subscribe({
       next: (lote) => {
         this.loteSeleccionado = lote;
-        this.modalService.open(loteModal, { size: 'lg' });
+        // Cargar información adicional
+        this.cargarInformacionAdicionalLote(lote, loteModal);
       },
       error: (error) => {
         this.error = 'Error al cargar los detalles del lote';
       }
     });
+  }
+
+  cargarInformacionAdicionalLote(lote: LoteDTO, loteModal: any) {
+    // Cargar nombre del item
+    this.nombreItemInfo = lote && lote.nombreItem ? lote.nombreItem : lote.idItem.toString();
+    
+    // Cargar número de compra
+    if (lote && lote.idCompra) {
+      this.comprasService.getCompraById(lote.idCompra).subscribe({
+        next: (compra) => {
+          this.numeroCompraLoteInfo = compra && compra.numeroCompra ? compra.numeroCompra : lote.idCompra.toString();
+          
+          // Cargar nombre comercial del servicio de garantía
+          if (lote && lote.idServicioGarantia) {
+            this.serviciosGarantiaService.getServicioGarantia(lote.idServicioGarantia).subscribe({
+              next: (servicio) => {
+                this.nombreComercialServicioInfo = servicio && servicio.nombreComercial ? servicio.nombreComercial : lote.idServicioGarantia.toString();
+                this.modalService.open(loteModal, { size: 'lg' });
+              },
+              error: () => {
+                this.nombreComercialServicioInfo = lote.idServicioGarantia.toString();
+                this.modalService.open(loteModal, { size: 'lg' });
+              }
+            });
+          } else {
+            this.nombreComercialServicioInfo = '';
+            this.modalService.open(loteModal, { size: 'lg' });
+          }
+        },
+        error: () => {
+          this.numeroCompraLoteInfo = lote.idCompra.toString();
+          this.modalService.open(loteModal, { size: 'lg' });
+        }
+      });
+    } else {
+      this.numeroCompraLoteInfo = '';
+      this.modalService.open(loteModal, { size: 'lg' });
+    }
   }
 
   verDetallesServicioGarantia(idServicioGarantia: number, servicioGarantiaModal: any) {

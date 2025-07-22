@@ -4,13 +4,17 @@
       <div class="title-wrapper">
         <h1><i class="fas fa-code"></i> Software Instalado</h1>
         <div class="stats-pills">
-          <div class="stat-pill total">
+          <div class="stat-pill total" [class.active-filter]="activeTab === 'total'" (click)="showTotalSoftware()" style="cursor:pointer;">
             <i class="fas fa-boxes"></i>
             <span>{{totalSoftware}} Total</span>
           </div>
-          <button class="visibility-toggle" (click)="toggleHiddenSoftware()">
-            <i class="fas" [ngClass]="showHidden ? 'fa-eye-slash' : 'fa-eye'"></i>
-            {{ showHidden ? 'Ocultar software escondido' : 'Mostrar software escondido' }}
+          <button class="visibility-toggle" [class.active-filter]="activeTab === 'hidden'" (click)="showOnlyHiddenSoftware()">
+            <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye' "></i>
+            {{ activeTab === 'hidden' ? 'Solo software escondido' : 'Mostrar solo escondidos' }}
+          </button>
+          <button class="forbidden-toggle" [class.active-filter]="activeTab === 'forbidden'" (click)="showOnlyForbiddenSoftware()">
+            <i class="fas fa-ban"></i>
+            {{ activeTab === 'forbidden' ? 'Solo prohibidos' : 'Mostrar solo prohibidos' }}
           </button>
         </div>
         <div class="search-box">
@@ -79,7 +83,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let software of filteredSoftwareList" 
+          <tr *ngFor="let software of pagedSoftwareList" 
               class="software-row"
               [class.hidden]="software.hidden"
               [class.forbidden]="software.forbidden">
@@ -120,6 +124,18 @@
           </tr>
         </tbody>
       </table>
+    </div>
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
     </div>
   </div>
 </div>

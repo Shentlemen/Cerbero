@@ -11,7 +11,6 @@ export interface ProveedorDTO {
     correoContacto: string;    // Correo electrónico de contacto
     telefonoContacto: string;  // Teléfono de contacto
     nombreComercial: string;   // Nombre comercial del proveedor
-    ruc: string;              // RUC del proveedor
 }
 
 @Injectable({
@@ -69,18 +68,6 @@ export class ProveedoresService {
 
   getProveedor(id: number): Observable<ProveedorDTO> {
     return this.http.get<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/${id}`).pipe(
-      map(response => {
-        if (response.success) {
-          return response.data;
-        }
-        throw new Error(response.message);
-      }),
-      catchError(this.handleError)
-    );
-  }
-
-  getProveedorByRuc(ruc: string): Observable<ProveedorDTO> {
-    return this.http.get<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/by-ruc/${ruc}`).pipe(
       map(response => {
         if (response.success) {
           return response.data;

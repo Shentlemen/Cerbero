@@ -56,19 +56,19 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('idNumeroCompra')" [class.active]="sortColumn === 'idNumeroCompra'">
+              <th (click)="sortData('numeroCompra')" [class.active]="sortColumn === 'numeroCompra'">
                 <div class="th-content">
                   <span>Número de Compra</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idNumeroCompra' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idNumeroCompra' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idNumeroCompra'
+                    'fa-sort-up': sortColumn === 'numeroCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'numeroCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'numeroCompra'
                   }"></i>
-                  <i class="fas fa-search search-icon" (click)="toggleFilter('idNumeroCompra'); $event.stopPropagation()"></i>
-                  <div *ngIf="activeFilter === 'idNumeroCompra'" class="filter-input-container" (click)="$event.stopPropagation()">
+                  <i class="fas fa-search search-icon" (click)="toggleFilter('numeroCompra'); $event.stopPropagation()"></i>
+                  <div *ngIf="activeFilter === 'numeroCompra'" class="filter-input-container" (click)="$event.stopPropagation()">
                     <input 
                       type="text" 
-                      [value]="filterValues['idNumeroCompra']"
+                      [value]="filterValues['numeroCompra']"
                       (input)="applyColumnFilter($event)"
                       (keyup)="handleKeyPress($event)"
                       placeholder="Buscar..."
@@ -129,7 +129,7 @@
             <tr *ngFor="let activo of pagedActivos" class="activo-row">
               <td>
                 <span class="compra-link" (click)="verDetallesCompra(activo.idNumeroCompra, compraModal)">
-                  {{activo.idNumeroCompra}}
+                  {{getNumeroCompraString(activo.idNumeroCompra)}}
                 </span>
               </td>
               <td>

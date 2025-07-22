@@ -12,13 +12,17 @@
             <i class="fas fa-euro-sign"></i>
             <span>EUR</span>
           </div>
+          <div class="stat-pill uyu" (click)="filterForm.patchValue({ moneda: 'UYU' })" [class.active]="filterForm.get('moneda')?.value === 'UYU'">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>UYU</span>
+          </div>
           <div class="stat-pill total" (click)="filterForm.patchValue({ moneda: '' })" [class.active]="!filterForm.get('moneda')?.value">
             <i class="fas fa-boxes"></i>
             <span>{{collectionSize}} Total</span>
           </div>
         </div>
       </div>
-      <div class="actions">
+      <div class="actions d-flex justify-content-end align-items-center" style="gap: 1rem;">
         <button class="btn btn-export" (click)="abrirModal(compraModal)">
           <i class="fas fa-plus me-2"></i>
           Nueva Compra
@@ -28,6 +32,11 @@
   </div>
 
   <div class="content-section">
+    <div class="row mb-3">
+      <div class="col-12">
+        <input type="text" class="form-control" placeholder="Buscar por número de compra..." [formControl]="numeroCompraControl" style="max-width: 320px;">
+      </div>
+    </div>
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -44,13 +53,13 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('idCompra')" [class.active]="sortColumn === 'idCompra'">
+              <th (click)="sortData('numeroCompra')" [class.active]="sortColumn === 'numeroCompra'">
                 <div class="th-content">
-                  <span>ID</span>
+                  <span>Número de Compra</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idCompra' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idCompra' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idCompra'
+                    'fa-sort-up': sortColumn === 'numeroCompra' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'numeroCompra' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'numeroCompra'
                   }"></i>
                 </div>
               </th>
@@ -76,7 +85,7 @@
               </th>
               <th (click)="sortData('fechaInicio')" [class.active]="sortColumn === 'fechaInicio'">
                 <div class="th-content">
-                  <span>Fecha Inicio</span>
+                  <span>Fecha Apertura</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'fechaInicio' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'fechaInicio' && sortDirection === 'desc',
@@ -86,7 +95,7 @@
               </th>
               <th (click)="sortData('fechaFinal')" [class.active]="sortColumn === 'fechaFinal'">
                 <div class="th-content">
-                  <span>Fecha Final</span>
+                  <span>Fecha Adjudicación</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'fechaFinal' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'fechaFinal' && sortDirection === 'desc',
@@ -119,7 +128,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let compra of pagedCompras" class="compra-row">
-              <td>{{compra.idCompra}}</td>
+              <td>{{compra.numeroCompra}}</td>
               <td>{{compra.tipoCompraDescripcion}}</td>
               <td>{{compra.descripcion}}</td>
               <td>{{formatearFecha(compra.fechaInicio)}}</td>
@@ -172,55 +181,179 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    <form [formGroup]="compraForm">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Tipo de Compra</label>
-          <select class="form-select" formControlName="idTipoCompra">
-            <option value="">Seleccione un tipo de compra</option>
-            <option *ngFor="let tipo of tiposCompraList" [value]="tipo.idTipoCompra">
-              {{tipo.descripcion}}
-            </option>
-          </select>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Moneda</label>
-          <select class="form-select" formControlName="moneda">
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-12 mb-3">
-          <label class="form-label">Descripción</label>
-          <input type="text" class="form-control" formControlName="descripcion">
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Fecha Inicio</label>
-          <input type="date" class="form-control" formControlName="fechaInicio">
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Fecha Final</label>
-          <input type="date" class="form-control" formControlName="fechaFinal">
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-12 mb-3">
-          <label class="form-label">Monto</label>
-          <input type="number" class="form-control" formControlName="monto" step="0.01">
-        </div>
-      </div>
-    </form>
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
+      <li [ngbNavItem]="'1'">
+        <a ngbNavLink>Datos de la compra</a>
+        <ng-template ngbNavContent>
+          <form [formGroup]="compraForm">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Número de Compra</label>
+                <input type="text" class="form-control" formControlName="numeroCompra">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Tipo de Compra</label>
+                <select class="form-select" formControlName="idTipoCompra">
+                  <option value="">Seleccione un tipo de compra</option>
+                  <option *ngFor="let tipo of tiposCompraList" [value]="tipo.idTipoCompra">
+                    {{tipo.descripcion}}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Moneda</label>
+                <select class="form-select" formControlName="moneda">
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="UYU">UYU</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Monto</label>
+                <input type="number" class="form-control" formControlName="monto" step="0.01">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Descripción</label>
+                <input type="text" class="form-control" formControlName="descripcion">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha Apertura</label>
+                <input type="date" class="form-control" formControlName="fechaInicio">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha Adjudicación</label>
+                <input type="date" class="form-control" formControlName="fechaFinal">
+              </div>
+            </div>
+          </form>
+        </ng-template>
+      </li>
+      <li [ngbNavItem]="'2'">
+        <a ngbNavLink>Ítems</a>
+        <ng-template ngbNavContent>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Ítems de la compra</h6>
+            <button class="btn btn-success btn-sm" (click)="agregarItem()">
+              <i class="fas fa-plus"></i> Agregar ítem
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Descripción</th>
+                  <th>Cantidad</th>
+                  <th>Meses Garantía</th>
+                  <th>Proveedor</th>
+                  <th>Servicio Garantía</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of itemsControls; let i = index" [formGroup]="item">
+                  <td><input type="text" class="form-control" formControlName="nombreItem" required></td>
+                  <td><input type="text" class="form-control" formControlName="descripcion" required></td>
+                  <td><input type="number" class="form-control" formControlName="cantidad" min="1" required></td>
+                  <td><input type="number" class="form-control" formControlName="mesesGarantia" min="0" required></td>
+                  <td>
+                    <select class="form-select" formControlName="idProveedor" required>
+                      <option value="">Seleccione un proveedor</option>
+                      <option *ngFor="let proveedor of proveedoresList" [value]="proveedor.idProveedores">
+                        {{proveedor.nombreComercial}}
+                      </option>
+                    </select>
+                  </td>
+                  <td>
+                    <select class="form-select" formControlName="idServicioGarantia" required>
+                      <option value="">Seleccione un servicio de garantía</option>
+                      <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
+                        {{servicio.nombreComercial}}
+                      </option>
+                    </select>
+                  </td>
+                  <td>
+                    <button class="btn btn-danger btn-sm" (click)="eliminarItem(i)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="itemsControls.length === 0">
+                  <td colspan="7" class="text-center text-muted">No hay ítems agregados.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-template>
+      </li>
+      <li *ngIf="modoEdicion" [ngbNavItem]="'3'">
+        <a ngbNavLink>Entregas</a>
+        <ng-template ngbNavContent>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Entregas de los ítems</h6>
+            <button class="btn btn-success btn-sm" (click)="agregarEntrega()">
+              <i class="fas fa-plus"></i> Agregar entrega
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Ítem (ID)</th>
+                  <th>Cantidad</th>
+                  <th>Descripción</th>
+                  <th>Fecha Pedido</th>
+                  <th>Fecha Fin Garantía</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let entrega of entregasControls; let i = index" [formGroup]="entrega">
+                  <td>
+                    <select class="form-select" [formControlName]="modoEdicion ? 'idItem' : 'nombreItem'" required>
+                      <option value="">Seleccione un ítem</option>
+                      <ng-container *ngIf="modoEdicion; else itemsLocal">
+                        <option *ngFor="let lote of lotesDeLaCompra" [value]="lote.idItem">
+                          {{lote.nombreItem}}
+                        </option>
+                      </ng-container>
+                      <ng-template #itemsLocal>
+                        <option *ngFor="let item of itemsControls" [value]="item.get('nombreItem')?.value">
+                          {{item.get('nombreItem')?.value}}
+                        </option>
+                      </ng-template>
+                    </select>
+                  </td>
+                  <td><input type="number" class="form-control" formControlName="cantidad" min="1" required></td>
+                  <td><input type="text" class="form-control" formControlName="descripcion" required></td>
+                  <td><input type="date" class="form-control" formControlName="fechaPedido" required></td>
+                  <td><input type="date" class="form-control" formControlName="fechaFinGarantia" required></td>
+                  <td>
+                    <button class="btn btn-danger btn-sm" (click)="eliminarEntrega(i)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="entregasControls.length === 0">
+                  <td colspan="6" class="text-center text-muted">No hay entregas agregadas.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+    <div [ngbNavOutlet]="nav"></div>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardarCompra()" [disabled]="!compraForm.valid">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-success btn-sm" (click)="guardarCompra()" [disabled]="!compraForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>

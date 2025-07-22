@@ -29,6 +29,11 @@
   color: #92400e;
 }
 
+.moneda-badge.uyu {
+  background: #e0f7fa;
+  color: #00695c;
+}
+
 /* Estilos para los botones de moneda */
 .stat-pill[class*="usd"].active {
   background: #0369a1;
@@ -38,6 +43,11 @@
 .stat-pill[class*="eur"].active {
   background: #92400e;
   border-color: #92400e;
+}
+
+.stat-pill[class*="uyu"].active {
+  background: #00695c;
+  border-color: #00695c;
 }
 
 .estado-badge.pendiente {
@@ -113,6 +123,26 @@
 .detail-value {
   color: #2c3e50;
   flex: 1;
+}
+
+/* Personalización de pestañas ngbNav */
+.nav-tabs .nav-link.active {
+  color: #2c3e50 !important; /* gris oscuro, igual que los títulos */
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 #dee2e6 #fff;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link {
+  color: #888 !important;
+  font-weight: 500;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #41A1AF !important;
 }
 
 @media (max-width: 768px) {

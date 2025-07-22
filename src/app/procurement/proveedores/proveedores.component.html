@@ -46,16 +46,6 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('ruc')" [class.active]="sortColumn === 'ruc'">
-                <div class="th-content">
-                  <span>RUC</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'ruc' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'ruc' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'ruc'
-                  }"></i>
-                </div>
-              </th>
               <th (click)="sortData('nombreComercial')" [class.active]="sortColumn === 'nombreComercial'">
                 <div class="th-content">
                   <span>Nombre Comercial</span>
@@ -74,12 +64,15 @@
           <tbody>
             <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
               <td>{{proveedor.nombre}}</td>
-              <td>{{proveedor.ruc}}</td>
               <td>{{proveedor.nombreComercial}}</td>
               <td>{{proveedor.correoContacto}}</td>
               <td>{{proveedor.telefonoContacto}}</td>
               <td>
                 <div class="action-buttons">
+                  <button class="btn btn-outline-secondary btn-sm me-2" (click)="verContactosProveedor(proveedor, contactosModal)">
+                    <i class="fas fa-address-book"></i>
+                    Ver contactos
+                  </button>
                   <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(proveedorModal, proveedor)">
                     <i class="fas fa-edit"></i>
                   </button>
@@ -120,66 +113,151 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    <form [formGroup]="proveedorForm">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Nombre</label>
-          <input type="text" class="form-control" formControlName="nombre">
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('nombre')?.errors?.['required'] && proveedorForm.get('nombre')?.touched">
-            El nombre es requerido.
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
+      <li [ngbNavItem]="1">
+        <a ngbNavLink>Datos del proveedor</a>
+        <ng-template ngbNavContent>
+          <form [formGroup]="proveedorForm">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" class="form-control" formControlName="nombre">
+                <div class="invalid-feedback" *ngIf="proveedorForm.get('nombre')?.errors?.['required'] && proveedorForm.get('nombre')?.touched">
+                  El nombre es requerido.
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre Comercial</label>
+                <input type="text" class="form-control" formControlName="nombreComercial">
+                <div class="invalid-feedback" *ngIf="proveedorForm.get('nombreComercial')?.errors?.['required'] && proveedorForm.get('nombreComercial')?.touched">
+                  El nombre comercial es requerido.
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Correo de Contacto</label>
+                <input type="email" class="form-control" formControlName="correoContacto">
+                <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['required'] && proveedorForm.get('correoContacto')?.touched">
+                  El correo es requerido.
+                </div>
+                <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['email'] && proveedorForm.get('correoContacto')?.touched">
+                  Ingrese un correo válido.
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono de Contacto</label>
+                <input type="tel" class="form-control" formControlName="telefonoContacto" maxlength="9">
+                <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['required'] && proveedorForm.get('telefonoContacto')?.touched">
+                  El teléfono es requerido.
+                </div>
+                <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['pattern'] && proveedorForm.get('telefonoContacto')?.touched">
+                  El teléfono debe tener 9 dígitos numéricos.
+                </div>
+              </div>
+            </div>
+          </form>
+        </ng-template>
+      </li>
+      <li [ngbNavItem]="2">
+        <a ngbNavLink>Contactos</a>
+        <ng-template ngbNavContent>
+          <div *ngIf="contactosCargados">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">Contactos del proveedor</h6>
+              <button class="btn btn-success btn-sm" (click)="agregarContacto()">
+                <i class="fas fa-plus"></i> Agregar contacto
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Cargo</th>
+                    <th>Observaciones</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let contacto of contactosControls; let i = index" [formGroup]="contacto">
+                    <td><input type="text" class="form-control" formControlName="nombre" required></td>
+                    <td><input type="text" class="form-control" formControlName="telefono" required></td>
+                    <td><input type="email" class="form-control" formControlName="email" required></td>
+                    <td><input type="text" class="form-control" formControlName="cargo" required></td>
+                    <td><input type="text" class="form-control" formControlName="observaciones"></td>
+                    <td>
+                      <button class="btn btn-danger btn-sm" (click)="eliminarContacto(i)">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="contactosControls.length === 0">
+                    <td colspan="6" class="text-center text-muted">No hay contactos agregados.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Nombre Comercial</label>
-          <input type="text" class="form-control" formControlName="nombreComercial">
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('nombreComercial')?.errors?.['required'] && proveedorForm.get('nombreComercial')?.touched">
-            El nombre comercial es requerido.
+          <div *ngIf="!contactosCargados" class="text-center p-3">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando contactos...</span>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-12 mb-3">
-          <label class="form-label">RUC</label>
-          <input type="text" class="form-control" formControlName="ruc" maxlength="11">
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('ruc')?.errors?.['required'] && proveedorForm.get('ruc')?.touched">
-            El RUC es requerido.
-          </div>
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('ruc')?.errors?.['pattern'] && proveedorForm.get('ruc')?.touched">
-            El RUC debe tener 11 dígitos numéricos.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Correo de Contacto</label>
-          <input type="email" class="form-control" formControlName="correoContacto">
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['required'] && proveedorForm.get('correoContacto')?.touched">
-            El correo es requerido.
-          </div>
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['email'] && proveedorForm.get('correoContacto')?.touched">
-            Ingrese un correo válido.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Teléfono de Contacto</label>
-          <input type="tel" class="form-control" formControlName="telefonoContacto" maxlength="9">
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['required'] && proveedorForm.get('telefonoContacto')?.touched">
-            El teléfono es requerido.
-          </div>
-          <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['pattern'] && proveedorForm.get('telefonoContacto')?.touched">
-            El teléfono debe tener 9 dígitos numéricos.
-          </div>
-        </div>
-      </div>
-    </form>
+        </ng-template>
+      </li>
+    </ul>
+    <div [ngbNavOutlet]="nav"></div>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardarProveedor()" [disabled]="!proveedorForm.valid">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-success btn-sm" (click)="guardarProveedor()" [disabled]="!proveedorForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
+  </div>
+</ng-template>
+
+<!-- Modal para ver contactos del proveedor -->
+<ng-template #contactosModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Contactos de {{proveedorVistaNombre}}</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="contactosVista.length > 0; else sinContactos">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>Cargo</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let contacto of contactosVista">
+              <td>{{contacto.nombre}}</td>
+              <td>{{contacto.telefono}}</td>
+              <td>{{contacto.email}}</td>
+              <td>{{contacto.cargo}}</td>
+              <td>{{contacto.observaciones}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <ng-template #sinContactos>
+      <div class="alert alert-info text-center mb-0">
+        No hay contactos registrados para este proveedor.
+      </div>
+    </ng-template>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cerrar</button>
   </div>
 </ng-template>
 

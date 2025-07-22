@@ -328,7 +328,7 @@ export class AssetsComponent implements OnInit {
 
   getNumeroCompra(name: string): string {
     const activo = this.activosMap.get(name);
-    return activo && activo.idNumeroCompra ? activo.idNumeroCompra.toString() : 'No asignado';
+    return activo && activo.numeroCompra ? activo.numeroCompra : 'No asignado';
   }
 
   sortData(column: string): void {

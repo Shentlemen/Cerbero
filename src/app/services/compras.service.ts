@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators';
 
 export interface CompraDTO {
   idCompra: number;
+  numeroCompra: string;
   idTipoCompra: number;
   descripcion: string;
   fechaInicio: string;
@@ -52,11 +53,11 @@ export class ComprasService {
     );
   }
 
-  crearCompra(compra: CompraDTO): Observable<string> {
-    return this.http.post<ApiResponse<null>>(this.apiUrl, compra).pipe(
+  crearCompra(compra: CompraDTO): Observable<CompraDTO> {
+    return this.http.post<ApiResponse<CompraDTO>>(this.apiUrl, compra).pipe(
       map(response => {
         if (response.success) {
-          return response.message;
+          return response.data;
         } else {
           throw new Error(response.message);
         }

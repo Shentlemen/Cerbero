@@ -42,7 +42,7 @@
         <p>No hay alertas pendientes en este momento</p>
       </div>
       
-      <div *ngFor="let alert of alerts" class="alert-item">
+      <div *ngFor="let alert of pagedAlerts" class="alert-item">
         <div class="alert-content">
           <div class="alert-header">
             <div class="alert-main-info">
@@ -120,6 +120,18 @@
           {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
         </button>
       </div>
+    </div>
+    <div class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
     </div>
   </div>
 </div>

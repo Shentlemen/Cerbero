@@ -3,6 +3,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { AlertService, Alerta } from '../services/alert.service';
@@ -24,7 +25,8 @@ interface ApiResponse<T> {
   imports: [
     CommonModule,
     CanvasJSAngularChartsModule, 
-    RouterModule
+    RouterModule,
+    NgbPaginationModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -36,6 +38,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   lineChartOptions: any;
   alerts: Alerta[] = [];
   isChecking: boolean = false;
+  page: number = 1;
+  pageSize: number = 7;
+  collectionSize: number = 0;
 
   private typeMap: Record<string, string> = {
     '0': 'PC',
@@ -177,6 +182,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       (alertas: Alerta[]) => {
         console.log('Alertas recibidas:', alertas);
         this.alerts = alertas;
+        this.collectionSize = alertas.length;
+        this.page = 1;
       },
       error => {
         console.error('Error al cargar las alertas', error);
@@ -363,5 +370,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   showNewHardwareMessage(): void {
     alert('Este equipo es nuevo y aún no está registrado en la base de datos. Por favor, confirme la alerta para procesar su registro.');
+  }
+
+  get pagedAlerts(): Alerta[] {
+    const start = (this.page - 1) * this.pageSize;
+    const end = this.page * this.pageSize;
+    return this.alerts.slice(start, end);
   }
 }

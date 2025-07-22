@@ -1,15 +1,16 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
-import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbPaginationModule, NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
+import { ContactosService, ContactoDTO } from '../../services/contactos.service';
 
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule],
   templateUrl: './proveedores.component.html',
   styleUrls: ['./proveedores.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -30,15 +31,24 @@ export class ProveedoresComponent implements OnInit {
   proveedorSeleccionado: ProveedorDTO | null = null;
   showConfirmDialog = false;
   proveedorToDelete: number | null = null;
+  contactosFormArray: FormArray;
+  contactosCargados: boolean = false;
+  contactosEliminados: number[] = [];
+  activeTab: number = 0;
+  contactosVista: ContactoDTO[] = [];
+  proveedorVistaNombre: string = '';
+
+  readonly fb: FormBuilder;
 
   constructor(
     private proveedoresService: ProveedoresService,
-    private fb: FormBuilder,
-    private modalService: NgbModal
+    fb: FormBuilder,
+    private modalService: NgbModal,
+    private contactosService: ContactosService
   ) {
+    this.fb = fb;
     this.filterForm = this.fb.group({
       nombre: [''],
-      ruc: [''],
       nombreComercial: ['']
     });
 
@@ -46,9 +56,9 @@ export class ProveedoresComponent implements OnInit {
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       correoContacto: ['', [Validators.required, Validators.email]],
       telefonoContacto: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
-      nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
-      ruc: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]]
+      nombreComercial: ['', [Validators.required, Validators.minLength(3)]]
     });
+    this.contactosFormArray = this.fb.array([]);
   }
 
   ngOnInit(): void {
@@ -109,41 +119,81 @@ export class ProveedoresComponent implements OnInit {
   }
 
   abrirModal(modal: any, proveedor?: ProveedorDTO): void {
+    this.activeTab = 1;
     if (proveedor) {
       this.modoEdicion = true;
       this.proveedorSeleccionado = proveedor;
       this.proveedorForm.patchValue(proveedor);
+      this.cargarContactosProveedor(proveedor.idProveedores);
     } else {
       this.modoEdicion = false;
       this.proveedorSeleccionado = null;
       this.proveedorForm.reset();
+      this.contactosFormArray.clear();
+      this.contactosEliminados = [];
+      this.contactosCargados = true;
     }
     this.modalService.open(modal, { size: 'lg' });
+  }
+
+  cargarContactosProveedor(idProveedores: number) {
+    this.contactosFormArray.clear();
+    this.contactosEliminados = [];
+    this.contactosCargados = false;
+    this.contactosService.obtenerContactosPorProveedor(idProveedores).subscribe({
+      next: (contactos) => {
+        contactos.forEach(contacto => {
+          this.contactosFormArray.push(this.fb.group({
+            idContacto: [contacto.idContacto],
+            nombre: [contacto.nombre, Validators.required],
+            telefono: [contacto.telefono, Validators.required],
+            email: [contacto.email, [Validators.required, Validators.email]],
+            cargo: [contacto.cargo, Validators.required],
+            observaciones: [contacto.observaciones],
+            idProveedores: [contacto.idProveedores]
+          }));
+        });
+        this.contactosCargados = true;
+      },
+      error: () => {
+        this.contactosCargados = true;
+      }
+    });
+  }
+
+  get contactosControls() {
+    return (this.contactosFormArray.controls as FormGroup[] || []);
+  }
+
+  agregarContacto() {
+    this.contactosFormArray.push(this.fb.group({
+      idContacto: [null],
+      nombre: ['', Validators.required],
+      telefono: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      cargo: ['', Validators.required],
+      observaciones: [''],
+      idProveedores: [this.proveedorSeleccionado?.idProveedores || null]
+    }));
+  }
+
+  eliminarContacto(index: number) {
+    const contacto = this.contactosFormArray.at(index).value;
+    if (contacto.idContacto) {
+      this.contactosEliminados.push(contacto.idContacto);
+    }
+    this.contactosFormArray.removeAt(index);
   }
 
   guardarProveedor(): void {
     if (this.proveedorForm.valid) {
       const proveedorData = this.proveedorForm.value;
       console.log('Datos del formulario:', proveedorData);
-      
-      // Validar que el RUC no esté vacío
-      if (!proveedorData.ruc || proveedorData.ruc.trim() === '') {
-        this.error = 'El RUC es obligatorio';
-        return;
-      }
-
-      // Validar que el RUC tenga 11 dígitos
-      if (proveedorData.ruc.length !== 11) {
-        this.error = 'El RUC debe tener 11 dígitos';
-        return;
-      }
-
       // Validar que el teléfono tenga 9 dígitos
       if (proveedorData.telefonoContacto && proveedorData.telefonoContacto.length !== 9) {
         this.error = 'El teléfono debe tener 9 dígitos';
         return;
       }
-
       // Validar formato de correo electrónico
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(proveedorData.correoContacto)) {
@@ -165,7 +215,8 @@ export class ProveedoresComponent implements OnInit {
         console.log('Actualizando proveedor:', proveedorActualizado);
         this.proveedoresService.actualizarProveedor(this.proveedorSeleccionado.idProveedores, proveedorActualizado).subscribe({
           next: (proveedorActualizado) => {
-            console.log('Proveedor actualizado exitosamente:', proveedorActualizado);
+            // Sincronizar contactos
+            this.sincronizarContactos(proveedorActualizado.idProveedores);
             this.loadProveedores();
             this.modalService.dismissAll();
             this.error = null;
@@ -182,7 +233,8 @@ export class ProveedoresComponent implements OnInit {
         console.log('Creando nuevo proveedor:', proveedorData);
         this.proveedoresService.crearProveedor(proveedorData).subscribe({
           next: (proveedorCreado) => {
-            console.log('Proveedor creado exitosamente:', proveedorCreado);
+            // Guardar contactos nuevos
+            this.guardarContactosNuevos(proveedorCreado.idProveedores);
             this.loadProveedores();
             this.modalService.dismissAll();
             this.error = null;
@@ -208,6 +260,33 @@ export class ProveedoresComponent implements OnInit {
     }
   }
 
+  guardarContactosNuevos(idProveedores: number) {
+    for (const grupo of this.contactosFormArray.controls) {
+      const contacto = grupo.value;
+      if (!contacto.idContacto) {
+        contacto.idProveedores = idProveedores;
+        this.contactosService.crearContacto(contacto).subscribe();
+      }
+    }
+  }
+
+  sincronizarContactos(idProveedores: number) {
+    // Eliminar contactos marcados
+    for (const id of this.contactosEliminados) {
+      this.contactosService.eliminarContacto(id).subscribe();
+    }
+    // Crear o actualizar contactos
+    for (const grupo of this.contactosFormArray.controls) {
+      const contacto = grupo.value;
+      contacto.idProveedores = idProveedores;
+      if (contacto.idContacto) {
+        this.contactosService.actualizarContacto(contacto.idContacto, contacto).subscribe();
+      } else {
+        this.contactosService.crearContacto(contacto).subscribe();
+      }
+    }
+  }
+
   aplicarFiltros(): void {
     const filtros = this.filterForm.value;
     
@@ -217,11 +296,6 @@ export class ProveedoresComponent implements OnInit {
       if (filtros.nombre && proveedor.nombre) {
         cumpleFiltros = cumpleFiltros && 
           proveedor.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
-      }
-
-      if (filtros.ruc && proveedor.ruc) {
-        cumpleFiltros = cumpleFiltros && 
-          proveedor.ruc.includes(filtros.ruc);
       }
 
       if (filtros.nombreComercial && proveedor.nombreComercial) {
@@ -263,5 +337,20 @@ export class ProveedoresComponent implements OnInit {
   cancelarEliminacion(): void {
     this.showConfirmDialog = false;
     this.proveedorToDelete = null;
+  }
+
+  verContactosProveedor(proveedor: ProveedorDTO, modal: any) {
+    this.contactosVista = [];
+    this.proveedorVistaNombre = proveedor.nombre;
+    this.contactosService.obtenerContactosPorProveedor(proveedor.idProveedores).subscribe({
+      next: (contactos) => {
+        this.contactosVista = contactos;
+        this.modalService.open(modal, { size: 'xl' });
+      },
+      error: () => {
+        this.contactosVista = [];
+        this.modalService.open(modal, { size: 'xl' });
+      }
+    });
   }
 } 

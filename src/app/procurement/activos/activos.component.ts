@@ -507,10 +507,12 @@ export class ActivosComponent implements OnInit {
       this.activosFiltrados = [...this.activos];
     } else {
       this.activosFiltrados = this.activos.filter(activo => {
-        const fieldValue = activo[this.activeFilter as keyof ActivoDTO]?.toString().toLowerCase() || '';
-        if (this.activeFilter === 'idNumeroCompra') {
-          return fieldValue === value;
+        if (this.activeFilter === 'numeroCompra') {
+          const compra = this.compras.get(activo.idNumeroCompra);
+          const numeroCompra = compra && compra.numeroCompra ? compra.numeroCompra.toLowerCase() : '';
+          return numeroCompra.includes(value);
         }
+        const fieldValue = activo[this.activeFilter as keyof ActivoDTO]?.toString().toLowerCase() || '';
         return fieldValue.includes(value);
       });
     }
@@ -616,15 +618,21 @@ export class ActivosComponent implements OnInit {
     }
 
     this.activosFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof typeof a];
-      let valueB = b[column as keyof typeof b];
-
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
-
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
-
+      let valueA: any;
+      let valueB: any;
+      if (column === 'numeroCompra') {
+        const compraA = this.compras.get(a.idNumeroCompra);
+        const compraB = this.compras.get(b.idNumeroCompra);
+        valueA = compraA && compraA.numeroCompra ? compraA.numeroCompra.toLowerCase() : '';
+        valueB = compraB && compraB.numeroCompra ? compraB.numeroCompra.toLowerCase() : '';
+      } else {
+        valueA = a[column as keyof typeof a];
+        valueB = b[column as keyof typeof b];
+        if (valueA === null || valueA === undefined) valueA = '';
+        if (valueB === null || valueB === undefined) valueB = '';
+        if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+        if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+      }
       if (valueA < valueB) {
         return this.sortDirection === 'asc' ? -1 : 1;
       }
@@ -655,5 +663,10 @@ export class ActivosComponent implements OnInit {
         alert('Error al buscar el hardware.');
       }
     });
+  }
+
+  getNumeroCompraString(idCompra: number): string {
+    const compra = this.compras.get(idCompra);
+    return compra && compra.numeroCompra ? compra.numeroCompra : 'No asignado';
   }
 } 

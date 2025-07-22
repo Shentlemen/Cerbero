@@ -20,6 +20,7 @@ export interface ActivoDTO {
   idSecundario: string;
   idServicioGarantia: number;
   fechaFinGarantia: string;
+  numeroCompra?: string;
   activosRelacionados?: number[];
 }
 

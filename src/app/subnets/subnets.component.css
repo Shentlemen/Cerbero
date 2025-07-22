@@ -130,6 +130,44 @@ h3 i {
   color: #3498db;
 }
 
+/* Estilos para paginación */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.custom-pagination ::ng-deep .page-link {
+  color: #3498db;
+  border-color: #dee2e6;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.custom-pagination ::ng-deep .page-link:hover {
+  color: #2980b9;
+  background-color: #e9ecef;
+  border-color: #3498db;
+  transform: translateY(-1px);
+}
+
+.custom-pagination ::ng-deep .page-item.active .page-link {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+.custom-pagination ::ng-deep .page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+.custom-pagination ::ng-deep .page-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
 @media (max-width: 768px) {
   .container-fluid {
     padding: 1rem;
@@ -141,5 +179,9 @@ h3 i {
 
   .coordinate-input {
     width: 100px;
+  }
+  
+  .pagination-container {
+    margin-top: 1rem;
   }
 }

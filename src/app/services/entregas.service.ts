@@ -74,12 +74,16 @@ export class EntregasService {
   }
 
   getEntregasByItem(idItem: number): Observable<EntregaDTO[]> {
-    return this.http.get<EntregaDTO[]>(`${this.apiUrl}/by-item/${idItem}`).pipe(
-      switchMap(entregas => {
-        const enrichedEntregas = entregas.map(entrega => 
-          this.enrichEntregaWithLoteInfo(entrega)
-        );
-        return forkJoin(enrichedEntregas);
+    return this.http.get<ApiResponse<EntregaDTO[]>>(`${this.apiUrl}/by-item/${idItem}`).pipe(
+      switchMap(response => {
+        if (response.success) {
+          const enrichedEntregas = response.data.map(entrega => 
+            this.enrichEntregaWithLoteInfo(entrega)
+          );
+          return forkJoin(enrichedEntregas);
+        } else {
+          return throwError(() => new Error(response.message));
+        }
       })
     );
   }

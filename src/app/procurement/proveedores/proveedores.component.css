@@ -207,6 +207,26 @@
   transform: translateY(-2px);
 }
 
+/* Personalización de pestañas ngbNav */
+.nav-tabs .nav-link.active {
+  color: #2c3e50 !important; /* gris oscuro, igual que los títulos */
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 #dee2e6 #fff;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link {
+  color: #888 !important;
+  font-weight: 500;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #41A1AF !important;
+}
+
 @media (max-width: 768px) {
   .proveedores-container {
     padding: 1rem;

@@ -30,4 +30,9 @@ export class NetworkInfoService {
   getNetworkInfoByMac(mac: string): Observable<ApiResponse<NetworkInfoDTO>> {
     return this.http.get<ApiResponse<NetworkInfoDTO>>(`${this.apiUrl}/${mac}`);
   }
+  
+  // Método para buscar dispositivos por nombre
+  searchDevicesByName(name: string): Observable<NetworkInfoDTO[]> {
+    return this.http.get<NetworkInfoDTO[]>(`${this.configService.getApiUrl()}/device/search?name=${name}`);
+  }
 } 

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { SoftwareService, SoftwareDTO } from '../services/software.service';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -13,7 +14,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
   imports: [
     CommonModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    NgbPaginationModule
   ],
   templateUrl: './software.component.html',
   styleUrls: ['./software.component.css']
@@ -24,8 +26,14 @@ export class SoftwareComponent implements OnInit {
   loading: boolean = true;
   errorMessage: string | null = null;
   showHidden: boolean = false;
+  showOnlyHidden: boolean = false;
+  showOnlyForbidden: boolean = false;
   searchTerm: string = '';
   private searchSubject = new Subject<string>();
+  activeTab: 'total' | 'hidden' | 'forbidden' = 'total';
+  page: number = 1;
+  pageSize: number = 10;
+  collectionSize: number = 0;
 
   constructor(
     private softwareService: SoftwareService,
@@ -43,6 +51,12 @@ export class SoftwareComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSoftware();
+  }
+
+  get pagedSoftwareList(): SoftwareDTO[] {
+    const start = (this.page - 1) * this.pageSize;
+    const end = this.page * this.pageSize;
+    return this.filteredSoftwareList.slice(start, end);
   }
 
   get totalSoftware(): number {
@@ -69,6 +83,7 @@ export class SoftwareComponent implements OnInit {
   updateFilteredList(): void {
     if (!this.softwareList) {
       this.filteredSoftwareList = [];
+      this.collectionSize = 0;
       return;
     }
 
@@ -82,11 +97,19 @@ export class SoftwareComponent implements OnInit {
       const matchesSearch = !searchTermLower || 
         nombre.includes(searchTermLower) ||
         publisher.includes(searchTermLower);
-      
-      const matchesVisibility = this.showHidden || !software.hidden;
-      
-      return matchesSearch && matchesVisibility;
+
+      if (this.activeTab === 'hidden') {
+        return matchesSearch && !!software.hidden;
+      } else if (this.activeTab === 'forbidden') {
+        return matchesSearch && !!software.forbidden;
+      } else if (this.activeTab === 'total') {
+        // Solo los que no están ni prohibidos ni escondidos
+        return matchesSearch && !software.hidden && !software.forbidden;
+      }
+      return matchesSearch;
     });
+    this.collectionSize = this.filteredSoftwareList.length;
+    this.page = 1;
   }
 
   filterSoftware(event: Event): void {
@@ -94,36 +117,54 @@ export class SoftwareComponent implements OnInit {
     this.searchSubject.next(input.value);
   }
 
-  toggleHiddenSoftware(): void {
-    this.showHidden = !this.showHidden;
+  showTotalSoftware(): void {
+    this.activeTab = 'total';
+    this.updateFilteredList();
+  }
+
+  showOnlyHiddenSoftware(): void {
+    this.activeTab = 'hidden';
+    this.updateFilteredList();
+  }
+
+  showOnlyForbiddenSoftware(): void {
+    this.activeTab = 'forbidden';
     this.updateFilteredList();
   }
 
   toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
-    this.loading = true;
     this.errorMessage = null;
 
-    this.softwareService.toggleSoftwareVisibility(software, !software.hidden).subscribe({
+    // Actualización optimista
+    const prevHidden = software.hidden;
+    software.hidden = !software.hidden;
+    this.updateFilteredList();
+
+    this.softwareService.toggleSoftwareVisibility(software, software.hidden).subscribe({
       next: (updatedSoftware) => {
         const index = this.softwareList.findIndex(s => s.idSoftware === software.idSoftware);
         if (index !== -1) {
           this.softwareList[index] = updatedSoftware;
           this.updateFilteredList();
         }
-        this.loading = false;
       },
       error: (error) => {
+        software.hidden = prevHidden; // revertir si falla
+        this.updateFilteredList();
         this.errorMessage = 'Error al actualizar la visibilidad: ' + error.message;
-        this.loading = false;
       }
     });
   }
 
   toggleSoftwareForbidden(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
-    this.loading = true;
     this.errorMessage = null;
+
+    // Actualización optimista
+    const prevForbidden = software.forbidden;
+    software.forbidden = !software.forbidden;
+    this.updateFilteredList();
 
     this.softwareService.toggleSoftwareForbidden(software).subscribe({
       next: (updatedSoftware) => {
@@ -134,11 +175,11 @@ export class SoftwareComponent implements OnInit {
           this.softwareList[index] = { ...updatedSoftware, count };
           this.updateFilteredList();
         }
-        this.loading = false;
       },
       error: (error) => {
+        software.forbidden = prevForbidden; // revertir si falla
+        this.updateFilteredList();
         this.errorMessage = 'Error al actualizar el estado prohibido: ' + error.message;
-        this.loading = false;
       }
     });
   }

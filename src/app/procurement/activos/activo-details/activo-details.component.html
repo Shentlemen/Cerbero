@@ -76,13 +76,13 @@
         <div class="detail-item">
           <span class="label">Número de Compra:</span>
           <span class="value compra-link" (click)="verDetallesCompra(activo.idNumeroCompra, compraModal)">
-            {{activo.idNumeroCompra}}
+            {{numeroCompraInfo}}
           </span>
         </div>
         <div class="detail-item">
           <span class="label">Item:</span>
           <span class="value item-link" (click)="verDetallesLote(activo.idItem, loteModal)">
-            {{activo.idItem}}
+            {{nombreItemInfo}}
           </span>
         </div>
       </div>
@@ -92,7 +92,7 @@
         <div class="detail-item">
           <span class="label">Entrega:</span>
           <span class="value entrega-link" (click)="verDetallesEntrega(activo.idEntrega, entregaModal)">
-            {{activo.idEntrega}}
+            {{descripcionEntregaInfo}}
           </span>
         </div>
         <div class="detail-item">
@@ -175,17 +175,17 @@
     <div class="ubicacion-details" *ngIf="entregaSeleccionada">
       <div class="detail-row">
         <div class="detail-label">
-          <i class="fas fa-id-card"></i>
-          ID Entrega
+          <i class="fas fa-align-left"></i>
+          Descripción
         </div>
-        <div class="detail-value">{{entregaSeleccionada.idEntrega}}</div>
+        <div class="detail-value">{{entregaSeleccionada.descripcion}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-box"></i>
-          ID Item
+          Nombre del Item
         </div>
-        <div class="detail-value">{{entregaSeleccionada.idItem}}</div>
+        <div class="detail-value">{{nombreItemEntregaInfo}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
@@ -193,13 +193,6 @@
           Cantidad
         </div>
         <div class="detail-value">{{entregaSeleccionada.cantidad}}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-align-left"></i>
-          Descripción
-        </div>
-        <div class="detail-value">{{entregaSeleccionada.descripcion}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
@@ -316,13 +309,6 @@
     <div class="ubicacion-details" *ngIf="usuarioSeleccionado">
       <div class="detail-row">
         <div class="detail-label">
-          <i class="fas fa-id-card"></i>
-          ID
-        </div>
-        <div class="detail-value">{{usuarioSeleccionado.idUsuario}}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">
           <i class="fas fa-user"></i>
           Nombre
         </div>
@@ -369,13 +355,6 @@
     <div class="ubicacion-details" *ngIf="tipoActivoSeleccionado">
       <div class="detail-row">
         <div class="detail-label">
-          <i class="fas fa-id-card"></i>
-          ID
-        </div>
-        <div class="detail-value">{{tipoActivoSeleccionado.idActivo}}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">
           <i class="fas fa-align-left"></i>
           Descripción
         </div>
@@ -409,16 +388,16 @@
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-id-card"></i>
-          ID Compra
+          Número de Compra
         </div>
-        <div class="detail-value">{{compraSeleccionada.idCompra}}</div>
+        <div class="detail-value">{{numeroCompraInfo}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-tag"></i>
           Tipo de Compra
         </div>
-        <div class="detail-value">{{compraSeleccionada.idTipoCompra}}</div>
+        <div class="detail-value">{{tipoCompraDescripcion}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
@@ -460,7 +439,7 @@
   <div class="modal-header">
     <h4 class="modal-title">
       <i class="fas fa-boxes me-2"></i>
-      Detalles del Lote
+      Detalles del Item
     </h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
@@ -468,17 +447,17 @@
     <div class="ubicacion-details" *ngIf="loteSeleccionado">
       <div class="detail-row">
         <div class="detail-label">
-          <i class="fas fa-id-card"></i>
-          ID Item
+          <i class="fas fa-box"></i>
+          Nombre del Item
         </div>
-        <div class="detail-value">{{loteSeleccionado.idItem}}</div>
+        <div class="detail-value">{{nombreItemInfo}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-shopping-cart"></i>
-          ID Compra
+          Número de Compra
         </div>
-        <div class="detail-value">{{loteSeleccionado.idCompra}}</div>
+        <div class="detail-value">{{numeroCompraLoteInfo}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
@@ -513,7 +492,7 @@
           <i class="fas fa-tools"></i>
           Servicio de Garantía
         </div>
-        <div class="detail-value">{{loteSeleccionado.idServicioGarantia}}</div>
+        <div class="detail-value">{{nombreComercialServicioInfo}}</div>
       </div>
     </div>
   </div>
@@ -533,13 +512,6 @@
   </div>
   <div class="modal-body">
     <div class="ubicacion-details" *ngIf="servicioGarantiaSeleccionado">
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-id-card"></i>
-          ID
-        </div>
-        <div class="detail-value">{{servicioGarantiaSeleccionado.idServicioGarantia}}</div>
-      </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-building"></i>

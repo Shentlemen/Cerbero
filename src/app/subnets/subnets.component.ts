@@ -5,6 +5,7 @@ import { SubnetService, SubnetDTO, SubnetCoordinatesDTO } from '../services/subn
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 
 // Extendemos la interfaz SubnetDTO para incluir las propiedades adicionales
 interface ExtendedSubnet extends SubnetDTO {
@@ -25,7 +26,7 @@ declare module 'leaflet' {
 @Component({
   selector: 'app-subnets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgbPaginationModule],
   templateUrl: './subnets.component.html',
   styleUrls: ['./subnets.component.css']
 })
@@ -38,6 +39,11 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   public sortDirection: 'asc' | 'desc' = 'asc';
   public loading: boolean = false;
   public errorMessage: string | null = null;
+  
+  // Propiedades para paginación
+  public page: number = 1;
+  public pageSize: number = 5;
+  public collectionSize: number = 0;
 
   private montevideoCenter = {
     lat: -34.9011,
@@ -82,6 +88,10 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
           };
         });
         
+        // Configurar paginación
+        this.collectionSize = this.subnets.length;
+        this.page = 1;
+        
         this.addMarkersToMap();
         this.loading = false;
       },
@@ -91,6 +101,13 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
         this.loading = false;
       }
     });
+  }
+
+  // Getter para obtener las subredes paginadas
+  get pagedSubnets(): ExtendedSubnet[] {
+    const start = (this.page - 1) * this.pageSize;
+    const end = this.page * this.pageSize;
+    return this.subnets.slice(start, end);
   }
 
   isValidCoordinates(subnet: ExtendedSubnet): boolean {
