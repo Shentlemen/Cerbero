@@ -26,6 +26,7 @@ export const routes: Routes = [
       { path: 'asset-details/:id', loadComponent: () => import('./assetdetails/assetdetails.component').then(m => m.AssetdetailsComponent) },
       { path: 'software', component: SoftwareComponent },
       { path: 'settings', loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'user-management', loadComponent: () => import('./user-management/user-management.component').then(m => m.UserManagementComponent) },
       { path: 'procurement', component: ProcurementComponent },
       { path: 'procurement/activos', loadComponent: () => import('./procurement/activos/activos.component').then(m => m.ActivosComponent) },
       { path: 'procurement/activos/:id', loadComponent: () => import('./procurement/activos/activo-details/activo-details.component').then(m => m.ActivoDetailsComponent) },

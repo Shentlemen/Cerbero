@@ -31,7 +31,7 @@
         </div>
       </div>
       <div class="actions">
-        <button class="btn btn-export" (click)="abrirModal(activoModal)">
+        <button class="btn btn-export" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Activo
         </button>
@@ -40,6 +40,11 @@
   </div>
 
   <div class="content-section">
+    <div class="row mb-3">
+      <div class="col-12">
+        <input type="text" class="form-control" placeholder="Buscar por número de compra..." [formControl]="numeroCompraControl" style="max-width: 320px;">
+      </div>
+    </div>
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -64,17 +69,6 @@
                     'fa-sort-down': sortColumn === 'numeroCompra' && sortDirection === 'desc',
                     'fa-sort': sortColumn !== 'numeroCompra'
                   }"></i>
-                  <i class="fas fa-search search-icon" (click)="toggleFilter('numeroCompra'); $event.stopPropagation()"></i>
-                  <div *ngIf="activeFilter === 'numeroCompra'" class="filter-input-container" (click)="$event.stopPropagation()">
-                    <input 
-                      type="text" 
-                      [value]="filterValues['numeroCompra']"
-                      (input)="applyColumnFilter($event)"
-                      (keyup)="handleKeyPress($event)"
-                      placeholder="Buscar..."
-                      class="filter-input"
-                      autofocus>
-                  </div>
                 </div>
               </th>
               <th>
@@ -162,10 +156,10 @@
                   <button class="btn btn-primary btn-sm me-2" (click)="verDetalles(activo)">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(activoModal, activo)">
+                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(activoModal, activo)" *ngIf="permissionsService.canEditAssets()">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarActivo(activo.idActivo)">
+                  <button class="btn btn-danger btn-sm" (click)="eliminarActivo(activo.idActivo)" *ngIf="permissionsService.canEditAssets()">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </div>
@@ -595,3 +589,22 @@
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
   </div>
 </ng-template> 
+
+<!-- Modal de confirmación para eliminar activo -->
+<div class="modal fade" #modalConfirmacion tabindex="-1" role="dialog" aria-labelledby="modalConfirmacionLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalConfirmacionLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro de que desea eliminar este activo? Esta acción no se puede deshacer.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelarEliminacion()">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="confirmarEliminacion()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div> 

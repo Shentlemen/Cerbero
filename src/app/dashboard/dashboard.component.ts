@@ -10,6 +10,7 @@ import { AlertService, Alerta } from '../services/alert.service';
 import { finalize } from 'rxjs/operators';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
+import { PermissionsService } from '../services/permissions.service';
 
 declare var bootstrap: any;
 
@@ -38,6 +39,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   lineChartOptions: any;
   alerts: Alerta[] = [];
   isChecking: boolean = false;
+  isCleaning: boolean = false;
   page: number = 1;
   pageSize: number = 7;
   collectionSize: number = 0;
@@ -54,7 +56,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private biosService: BiosService,
     private router: Router,
     private alertService: AlertService,
-    private networkInfoService: NetworkInfoService
+    private networkInfoService: NetworkInfoService,
+    private permissionsService: PermissionsService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -292,6 +295,27 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
+  cleanupOrphanedAlerts(): void {
+    if (this.isCleaning) return;
+    
+    this.isCleaning = true;
+    this.alertService.cleanupOrphanedAlerts().pipe(
+      finalize(() => {
+        this.isCleaning = false;
+      })
+    ).subscribe({
+      next: () => {
+        // Recargar alertas después de limpiar
+        this.loadAlertas();
+      },
+      error: (error) => {
+        console.error('Error al limpiar alertas huérfanas:', error);
+        // Aquí puedes mostrar un mensaje al usuario usando un servicio de notificaciones
+        // o un componente de toast/snackbar
+      }
+    });
+  }
+
   navigateToAssetDetails(hardwareId: number): void {
     this.router.navigate(['/menu/asset-details', hardwareId])
       .then(() => {
@@ -376,5 +400,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const start = (this.page - 1) * this.pageSize;
     const end = this.page * this.pageSize;
     return this.alerts.slice(start, end);
+  }
+
+  canConfirmAlerts(): boolean {
+    return this.permissionsService.canConfirmAlerts();
   }
 }

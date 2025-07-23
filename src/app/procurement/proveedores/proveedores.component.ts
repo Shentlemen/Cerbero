@@ -6,6 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 import { ContactosService, ContactoDTO } from '../../services/contactos.service';
+import { PermissionsService } from '../../services/permissions.service';
 
 @Component({
   selector: 'app-proveedores',
@@ -44,7 +45,8 @@ export class ProveedoresComponent implements OnInit {
     private proveedoresService: ProveedoresService,
     fb: FormBuilder,
     private modalService: NgbModal,
-    private contactosService: ContactosService
+    private contactosService: ContactosService,
+    private permissionsService: PermissionsService
   ) {
     this.fb = fb;
     this.filterForm = this.fb.group({
@@ -352,5 +354,9 @@ export class ProveedoresComponent implements OnInit {
         this.modalService.open(modal, { size: 'xl' });
       }
     });
+  }
+
+  canManageProviders(): boolean {
+    return this.permissionsService.canManageProviders();
   }
 } 

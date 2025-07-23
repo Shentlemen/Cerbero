@@ -26,14 +26,24 @@
         <i class="fa-solid fa-bell"></i>
         Alertas Recientes
       </h2>
-      <button 
-        class="btn btn-check-changes" 
-        (click)="checkHardwareChanges()" 
-        [disabled]="isChecking"
-        title="Verificar cambios en el hardware">
-        <i class="fas fa-sync-alt" [class.fa-spin]="isChecking"></i>
-        {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
-      </button>
+      <div class="alerts-buttons">
+        <button 
+          class="btn btn-check-changes" 
+          (click)="checkHardwareChanges()" 
+          [disabled]="isChecking"
+          title="Verificar cambios en el hardware">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isChecking"></i>
+          {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
+        </button>
+        <button 
+          class="btn btn-cleanup-alerts" 
+          (click)="cleanupOrphanedAlerts()" 
+          [disabled]="isCleaning"
+          title="Limpiar alertas huérfanas (hardware eliminado o software ya no prohibido)">
+          <i class="fas fa-broom" [class.fa-spin]="isCleaning"></i>
+          {{ isCleaning ? 'Limpiando...' : 'Limpiar alertas' }}
+        </button>
+      </div>
     </div>
     <div class="alert-list">
       <div *ngIf="alerts.length === 0" class="no-alerts">
@@ -116,7 +126,7 @@
           class="btn btn-sm btn-primary" 
           (click)="confirmarAlerta(alert)"
           [disabled]="alert.confirmada"
-          *ngIf="!alert.softwareForbidden">
+          *ngIf="!alert.softwareForbidden && canConfirmAlerts()">
           {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
         </button>
       </div>

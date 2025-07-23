@@ -5,9 +5,12 @@
     <form class="login-form" (ngSubmit)="onSubmit()">
         <input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required>
         <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required>
-        <button type="submit">Iniciar Sesión</button>
+        <button type="submit" [disabled]="loading">
+            <span *ngIf="loading">Iniciando sesión...</span>
+            <span *ngIf="!loading">Iniciar Sesión</span>
+        </button>
         <div *ngIf="loginError" class="login-error">
-            Usuario o contraseña incorrectos
+            {{ errorMessage }}
         </div>
     </form>
 </div>

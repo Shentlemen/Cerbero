@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { PermissionsService } from '../services/permissions.service';
 
 @Component({
   selector: 'app-software',
@@ -37,7 +38,8 @@ export class SoftwareComponent implements OnInit {
 
   constructor(
     private softwareService: SoftwareService,
-    private router: Router
+    private router: Router,
+    private permissionsService: PermissionsService
   ) {
     // Configurar el filtrado reactivo
     this.searchSubject.pipe(
@@ -191,5 +193,9 @@ export class SoftwareComponent implements OnInit {
         softwareName: software.nombre
       }
     });
+  }
+
+  canManageSoftware(): boolean {
+    return this.permissionsService.canManageSoftware();
   }
 }

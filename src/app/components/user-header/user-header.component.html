@@ -1,0 +1,22 @@
+<div class="user-header" *ngIf="currentUser">
+  <div class="user-info">
+    <div class="user-avatar">
+      <i [class]="getRoleIcon(currentUser.role)"></i>
+    </div>
+    <div class="user-details">
+      <div class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
+      <div class="user-role">
+        <span class="badge" 
+              [class]="currentUser.role === 'GM' ? 'bg-danger' : currentUser.role === 'ADMIN' ? 'bg-warning' : 'bg-secondary'">
+          {{ getRoleLabel(currentUser.role) }}
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="user-actions">
+    <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Cerrar Sesión</span>
+    </button>
+  </div>
+</div> 

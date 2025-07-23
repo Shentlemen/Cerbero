@@ -105,7 +105,7 @@
               </span>
             </td>
             <td>
-              <div class="action-buttons">
+              <div class="action-buttons" *ngIf="canManageSoftware()">
                 <button class="visibility-button" 
                         (click)="toggleSoftwareVisibility(software, $event)"
                         [title]="software.hidden ? 'Mostrar software' : 'Ocultar software'"
@@ -119,6 +119,12 @@
                         [class.forbidden]="software.forbidden">
                   <i class="fas" [ngClass]="software.forbidden ? 'fa-ban' : 'fa-check-circle'"></i>
                 </button>
+              </div>
+              <div class="action-buttons" *ngIf="!canManageSoftware()">
+                <span class="read-only-badge">
+                  <i class="fas fa-eye"></i>
+                  Solo lectura
+                </span>
               </div>
             </td>
           </tr>

@@ -5,6 +5,10 @@ import { HelperService } from '../services/helper.service';
 import { HelpTip } from '../services/helper.service';
 import { filter, Subscription } from 'rxjs';
 import { HelperDogComponent } from '../components/helper-dog/helper-dog.component';
+import { UserHeaderComponent } from '../components/user-header/user-header.component';
+import { AuthService } from '../services/auth.service';
+import { User } from '../interfaces/auth.interface';
+import { PermissionsService } from '../services/permissions.service';
 
 @Component({
   selector: 'app-menu',
@@ -13,7 +17,8 @@ import { HelperDogComponent } from '../components/helper-dog/helper-dog.componen
     CommonModule,
     RouterOutlet,
     RouterModule,
-    HelperDogComponent
+    HelperDogComponent,
+    UserHeaderComponent
   ],
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.css']
@@ -25,6 +30,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   isHelperActive = false;
   showHelperMessage = false;
   currentHelperTip?: HelpTip;
+  currentUser: User | null = null;
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección
@@ -35,7 +41,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/procurement/tipos-activo',
     '/menu/procurement/tipos-compra',
     '/menu/procurement/servicios-garantia',
-    '/menu/procurement/usuarios'
+    '/menu/procurement/usuarios',
+    '/menu/user-management'
   ];
   private procurementRoutes = [
     '/menu/procurement/activos',
@@ -47,7 +54,9 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private helperService: HelperService
+    private helperService: HelperService,
+    private authService: AuthService,
+    private permissionsService: PermissionsService
   ) {
     this.routerSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -87,7 +96,10 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // ... código existente ...
+    // Suscribirse al usuario actual
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
   }
 
   ngOnDestroy() {
@@ -131,5 +143,42 @@ export class MenuComponent implements OnInit, OnDestroy {
   closeHelper() {
     this.isHelperActive = false;
     this.showHelperMessage = false;
+  }
+
+  isGM(): boolean {
+    return this.permissionsService.isGM();
+  }
+
+  canAccessConfiguration(): boolean {
+    return this.permissionsService.canAccessConfiguration();
+  }
+
+  canManageUsers(): boolean {
+    return this.permissionsService.canManageUsers();
+  }
+
+  // Métodos para el user-header integrado
+  getRoleLabel(role: string): string {
+    switch (role) {
+      case 'GM': return 'Game Master';
+      case 'ADMIN': return 'Administrador';
+      case 'USER': return 'Usuario';
+      default: return role;
+    }
+  }
+
+  getRoleIcon(role: string): string {
+    switch (role) {
+      case 'GM': return 'fas fa-crown'; // Corona para Game Master
+      case 'ADMIN': return 'fas fa-shield-alt'; // Escudo para Administrador
+      case 'USER': return 'fas fa-user'; // Usuario normal
+      default: return 'fas fa-user-circle';
+    }
+  }
+
+  logout(): void {
+    this.authService.logout();
+    // Redirigir al login
+    window.location.href = '/#/login';
   }
 }

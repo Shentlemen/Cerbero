@@ -10,6 +10,7 @@ import { BiosService } from '../services/bios.service';
 import { forkJoin } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
 import { ActivosService } from '../services/activos.service';
+import { PermissionsService } from '../services/permissions.service';
 
 @Component({
   selector: 'app-assets',
@@ -52,7 +53,8 @@ export class AssetsComponent implements OnInit {
     private activosService: ActivosService,
     private fb: FormBuilder,
     private router: Router,
-    public route: ActivatedRoute
+    public route: ActivatedRoute,
+    private permissionsService: PermissionsService
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -442,5 +444,9 @@ export class AssetsComponent implements OnInit {
     if (event.key === 'Enter') {
       this.activeFilter = null;
     }
+  }
+
+  canManageAssets(): boolean {
+    return this.permissionsService.canManageAssets();
   }
 }

@@ -10,7 +10,7 @@
           </div>
         </div>
       </div>
-      <div class="actions">
+      <div class="actions" *ngIf="canManageProviders()">
         <button class="btn btn-export" (click)="abrirModal(proveedorModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo Proveedor
@@ -73,12 +73,20 @@
                     <i class="fas fa-address-book"></i>
                     Ver contactos
                   </button>
-                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(proveedorModal, proveedor)">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarProveedor(proveedor.idProveedores)">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
+                  <div *ngIf="canManageProviders()">
+                    <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(proveedorModal, proveedor)">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" (click)="eliminarProveedor(proveedor.idProveedores)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                  <div *ngIf="!canManageProviders()">
+                    <span class="read-only-badge">
+                      <i class="fas fa-eye"></i>
+                      Solo lectura
+                    </span>
+                  </div>
                 </div>
               </td>
             </tr>

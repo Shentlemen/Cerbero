@@ -11,6 +11,7 @@ import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.ser
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService } from '../../services/entregas.service';
+import { PermissionsService } from '../../services/permissions.service';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
@@ -58,7 +59,8 @@ export class ComprasComponent implements OnInit {
     private serviciosGarantiaService: ServiciosGarantiaService,
     private lotesService: LotesService,
     private entregasService: EntregasService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private permissionsService: PermissionsService
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -502,5 +504,9 @@ export class ComprasComponent implements OnInit {
 
   get numeroCompraControl(): FormControl {
     return this.filterForm.get('numeroCompra') as FormControl;
+  }
+
+  canManagePurchases(): boolean {
+    return this.permissionsService.canManagePurchases();
   }
 } 

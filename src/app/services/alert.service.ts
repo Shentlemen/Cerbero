@@ -65,6 +65,19 @@ export class AlertService {
       })
     );
   }
+
+  cleanupOrphanedAlerts(): Observable<any> {
+    return this.http.post(`${this.changeDetectionUrl}/cleanup-orphaned-alerts`, {}).pipe(
+      catchError(error => {
+        console.error('Error en cleanupOrphanedAlerts:', error);
+        if (error.status === 500) {
+          const errorMessage = error.error || 'Error interno del servidor al limpiar alertas';
+          return throwError(() => new Error(errorMessage));
+        }
+        return throwError(() => error);
+      })
+    );
+  }
 }
 
 export interface Alerta {

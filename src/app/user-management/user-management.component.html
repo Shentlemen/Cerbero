@@ -1,0 +1,193 @@
+<div class="user-management-container">
+  <!-- Partículas flotantes -->
+  <div class="floating-particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Título holográfico -->
+    <h1 class="page-title">GESTIÓN DE USUARIOS</h1>
+
+    <!-- Mensajes de error y éxito -->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+    
+    <div *ngIf="successMessage" class="success-message">
+      {{ successMessage }}
+    </div>
+
+    <!-- Botón de agregar usuario -->
+    <div class="button-container">
+      <button class="add-user-btn" (click)="showCreateForm()" [disabled]="showForm">
+        Agregar Usuario
+      </button>
+    </div>
+
+    <!-- Modal de usuario -->
+    <div *ngIf="showForm" class="user-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">{{ editingUser ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+        </div>
+        
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label for="username">Usuario</label>
+            <input 
+              type="text" 
+              id="username" 
+              formControlName="username" 
+              [readonly]="editingUser"
+              placeholder="Ingrese el nombre de usuario">
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email" 
+              placeholder="Ingrese el email">
+          </div>
+
+          <div class="form-group">
+            <label for="firstName">Nombre</label>
+            <input 
+              type="text" 
+              id="firstName" 
+              formControlName="firstName" 
+              placeholder="Ingrese el nombre">
+          </div>
+          
+          <div class="form-group">
+            <label for="lastName">Apellido</label>
+            <input 
+              type="text" 
+              id="lastName" 
+              formControlName="lastName" 
+              placeholder="Ingrese el apellido">
+          </div>
+
+          <div class="form-group">
+            <label for="password">
+              {{ editingUser ? 'Nueva Contraseña' : 'Contraseña' }}
+              <small *ngIf="editingUser" class="password-hint">(dejar vacío para mantener la actual)</small>
+            </label>
+            <input 
+              type="password" 
+              id="password" 
+              formControlName="password" 
+              [placeholder]="editingUser ? 'Ingrese nueva contraseña (opcional)' : 'Ingrese la contraseña'">
+          </div>
+          
+          <div class="form-group">
+            <label for="role">Rol</label>
+            <select 
+              id="role" 
+              formControlName="role">
+              <option *ngFor="let role of roles" [value]="role.value">
+                {{ role.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="modal-actions">
+            <button 
+              type="submit" 
+              class="save-btn"
+              [disabled]="userForm.invalid || loading">
+              {{ editingUser ? 'Actualizar' : 'Crear' }}
+            </button>
+            <button 
+              type="button" 
+              class="cancel-btn"
+              (click)="cancelForm()"
+              [disabled]="loading">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <div *ngIf="!loading && users.length > 0">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Nombre Completo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Fecha Creación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>
+              <strong>{{ user.username }}</strong>
+              <span *ngIf="isCurrentUser(user)" class="current-user-badge">(Tú)</span>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.firstName }} {{ user.lastName }}</td>
+            <td>
+              <span class="role-badge" [class]="'role-' + user.role.toLowerCase()">
+                {{ getRoleLabel(user.role) }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="user.enabled ? 'status-active' : 'status-inactive'">
+                {{ user.enabled ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>{{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <button 
+                class="action-btn edit-btn"
+                (click)="showEditForm(user)"
+                title="Editar">
+                Editar
+              </button>
+              <button 
+                class="action-btn delete-btn"
+                (click)="deleteUser(user)"
+                [disabled]="isCurrentUser(user) || user.role === 'GM'"
+                title="Eliminar">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div *ngIf="loading && !showForm" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Cargando usuarios...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay usuarios -->
+    <div *ngIf="!loading && users.length === 0" class="empty-state">
+      <p>No hay usuarios registrados</p>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style> 

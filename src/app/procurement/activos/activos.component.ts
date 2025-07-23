@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewEncapsulation, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
@@ -15,6 +15,7 @@ import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/se
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
 import { firstValueFrom } from 'rxjs';
 import { importProvidersFrom } from '@angular/core';
+import { PermissionsService } from '../../services/permissions.service';
 
 @Component({
   selector: 'app-activos',
@@ -62,11 +63,8 @@ export class ActivosComponent implements OnInit {
   bajaCount: number = 0;
   totalActivos: number = 0;
 
-  // Propiedades para el filtrado
-  activeFilter: string | null = null;
-  filterValues: { [key: string]: string } = {
-    'idNumeroCompra': ''
-  };
+  // Control de búsqueda
+  numeroCompraControl: FormControl = new FormControl('');
 
   // Listas para los dropdowns
   hardwareList: any[] = [];
@@ -100,7 +98,8 @@ export class ActivosComponent implements OnInit {
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    public permissionsService: PermissionsService
   ) {
     this.activoForm = this.fb.group({
       name: ['', Validators.required],
@@ -129,6 +128,11 @@ export class ActivosComponent implements OnInit {
     this.cargarEntregas();
     this.cargarServiciosGarantia();
     this.cargarTiposActivo();
+    
+    // Suscribirse a cambios en el control de búsqueda
+    this.numeroCompraControl.valueChanges.subscribe(() => {
+      this.aplicarFiltroBusqueda();
+    });
   }
 
   cargarUsuarios() {
@@ -489,43 +493,7 @@ export class ActivosComponent implements OnInit {
     }
   }
 
-  toggleFilter(column: string): void {
-    if (this.activeFilter === column) {
-      this.activeFilter = null;
-    } else {
-      this.activeFilter = column;
-    }
-  }
 
-  applyColumnFilter(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.toLowerCase();
-    if (this.activeFilter) {
-      this.filterValues[this.activeFilter] = value;
-    }
-    
-    if (!this.activeFilter || !value) {
-      this.activosFiltrados = [...this.activos];
-    } else {
-      this.activosFiltrados = this.activos.filter(activo => {
-        if (this.activeFilter === 'numeroCompra') {
-          const compra = this.compras.get(activo.idNumeroCompra);
-          const numeroCompra = compra && compra.numeroCompra ? compra.numeroCompra.toLowerCase() : '';
-          return numeroCompra.includes(value);
-        }
-        const fieldValue = activo[this.activeFilter as keyof ActivoDTO]?.toString().toLowerCase() || '';
-        return fieldValue.includes(value);
-      });
-    }
-    
-    this.collectionSize = this.activosFiltrados.length;
-    this.page = 1;
-  }
-
-  handleKeyPress(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
-      this.activeFilter = null;
-    }
-  }
 
   // Método para cargar hardware
   cargarHardware() {
@@ -668,5 +636,22 @@ export class ActivosComponent implements OnInit {
   getNumeroCompraString(idCompra: number): string {
     const compra = this.compras.get(idCompra);
     return compra && compra.numeroCompra ? compra.numeroCompra : 'No asignado';
+  }
+
+  aplicarFiltroBusqueda(): void {
+    const valorBusqueda = this.numeroCompraControl.value?.toLowerCase() || '';
+    
+    if (!valorBusqueda) {
+      this.activosFiltrados = [...this.activos];
+    } else {
+      this.activosFiltrados = this.activos.filter(activo => {
+        const compra = this.compras.get(activo.idNumeroCompra);
+        const numeroCompra = compra && compra.numeroCompra ? compra.numeroCompra.toLowerCase() : '';
+        return numeroCompra.includes(valorBusqueda);
+      });
+    }
+    
+    this.collectionSize = this.activosFiltrados.length;
+    this.page = 1;
   }
 } 

@@ -40,6 +40,104 @@ html, body {
   background: #2980b9;
 }
 
+/* Sección de usuario integrada en el menú */
+.user-section {
+  margin: 0 10px 15px 10px;
+  padding: 10px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.user-section app-user-header {
+  display: block;
+}
+
+/* Reglas con mayor especificidad para el user-header dentro del menú */
+.sidenav .user-section .user-header {
+  position: static !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #ecf0f1 !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+}
+
+.sidenav .user-section .user-info {
+  flex-direction: column !important;
+  gap: 8px !important;
+  text-align: left !important;
+  align-items: flex-start !important;
+}
+
+.sidenav .user-section .user-avatar {
+  background: rgba(52, 152, 219, 0.2) !important;
+  border: 1px solid #3498db !important;
+  width: 32px !important;
+  height: 32px !important;
+  margin: 0 !important;
+  font-size: 1rem !important;
+}
+
+.sidenav .user-section .user-details {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.sidenav .user-section .user-name {
+  color: #ecf0f1 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 2px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidenav .user-section .user-role-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: space-between !important;
+}
+
+.sidenav .user-section .badge {
+  font-size: 0.6rem !important;
+  padding: 2px 6px !important;
+  border-radius: 8px !important;
+  margin: 0 !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+.sidenav .user-section .btn-logout-small {
+  background: #6c757d !important;
+  color: white !important;
+  border: none !important;
+  padding: 4px 6px !important;
+  border-radius: 4px !important;
+  font-size: 0.6rem !important;
+  cursor: pointer !important;
+  transition: background-color 0.3s ease !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.sidenav .user-section .btn-logout-small:hover {
+  background: #5a6268 !important;
+  transform: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
 .sidenav a, .menu-header {
   padding: 12px 20px;
   text-decoration: none;
@@ -100,7 +198,7 @@ html, body {
   display: flex;
   justify-content: center;
   padding: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 /* Estilo para el recuadro del logo */

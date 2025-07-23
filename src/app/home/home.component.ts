@@ -6,6 +6,8 @@ import { IOptions, RecursivePartial } from '@tsparticles/engine';
 import { FormsModule } from '@angular/forms';
 import { loadPolygonShape } from '@tsparticles/shape-polygon';
 import { NgIf } from '@angular/common';
+import { AuthService } from '../services/auth.service';
+import { LoginRequest } from '../interfaces/auth.interface';
 
 @Component({
   selector: 'app-home',
@@ -18,8 +20,14 @@ export class HomeComponent {
   username: string = '';
   password: string = '';
   loginError: boolean = false;
+  loading: boolean = false;
+  errorMessage: string = '';
 
-  constructor(private router: Router, private readonly ngParticlesService: NgParticlesService) {}
+  constructor(
+    private router: Router, 
+    private readonly ngParticlesService: NgParticlesService,
+    private authService: AuthService
+  ) {}
 
   particlesOptions: RecursivePartial<IOptions> = {
     fpsLimit: 120,
@@ -101,11 +109,30 @@ export class HomeComponent {
   }
 
   onSubmit(): void {
-    if (this.username === 'admin' && this.password === 'admin') {
+    if (this.username && this.password) {
+      this.loading = true;
       this.loginError = false;
-      this.router.navigate(['/menu/dashboard']);
+      this.errorMessage = '';
+
+      const loginRequest: LoginRequest = {
+        username: this.username,
+        password: this.password
+      };
+
+      this.authService.login(loginRequest).subscribe({
+        next: (response) => {
+          this.loading = false;
+          this.router.navigate(['/menu/dashboard']);
+        },
+        error: (error) => {
+          this.loading = false;
+          this.loginError = true;
+          this.errorMessage = error.error?.message || 'Usuario o contraseña incorrectos';
+        }
+      });
     } else {
       this.loginError = true;
+      this.errorMessage = 'Por favor complete todos los campos';
     }
   }
 }

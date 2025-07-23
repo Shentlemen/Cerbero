@@ -1412,3 +1412,57 @@ ngb-pagination.custom-pagination {
   font-weight: 500;
   margin-top: 1rem;
 }
+
+/* Estilo para el badge de solo lectura */
+.read-only-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.read-only-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.read-only-badge i {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+/* Variante más pequeña para espacios reducidos */
+.read-only-badge.small {
+  padding: 4px 8px;
+  font-size: 10px;
+  gap: 4px;
+}
+
+.read-only-badge.small i {
+  font-size: 10px;
+}
+
+/* Variante con estilo outline */
+.read-only-badge.outline {
+  background: transparent;
+  color: #6c757d;
+  border: 2px solid #6c757d;
+  box-shadow: none;
+}
+
+.read-only-badge.outline:hover {
+  background: #6c757d;
+  color: white;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}

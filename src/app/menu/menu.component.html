@@ -12,6 +12,24 @@
     <app-helper-dog></app-helper-dog>
   </div>
 
+  <!-- Header de usuario integrado en el menú -->
+  <div class="user-section" *ngIf="currentUser">
+    <div class="user-info">
+      <div class="user-details">
+        <div class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
+        <div class="user-role-container">
+          <span class="badge" 
+                [class]="currentUser.role === 'GM' ? 'bg-danger' : currentUser.role === 'ADMIN' ? 'bg-warning' : 'bg-secondary'">
+            {{ getRoleLabel(currentUser.role) }}
+          </span>
+          <button class="btn-logout-small" (click)="logout()" title="Cerrar sesión">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Menú de navegación -->
   <a routerLink="/menu/dashboard" routerLinkActive="active">
     <i class="fas fa-tachometer-alt"></i>
@@ -68,8 +86,8 @@
     <span>SUB REDES</span>
   </a>
 
-  <!-- Menú expandible de Configuración -->
-  <div class="menu-item" [class.expanded]="isConfigExpanded">
+  <!-- Menú expandible de Configuración - Solo visible para GM y Admin -->
+  <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canAccessConfiguration()">
     <div class="menu-header" (click)="toggleConfigMenu()">
       <i class="fas fa-cog"></i>
       <span>CONFIGURACIÓN</span>
@@ -98,6 +116,10 @@
       <a routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-users"></i>
         <span>USUARIOS</span>
+      </a>
+      <a *ngIf="canManageUsers()" routerLink="/menu/user-management" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-user-cog"></i>
+        <span>Users</span>
       </a>
     </div>
   </div>

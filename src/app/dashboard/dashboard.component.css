@@ -353,6 +353,23 @@
     font-size: 1.3rem;
   }
 
+  .alerts-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .alerts-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-check-changes,
+  .btn-cleanup-alerts {
+    width: 100%;
+    justify-content: center;
+  }
+
   .alert-item {
     flex-direction: column;
     align-items: stretch;
@@ -387,6 +404,12 @@
   border-bottom: 2px solid #ecf0f1;
 }
 
+.alerts-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .btn-check-changes {
   background: #34495e;
   color: white;
@@ -416,7 +439,40 @@
   opacity: 0.8;
 }
 
+.btn-cleanup-alerts {
+  background: #e67e22;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 15px rgba(230,126,34,0.3),
+    inset 0 -2px 0 rgba(0,0,0,0.1);
+}
+
+.btn-cleanup-alerts:hover:not(:disabled) {
+  background: #d35400;
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(230,126,34,0.4),
+    inset 0 -2px 0 rgba(0,0,0,0.1);
+}
+
+.btn-cleanup-alerts:disabled {
+  background: #95a5a6;
+  opacity: 0.8;
+}
+
 .btn-check-changes i {
+  margin-right: 8px;
+}
+
+.btn-cleanup-alerts i {
   margin-right: 8px;
 }
 

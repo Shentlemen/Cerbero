@@ -6,6 +6,7 @@ import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { PermissionsService } from '../services/permissions.service';
 
 // Extendemos la interfaz SubnetDTO para incluir las propiedades adicionales
 interface ExtendedSubnet extends SubnetDTO {
@@ -50,7 +51,10 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
     lng: -56.1645
   };
 
-  constructor(private subnetService: SubnetService) {}
+  constructor(
+    private subnetService: SubnetService,
+    private permissionsService: PermissionsService
+  ) {}
 
   ngOnInit(): void {
     this.loadResources()
@@ -338,5 +342,9 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
       }
       return 0;
     });
+  }
+
+  canManageSubnets(): boolean {
+    return this.permissionsService.canManageSubnets();
   }
 } 

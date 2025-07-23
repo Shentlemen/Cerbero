@@ -76,7 +76,7 @@
                   class="form-control form-control-sm coordinate-input"
                   [(ngModel)]="subnet.latitud" 
                   placeholder="Ej: -34.9011"
-                  [disabled]="subnet.hasCoordinates && !subnet.editing"
+                  [disabled]="subnet.hasCoordinates && !subnet.editing || !canManageSubnets()"
                   step="0.0001"
                   min="-90"
                   max="90">
@@ -87,40 +87,48 @@
                   class="form-control form-control-sm coordinate-input"
                   [(ngModel)]="subnet.longitud" 
                   placeholder="Ej: -56.1645"
-                  [disabled]="subnet.hasCoordinates && !subnet.editing"
+                  [disabled]="subnet.hasCoordinates && !subnet.editing || !canManageSubnets()"
                   step="0.0001"
                   min="-180"
                   max="180">
               </td>
               <td>
-                <button 
-                  *ngIf="!subnet.hasCoordinates"
-                  class="btn btn-sm btn-primary me-2"
-                  (click)="saveCoordinates(subnet)"
-                  [disabled]="!isValidCoordinates(subnet) || loading">
-                  <i class="fas fa-save"></i> Guardar
-                </button>
-                <button 
-                  *ngIf="subnet.hasCoordinates && !subnet.editing"
-                  class="btn btn-sm btn-warning me-2"
-                  (click)="editCoordinates(subnet)"
-                  [disabled]="loading">
-                  <i class="fas fa-edit"></i> Editar
-                </button>
-                <button 
-                  *ngIf="subnet.hasCoordinates && subnet.editing"
-                  class="btn btn-sm btn-success me-2"
-                  (click)="updateCoordinates(subnet)"
-                  [disabled]="!isValidCoordinates(subnet) || loading">
-                  <i class="fas fa-check"></i> Actualizar
-                </button>
-                <button 
-                  *ngIf="subnet.editing"
-                  class="btn btn-sm btn-secondary"
-                  (click)="cancelEdit(subnet)"
-                  [disabled]="loading">
-                  <i class="fas fa-times"></i> Cancelar
-                </button>
+                <div *ngIf="canManageSubnets()">
+                  <button 
+                    *ngIf="!subnet.hasCoordinates"
+                    class="btn btn-sm btn-primary me-2"
+                    (click)="saveCoordinates(subnet)"
+                    [disabled]="!isValidCoordinates(subnet) || loading">
+                    <i class="fas fa-save"></i> Guardar
+                  </button>
+                  <button 
+                    *ngIf="subnet.hasCoordinates && !subnet.editing"
+                    class="btn btn-sm btn-warning me-2"
+                    (click)="editCoordinates(subnet)"
+                    [disabled]="loading">
+                    <i class="fas fa-edit"></i> Editar
+                  </button>
+                  <button 
+                    *ngIf="subnet.hasCoordinates && subnet.editing"
+                    class="btn btn-sm btn-success me-2"
+                    (click)="updateCoordinates(subnet)"
+                    [disabled]="!isValidCoordinates(subnet) || loading">
+                    <i class="fas fa-check"></i> Actualizar
+                  </button>
+                  <button 
+                    *ngIf="subnet.editing"
+                    class="btn btn-sm btn-secondary"
+                    (click)="cancelEdit(subnet)"
+                    [disabled]="loading">
+                    <i class="fas fa-times"></i> Cancelar
+                  </button>
+                </div>
+                <div *ngIf="!canManageSubnets()">
+                  <span class="read-only-badge">
+                    <i class="fas fa-eye"></i>
+                    Solo lectura
+                  </span>
+                </div>
               </td>
             </tr>
           </tbody>
