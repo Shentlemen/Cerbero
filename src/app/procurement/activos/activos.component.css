@@ -33,19 +33,53 @@
   color: #16a34a;
 }
 
+.estado-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
 .estado-badge.activo {
   background: #dcfce7;
   color: #16a34a;
+  border: none;
+  box-shadow: none;
+}
+
+.estado-badge.activo:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .estado-badge.inactivo {
   background: #fee2e2;
   color: #dc2626;
+  border: none;
+  box-shadow: none;
+}
+
+.estado-badge.inactivo:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .estado-badge.mantenimiento {
   background: #fef3c7;
   color: #d97706;
+  border: none;
+  box-shadow: none;
+}
+
+.estado-badge.mantenimiento:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .ubicacion-link {
@@ -250,4 +284,78 @@
 
 .selected-asset-badge .btn-close:hover {
   opacity: 1;
+}
+
+/* Estilos para los botones de filtro - estilo similar a criticidad-badge */
+.filters-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 15px;
+  background: var(--device-bg-color, #f8f9fa);
+  color: var(--device-color, #6c757d);
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+.filter-btn:hover {
+  transform: none;
+  box-shadow: none;
+  background: var(--device-bg-color, #f8f9fa);
+  color: var(--device-color, #495057);
+}
+
+.filter-btn.active {
+  background: var(--device-bg-color, #e9ecef);
+  color: var(--device-color, #495057);
+  border: none;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.filter-btn i {
+  font-size: 0.9rem;
+}
+
+.filter-btn .count {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .filters-container {
+    gap: 0.5rem;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .filter-btn .count {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-btn {
+    justify-content: center;
+  }
 }

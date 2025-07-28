@@ -32,27 +32,6 @@
   font-size: 2rem;
 }
 
-.stats-pills {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #3498db;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  color: white;
-}
-
-.stat-pill i {
-  color: white;
-}
-
 .devices-content {
   background: white;
   border-radius: 15px;
@@ -134,10 +113,15 @@
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  background-color: #e8f5e9;
-  color: #2e7d32;
   font-size: 13px;
   font-weight: 600;
+  border: 1px solid;
+  transition: all 0.3s ease;
+}
+
+.type-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* Estilos para la paginación */
@@ -182,4 +166,31 @@
 
 .custom-pagination ::ng-deep .page-link:focus {
   box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.25);
+}
+
+/* Responsive para filtros */
+@media (max-width: 768px) {
+  .filters-container {
+    gap: 0.5rem;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .filter-btn .count {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-btn {
+    justify-content: center;
+  }
 }

@@ -47,8 +47,57 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/* Estilos para la paginación */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.custom-pagination ::ng-deep .page-link {
+  color: #3498db;
+  border: 1px solid #dee2e6;
+  padding: 0.5rem 0.75rem;
+  margin: 0 2px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.custom-pagination ::ng-deep .page-link:hover {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(52,152,219,0.3);
+}
+
+.custom-pagination ::ng-deep .page-item.active .page-link {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+.custom-pagination ::ng-deep .page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+.custom-pagination ::ng-deep .page-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.25);
+}
+
 @media (max-width: 768px) {
   .tipos-activo-container {
     padding: 1rem;
+  }
+  
+  .pagination-container {
+    margin-top: 1rem;
+    padding: 0.5rem;
   }
 } 

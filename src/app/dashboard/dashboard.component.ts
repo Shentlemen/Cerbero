@@ -104,6 +104,21 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           }]
         };
 
+        // Aplicar un valor mínimo a las porciones pequeñas para mejor visibilidad
+        const enhancedTypeData = typeData.map(item => {
+          const minValue = 30; // Valor mínimo para porciones pequeñas
+          const realValue = item.y;
+          const displayValue = realValue < minValue ? minValue : realValue;
+          
+          return {
+            ...item,
+            y: displayValue,
+            toolTipContent: realValue < minValue 
+              ? `${item.label}: ${realValue} (altura ampliada para visibilidad)`
+              : `${item.label}: ${realValue}`
+          };
+        });
+
         this.pieChartOptions = {
           ...commonOptions,
           title: { 
@@ -115,34 +130,91 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             type: "doughnut",
             indexLabel: "{label}: {y}",
             startAngle: -90,
-            dataPoints: typeData,
+            dataPoints: enhancedTypeData,
             click: this.onChartPointClick.bind(this, 'terminales'),
-            indexLabelFontSize: this.getResponsiveFontSize(13)
-          }]
+            indexLabelFontSize: this.getResponsiveFontSize(13),
+            // Configuraciones para mejorar la visibilidad de porciones pequeñas
+            indexLabelPlacement: "outside",
+            indexLabelOrientation: "horizontal",
+            indexLabelMaxWidth: 120,
+            indexLabelWrap: true,
+            // Ocultar la leyenda
+            showInLegend: false,
+            // Configurar colores personalizados para mejor visibilidad
+            colorSet: "customColorSet",
+            // Configurar el radio interno para hacer el anillo más delgado
+            innerRadius: "60%"
+          }],
+          // Configurar colores personalizados
+          colorSet: [
+            "#2E86AB", // Desktop - Azul
+            "#A23B72", // Mini PC - Rosa
+            "#F18F01", // Tower - Naranja
+            "#C73E1D", // Notebook - Rojo
+            "#8E44AD", // Low Profile Desktop - Púrpura
+            "#95A5A6", // Desconocido - Gris
+            "#E67E22"  // Mini Tower - Naranja oscuro
+          ]
         };
 
         this.barChartOptions = {
           ...commonOptions,
           title: { 
             ...commonOptions.title,
-            text: "Fabricante" 
+            text: "Fabricante",
+            subtitle: {
+              text: "Barras pequeñas ampliadas para mejor visibilidad",
+              fontSize: this.getResponsiveFontSize(10),
+              fontColor: "#666"
+            }
           },
           axisY: { 
             title: "Cantidad",
             titleFontSize: this.getResponsiveFontSize(12),
             labelFontSize: this.getResponsiveFontSize(11),
-            minimum: 0
+            minimum: 0,
+            // Agregar formato personalizado para mostrar valores reales
+            labelFormatter: (e: any) => {
+              const value = e.value;
+              // Si el valor es 50 pero el valor real es menor, mostrar el valor real
+              if (value === 50) {
+                const dataPoint = brandData.find(d => d.y < 50);
+                if (dataPoint) {
+                  return `< ${dataPoint.y}`;
+                }
+              }
+              return value;
+            }
+          },
+          legend: {
+            cursor: "pointer",
+            itemclick: function (e: any) {
+              if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                e.dataSeries.visible = false;
+              } else {
+                e.dataSeries.visible = true;
+              }
+              e.chart.render();
+            }
           },
           data: [{
             ...commonOptions.data[0],
             type: "column",
             dataPoints: brandData.map(d => {
               const realY = d.y;
+              // Calcular altura mínima: si el valor real es menor a 50, usar 50 como altura visual
+              const visualY = realY < 50 ? 50 : realY;
+              const tooltipText = realY < 50 
+                ? `${d.label}: ${realY} dispositivos (altura ampliada para visibilidad)`
+                : `${d.label}: ${realY} dispositivos`;
+              
               return {
                 ...d,
-                y: realY < 5 ? 5 : realY,
-                toolTipContent: `${d.label}: ${realY}`,
-                indexLabel: String(realY)
+                y: visualY,
+                toolTipContent: tooltipText,
+                indexLabel: String(realY),
+                // Agregar color personalizado para barras pequeñas
+                color: realY < 50 ? "#e74c3c" : undefined
               };
             }),
             click: this.onChartPointClick.bind(this, 'marca'),
@@ -183,7 +255,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   loadAlertas(): void {
     this.alertService.getAlertas().subscribe(
       (alertas: Alerta[]) => {
-        console.log('Alertas recibidas:', alertas);
         this.alerts = alertas;
         this.collectionSize = alertas.length;
         this.page = 1;
@@ -194,11 +265,43 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     );
   }
 
+  // Función auxiliar para recargar alertas manteniendo la página actual
+  private reloadAlertasManteniendoPagina(currentPage: number): void {
+    this.alertService.getAlertas().subscribe(
+      (alertas: Alerta[]) => {
+        console.log('Alertas actualizadas:', alertas);
+        this.alerts = alertas;
+        this.collectionSize = alertas.length;
+        
+        // Calcular la página correcta después de actualizar las alertas
+        const totalPages = Math.ceil(this.collectionSize / this.pageSize);
+        
+        // Si la página actual es mayor que el total de páginas, ir a la última página
+        if (currentPage > totalPages && totalPages > 0) {
+          this.page = totalPages;
+        } else {
+          // Mantener la página actual si es válida
+          this.page = currentPage;
+        }
+      },
+      error => {
+        console.error('Error al recargar las alertas', error);
+        // En caso de error, mantener la página actual
+        this.page = currentPage;
+      }
+    );
+  }
+
   confirmarAlerta(alerta: Alerta): void {
+    // Guardar la página actual antes de confirmar
+    const currentPage = this.page;
+    
     this.alertService.confirmarAlerta(alerta.id).subscribe({
       next: (response) => {
         console.log('Alerta confirmada exitosamente:', response);
-        this.loadAlertas();
+        
+        // Recargar alertas y mantener la página actual
+        this.reloadAlertasManteniendoPagina(currentPage);
       },
       error: (error) => {
         let mensajeError = 'Error al confirmar la alerta';
@@ -213,9 +316,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   private prepareHardwareTypeData(hardware: any[], biosMap: Map<number, any>): any[] {
+    // Verificar si hay tipos que contengan las palabras clave que buscamos
+    const allTypes = new Set<string>();
+    for (const [key, value] of biosMap.entries()) {
+      if (value?.type) {
+        allTypes.add(value.type.toUpperCase());
+      }
+    }
+    
     const counts = hardware.reduce((acc: Record<string, number>, curr) => {
       const biosData = biosMap.get(curr.id);
-      const type = biosData?.type?.toUpperCase() || 'DESCONOCIDO';
+      const originalType = biosData?.type || '';
+      
+      // Usar el tipo original sin normalización ya que llega correctamente del backend
+      const type = originalType || 'DESCONOCIDO';
+      
+
       
       if (!acc[type]) {
         acc[type] = 0;
@@ -225,7 +341,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       return acc;
     }, {});
 
-    return Object.entries(counts).map(([label, y]) => ({ label, y }));
+    const result = Object.entries(counts).map(([label, y]) => ({ label, y }));
+    return result;
   }
 
   private prepareChartData(array: any[], prop: string): any[] {
@@ -235,7 +352,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   private prepareBrandData(biosData: any[]): any[] {
     const counts = this.countByProperty(biosData, 'smanufacturer');
-    console.log('Brand counts:', counts); // Agrega este log para verificar los valores
     return Object.entries(counts).map(([label, y]) => ({ label, y }));
   }
 
@@ -277,6 +393,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   checkHardwareChanges(): void {
     if (this.isChecking) return;
     
+    // Guardar la página actual antes de verificar cambios
+    const currentPage = this.page;
+    
     this.isChecking = true;
     this.alertService.checkHardwareChanges().pipe(
       finalize(() => {
@@ -284,19 +403,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       })
     ).subscribe({
       next: () => {
-        // Recargar alertas después de verificar cambios
-        this.loadAlertas();
+        // Recargar alertas y mantener la página actual
+        this.reloadAlertasManteniendoPagina(currentPage);
       },
       error: (error) => {
         console.error('Error al verificar cambios:', error);
-        // Aquí puedes mostrar un mensaje al usuario usando un servicio de notificaciones
-        // o un componente de toast/snackbar
+        // En caso de error, mantener la página actual
+        this.page = currentPage;
       }
     });
   }
 
   cleanupOrphanedAlerts(): void {
     if (this.isCleaning) return;
+    
+    // Guardar la página actual antes de limpiar
+    const currentPage = this.page;
     
     this.isCleaning = true;
     this.alertService.cleanupOrphanedAlerts().pipe(
@@ -305,13 +427,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       })
     ).subscribe({
       next: () => {
-        // Recargar alertas después de limpiar
-        this.loadAlertas();
+        // Recargar alertas y mantener la página actual
+        this.reloadAlertasManteniendoPagina(currentPage);
       },
       error: (error) => {
         console.error('Error al limpiar alertas huérfanas:', error);
-        // Aquí puedes mostrar un mensaje al usuario usando un servicio de notificaciones
-        // o un componente de toast/snackbar
+        // En caso de error, mantener la página actual
+        this.page = currentPage;
       }
     });
   }
@@ -327,11 +449,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   private prepareNetworkChart(networkData: NetworkInfoDTO[], commonOptions: any): void {
-    console.log('Datos de red recibidos:', networkData);
-    
     // Asegurarnos de que networkData sea un array
     const networkArray = Array.isArray(networkData) ? networkData : [];
-    console.log('Array de red procesado:', networkArray);
     
     // Si no hay datos, mostrar un mensaje en la gráfica
     if (networkArray.length === 0) {
@@ -365,15 +484,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       return acc;
     }, {});
 
-    console.log('Dispositivos agrupados por tipo:', devicesByType);
-
     const dataPoints = Object.entries(devicesByType).map(([type, devices]) => ({
       label: type,
       y: devices.length,
       indexLabel: `${type}: {y}`
     }));
-
-    console.log('Puntos de datos para la gráfica:', dataPoints);
 
     this.lineChartOptions = {
       ...commonOptions,
@@ -404,5 +519,56 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   canConfirmAlerts(): boolean {
     return this.permissionsService.canConfirmAlerts();
+  }
+
+  private normalizeHardwareType(type: string): string {
+    // Normalizar el tipo de hardware para que coincida con los filtros del componente assets
+    const normalizedType = type.trim().toUpperCase();
+    
+    // Log para debugging de normalización
+    if (type !== normalizedType) {
+      console.log(`Normalizando: "${type}" -> "${normalizedType}"`);
+    }
+    
+    switch (normalizedType) {
+      case 'DESKTOP':
+        return 'DESKTOP';
+      case 'MINI PC':
+      case 'MINI-PC':
+      case 'MINIPC':
+        return 'MINI PC';
+      case 'LAPTOP':
+      case 'NOTEBOOK':
+      case 'PORTATIL':
+        return 'LAPTOP';
+      case 'TOWER':
+      case 'TORRE':
+        return 'TOWER';
+      case 'LOW PROFILE DESKTOP':
+      case 'LOW PROFILE':
+      case 'LOWPROFILE':
+      case 'LOW-PROFILE':
+      case 'LOW PROFILE':
+      case 'LOWPROFILEDESKTOP':
+      case 'LOW-PROFILE-DESKTOP':
+        return 'LOW PROFILE DESKTOP';
+      case 'MINI TOWER':
+      case 'MINITOWER':
+      case 'MINI-TOWER':
+      case 'MINI TOWER DESKTOP':
+      case 'MINITOWERDESKTOP':
+      case 'MINI-TOWER-DESKTOP':
+        return 'MINI TOWER';
+      case 'DESCONOCIDO':
+      case 'UNKNOWN':
+      case 'N/A':
+      case 'NA':
+      case '':
+      case null:
+      case undefined:
+        return 'DESCONOCIDO';
+      default:
+        return normalizedType;
+    }
   }
 }

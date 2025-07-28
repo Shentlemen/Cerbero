@@ -11,23 +11,51 @@
           {{ errorMessage }}
           <button type="button" class="btn-close" (click)="errorMessage = null"></button>
         </div>
-        <div class="stats-pills">
-          <div class="stat-pill alta" (click)="filterByCriticidad('ALTA')" [class.active]="currentFilter === 'ALTA'">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>{{altaCount}} Alta</span>
-          </div>
-          <div class="stat-pill media" (click)="filterByCriticidad('MEDIA')" [class.active]="currentFilter === 'MEDIA'">
-            <i class="fas fa-exclamation-circle"></i>
-            <span>{{mediaCount}} Media</span>
-          </div>
-          <div class="stat-pill baja" (click)="filterByCriticidad('BAJA')" [class.active]="currentFilter === 'BAJA'">
-            <i class="fas fa-info-circle"></i>
-            <span>{{bajaCount}} Baja</span>
-          </div>
-          <div class="stat-pill total" (click)="filterByCriticidad('')" [class.active]="currentFilter === ''">
-            <i class="fas fa-boxes"></i>
-            <span>{{totalActivos}} Total</span>
-          </div>
+        <div class="filters-container">
+          <button 
+            class="filter-btn" 
+            [class.active]="currentFilter === ''"
+            (click)="filterByCriticidad('')">
+            <i class="fas fa-th-large"></i>
+            <span>Todos</span>
+            <span class="count">({{totalActivos}})</span>
+          </button>
+          
+          <button 
+            class="filter-btn" 
+            [class.active]="currentFilter === 'ALTA'"
+            [style.--device-color]="'#dc2626'"
+            [style.--device-bg-color]="'#fee2e2'"
+            [style.--device-border-color]="'#fecaca'"
+            (click)="filterByCriticidad('ALTA')">
+            <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
+            <span>Alta</span>
+            <span class="count">({{altaCount}})</span>
+          </button>
+          
+          <button 
+            class="filter-btn" 
+            [class.active]="currentFilter === 'MEDIA'"
+            [style.--device-color]="'#d97706'"
+            [style.--device-bg-color]="'#fef3c7'"
+            [style.--device-border-color]="'#fed7aa'"
+            (click)="filterByCriticidad('MEDIA')">
+            <i class="fas fa-exclamation-circle" style="color: #d97706;"></i>
+            <span>Media</span>
+            <span class="count">({{mediaCount}})</span>
+          </button>
+          
+          <button 
+            class="filter-btn" 
+            [class.active]="currentFilter === 'BAJA'"
+            [style.--device-color]="'#16a34a'"
+            [style.--device-bg-color]="'#dcfce7'"
+            [style.--device-border-color]="'#bbf7d0'"
+            (click)="filterByCriticidad('BAJA')">
+            <i class="fas fa-info-circle" style="color: #16a34a;"></i>
+            <span>Baja</span>
+            <span class="count">({{bajaCount}})</span>
+          </button>
         </div>
       </div>
       <div class="actions">

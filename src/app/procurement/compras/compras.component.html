@@ -3,23 +3,51 @@
     <div class="header-content">
       <div class="title-wrapper">
         <h1><i class="fas fa-shopping-cart"></i> Gestión de Compras</h1>
-        <div class="stats-pills">
-          <div class="stat-pill usd" (click)="filterForm.patchValue({ moneda: 'USD' })" [class.active]="filterForm.get('moneda')?.value === 'USD'">
-            <i class="fas fa-dollar-sign"></i>
+        <div class="filters-container">
+          <button 
+            class="filter-btn" 
+            [class.active]="!filterForm.get('moneda')?.value"
+            (click)="filterForm.patchValue({ moneda: '' })">
+            <i class="fas fa-th-large"></i>
+            <span>Todos</span>
+            <span class="count">({{collectionSize}})</span>
+          </button>
+          
+          <button 
+            class="filter-btn" 
+            [class.active]="filterForm.get('moneda')?.value === 'USD'"
+            [style.--device-color]="'#0369a1'"
+            [style.--device-bg-color]="'#e0f2fe'"
+            [style.--device-border-color]="'#bae6fd'"
+            (click)="filterForm.patchValue({ moneda: 'USD' })">
+            <i class="fas fa-dollar-sign" style="color: #0369a1;"></i>
             <span>USD</span>
-          </div>
-          <div class="stat-pill eur" (click)="filterForm.patchValue({ moneda: 'EUR' })" [class.active]="filterForm.get('moneda')?.value === 'EUR'">
-            <i class="fas fa-euro-sign"></i>
+            <span class="count">({{getMonedaCount('USD')}})</span>
+          </button>
+          
+          <button 
+            class="filter-btn" 
+            [class.active]="filterForm.get('moneda')?.value === 'EUR'"
+            [style.--device-color]="'#92400e'"
+            [style.--device-bg-color]="'#fef3c7'"
+            [style.--device-border-color]="'#fde68a'"
+            (click)="filterForm.patchValue({ moneda: 'EUR' })">
+            <i class="fas fa-euro-sign" style="color: #92400e;"></i>
             <span>EUR</span>
-          </div>
-          <div class="stat-pill uyu" (click)="filterForm.patchValue({ moneda: 'UYU' })" [class.active]="filterForm.get('moneda')?.value === 'UYU'">
-            <i class="fas fa-money-bill-wave"></i>
+            <span class="count">({{getMonedaCount('EUR')}})</span>
+          </button>
+          
+          <button 
+            class="filter-btn" 
+            [class.active]="filterForm.get('moneda')?.value === 'UYU'"
+            [style.--device-color]="'#00695c'"
+            [style.--device-bg-color]="'#e0f7fa'"
+            [style.--device-border-color]="'#b2ebf2'"
+            (click)="filterForm.patchValue({ moneda: 'UYU' })">
+            <i class="fas fa-money-bill-wave" style="color: #00695c;"></i>
             <span>UYU</span>
-          </div>
-          <div class="stat-pill total" (click)="filterForm.patchValue({ moneda: '' })" [class.active]="!filterForm.get('moneda')?.value">
-            <i class="fas fa-boxes"></i>
-            <span>{{collectionSize}} Total</span>
-          </div>
+            <span class="count">({{getMonedaCount('UYU')}})</span>
+          </button>
         </div>
       </div>
       <div class="actions d-flex justify-content-end align-items-center" style="gap: 1rem;" *ngIf="canManagePurchases()">
@@ -75,7 +103,7 @@
               </th>
               <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
-                  <span>Descripción</span>
+                  <span>Nombre de Compra</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
@@ -223,8 +251,8 @@
             </div>
             <div class="row">
               <div class="col-md-12 mb-3">
-                <label class="form-label">Descripción</label>
-                <input type="text" class="form-control" formControlName="descripcion">
+                <label class="form-label">Nombre de Compra</label>
+                <input type="text" class="form-control" formControlName="descripcion" placeholder="Ingrese el nombre de la compra">
               </div>
             </div>
             <div class="row">
@@ -254,7 +282,7 @@
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Descripción</th>
+                  <th>Observación</th>
                   <th>Cantidad</th>
                   <th>Meses Garantía</th>
                   <th>Proveedor</th>
@@ -265,7 +293,7 @@
               <tbody>
                 <tr *ngFor="let item of itemsControls; let i = index" [formGroup]="item">
                   <td><input type="text" class="form-control" formControlName="nombreItem" required></td>
-                  <td><input type="text" class="form-control" formControlName="descripcion" required></td>
+                  <td><input type="text" class="form-control" formControlName="descripcion" placeholder="Observación opcional"></td>
                   <td><input type="number" class="form-control" formControlName="cantidad" min="1" required></td>
                   <td><input type="number" class="form-control" formControlName="mesesGarantia" min="0" required></td>
                   <td>
@@ -313,8 +341,8 @@
                 <tr>
                   <th>Ítem (ID)</th>
                   <th>Cantidad</th>
-                  <th>Descripción</th>
-                  <th>Fecha Pedido</th>
+                  <th>Observación</th>
+                  <th>Fecha de Entrega</th>
                   <th>Fecha Fin Garantía</th>
                   <th>Acciones</th>
                 </tr>
@@ -337,7 +365,7 @@
                     </select>
                   </td>
                   <td><input type="number" class="form-control" formControlName="cantidad" min="1" required></td>
-                  <td><input type="text" class="form-control" formControlName="descripcion" required></td>
+                  <td><input type="text" class="form-control" formControlName="descripcion" placeholder="Observación opcional"></td>
                   <td><input type="date" class="form-control" formControlName="fechaPedido" required></td>
                   <td><input type="date" class="form-control" formControlName="fechaFinGarantia" required></td>
                   <td>

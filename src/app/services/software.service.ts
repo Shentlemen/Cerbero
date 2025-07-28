@@ -59,6 +59,45 @@ export class SoftwareService {
     );
   }
 
+  // Obtener software visible (no oculto, no prohibido) con conteo
+  getVisibleSoftwareWithCounts(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/visible`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  // Obtener software oculto con conteo
+  getHiddenSoftwareWithCounts(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/hidden`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  // Obtener software prohibido con conteo
+  getForbiddenSoftwareWithCounts(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/forbidden`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
   // Obtener software por ID
   getSoftwareById(id: number): Observable<SoftwareDTO> {
     return this.http.get<ApiResponse<SoftwareDTO>>(`${this.apiUrl}/${id}`).pipe(

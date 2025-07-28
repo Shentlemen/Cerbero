@@ -30,16 +30,7 @@
         <table class="tipos-compra-table">
           <thead>
             <tr>
-              <th (click)="sortData('idTipoCompra')" [class.active]="sortColumn === 'idTipoCompra'">
-                <div class="th-content">
-                  <span>ID</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idTipoCompra' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idTipoCompra' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idTipoCompra'
-                  }"></i>
-                </div>
-              </th>
+
               <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
                   <span>Descripción</span>
@@ -50,13 +41,23 @@
                   }"></i>
                 </div>
               </th>
+              <th (click)="sortData('abreviado')" [class.active]="sortColumn === 'abreviado'">
+                <div class="th-content">
+                  <span>Abreviado</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'abreviado' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'abreviado' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'abreviado'
+                  }"></i>
+                </div>
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let tipoCompra of pagedTiposCompra" class="tipo-compra-row">
-              <td>{{tipoCompra.idTipoCompra}}</td>
               <td>{{tipoCompra.descripcion}}</td>
+              <td>{{tipoCompra.abreviado || '-'}}</td>
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(tipoCompraModal, tipoCompra)">
@@ -104,6 +105,11 @@
         <div class="col-12 mb-3">
           <label class="form-label">Descripción</label>
           <input type="text" class="form-control" formControlName="descripcion" placeholder="Ingrese la descripción del tipo de compra">
+        </div>
+        <div class="col-12 mb-3">
+          <label class="form-label">Abreviado</label>
+          <input type="text" class="form-control" formControlName="abreviado" placeholder="Ingrese la abreviatura (máximo 10 caracteres)" maxlength="10">
+          <small class="form-text text-muted">Opcional. Máximo 10 caracteres.</small>
         </div>
       </div>
     </form>

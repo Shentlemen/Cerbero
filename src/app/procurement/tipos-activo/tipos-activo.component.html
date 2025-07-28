@@ -36,7 +36,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let tipo of tiposActivoList" class="tipos-activo-row">
+            <tr *ngFor="let tipo of pagedTiposActivo" class="tipos-activo-row">
               <td>{{tipo.idActivo}}</td>
               <td>{{tipo.descripcion}}</td>
               <td>{{getNombreUsuario(tipo.idUsuario)}}</td>
@@ -55,12 +55,12 @@
         </table>
       </div>
 
-      <div *ngIf="!loading && !error && tiposActivoList.length === 0" class="alert alert-info">
+      <div *ngIf="!loading && !error && pagedTiposActivo.length === 0" class="alert alert-info">
         No hay tipos de activo registrados.
       </div>
     </div>
 
-    <div class="pagination-container">
+    <div class="pagination-container" *ngIf="collectionSize > pageSize">
       <ngb-pagination
         [(page)]="page"
         [pageSize]="pageSize"

@@ -32,56 +32,6 @@
   font-size: 2rem;
 }
 
-.stats-pills {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #f8f9fa;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  color: #2c3e50;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.stat-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.stat-pill.active {
-  background: #3498db;
-  color: white;
-}
-
-.stat-pill.active i {
-  color: white;
-}
-
-.stat-pill.total.active {
-  background: #2c3e50;
-}
-
-.stat-pill i {
-  color: #3498db;
-}
-
-.stat-pill.total {
-  background: #3498db;
-  color: white;
-}
-
-.stat-pill.total i {
-  color: white;
-}
-
 .assets-content {
   background: white;
   border-radius: 15px;
@@ -213,6 +163,24 @@
   font-weight: 600;
 }
 
+.type-badge.low-profile {
+  background: #f4e6f7;
+  color: #8e44ad;
+  font-weight: 500;
+}
+
+.type-badge.mini-tower {
+  background: #fdf2e9;
+  color: #e67e22;
+  font-weight: 500;
+}
+
+.type-badge.desconocido {
+  background: #f8f9fa;
+  color: #95a5a6;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .assets-container {
     padding: 1rem;
@@ -220,15 +188,6 @@
 
   .header-section {
     padding: 1rem;
-  }
-
-  .stats-pills {
-    gap: 0.5rem;
-  }
-
-  .stat-pill {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
   }
 
   .assets-content {

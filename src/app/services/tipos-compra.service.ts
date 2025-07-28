@@ -8,6 +8,7 @@ import { map, catchError } from 'rxjs/operators';
 export interface TipoDeCompraDTO {
   idTipoCompra: number;
   descripcion: string;
+  abreviado?: string;
 }
 
 @Injectable({

@@ -93,7 +93,7 @@
       <span>CONFIGURACIÓN</span>
     </div>
     <div class="submenu" [class.show]="isConfigExpanded">
-      <a routerLink="/menu/settings" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="isGM()" routerLink="/menu/settings" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-database"></i>
         <span>BASE DE DATOS</span>
       </a>

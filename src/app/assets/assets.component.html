@@ -8,27 +8,101 @@
           - Filtrado por software: {{ route.snapshot.queryParams['softwareName'] }}
         </span>
       </h1>
-      <div class="stats-pills">
-        <div class="stat-pill" (click)="filterByType('DESKTOP')" [class.active]="currentFilter === 'DESKTOP'">
-          <i class="fas fa-desktop"></i>
-          <span>{{pcCount}} Desktops</span>
-        </div>
-        <div class="stat-pill" (click)="filterByType('MINI PC')" [class.active]="currentFilter === 'MINI PC'">
-          <i class="fas fa-laptop"></i>
-          <span>{{miniPcCount}} Mini PCs</span>
-        </div>
-        <div class="stat-pill" (click)="filterByType('LAPTOP')" [class.active]="currentFilter === 'LAPTOP'">
-          <i class="fas fa-laptop"></i>
-          <span>{{laptopCount}} Laptops</span>
-        </div>
-        <div class="stat-pill" (click)="filterByType('TOWER')" [class.active]="currentFilter === 'TOWER'">
-          <i class="fas fa-server"></i>
-          <span>{{towerCount}} Towers</span>
-        </div>
-        <div class="stat-pill total" (click)="filterByType('')" [class.active]="currentFilter === ''">
-          <i class="fas fa-boxes"></i>
-          <span>{{totalAssets}} Total</span>
-        </div>
+      
+      <!-- Filtros por tipo de activo -->
+      <div class="filters-container">
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === ''"
+          (click)="filterByType('')">
+          <i class="fas fa-th-large"></i>
+          <span>Todos</span>
+          <span class="count">({{totalAssets}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'DESKTOP'"
+          [style.--device-color]="'#2e7d32'"
+          [style.--device-bg-color]="'#e8f5e9'"
+          [style.--device-border-color]="'#c8e6c9'"
+          (click)="filterByType('DESKTOP')">
+          <i class="fas fa-desktop" style="color: #2e7d32;"></i>
+          <span>Desktops</span>
+          <span class="count">({{pcCount}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'MINI PC'"
+          [style.--device-color]="'#f57c00'"
+          [style.--device-bg-color]="'#fff3e0'"
+          [style.--device-border-color]="'#ffe0b2'"
+          (click)="filterByType('MINI PC')">
+          <i class="fas fa-laptop" style="color: #f57c00;"></i>
+          <span>Mini PCs</span>
+          <span class="count">({{miniPcCount}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'LAPTOP'"
+          [style.--device-color]="'#1976d2'"
+          [style.--device-bg-color]="'#e3f2fd'"
+          [style.--device-border-color]="'#bbdefb'"
+          (click)="filterByType('LAPTOP')">
+          <i class="fas fa-laptop" style="color: #1976d2;"></i>
+          <span>Laptops</span>
+          <span class="count">({{laptopCount}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'TOWER'"
+          [style.--device-color]="'#34495e'"
+          [style.--device-bg-color]="'#ecf0f1'"
+          [style.--device-border-color]="'#bdc3c7'"
+          (click)="filterByType('TOWER')">
+          <i class="fas fa-server" style="color: #34495e;"></i>
+          <span>Towers</span>
+          <span class="count">({{towerCount}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'LOW PROFILE DESKTOP'"
+          [style.--device-color]="'#8e44ad'"
+          [style.--device-bg-color]="'#f4e6f7'"
+          [style.--device-border-color]="'#e8d5f0'"
+          (click)="filterByType('LOW PROFILE DESKTOP')">
+          <i class="fas fa-desktop" style="color: #8e44ad;"></i>
+          <span>Low Profile</span>
+          <span class="count">({{lowProfileCount}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'MINI TOWER'"
+          [style.--device-color]="'#e67e22'"
+          [style.--device-bg-color]="'#fdf2e9'"
+          [style.--device-border-color]="'#fad7b0'"
+          (click)="filterByType('MINI TOWER')">
+          <i class="fas fa-server" style="color: #e67e22;"></i>
+          <span>Mini Tower</span>
+          <span class="count">({{miniTowerCount}})</span>
+        </button>
+        
+        <button 
+          class="filter-btn" 
+          [class.active]="currentFilter === 'DESCONOCIDO'"
+          [style.--device-color]="'#95a5a6'"
+          [style.--device-bg-color]="'#f8f9fa'"
+          [style.--device-border-color]="'#dee2e6'"
+          (click)="filterByType('DESCONOCIDO')">
+          <i class="fas fa-question-circle" style="color: #95a5a6;"></i>
+          <span>Desconocido</span>
+          <span class="count">({{desconocidoCount}})</span>
+        </button>
       </div>
     </div>
   </div>
@@ -112,11 +186,11 @@
             <td>
               <div class="asset-name">
                 <i class="fas" [ngClass]="{
-                  'fa-desktop': asset.biosType === 'DESKTOP',
+                  'fa-desktop': asset.biosType === 'DESKTOP' || asset.biosType === 'LOW PROFILE DESKTOP',
                   'fa-laptop': asset.biosType === 'LAPTOP' || asset.biosType === 'NOTEBOOK',
                   'fa-tablet-alt': asset.biosType === 'MINI PC',
-                  'fa-server': asset.biosType === 'TOWER',
-                  'fa-question-circle': !asset.biosType
+                  'fa-server': asset.biosType === 'TOWER' || asset.biosType === 'MINI TOWER',
+                  'fa-question-circle': asset.biosType === 'DESCONOCIDO' || !asset.biosType
                 }"></i>
                 <span>{{ asset.name }}</span>
               </div>
@@ -135,7 +209,10 @@
                 'desktop': asset.biosType === 'DESKTOP',
                 'laptop': asset.biosType === 'LAPTOP' || asset.biosType === 'NOTEBOOK',
                 'mini': asset.biosType === 'MINI PC',
-                'tower': asset.biosType === 'TOWER'
+                'tower': asset.biosType === 'TOWER',
+                'low-profile': asset.biosType === 'LOW PROFILE DESKTOP',
+                'mini-tower': asset.biosType === 'MINI TOWER',
+                'desconocido': asset.biosType === 'DESCONOCIDO' || !asset.biosType
               }">
                 {{ asset.biosType || 'Desconocido' }}
               </span>

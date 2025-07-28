@@ -222,7 +222,7 @@ export class ComprasComponent implements OnInit {
           lotes.forEach(lote => {
             this.itemsFormArray.push(this.fb.group({
               nombreItem: [lote.nombreItem, Validators.required],
-              descripcion: [lote.descripcion, Validators.required],
+              descripcion: [lote.descripcion],
               cantidad: [lote.cantidad, [Validators.required, Validators.min(1)]],
               mesesGarantia: [lote.mesesGarantia, [Validators.required, Validators.min(0)]],
               idProveedor: [lote.idProveedor, Validators.required],
@@ -242,7 +242,7 @@ export class ComprasComponent implements OnInit {
                 idEntrega: [entrega.idEntrega],
                 idItem: [entrega.idItem, Validators.required],
                 cantidad: [entrega.cantidad, [Validators.required, Validators.min(1)]],
-                descripcion: [entrega.descripcion, Validators.required],
+                descripcion: [entrega.descripcion],
                 fechaPedido: [entrega.fechaPedido, Validators.required],
                 fechaFinGarantia: [entrega.fechaFinGarantia, Validators.required]
               }));
@@ -281,7 +281,7 @@ export class ComprasComponent implements OnInit {
   agregarItem() {
     this.itemsFormArray.push(this.fb.group({
       nombreItem: ['', Validators.required],
-      descripcion: ['', Validators.required],
+      descripcion: [''],
       cantidad: [1, [Validators.required, Validators.min(1)]],
       mesesGarantia: [0, [Validators.required, Validators.min(0)]],
       idProveedor: [null, Validators.required],
@@ -299,7 +299,7 @@ export class ComprasComponent implements OnInit {
     this.entregasFormArray.push(this.fb.group({
       idItem: [null, Validators.required],
       cantidad: [1, [Validators.required, Validators.min(1)]],
-      descripcion: ['', Validators.required],
+      descripcion: [''],
       fechaPedido: ['', Validators.required],
       fechaFinGarantia: ['', Validators.required]
     }));
@@ -508,5 +508,9 @@ export class ComprasComponent implements OnInit {
 
   canManagePurchases(): boolean {
     return this.permissionsService.canManagePurchases();
+  }
+
+  getMonedaCount(moneda: string): number {
+    return this.comprasList.filter(compra => compra.moneda === moneda).length;
   }
 } 

@@ -34,21 +34,7 @@
   color: #00695c;
 }
 
-/* Estilos para los botones de moneda */
-.stat-pill[class*="usd"].active {
-  background: #0369a1;
-  border-color: #0369a1;
-}
 
-.stat-pill[class*="eur"].active {
-  background: #92400e;
-  border-color: #92400e;
-}
-
-.stat-pill[class*="uyu"].active {
-  background: #00695c;
-  border-color: #00695c;
-}
 
 .estado-badge.pendiente {
   background: #fef3c7;
@@ -154,5 +140,241 @@
 
   .detail-label {
     min-width: auto;
+  }
+}
+
+/* Estilos para los botones de filtro */
+.filters-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--device-border-color, #dee2e6);
+  border-radius: 25px;
+  background: var(--device-bg-color, #ffffff);
+  color: var(--device-color, #2c3e50);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  background: var(--device-bg-color, #ffffff);
+  border-color: var(--device-border-color, #dee2e6);
+}
+
+.filter-btn.active {
+  background: var(--device-color, #2c3e50);
+  color: white;
+  border-color: var(--device-color, #2c3e50);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.filter-btn i {
+  font-size: 1rem;
+}
+
+.filter-btn .count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .filters-container {
+    gap: 0.5rem;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .filter-btn .count {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-btn {
+    justify-content: center;
+  }
+}
+
+/* Estilos para las tablas en modales */
+.modal-body .table th,
+.modal-body .table td {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Hacer que la columna del nombre del ítem sea más ancha */
+.modal-body .table th:first-child,
+.modal-body .table td:first-child {
+  min-width: 130px;
+  max-width: 250px;
+  width: 20%;
+}
+
+/* Asegurar que el texto del ítem se vea completo */
+.modal-body .table td:first-child .form-select,
+.modal-body .table td:first-child input {
+  width: 100%;
+  min-width: 110px;
+}
+
+/* Anchos mínimos para proveedor y servicio de garantía */
+.modal-body .table th:nth-child(5),
+.modal-body .table td:nth-child(5) {
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.modal-body .table th:nth-child(6),
+.modal-body .table td:nth-child(6) {
+  min-width: 180px;
+  max-width: 240px;
+}
+
+/* Asegurar que los controles de proveedor y servicio se vean completos */
+.modal-body .table td:nth-child(5) .form-select,
+.modal-body .table td:nth-child(6) .form-select {
+  width: 100%;
+  min-width: 120px;
+}
+
+/* Ancho específico para la columna Acciones en entregas */
+.modal-body .table th:last-child,
+.modal-body .table td:last-child {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  text-align: center;
+}
+
+/* Configuración responsive para tablas en modales */
+.modal-body .table {
+  table-layout: auto !important;
+  width: 100% !important;
+}
+
+/* Ancho específico para la columna Observación en ítems */
+.modal-body .table th:nth-child(2),
+.modal-body .table td:nth-child(2) {
+  min-width: 180px !important;
+  max-width: 300px !important;
+  width: auto !important;
+}
+
+/* Ancho específico para la columna Cantidad en ítems */
+.modal-body .table th:nth-child(3),
+.modal-body .table td:nth-child(3) {
+  min-width: 80px !important;
+  max-width: 100px !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+/* Ancho específico para la columna Meses Garantía en ítems */
+.modal-body .table th:nth-child(4),
+.modal-body .table td:nth-child(4) {
+  min-width: 80px !important;
+  max-width: 100px !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+/* Ancho específico para la columna Acciones */
+.modal-body .table th:last-child,
+.modal-body .table td:last-child {
+  min-width: 60px !important;
+  max-width: 80px !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+/* Ancho específico para la columna Cantidad en entregas */
+.modal-body .table th:nth-child(2),
+.modal-body .table td:nth-child(2) {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  text-align: center !important;
+}
+
+/* Ancho específico para la columna Observación en entregas */
+.modal-body .table th:nth-child(3),
+.modal-body .table td:nth-child(3) {
+  min-width: 200px !important;
+  max-width: 350px !important;
+  width: auto !important;
+}
+
+/* Ancho específico para las columnas de fechas */
+.modal-body .table th:nth-child(4),
+.modal-body .table td:nth-child(4),
+.modal-body .table th:nth-child(5),
+.modal-body .table td:nth-child(5) {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  text-align: center;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+  .modal-body .table {
+    font-size: 0.9rem !important;
+  }
+  
+  .modal-body .table th,
+  .modal-body .table td {
+    padding: 0.5rem 0.3rem !important;
+  }
+  
+  .modal-body .table th:nth-child(2),
+  .modal-body .table td:nth-child(2) {
+    min-width: 120px !important;
+    max-width: 200px !important;
+  }
+  
+  .modal-body .table th:nth-child(3),
+  .modal-body .table td:nth-child(3),
+  .modal-body .table th:nth-child(4),
+  .modal-body .table td:nth-child(4) {
+    min-width: 60px !important;
+    max-width: 80px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .modal-body .table {
+    font-size: 0.8rem !important;
+  }
+  
+  .modal-body .table th,
+  .modal-body .table td {
+    padding: 0.3rem 0.2rem !important;
+  }
+  
+  .modal-body .table th:nth-child(2),
+  .modal-body .table td:nth-child(2) {
+    min-width: 100px !important;
+    max-width: 150px !important;
   }
 } 

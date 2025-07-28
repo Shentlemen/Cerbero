@@ -46,41 +46,7 @@
   margin-top: 0.5rem;
 }
 
-.stats-pills {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
 
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #f8f9fa;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  color: #2c3e50;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.stat-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  background: #e2e8f0;
-}
-
-.stat-pill.active {
-  background: #41A1AF;
-  color: white;
-  border-color: #41A1AF;
-}
-
-.stat-pill.active i {
-  color: white;
-}
 
 .proveedores-content {
   background: white;
@@ -236,16 +202,80 @@
     padding: 1rem;
   }
 
-  .stats-pills {
-    gap: 0.5rem;
-  }
-
-  .stat-pill {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-
   .proveedores-content {
     padding: 1rem;
+  }
+}
+
+/* Estilos para los botones de filtro */
+.filters-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--device-border-color, #dee2e6);
+  border-radius: 25px;
+  background: var(--device-bg-color, #ffffff);
+  color: var(--device-color, #2c3e50);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  background: var(--device-bg-color, #ffffff);
+  border-color: var(--device-border-color, #dee2e6);
+}
+
+.filter-btn.active {
+  background: var(--device-color, #2c3e50);
+  color: white;
+  border-color: var(--device-color, #2c3e50);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.filter-btn i {
+  font-size: 1rem;
+}
+
+.filter-btn .count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .filters-container {
+    gap: 0.5rem;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .filter-btn .count {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-btn {
+    justify-content: center;
   }
 } 

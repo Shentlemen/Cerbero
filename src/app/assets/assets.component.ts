@@ -38,6 +38,9 @@ export class AssetsComponent implements OnInit {
   otherCount: number = 0;  // Declaración de la propiedad
   miniPcCount: number = 0; // Añadir esta nueva propiedad
   towerCount: number = 0;  // Nueva propiedad para Tower
+  lowProfileCount: number = 0; // Contador para Low Profile Desktop
+  miniTowerCount: number = 0;  // Contador para Mini Tower
+  desconocidoCount: number = 0; // Contador para Desconocido
   currentFilter: string = '';
   originalAssetsList: any[] = []; // Para guardar la lista original
   activeFilter: string | null = null;
@@ -87,7 +90,9 @@ export class AssetsComponent implements OnInit {
   private applyFilterFromParams(filterType: string, filterValue: string): void {
     switch (filterType) {
       case 'type':
-        this.filterByType(filterValue);
+        // Normalizar el valor del filtro para que coincida con los tipos esperados
+        const normalizedValue = this.normalizeTypeFilter(filterValue);
+        this.filterByType(normalizedValue);
         break;
       case 'marca':
         this.assetsFiltrados = this.originalAssetsList.filter(asset => 
@@ -102,7 +107,7 @@ export class AssetsComponent implements OnInit {
     }
     this.collectionSize = this.assetsFiltrados.length;
     this.page = 1;
-    this.updateSummary();
+    // No llamamos a updateSummary() aquí para mantener los contadores constantes
   }
 
   loadAssets(): Promise<void> {
@@ -145,7 +150,8 @@ export class AssetsComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error(`Error al cargar activo para PC ${asset.name}:`, error);
+          // No imprimir error - es normal que algunos equipos no tengan activos asignados
+          // console.error(`Error al cargar activo para PC ${asset.name}:`, error);
         }
       });
     });
@@ -244,7 +250,7 @@ export class AssetsComponent implements OnInit {
         this.assetsFiltrados = filteredAssets;
         this.collectionSize = this.assetsFiltrados.length;
         this.page = 1;
-        this.updateSummary();
+        // No llamamos a updateSummary() aquí para mantener los contadores constantes
         
         console.log('Assets filtrados:', this.assetsFiltrados);
       },
@@ -262,9 +268,12 @@ export class AssetsComponent implements OnInit {
     let laptopCount = 0;
     let otherCount = 0;
     let towerCount = 0;
+    let lowProfileCount = 0;
+    let miniTowerCount = 0;
+    let desconocidoCount = 0;
 
-    // Recorre la lista de assets filtrados y cuenta los tipos
-    this.assetsFiltrados.forEach(asset => {
+    // Recorre la lista original de assets y cuenta los tipos (no la filtrada)
+    this.assetsList.forEach(asset => {
       totalAssets++;
       const type = (asset.biosType || '').toUpperCase();
 
@@ -282,6 +291,15 @@ export class AssetsComponent implements OnInit {
         case 'TOWER':
           towerCount++;
           break;
+        case 'LOW PROFILE DESKTOP':
+          lowProfileCount++;
+          break;
+        case 'MINI TOWER':
+          miniTowerCount++;
+          break;
+        case 'DESCONOCIDO':
+          desconocidoCount++;
+          break;
         default:
           otherCount++;
           break;
@@ -295,6 +313,9 @@ export class AssetsComponent implements OnInit {
     this.laptopCount = laptopCount;
     this.otherCount = otherCount;
     this.towerCount = towerCount;
+    this.lowProfileCount = lowProfileCount;
+    this.miniTowerCount = miniTowerCount;
+    this.desconocidoCount = desconocidoCount;
 
     console.log('Resumen actualizado:', {
       totalAssets,
@@ -302,7 +323,10 @@ export class AssetsComponent implements OnInit {
       miniPcCount,
       laptopCount,
       otherCount,
-      towerCount
+      towerCount,
+      lowProfileCount,
+      miniTowerCount,
+      desconocidoCount
     });
   }
 
@@ -385,6 +409,12 @@ export class AssetsComponent implements OnInit {
         const assetType = (asset.biosType || '').trim().toUpperCase();
         return assetType === 'LAPTOP' || assetType === 'NOTEBOOK';
       });
+    } else if (this.currentFilter === 'DESCONOCIDO') {
+      // Filtrar tanto DESCONOCIDO como valores nulos/vacíos
+      this.assetsFiltrados = this.originalAssetsList.filter(asset => {
+        const assetType = (asset.biosType || '').trim().toUpperCase();
+        return assetType === 'DESCONOCIDO' || assetType === '';
+      });
     } else {
       this.assetsFiltrados = this.originalAssetsList.filter(asset => 
         (asset.biosType || '').trim().toUpperCase() === this.currentFilter.trim().toUpperCase()
@@ -393,7 +423,7 @@ export class AssetsComponent implements OnInit {
     
     this.collectionSize = this.assetsFiltrados.length;
     this.page = 1;
-    this.updateSummary();
+    // No llamamos a updateSummary() aquí para mantener los contadores constantes
 
     // Para debug
     console.log('Filtro aplicado:', this.currentFilter);
@@ -407,7 +437,7 @@ export class AssetsComponent implements OnInit {
     } else {
       this.activeFilter = column;
     }
-    this.updateSummary();
+    // No llamamos a updateSummary() aquí para mantener los contadores constantes
   }
 
   applyColumnFilter(event: Event): void {
@@ -437,7 +467,7 @@ export class AssetsComponent implements OnInit {
         }
       });
     }
-    this.updateSummary();
+    // No llamamos a updateSummary() aquí para mantener los contadores constantes
   }
 
   handleKeyPress(event: KeyboardEvent): void {
@@ -448,5 +478,35 @@ export class AssetsComponent implements OnInit {
 
   canManageAssets(): boolean {
     return this.permissionsService.canManageAssets();
+  }
+
+  private normalizeTypeFilter(filterValue: string): string {
+    // Normalizar el valor del filtro para que coincida con los tipos esperados
+    const normalizedValue = filterValue.trim().toUpperCase();
+    
+    // Mapeo de valores que pueden venir del dashboard a los valores esperados
+    switch (normalizedValue) {
+      case 'DESKTOP':
+      case 'PC':
+        return 'DESKTOP';
+      case 'MINI PC':
+      case 'MINI-PC':
+        return 'MINI PC';
+      case 'LAPTOP':
+      case 'NOTEBOOK':
+        return 'LAPTOP';
+      case 'TOWER':
+        return 'TOWER';
+      case 'LOW PROFILE DESKTOP':
+      case 'LOW PROFILE':
+        return 'LOW PROFILE DESKTOP';
+      case 'MINI TOWER':
+        return 'MINI TOWER';
+      case 'DESCONOCIDO':
+        return 'DESCONOCIDO';
+      default:
+        // Si no coincide con ningún tipo conocido, intentar filtrar por el valor exacto
+        return normalizedValue;
+    }
   }
 }

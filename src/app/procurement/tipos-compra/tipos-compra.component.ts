@@ -36,7 +36,8 @@ export class TiposCompraComponent implements OnInit {
     private modalService: NgbModal
   ) {
     this.tipoCompraForm = this.fb.group({
-      descripcion: ['', Validators.required]
+      descripcion: ['', Validators.required],
+      abreviado: ['', [Validators.maxLength(10)]]
     });
   }
 
@@ -101,7 +102,10 @@ export class TiposCompraComponent implements OnInit {
     if (tipoCompra) {
       this.modoEdicion = true;
       this.tipoCompraSeleccionado = tipoCompra;
-      this.tipoCompraForm.patchValue(tipoCompra);
+      this.tipoCompraForm.patchValue({
+        descripcion: tipoCompra.descripcion,
+        abreviado: tipoCompra.abreviado || ''
+      });
     } else {
       this.modoEdicion = false;
       this.tipoCompraSeleccionado = null;
@@ -113,13 +117,17 @@ export class TiposCompraComponent implements OnInit {
   guardarTipoCompra(): void {
     if (this.tipoCompraForm.valid) {
       const descripcion = this.tipoCompraForm.get('descripcion')?.value;
+      const abreviado = this.tipoCompraForm.get('abreviado')?.value;
       
       if (!descripcion || descripcion.trim() === '') {
         this.error = 'La descripción es obligatoria';
         return;
       }
 
-      const tipoCompraData = { descripcion: descripcion.trim() };
+      const tipoCompraData = { 
+        descripcion: descripcion.trim(),
+        abreviado: abreviado ? abreviado.trim() : null
+      };
       console.log('Datos a enviar:', tipoCompraData);
       
       if (this.modoEdicion && this.tipoCompraSeleccionado) {
@@ -129,7 +137,8 @@ export class TiposCompraComponent implements OnInit {
         }
 
         const tipoCompraActualizado: TipoDeCompraDTO = {
-          ...tipoCompraData,
+          descripcion: tipoCompraData.descripcion,
+          abreviado: tipoCompraData.abreviado,
           idTipoCompra: this.tipoCompraSeleccionado.idTipoCompra
         };
         

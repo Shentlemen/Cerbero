@@ -3,11 +3,14 @@
     <div class="header-content">
       <div class="title-wrapper">
         <h1><i class="fas fa-industry"></i> Gestión de Proveedores</h1>
-        <div class="stats-pills">
-          <div class="stat-pill total">
+        <div class="filters-container">
+          <button 
+            class="filter-btn" 
+            [class.active]="true">
             <i class="fas fa-industry"></i>
-            <span>{{collectionSize}} Total</span>
-          </div>
+            <span>Proveedores</span>
+            <span class="count">({{collectionSize}})</span>
+          </button>
         </div>
       </div>
       <div class="actions" *ngIf="canManageProviders()">
