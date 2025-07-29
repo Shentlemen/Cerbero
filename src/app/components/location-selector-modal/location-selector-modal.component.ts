@@ -5,6 +5,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { UbicacionesService } from '../../services/ubicaciones.service';
 import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../../services/subnet.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-location-selector-modal',
@@ -146,7 +147,8 @@ export class LocationSelectorModalComponent implements OnInit {
     public activeModal: NgbActiveModal,
     private formBuilder: FormBuilder,
     private ubicacionesService: UbicacionesService,
-    private subnetService: SubnetService
+    private subnetService: SubnetService,
+    private notificationService: NotificationService
   ) {
     this.ubicacionForm = this.formBuilder.group({
       nombreGerencia: [''],
@@ -189,7 +191,10 @@ export class LocationSelectorModalComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar subnets:', error);
-        alert('Error al cargar las subnets. Por favor, intente nuevamente.');
+        this.notificationService.showError(
+          'Error al Cargar Subnets',
+          'No se pudieron cargar las subnets. Por favor, intente nuevamente.'
+        );
       }
     });
   }
@@ -210,22 +215,30 @@ export class LocationSelectorModalComponent implements OnInit {
           ).subscribe({
             next: (ubicacion: UbicacionDTO) => {
               console.log('Ubicación asignada:', ubicacion);
+              this.notificationService.showSuccessMessage('Ubicación asignada exitosamente');
               this.activeModal.close(ubicacion);
             },
             error: (error: any) => {
               console.error('Error al asignar ubicación:', error);
-              alert('Error al asignar la ubicación. Por favor, intente nuevamente.');
+              this.notificationService.showError(
+                'Error al Asignar Ubicación',
+                'No se pudo asignar la ubicación. Por favor, intente nuevamente.'
+              );
             }
           });
         } else {
           this.ubicacionesService.crearUbicacionEquipo(ubicacionData).subscribe({
             next: (ubicacion: UbicacionDTO) => {
               console.log('Ubicación asignada:', ubicacion);
+              this.notificationService.showSuccessMessage('Ubicación asignada exitosamente');
               this.activeModal.close(ubicacion);
             },
             error: (error: any) => {
               console.error('Error al asignar ubicación:', error);
-              alert('Error al asignar la ubicación. Por favor, intente nuevamente.');
+              this.notificationService.showError(
+                'Error al Asignar Ubicación',
+                'No se pudo asignar la ubicación. Por favor, intente nuevamente.'
+              );
             }
           });
         }
@@ -236,22 +249,30 @@ export class LocationSelectorModalComponent implements OnInit {
           this.ubicacionesService.actualizarUbicacionData(this.ubicacion.id, ubicacionData).subscribe({
             next: (ubicacion: UbicacionDTO) => {
               console.log('Ubicación actualizada:', ubicacion);
+              this.notificationService.showSuccessMessage('Ubicación actualizada exitosamente');
               this.activeModal.close(ubicacion);
             },
             error: (error: any) => {
               console.error('Error al actualizar ubicación:', error);
-              alert('Error al actualizar la ubicación. Por favor, intente nuevamente.');
+              this.notificationService.showError(
+                'Error al Actualizar Ubicación',
+                'No se pudo actualizar la ubicación. Por favor, intente nuevamente.'
+              );
             }
           });
         } else {
           this.ubicacionesService.crearUbicacionData(ubicacionData).subscribe({
             next: (ubicacion: UbicacionDTO) => {
               console.log('Ubicación creada:', ubicacion);
+              this.notificationService.showSuccessMessage('Ubicación creada exitosamente');
               this.activeModal.close(ubicacion);
             },
             error: (error: any) => {
               console.error('Error al crear ubicación:', error);
-              alert('Error al crear la ubicación. Por favor, intente nuevamente.');
+              this.notificationService.showError(
+                'Error al Crear Ubicación',
+                'No se pudo crear la ubicación. Por favor, intente nuevamente.'
+              );
             }
           });
         }

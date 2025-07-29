@@ -1,0 +1,239 @@
+<div class="profile-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
+  <div class="profile-header">
+    <div class="header-content">
+      <button class="btn-back" (click)="volver()">
+        <i class="fas fa-arrow-left"></i>
+        Volver
+      </button>
+      <h1 class="profile-title">
+        <i class="fas fa-user-circle"></i>
+        Mi Perfil
+      </h1>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <!-- Información del usuario -->
+    <div class="user-info-card" *ngIf="currentUser">
+      <div class="user-avatar">
+        <i [class]="getRoleIcon(currentUser.role)"></i>
+      </div>
+      <div class="user-details">
+        <h2>{{ currentUser.firstName }} {{ currentUser.lastName }}</h2>
+        <p class="username">{{ '@' + currentUser.username }}</p>
+        <span class="role-badge" [class]="'role-' + currentUser.role.toLowerCase()">
+          <i [class]="getRoleIcon(currentUser.role)"></i>
+          {{ getRoleLabel(currentUser.role) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Mensajes de error y éxito -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
+    </div>
+    
+    <div *ngIf="successMessage" class="alert alert-success">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+
+    <!-- Formulario de perfil -->
+    <div class="profile-form-card">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-edit"></i>
+          Información Personal
+        </h3>
+        <button 
+          *ngIf="!isEditing" 
+          class="btn-edit" 
+          (click)="toggleEdit()"
+          [disabled]="loading">
+          <i class="fas fa-pencil-alt"></i>
+          Editar
+        </button>
+      </div>
+
+      <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="profile-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="username">
+              <i class="fas fa-user"></i>
+              Nombre de Usuario
+            </label>
+            <input 
+              type="text" 
+              id="username" 
+              formControlName="username"
+              [readonly]="!isEditing"
+              placeholder="Nombre de usuario">
+            <div *ngIf="userForm.get('username')?.invalid && userForm.get('username')?.touched" class="error-message">
+              <i class="fas fa-exclamation-triangle"></i>
+              El nombre de usuario es requerido y debe tener al menos 3 caracteres
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">
+              <i class="fas fa-envelope"></i>
+              Email
+            </label>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email"
+              [readonly]="!isEditing"
+              placeholder="Email">
+            <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="error-message">
+              <i class="fas fa-exclamation-triangle"></i>
+              Ingrese un email válido
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">
+              <i class="fas fa-id-card"></i>
+              Nombre
+            </label>
+            <input 
+              type="text" 
+              id="firstName" 
+              formControlName="firstName"
+              [readonly]="!isEditing"
+              placeholder="Nombre">
+            <div *ngIf="userForm.get('firstName')?.invalid && userForm.get('firstName')?.touched" class="error-message">
+              <i class="fas fa-exclamation-triangle"></i>
+              El nombre es requerido
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">
+              <i class="fas fa-id-card"></i>
+              Apellido
+            </label>
+            <input 
+              type="text" 
+              id="lastName" 
+              formControlName="lastName"
+              [readonly]="!isEditing"
+              placeholder="Apellido">
+            <div *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched" class="error-message">
+              <i class="fas fa-exclamation-triangle"></i>
+              El apellido es requerido
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="role">
+            <i class="fas fa-shield-alt"></i>
+            Rol
+          </label>
+          <input 
+            type="text" 
+            id="role" 
+            formControlName="role"
+            readonly
+            [value]="getRoleLabel(currentUser?.role || '')"
+            class="role-display">
+          <small class="role-note">
+            <i class="fas fa-info-circle"></i>
+            El rol no puede ser modificado desde el perfil
+          </small>
+        </div>
+
+        <!-- Campos de contraseña (solo visibles en modo edición) -->
+        <div *ngIf="isEditing" class="password-section">
+          <h4>
+            <i class="fas fa-lock"></i>
+            Cambiar Contraseña
+          </h4>
+          <small class="password-note">
+            <i class="fas fa-info-circle"></i>
+            Deja los campos vacíos si no quieres cambiar la contraseña
+          </small>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="password">
+                <i class="fas fa-key"></i>
+                Nueva Contraseña
+              </label>
+              <input 
+                type="password" 
+                id="password" 
+                formControlName="password"
+                placeholder="Nueva contraseña (mínimo 6 caracteres)">
+              <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                La contraseña debe tener al menos 6 caracteres
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">
+                <i class="fas fa-key"></i>
+                Confirmar Contraseña
+              </label>
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                formControlName="confirmPassword"
+                placeholder="Confirmar nueva contraseña">
+              <div *ngIf="userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched" class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                Confirma la nueva contraseña
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div *ngIf="isEditing" class="form-actions">
+          <button 
+            type="submit" 
+            class="btn-save"
+            [disabled]="userForm.invalid || loading">
+            <i class="fas fa-save"></i>
+            {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
+          <button 
+            type="button" 
+            class="btn-cancel"
+            (click)="cancelEdit()"
+            [disabled]="loading">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="info-card">
+      <h4>
+        <i class="fas fa-info-circle"></i>
+        Información de la Cuenta
+      </h4>
+      <div class="info-item" *ngIf="currentUser">
+        <span class="info-label">Fecha de Creación:</span>
+        <span class="info-value">{{ currentUser.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+      <div class="info-item" *ngIf="currentUser">
+        <span class="info-label">Estado:</span>
+        <span class="info-value status-active">
+          <i class="fas fa-check-circle"></i>
+          Activo
+        </span>
+      </div>
+    </div>
+  </div>
+</div> 

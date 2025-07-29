@@ -8,6 +8,8 @@ import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { Subject, Observable } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PermissionsService } from '../services/permissions.service';
+import { NotificationService } from '../services/notification.service';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 
 @Component({
   selector: 'app-software',
@@ -16,7 +18,8 @@ import { PermissionsService } from '../services/permissions.service';
     CommonModule,
     HttpClientModule,
     FormsModule,
-    NgbPaginationModule
+    NgbPaginationModule,
+    NotificationContainerComponent
   ],
   templateUrl: './software.component.html',
   styleUrls: ['./software.component.css']
@@ -25,7 +28,6 @@ export class SoftwareComponent implements OnInit {
   softwareList: SoftwareDTO[] = [];
   filteredSoftwareList: SoftwareDTO[] = [];
   loading: boolean = true;
-  errorMessage: string | null = null;
   showHidden: boolean = false;
   showOnlyHidden: boolean = false;
   showOnlyForbidden: boolean = false;
@@ -39,7 +41,8 @@ export class SoftwareComponent implements OnInit {
   constructor(
     private softwareService: SoftwareService,
     private router: Router,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private notificationService: NotificationService
   ) {
     // Configurar el filtrado reactivo
     this.searchSubject.pipe(
@@ -67,7 +70,6 @@ export class SoftwareComponent implements OnInit {
 
   loadSoftware(): void {
     this.loading = true;
-    this.errorMessage = null;
 
     // Cargar software visible por defecto
     this.loadSoftwareByFilter('total');
@@ -75,7 +77,6 @@ export class SoftwareComponent implements OnInit {
 
   loadSoftwareByFilter(filter: 'total' | 'hidden' | 'forbidden'): void {
     this.loading = true;
-    this.errorMessage = null;
 
     let observable: Observable<SoftwareDTO[]>;
 
@@ -100,7 +101,10 @@ export class SoftwareComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        this.errorMessage = 'Error al cargar el software: ' + error.message;
+        this.notificationService.showError(
+          'Error al Cargar Software',
+          'No se pudo cargar la lista de software: ' + error.message
+        );
         this.loading = false;
       }
     });
@@ -161,30 +165,44 @@ export class SoftwareComponent implements OnInit {
 
   toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
-    this.errorMessage = null;
 
     this.softwareService.toggleSoftwareVisibility(software, !software.hidden).subscribe({
       next: () => {
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage(
+          `Software ${software.hidden ? 'mostrado' : 'ocultado'} exitosamente`
+        );
+        
         // Recargar los datos del filtro actual
         this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
-        this.errorMessage = 'Error al actualizar la visibilidad: ' + error.message;
+        this.notificationService.showError(
+          'Error al Actualizar Visibilidad',
+          'No se pudo actualizar la visibilidad del software: ' + error.message
+        );
       }
     });
   }
 
   toggleSoftwareForbidden(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
-    this.errorMessage = null;
 
     this.softwareService.toggleSoftwareForbidden(software).subscribe({
       next: () => {
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage(
+          `Software ${software.forbidden ? 'desmarcado como prohibido' : 'marcado como prohibido'} exitosamente`
+        );
+        
         // Recargar los datos del filtro actual
         this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
-        this.errorMessage = 'Error al actualizar el estado prohibido: ' + error.message;
+        this.notificationService.showError(
+          'Error al Actualizar Estado Prohibido',
+          'No se pudo actualizar el estado prohibido del software: ' + error.message
+        );
       }
     });
   }

@@ -201,6 +201,11 @@ export class AuthService {
       );
   }
 
+  updateCurrentUser(updatedUser: User): void {
+    this.currentUserSubject.next(updatedUser);
+    this.permissionsService.setCurrentUser(updatedUser);
+  }
+
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/gm/users/${id}`);
   }

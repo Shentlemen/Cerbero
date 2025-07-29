@@ -16,7 +16,9 @@
   <div class="user-section" *ngIf="currentUser">
     <div class="user-info">
       <div class="user-details">
-        <div class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
+        <div class="user-name" (click)="goToProfile()" style="cursor: pointer; text-decoration: underline;">
+          {{ currentUser.firstName }} {{ currentUser.lastName }}
+        </div>
         <div class="user-role-container">
           <span class="badge" 
                 [class]="currentUser.role === 'GM' ? 'bg-danger' : currentUser.role === 'ADMIN' ? 'bg-warning' : 'bg-secondary'">
@@ -85,6 +87,8 @@
     <i class="fas fa-network-wired"></i>
     <span>SUB REDES</span>
   </a>
+
+
 
   <!-- Menú expandible de Configuración - Solo visible para GM y Admin -->
   <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canAccessConfiguration()">

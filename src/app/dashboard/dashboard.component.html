@@ -1,4 +1,7 @@
 <div class="dashboard-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
   <header class="dashboard-header">
     <h1 class="dashboard-title">
       <i class="fas fa-chart-line"></i>
@@ -39,12 +42,100 @@
           class="btn btn-cleanup-alerts" 
           (click)="cleanupOrphanedAlerts()" 
           [disabled]="isCleaning"
-          title="Limpiar alertas huérfanas (hardware eliminado o software ya no prohibido)">
+          title="Verificar y limpiar todas las alertas obsoletas (hardware eliminado, software ya no prohibido, equipos 'nuevos' que ya existen, cambios que ya no son válidos)">
           <i class="fas fa-broom" [class.fa-spin]="isCleaning"></i>
           {{ isCleaning ? 'Limpiando...' : 'Limpiar alertas' }}
         </button>
       </div>
     </div>
+    
+    <!-- Filtros por tipo de alerta -->
+    <div class="alert-filters">
+      <div class="filter-buttons">
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'all'"
+          (click)="filterAlerts('all')"
+          title="Mostrar todas las alertas">
+          <i class="fas fa-list"></i>
+          <span>Todas</span>
+          <span class="count">({{alerts.length}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'new_hardware'"
+          [style.--device-color]="'#2e7d32'"
+          [style.--device-bg-color]="'#e8f5e9'"
+          [style.--device-border-color]="'#c8e6c9'"
+          (click)="filterAlerts('new_hardware')"
+          title="Mostrar solo alertas de equipos nuevos">
+          <i class="fas fa-plus-circle" style="color: #2e7d32;"></i>
+          <span>Nuevos</span>
+          <span class="count">({{getFilterCount('new_hardware')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'memory'"
+          [style.--device-color]="'#1976d2'"
+          [style.--device-bg-color]="'#e3f2fd'"
+          [style.--device-border-color]="'#bbdefb'"
+          (click)="filterAlerts('memory')"
+          title="Mostrar solo alertas de cambios en memoria">
+          <i class="fas fa-memory" style="color: #1976d2;"></i>
+          <span>Memoria</span>
+          <span class="count">({{getFilterCount('memory')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'disk'"
+          [style.--device-color]="'#f57c00'"
+          [style.--device-bg-color]="'#fff3e0'"
+          [style.--device-border-color]="'#ffe0b2'"
+          (click)="filterAlerts('disk')"
+          title="Mostrar solo alertas de uso de disco">
+          <i class="fas fa-hdd" style="color: #f57c00;"></i>
+          <span>Disco</span>
+          <span class="count">({{getFilterCount('disk')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'ip'"
+          [style.--device-color]="'#388e3c'"
+          [style.--device-bg-color]="'#e8f5e9'"
+          [style.--device-border-color]="'#c8e6c9'"
+          (click)="filterAlerts('ip')"
+          title="Mostrar solo alertas de cambios de IP">
+          <i class="fas fa-network-wired" style="color: #388e3c;"></i>
+          <span>IP</span>
+          <span class="count">({{getFilterCount('ip')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'video'"
+          [style.--device-color]="'#7b1fa2'"
+          [style.--device-bg-color]="'#f3e5f5'"
+          [style.--device-border-color]="'#e1bee7'"
+          (click)="filterAlerts('video')"
+          title="Mostrar solo alertas de cambios en video">
+          <i class="fas fa-video" style="color: #7b1fa2;"></i>
+          <span>Video</span>
+          <span class="count">({{getFilterCount('video')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'software_forbidden'"
+          [style.--device-color]="'#e74c3c'"
+          [style.--device-bg-color]="'#fff5f5'"
+          [style.--device-border-color]="'#fad2d2'"
+          (click)="filterAlerts('software_forbidden')"
+          title="Mostrar solo alertas de software prohibido">
+          <i class="fas fa-ban" style="color: #e74c3c;"></i>
+          <span>Software</span>
+          <span class="count">({{getFilterCount('software_forbidden')}})</span>
+        </button>
+      </div>
+    </div>
+    
     <div class="alert-list">
       <div *ngIf="alerts.length === 0" class="no-alerts">
         <i class="fas fa-check-circle"></i>

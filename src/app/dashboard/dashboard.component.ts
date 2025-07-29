@@ -11,6 +11,8 @@ import { finalize } from 'rxjs/operators';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { PermissionsService } from '../services/permissions.service';
+import { NotificationService } from '../services/notification.service';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 
 declare var bootstrap: any;
 
@@ -27,7 +29,8 @@ interface ApiResponse<T> {
     CommonModule,
     CanvasJSAngularChartsModule, 
     RouterModule,
-    NgbPaginationModule
+    NgbPaginationModule,
+    NotificationContainerComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -41,8 +44,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   isChecking: boolean = false;
   isCleaning: boolean = false;
   page: number = 1;
-  pageSize: number = 7;
+  pageSize: number = 14;
   collectionSize: number = 0;
+  currentFilter: string = 'all';
+  filteredAlerts: Alerta[] = [];
 
   private typeMap: Record<string, string> = {
     '0': 'PC',
@@ -57,7 +62,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private router: Router,
     private alertService: AlertService,
     private networkInfoService: NetworkInfoService,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private notificationService: NotificationService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -256,7 +262,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.alertService.getAlertas().subscribe(
       (alertas: Alerta[]) => {
         this.alerts = alertas;
-        this.collectionSize = alertas.length;
+        this.applyCurrentFilter(); // Usar el método auxiliar
         this.page = 1;
       },
       error => {
@@ -271,7 +277,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       (alertas: Alerta[]) => {
         console.log('Alertas actualizadas:', alertas);
         this.alerts = alertas;
-        this.collectionSize = alertas.length;
+        
+        // Aplicar el filtro actual a las nuevas alertas
+        this.applyCurrentFilter();
         
         // Calcular la página correcta después de actualizar las alertas
         const totalPages = Math.ceil(this.collectionSize / this.pageSize);
@@ -292,6 +300,34 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     );
   }
 
+  // Método auxiliar para aplicar el filtro actual
+  private applyCurrentFilter(): void {
+    if (this.currentFilter === 'all') {
+      this.filteredAlerts = this.alerts;
+    } else {
+      this.filteredAlerts = this.alerts.filter(alert => {
+        switch (this.currentFilter) {
+          case 'new_hardware':
+            return alert.new_hardware === 1;
+          case 'memory':
+            return alert.memory === true;
+          case 'disk':
+            return alert.disk === true;
+          case 'ip':
+            return alert.ip === true;
+          case 'video':
+            return alert.video === true;
+          case 'software_forbidden':
+            return alert.softwareForbidden === true;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    this.collectionSize = this.filteredAlerts.length;
+  }
+
   confirmarAlerta(alerta: Alerta): void {
     // Guardar la página actual antes de confirmar
     const currentPage = this.page;
@@ -300,17 +336,40 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       next: (response) => {
         console.log('Alerta confirmada exitosamente:', response);
         
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage('Alerta confirmada exitosamente');
+        
         // Recargar alertas y mantener la página actual
         this.reloadAlertasManteniendoPagina(currentPage);
       },
       error: (error) => {
-        let mensajeError = 'Error al confirmar la alerta';
+        console.error('Error al confirmar alerta:', error);
+        
         if (error.status === 404) {
-          mensajeError = 'No se encontró la alerta';
+          this.notificationService.showNotFoundError();
+          // Recargar alertas para actualizar la lista
+          this.reloadAlertasManteniendoPagina(currentPage);
+        } else if (error.status === 409) {
+          this.notificationService.showConflictError();
+          // Recargar alertas para actualizar la lista
+          this.reloadAlertasManteniendoPagina(currentPage);
         } else if (error.status === 400) {
-          mensajeError = 'Solicitud inválida';
+          this.notificationService.showValidationError();
+        } else if (error.status === 500) {
+          // Verificar si es el error específico de alerta no encontrada
+          if (error.error && error.error.error && error.error.error.includes('no encontrada')) {
+            this.notificationService.showNotFoundError();
+            // Recargar alertas para actualizar la lista
+            this.reloadAlertasManteniendoPagina(currentPage);
+          } else {
+            this.notificationService.showServerError();
+          }
+        } else {
+          this.notificationService.showError(
+            'Error Inesperado',
+            'Ocurrió un error inesperado al confirmar la alerta'
+          );
         }
-        console.error(mensajeError, error);
       }
     });
   }
@@ -403,11 +462,25 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       })
     ).subscribe({
       next: () => {
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage('Verificación de cambios completada');
+        
         // Recargar alertas y mantener la página actual
         this.reloadAlertasManteniendoPagina(currentPage);
       },
       error: (error) => {
         console.error('Error al verificar cambios:', error);
+        
+        // Mostrar mensaje específico para conflictos de concurrencia
+        if (error.status === 409) {
+          this.notificationService.showOperationInProgress('Ya hay una verificación de cambios en ejecución. Por favor, espera a que termine.');
+        } else {
+          this.notificationService.showError(
+            'Error al Verificar Cambios',
+            error.error?.error || error.message || 'Error desconocido al verificar cambios'
+          );
+        }
+        
         // En caso de error, mantener la página actual
         this.page = currentPage;
       }
@@ -427,11 +500,25 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       })
     ).subscribe({
       next: () => {
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage('Limpieza de alertas completada');
+        
         // Recargar alertas y mantener la página actual
         this.reloadAlertasManteniendoPagina(currentPage);
       },
       error: (error) => {
         console.error('Error al limpiar alertas huérfanas:', error);
+        
+        // Mostrar mensaje específico para conflictos de concurrencia
+        if (error.status === 409) {
+          this.notificationService.showOperationInProgress('Ya hay una limpieza de alertas en ejecución. Por favor, espera a que termine.');
+        } else {
+          this.notificationService.showError(
+            'Error al Limpiar Alertas',
+            error.error?.error || error.message || 'Error desconocido al limpiar alertas'
+          );
+        }
+        
         // En caso de error, mantener la página actual
         this.page = currentPage;
       }
@@ -508,17 +595,52 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   showNewHardwareMessage(): void {
-    alert('Este equipo es nuevo y aún no está registrado en la base de datos. Por favor, confirme la alerta para procesar su registro.');
+    this.notificationService.showInfo(
+      'Equipo Nuevo',
+      'Este equipo es nuevo y aún no está registrado en la base de datos. Por favor, confirme la alerta para procesar su registro.'
+    );
   }
 
   get pagedAlerts(): Alerta[] {
     const start = (this.page - 1) * this.pageSize;
     const end = this.page * this.pageSize;
-    return this.alerts.slice(start, end);
+    return this.filteredAlerts.slice(start, end);
   }
 
   canConfirmAlerts(): boolean {
     return this.permissionsService.canConfirmAlerts();
+  }
+
+  filterAlerts(filterType: string): void {
+    this.currentFilter = filterType;
+    this.page = 1; // Resetear a la primera página al cambiar filtro
+    
+    this.applyCurrentFilter();
+  }
+
+  getFilterCount(filterType: string): number {
+    if (filterType === 'all') {
+      return this.alerts.length;
+    }
+    
+    return this.alerts.filter(alert => {
+      switch (filterType) {
+        case 'new_hardware':
+          return alert.new_hardware === 1;
+        case 'memory':
+          return alert.memory === true;
+        case 'disk':
+          return alert.disk === true;
+        case 'ip':
+          return alert.ip === true;
+        case 'video':
+          return alert.video === true;
+        case 'software_forbidden':
+          return alert.softwareForbidden === true;
+        default:
+          return false;
+      }
+    }).length;
   }
 
   private normalizeHardwareType(type: string): string {
@@ -548,7 +670,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       case 'LOW PROFILE':
       case 'LOWPROFILE':
       case 'LOW-PROFILE':
-      case 'LOW PROFILE':
       case 'LOWPROFILEDESKTOP':
       case 'LOW-PROFILE-DESKTOP':
         return 'LOW PROFILE DESKTOP';

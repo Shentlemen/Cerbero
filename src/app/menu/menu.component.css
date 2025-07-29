@@ -97,6 +97,11 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+.sidenav .user-section .user-name:hover {
+  color: #3498db !important;
 }
 
 .sidenav .user-section .user-role-container {

@@ -16,6 +16,8 @@ import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo
 import { firstValueFrom } from 'rxjs';
 import { importProvidersFrom } from '@angular/core';
 import { PermissionsService } from '../../services/permissions.service';
+import { NotificationService } from '../../services/notification.service';
+import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 
 @Component({
   selector: 'app-activos',
@@ -24,7 +26,8 @@ import { PermissionsService } from '../../services/permissions.service';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    NgbModule
+    NgbModule,
+    NotificationContainerComponent
   ],
   templateUrl: './activos.component.html',
   styleUrls: ['./activos.component.css'],
@@ -99,7 +102,8 @@ export class ActivosComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private changeDetectorRef: ChangeDetectorRef,
-    public permissionsService: PermissionsService
+    public permissionsService: PermissionsService,
+    private notificationService: NotificationService
   ) {
     this.activoForm = this.fb.group({
       name: ['', Validators.required],
@@ -624,11 +628,14 @@ export class ActivosComponent implements OnInit {
         if (hardware) {
           this.router.navigate(['/menu/asset-details', hardware.id]);
         } else {
-          alert('No se encontró el hardware correspondiente.');
+          this.notificationService.showNotFoundError('No se encontró el hardware correspondiente.');
         }
       },
       error: () => {
-        alert('Error al buscar el hardware.');
+        this.notificationService.showError(
+          'Error al Buscar Hardware',
+          'No se pudo buscar el hardware correspondiente.'
+        );
       }
     });
   }

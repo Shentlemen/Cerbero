@@ -70,7 +70,7 @@ export class DevicesComponent implements OnInit {
         if (response.success) {
           this.devices = response.data;
           this.applyFilter();
-          console.log('Dispositivos cargados:', this.devices);
+          // console.log('Dispositivos cargados:', this.devices);
           // Verificar parámetros de consulta después de cargar los datos
           this.checkQueryParams();
         } else {

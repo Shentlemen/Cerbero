@@ -67,13 +67,22 @@ export class AlertService {
   }
 
   cleanupOrphanedAlerts(): Observable<any> {
-    return this.http.post(`${this.changeDetectionUrl}/cleanup-orphaned-alerts`, {}).pipe(
+    return this.http.get(`${this.changeDetectionUrl}/cleanup-orphaned-alerts`).pipe(
       catchError(error => {
         console.error('Error en cleanupOrphanedAlerts:', error);
-        if (error.status === 500) {
-          const errorMessage = error.error || 'Error interno del servidor al limpiar alertas';
+        if (error.status === 409) {
+          const errorMessage = error.error?.error || 'Operación en conflicto - ya hay una limpieza en ejecución';
           return throwError(() => new Error(errorMessage));
         }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getOperationsStatus(): Observable<any> {
+    return this.http.get(`${this.changeDetectionUrl}/operations-status`).pipe(
+      catchError(error => {
+        console.error('Error obteniendo estado de operaciones:', error);
         return throwError(() => error);
       })
     );

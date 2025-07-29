@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
@@ -7,10 +7,11 @@ import { HardwareService } from '../services/hardware.service';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { BiosService } from '../services/bios.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, from, mergeMap } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
 import { ActivosService } from '../services/activos.service';
 import { PermissionsService } from '../services/permissions.service';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-assets',
@@ -31,6 +32,7 @@ export class AssetsComponent implements OnInit {
   page = 1;
   pageSize = 11;
   collectionSize = 0;
+  loading: boolean = true; // Agregar propiedad loading
 
   totalAssets: number = 0; // Declaración de la propiedad
   pcCount: number = 0;     // Declaración de la propiedad
@@ -43,11 +45,9 @@ export class AssetsComponent implements OnInit {
   desconocidoCount: number = 0; // Contador para Desconocido
   currentFilter: string = '';
   originalAssetsList: any[] = []; // Para guardar la lista original
-  activeFilter: string | null = null;
-  filterValues: { [key: string]: string } = {
-    'name': '',
-    'ipAddr': ''
-  };
+
+  // Control para el filtro de nombre
+  nombreEquipoControl = new FormControl('');
 
   constructor(
     private hardwareService: HardwareService,
@@ -65,6 +65,11 @@ export class AssetsComponent implements OnInit {
       ipAddr: [''],
       biosType: [''],
       smanufacturer: ['']
+    });
+
+    // Suscribirse a cambios en el filtro de nombre
+    this.nombreEquipoControl.valueChanges.subscribe(value => {
+      this.aplicarFiltroNombre(value || '');
     });
   }
 
@@ -98,20 +103,69 @@ export class AssetsComponent implements OnInit {
         this.assetsFiltrados = this.originalAssetsList.filter(asset => 
           asset.smanufacturer?.toUpperCase() === filterValue.toUpperCase()
         );
+        this.actualizarPaginacion();
         break;
       case 'osName':
         this.assetsFiltrados = this.originalAssetsList.filter(asset => 
           asset.osName?.toUpperCase() === filterValue.toUpperCase()
         );
+        this.actualizarPaginacion();
         break;
     }
+  }
+
+  // Método para aplicar filtro por nombre
+  private aplicarFiltroNombre(nombre: string): void {
+    if (!nombre.trim()) {
+      // Si no hay filtro, mostrar todos los assets según el filtro de tipo actual
+      this.aplicarFiltroTipoActual();
+    } else {
+      // Aplicar filtro de nombre sobre los assets filtrados por tipo
+      const assetsPorTipo = this.obtenerAssetsPorTipoActual();
+      this.assetsFiltrados = assetsPorTipo.filter(asset => 
+        asset.name?.toLowerCase().includes(nombre.toLowerCase())
+      );
+      this.actualizarPaginacion();
+    }
+  }
+
+  // Método para obtener assets según el filtro de tipo actual
+  private obtenerAssetsPorTipoActual(): any[] {
+    if (this.currentFilter === '') {
+      return [...this.originalAssetsList];
+    } else if (this.currentFilter === 'LAPTOP') {
+      return this.originalAssetsList.filter(asset => {
+        const assetType = (asset.biosType || '').trim().toUpperCase();
+        return assetType === 'LAPTOP' || assetType === 'NOTEBOOK';
+      });
+    } else if (this.currentFilter === 'DESCONOCIDO') {
+      return this.originalAssetsList.filter(asset => {
+        const assetType = (asset.biosType || '').trim().toUpperCase();
+        return assetType === 'DESCONOCIDO' || assetType === '';
+      });
+    } else {
+      return this.originalAssetsList.filter(asset => 
+        (asset.biosType || '').trim().toUpperCase() === this.currentFilter.trim().toUpperCase()
+      );
+    }
+  }
+
+  // Método para aplicar el filtro de tipo actual
+  private aplicarFiltroTipoActual(): void {
+    this.assetsFiltrados = this.obtenerAssetsPorTipoActual();
+    this.actualizarPaginacion();
+  }
+
+  // Método para actualizar la paginación
+  private actualizarPaginacion(): void {
     this.collectionSize = this.assetsFiltrados.length;
+    // Resetear a la página 1 cuando se filtran los resultados
     this.page = 1;
-    // No llamamos a updateSummary() aquí para mantener los contadores constantes
   }
 
   loadAssets(): Promise<void> {
     return new Promise((resolve, reject) => {
+      this.loading = true; // Activar loading
       forkJoin([
         this.hardwareService.getHardware(),
         this.biosService.getAllBios()
@@ -127,13 +181,15 @@ export class AssetsComponent implements OnInit {
           
           this.originalAssetsList = this.assetsList;
           this.assetsFiltrados = [...this.originalAssetsList];
-          this.collectionSize = this.assetsFiltrados.length;
+          this.actualizarPaginacion();
           this.updateSummary();
           this.cargarActivosInfo();
+          this.loading = false; // Desactivar loading
           resolve();
         },
         error: (error) => {
           console.error('Error al cargar los assets:', error);
+          this.loading = false; // Desactivar loading en caso de error
           reject(error);
         }
       });
@@ -141,23 +197,41 @@ export class AssetsComponent implements OnInit {
   }
 
   cargarActivosInfo(): void {
-    this.assetsList.forEach(asset => {
-      this.activosService.getActivoByName(asset.name).subscribe({
-        next: (activo) => {
-          if (activo) {
-            this.activosMap.set(asset.name, activo);
-            console.log(`Activo cargado para PC ${asset.name}:`, activo);
-          }
-        },
-        error: (error) => {
-          // No imprimir error - es normal que algunos equipos no tengan activos asignados
-          // console.error(`Error al cargar activo para PC ${asset.name}:`, error);
+    // Limitar a 5 peticiones simultáneas para evitar sobrecargar el servidor
+    const CONCURRENT_REQUESTS = 5;
+    
+    // Crear un array de nombres de equipos
+    const assetNames = this.assetsList.map(asset => asset.name);
+    
+    // Usar from y mergeMap para controlar la concurrencia
+    from(assetNames).pipe(
+      mergeMap(assetName => 
+        this.activosService.getActivoByName(assetName).pipe(
+          catchError(error => {
+            // Retornar null en caso de error (equipos sin activos)
+            return of(null);
+          })
+        ), 
+        CONCURRENT_REQUESTS // Limitar a 5 peticiones simultáneas
+      )
+    ).subscribe({
+      next: (activo) => {
+        if (activo) {
+          this.activosMap.set(activo.name, activo);
+          // console.log(`Activo cargado para PC ${activo.name}:`, activo);
         }
-      });
+      },
+      error: (error) => {
+        console.error('Error al cargar activos:', error);
+      },
+      complete: () => {
+        // console.log(`Carga de activos completada. Total cargados: ${this.activosMap.size}`);
+      }
     });
   }
 
   loadAssetsForSoftware(softwareId: number): void {
+    this.loading = true; // Activar loading
     this.softwareService.getHardwaresBySoftware({ idSoftware: softwareId }).subscribe({
       next: (hardwareIds) => {
         forkJoin([
@@ -177,17 +251,20 @@ export class AssetsComponent implements OnInit {
             
             this.originalAssetsList = this.assetsList;
             this.assetsFiltrados = [...this.originalAssetsList];
-            this.collectionSize = this.assetsFiltrados.length;
+            this.actualizarPaginacion();
             this.updateSummary();
             this.cargarActivosInfo();
+            this.loading = false; // Desactivar loading
           },
           error: (error) => {
             console.error('Error al cargar los assets:', error);
+            this.loading = false; // Desactivar loading en caso de error
           }
         });
       },
       error: (error) => {
         console.error('Error al obtener hardware IDs:', error);
+        this.loading = false; // Desactivar loading en caso de error
         this.loadAssets();
       }
     });
@@ -248,9 +325,7 @@ export class AssetsComponent implements OnInit {
         });
 
         this.assetsFiltrados = filteredAssets;
-        this.collectionSize = this.assetsFiltrados.length;
-        this.page = 1;
-        // No llamamos a updateSummary() aquí para mantener los contadores constantes
+        this.actualizarPaginacion();
         
         console.log('Assets filtrados:', this.assetsFiltrados);
       },
@@ -317,17 +392,17 @@ export class AssetsComponent implements OnInit {
     this.miniTowerCount = miniTowerCount;
     this.desconocidoCount = desconocidoCount;
 
-    console.log('Resumen actualizado:', {
-      totalAssets,
-      pcCount,
-      miniPcCount,
-      laptopCount,
-      otherCount,
-      towerCount,
-      lowProfileCount,
-      miniTowerCount,
-      desconocidoCount
-    });
+    // console.log('Resumen actualizado:', {
+    //   totalAssets,
+    //   pcCount,
+    //   miniPcCount,
+    //   laptopCount,
+    //   otherCount,
+    //   towerCount,
+    //   lowProfileCount,
+    //   miniTowerCount,
+    //   desconocidoCount
+    // });
   }
 
   get pagedAssets(): any[] {
@@ -401,80 +476,12 @@ export class AssetsComponent implements OnInit {
 
   filterByType(type: string): void {
     this.currentFilter = type;
-    if (this.currentFilter === '') {
-      this.assetsFiltrados = [...this.originalAssetsList];
-    } else if (this.currentFilter === 'LAPTOP') {
-      // Filtrar tanto LAPTOP como NOTEBOOK
-      this.assetsFiltrados = this.originalAssetsList.filter(asset => {
-        const assetType = (asset.biosType || '').trim().toUpperCase();
-        return assetType === 'LAPTOP' || assetType === 'NOTEBOOK';
-      });
-    } else if (this.currentFilter === 'DESCONOCIDO') {
-      // Filtrar tanto DESCONOCIDO como valores nulos/vacíos
-      this.assetsFiltrados = this.originalAssetsList.filter(asset => {
-        const assetType = (asset.biosType || '').trim().toUpperCase();
-        return assetType === 'DESCONOCIDO' || assetType === '';
-      });
-    } else {
-      this.assetsFiltrados = this.originalAssetsList.filter(asset => 
-        (asset.biosType || '').trim().toUpperCase() === this.currentFilter.trim().toUpperCase()
-      );
-    }
-    
-    this.collectionSize = this.assetsFiltrados.length;
-    this.page = 1;
-    // No llamamos a updateSummary() aquí para mantener los contadores constantes
-
-    // Para debug
-    console.log('Filtro aplicado:', this.currentFilter);
-    console.log('Assets filtrados:', this.assetsFiltrados);
-    console.log('Tipos disponibles:', [...new Set(this.originalAssetsList.map(a => a.biosType))]);
+    // Limpiar el filtro de nombre cuando se cambia el tipo
+    this.nombreEquipoControl.setValue('');
+    this.aplicarFiltroTipoActual();
   }
 
-  toggleFilter(column: string): void {
-    if (this.activeFilter === column) {
-      this.activeFilter = null;
-    } else {
-      this.activeFilter = column;
-    }
-    // No llamamos a updateSummary() aquí para mantener los contadores constantes
-  }
 
-  applyColumnFilter(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.toLowerCase();
-    if (this.activeFilter) {
-      this.filterValues[this.activeFilter] = value;
-    }
-    
-    if (!this.activeFilter || !value) {
-      this.assetsFiltrados = [...this.originalAssetsList];
-    } else {
-      this.assetsFiltrados = this.originalAssetsList.filter(asset => {
-        if (this.activeFilter === 'ipAddr') {
-          const ipValue = asset[this.activeFilter]?.toLowerCase() || '';
-          const searchOctets = value.split('.');
-          const ipOctets = ipValue.split('.');
-          
-          for (let i = 0; i < searchOctets.length; i++) {
-            if (searchOctets[i] && !ipOctets[i].startsWith(searchOctets[i])) {
-              return false;
-            }
-          }
-          return true;
-        } else {
-          const fieldValue = asset[this.activeFilter as string]?.toLowerCase() || '';
-          return fieldValue.includes(value);
-        }
-      });
-    }
-    // No llamamos a updateSummary() aquí para mantener los contadores constantes
-  }
-
-  handleKeyPress(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
-      this.activeFilter = null;
-    }
-  }
 
   canManageAssets(): boolean {
     return this.permissionsService.canManageAssets();

@@ -108,7 +108,27 @@
   </div>
 
   <div class="assets-content">
-    <div class="table-container">
+    <!-- Filtro de búsqueda arriba de la tabla -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Buscar por nombre de equipo..." 
+          [formControl]="nombreEquipoControl" 
+          style="max-width: 320px;">
+      </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div *ngIf="loading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando datos...</p>
+    </div>
+
+    <div class="table-container" *ngIf="!loading">
       <table class="assets-table">
         <thead>
           <tr>
@@ -120,17 +140,6 @@
                   'fa-sort-down': sortColumn === 'name' && sortDirection === 'desc',
                   'fa-sort': sortColumn !== 'name'
                 }"></i>
-                <i class="fas fa-search search-icon" (click)="toggleFilter('name'); $event.stopPropagation()"></i>
-                <div *ngIf="activeFilter === 'name'" class="filter-input-container" (click)="$event.stopPropagation()">
-                  <input 
-                    type="text" 
-                    [value]="filterValues[activeFilter!]"
-                    (input)="applyColumnFilter($event)"
-                    (keyup)="handleKeyPress($event)"
-                    placeholder="Buscar..."
-                    class="filter-input"
-                    autofocus>
-                </div>
               </div>
             </th>
             <th (click)="sortData('osName')" [class.active]="sortColumn === 'osName'">
@@ -151,17 +160,6 @@
                   'fa-sort-down': sortColumn === 'ipAddr' && sortDirection === 'desc',
                   'fa-sort': sortColumn !== 'ipAddr'
                 }"></i>
-                <i class="fas fa-search search-icon" (click)="toggleFilter('ipAddr'); $event.stopPropagation()"></i>
-                <div *ngIf="activeFilter === 'ipAddr'" class="filter-input-container" (click)="$event.stopPropagation()">
-                  <input 
-                    type="text" 
-                    [value]="filterValues[activeFilter!]"
-                    (input)="applyColumnFilter($event)"
-                    (keyup)="handleKeyPress($event)"
-                    placeholder="Buscar..."
-                    class="filter-input"
-                    autofocus>
-                </div>
               </div>
             </th>
             <th (click)="sortData('biosType')" [class.active]="sortColumn === 'biosType'">
@@ -227,7 +225,7 @@
       </table>
     </div>
 
-    <div class="pagination-container">
+    <div class="pagination-container" *ngIf="!loading">
       <ngb-pagination
         [(page)]="page"
         [pageSize]="pageSize"

@@ -18,6 +18,14 @@ export const routes: Routes = [
     component: HomeComponent
   },
   {
+    path: 'notification-demo',
+    loadComponent: () => import('./components/notification-demo/notification-demo.component').then(m => m.NotificationDemoComponent)
+  },
+  {
+    path: 'user-profile',
+    loadComponent: () => import('./user-profile/user-profile.component').then(m => m.UserProfileComponent)
+  },
+  {
     path: 'menu',
     component: MenuComponent,
     children: [

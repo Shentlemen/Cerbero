@@ -7,11 +7,13 @@ import jsPDF from 'jspdf';
 import { Router } from '@angular/router';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
 import { HttpClientModule } from '@angular/common/http';
+import { NotificationService } from '../services/notification.service';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 
 @Component({
   selector: 'app-ubicacion-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule, NotificationContainerComponent],
   templateUrl: './ubicacion-details.component.html',
   styleUrls: ['./ubicacion-details.component.css']
 })
@@ -26,7 +28,8 @@ export class UbicacionDetailsComponent implements OnInit {
     private ubicacionService: UbicacionEquipoService,
     private subnetService: SubnetService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {
     this.ubicacionForm = this.createForm();
   }
@@ -136,11 +139,14 @@ export class UbicacionDetailsComponent implements OnInit {
       this.ubicacionService.deleteUbicacion(this.hardwareId).subscribe({
         next: () => {
           this.ubicacion = null;
-          // Aquí podrías mostrar un mensaje de éxito
+          this.notificationService.showSuccessMessage('Ubicación eliminada exitosamente');
         },
         error: (error) => {
           console.error('Error al eliminar ubicación:', error);
-          // Aquí podrías mostrar un mensaje de error
+          this.notificationService.showError(
+            'Error al Eliminar Ubicación',
+            'No se pudo eliminar la ubicación: ' + error.message
+          );
         }
       });
     }

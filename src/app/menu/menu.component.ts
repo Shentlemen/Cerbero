@@ -181,4 +181,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     // Redirigir al login
     window.location.href = '/#/login';
   }
+
+  goToProfile(): void {
+    this.router.navigate(['/user-profile']);
+  }
 }

@@ -15,11 +15,13 @@ import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../../services
 import { HardwareService } from '../../../services/hardware.service';
 import { forkJoin } from 'rxjs';
 import { TiposCompraService } from '../../../services/tipos-compra.service';
+import { NotificationService } from '../../../services/notification.service';
+import { NotificationContainerComponent } from '../../../components/notification-container/notification-container.component';
 
 @Component({
   selector: 'app-activo-details',
   standalone: true,
-  imports: [CommonModule, NgbModule],
+  imports: [CommonModule, NgbModule, NotificationContainerComponent],
   templateUrl: './activo-details.component.html',
   styleUrls: ['./activo-details.component.css']
 })
@@ -67,7 +69,8 @@ export class ActivoDetailsComponent implements OnInit {
     private serviciosGarantiaService: ServiciosGarantiaService,
     private modalService: NgbModal,
     private hardwareService: HardwareService,
-    private tiposCompraService: TiposCompraService
+    private tiposCompraService: TiposCompraService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit() {
@@ -477,11 +480,14 @@ export class ActivoDetailsComponent implements OnInit {
         if (hardware) {
           this.router.navigate(['/menu/asset-details', hardware.id]);
         } else {
-          alert('No se encontró el hardware correspondiente.');
+          this.notificationService.showNotFoundError('No se encontró el hardware correspondiente.');
         }
       },
       error: () => {
-        alert('Error al buscar el hardware.');
+        this.notificationService.showError(
+          'Error al Buscar Hardware',
+          'No se pudo buscar el hardware correspondiente.'
+        );
       }
     });
   }
