@@ -1,33 +1,54 @@
 <div class="generic-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
   <div class="header-section">
-    <div class="header-content">
-      <div class="title-wrapper">
+    <div class="title-wrapper">
+      <div class="title-row">
         <h1><i class="fas fa-network-wired"></i> Dispositivos de Red</h1>
         
-        <!-- Filtros por tipo de dispositivo -->
-        <div class="filters-container">
-          <button 
-            class="filter-btn" 
-            [class.active]="isFilterActive('all')"
-            (click)="applyFilter('all')">
-            <i class="fas fa-th-large"></i>
-            <span>Todos</span>
-            <span class="count">({{getDeviceCount('all')}})</span>
-          </button>
-          
-          <button 
-            *ngFor="let deviceType of deviceTypes" 
-            class="filter-btn" 
-            [class.active]="isFilterActive(deviceType.name)"
-            [style.--device-color]="deviceType.color"
-            [style.--device-bg-color]="deviceType.backgroundColor"
-            [style.--device-border-color]="deviceType.borderColor"
-            (click)="applyFilter(deviceType.name)">
-            <i class="fas" [ngClass]="deviceType.icon" [style.color]="deviceType.color"></i>
-            <span>{{deviceType.name}}</span>
-            <span class="count">({{getDeviceCount(deviceType.name)}})</span>
-          </button>
+        <!-- Botón de actualizar dispositivos -->
+        <button 
+          *ngIf="canUpdateDevices()"
+          class="filter-btn sync-filter-btn" 
+          (click)="actualizarDispositivos()"
+          [disabled]="isUpdatingDevices">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isUpdatingDevices" style="color: #007bff;"></i>
+          <span>{{ isUpdatingDevices ? 'Actualizando...' : 'Actualizar Dispositivos' }}</span>
+        </button>
+        
+        <!-- Mensaje informativo para usuarios sin permisos -->
+        <div *ngIf="!canUpdateDevices()" class="permission-info">
+          <i class="fas fa-info-circle" style="color: #6c757d;"></i>
+          <span style="color: #6c757d; font-size: 0.9rem; margin-left: 0.5rem;">
+            Solo administradores pueden actualizar dispositivos de red
+          </span>
         </div>
+      </div>
+      
+      <!-- Filtros por tipo de dispositivo -->
+      <div class="filters-container">
+        <button 
+          class="filter-btn" 
+          [class.active]="isFilterActive('all')"
+          (click)="applyFilter('all')">
+          <i class="fas fa-th-large"></i>
+          <span>Todos</span>
+          <span class="count">({{getDeviceCount('all')}})</span>
+        </button>
+        
+        <button 
+          *ngFor="let deviceType of deviceTypes" 
+          class="filter-btn" 
+          [class.active]="isFilterActive(deviceType.name)"
+          [style.--device-color]="deviceType.color"
+          [style.--device-bg-color]="deviceType.backgroundColor"
+          [style.--device-border-color]="deviceType.borderColor"
+          (click)="applyFilter(deviceType.name)">
+          <i class="fas" [ngClass]="deviceType.icon" [style.color]="deviceType.color"></i>
+          <span>{{deviceType.name}}</span>
+          <span class="count">({{getDeviceCount(deviceType.name)}})</span>
+        </button>
       </div>
     </div>
   </div>
@@ -78,7 +99,9 @@
           <tr *ngFor="let device of pagedDevices" class="device-row" (click)="verDetallesDevice(device)">
             <td>
               <div class="device-name">
-                <i class="fas fa-network-wired"></i>
+                <i class="fas" 
+                   [ngClass]="getDeviceIcon(device).icon"
+                   [style.color]="getDeviceIcon(device).color"></i>
                 <span>{{ device.name }}</span>
               </div>
             </td>

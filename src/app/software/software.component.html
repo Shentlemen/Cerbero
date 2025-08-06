@@ -19,6 +19,14 @@
             <i class="fas fa-ban"></i>
             {{ activeTab === 'forbidden' ? 'Solo prohibidos' : 'Mostrar solo prohibidos' }}
           </button>
+          <button class="driver-toggle" [class.active-filter]="activeTab === 'driver'" (click)="showOnlyDriverSoftware()">
+            <i class="fas fa-cog"></i>
+            {{ activeTab === 'driver' ? 'Solo drivers' : 'Mostrar solo drivers' }}
+          </button>
+          <button class="licenciado-toggle" [class.active-filter]="activeTab === 'licenciado'" (click)="showOnlyLicenciadoSoftware()">
+            <i class="fas fa-key"></i>
+            {{ activeTab === 'licenciado' ? 'Solo licenciados' : 'Mostrar solo licenciados' }}
+          </button>
         </div>
         <div class="search-box">
           <div class="input-group">
@@ -116,6 +124,26 @@
                         [disabled]="loading"
                         [class.forbidden]="software.forbidden">
                   <i class="fas" [ngClass]="software.forbidden ? 'fa-ban' : 'fa-check-circle'"></i>
+                </button>
+                <button class="driver-button" 
+                        (click)="toggleSoftwareDriver(software, $event)"
+                        [title]="software.driver ? 'Desmarcar como driver' : 'Marcar como driver'"
+                        [disabled]="loading"
+                        [class.driver]="software.driver">
+                  <i class="fas" [ngClass]="software.driver ? 'fa-cog' : 'fa-cogs'"></i>
+                </button>
+                <button class="licenciado-button" 
+                        (click)="toggleSoftwareLicenciado(software, $event)"
+                        [title]="software.licenciado ? 'Desmarcar como licenciado' : 'Marcar como licenciado'"
+                        [disabled]="loading"
+                        [class.licenciado]="software.licenciado">
+                  <i class="fas" [ngClass]="software.licenciado ? 'fa-key' : 'fa-unlock'"></i>
+                </button>
+                <button class="delete-button" 
+                        (click)="deleteSoftware(software, $event)"
+                        [title]="'Eliminar software'"
+                        [disabled]="loading">
+                  <i class="fas fa-trash"></i>
                 </button>
               </div>
               <div class="action-buttons" *ngIf="!canManageSoftware()">

@@ -1,3 +1,81 @@
+/* Estilos globales para eliminar outline azul */
+.btn:focus,
+button:focus,
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}
+
+* {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Permitir selección de texto en inputs y textareas */
+input, textarea {
+  user-select: text;
+  -webkit-tap-highlight-color: auto;
+}
+
+/* Estilos específicos para elementos dentro de botones */
+.btn span:focus,
+.btn i:focus,
+.btn div:focus,
+button span:focus,
+button i:focus,
+button div:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Aplicar a todos los botones */
+.btn,
+button {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Eliminar outline de todos los elementos */
+*:focus {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}
+
+/* Estilos específicos para elementos dentro de botones */
+.btn *,
+button * {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Estilos específicos para elementos de texto dentro de botones */
+span:focus,
+i:focus,
+div:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Aplicar a todos los botones y sus elementos internos */
+.btn,
+button {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn *,
+button * {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .devices-container {
   padding: 2rem;
   background: #f8f9fa;
@@ -16,6 +94,13 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 
 .title-wrapper h1 {
@@ -91,7 +176,15 @@
 
 .device-name i {
   font-size: 1.2rem;
-  color: #3498db;
+  width: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.device-name:hover i {
+  transform: scale(1.1);
 }
 
 .device-name span {
@@ -168,6 +261,56 @@
   box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.25);
 }
 
+/* Estilos para filtros de dispositivos */
+.filters-container {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #e9ecef;
+  border-radius: 25px;
+  background: white;
+  color: #6c757d;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  min-width: fit-content;
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: var(--device-color, #3498db);
+  color: var(--device-color, #3498db);
+}
+
+.filter-btn.active {
+  background: var(--device-bg-color, #e3f2fd);
+  border-color: var(--device-border-color, #bbdefb);
+  color: var(--device-color, #1976d2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.filter-btn i {
+  font-size: 0.8rem;
+}
+
+.filter-btn .count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
 /* Responsive para filtros */
 @media (max-width: 768px) {
   .filters-container {
@@ -193,4 +336,97 @@
   .filter-btn {
     justify-content: center;
   }
+}
+
+/* Estilos para el botón de sincronización */
+.sync-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1rem;
+}
+
+.sync-filter-btn {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.sync-filter-btn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #007bff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+}
+
+.sync-filter-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.sync-filter-btn i {
+  margin-right: 0.5rem;
+}
+
+/* Estilos para el mensaje informativo de permisos */
+.permission-info {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.permission-info i {
+  font-size: 1rem;
+}
+
+/* Responsive para el botón de sincronización */
+@media (max-width: 768px) {
+  .sync-container {
+    justify-content: center;
+  }
+  
+  .sync-filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .permission-info {
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* Responsive para el botón de sincronización */
+@media (max-width: 768px) {
+  .title-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .sync-filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Estilos para iconos en la tabla de dispositivos */
+.device-row:hover .device-name i {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+.device-name i {
+  font-size: 1.2rem;
+  width: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  padding: 2px;
 }

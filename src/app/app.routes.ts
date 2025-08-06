@@ -50,7 +50,9 @@ export const routes: Routes = [
       { path: 'devices', component: DevicesComponent },
       { path: 'device-details/:mac', component: DeviceDetailsComponent },
       { path: 'locations', loadComponent: () => import('./locations/locations.component')
-        .then(m => m.LocationsComponent) }
+        .then(m => m.LocationsComponent) },
+      { path: 'almacen/almacenes', loadComponent: () => import('./almacen/almacenes/almacenes.component').then(m => m.AlmacenesComponent) },
+      { path: 'almacen/ubicaciones', loadComponent: () => import('./almacen/ubicaciones/ubicaciones.component').then(m => m.UbicacionesComponent) }
     ]
   },
   {

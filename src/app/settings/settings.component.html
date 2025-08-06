@@ -10,44 +10,46 @@
   <div class="settings-section">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
-      <h3>Sincronización de Bases de Datos</h3>
+              <h3>Reseteo Completo de Base de Datos</h3>
     </div>
     
     <div class="sync-controls">
       <div class="info-box">
         <i class="fas fa-info-circle me-2"></i>
-        <span>Esta operación sincroniza los datos entre las bases de datos OCS y Cerbero usando el campo NAME como clave principal. Esto evita problemas cuando el hardware_id cambia en OCS debido a reinstalaciones o cambios de configuración.</span>
+        <span><strong>⚠️ ATENCIÓN:</strong> Esta operación realizará un RESETEO COMPLETO de la base de datos Cerbero. Se eliminarán TODOS los datos existentes y se importarán datos frescos desde OCS. Esta acción es irreversible y puede tomar varios minutos.</span>
       </div>
       
-      <button 
-        class="btn btn-primary sync-button" 
-        (click)="mostrarConfirmacion(confirmModal)"
-        [disabled]="isSyncing">
-        <i class="fas fa-sync-alt me-2" [class.fa-spin]="isSyncing"></i>
-        {{ isSyncing ? 'Sincronizando...' : 'Iniciar Sincronización' }}
-      </button>
+              <button 
+          class="btn btn-danger sync-button" 
+          (click)="mostrarConfirmacion(confirmModal)"
+          [disabled]="isSyncing">
+          <i class="fas fa-trash me-2" [class.fa-spin]="isSyncing"></i>
+          {{ isSyncing ? 'Reseteando base de datos...' : 'RESETEAR BASE DE DATOS COMPLETA' }}
+        </button>
     </div>
 
     <!-- Template del modal -->
     <ng-template #confirmModal let-modal>
       <div class="modal-header">
         <h4 class="modal-title">
-          <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-          Confirmar Sincronización
+          <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+          Confirmar Reseteo Completo
         </h4>
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
       <div class="modal-body">
         <div class="confirmation-box">
-          <p class="confirmation-text">¿Está seguro de que desea continuar con la sincronización?</p>
+          <p class="confirmation-text">¿Está seguro de que desea realizar un RESETEO COMPLETO de la base de datos?</p>
           <p class="confirmation-warning">
-            <i class="fas fa-info-circle me-2"></i>
-            Este proceso puede tomar varios minutos y actualizará los datos del sistema
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>⚠️ ADVERTENCIA CRÍTICA:</strong> Esta acción eliminará TODOS los datos existentes en Cerbero
           </p>
           <div class="confirmation-details">
-            <p><i class="fas fa-check-circle"></i> Se sincronizarán los datos de hardware</p>
-            <p><i class="fas fa-check-circle"></i> Se actualizarán las configuraciones</p>
-            <p><i class="fas fa-check-circle"></i> Se procesarán las alertas pendientes</p>
+            <p><i class="fas fa-trash text-danger"></i> Se eliminarán TODOS los datos de hardware</p>
+            <p><i class="fas fa-trash text-danger"></i> Se eliminarán TODOS los datos de software</p>
+            <p><i class="fas fa-trash text-danger"></i> Se eliminarán TODAS las configuraciones</p>
+            <p><i class="fas fa-download text-success"></i> Se importarán datos frescos desde OCS</p>
+            <p><i class="fas fa-clock text-warning"></i> Este proceso puede tomar varios minutos</p>
           </div>
         </div>
       </div>
@@ -56,9 +58,9 @@
           <i class="fas fa-times me-2"></i>
           Cancelar
         </button>
-        <button type="button" class="btn btn-primary" (click)="modal.close('confirm')">
-          <i class="fas fa-sync-alt me-2"></i>
-          Confirmar Sincronización
+        <button type="button" class="btn btn-danger" (click)="modal.close('confirm')">
+          <i class="fas fa-trash me-2"></i>
+          Confirmar Reseteo Completo
         </button>
       </div>
     </ng-template>
@@ -67,18 +69,18 @@
     <div *ngIf="syncResult || syncMessage" class="sync-results">
       <h4>
         <i class="fas fa-check-circle me-2"></i>
-        Proceso Completado
+        Reseteo Completado
       </h4>
       
       <!-- Mensaje general -->
       <div *ngIf="syncMessage" class="alert alert-success mb-3">
-        <i class="fas fa-info-circle me-2"></i>
+        <i class="fas fa-check-circle me-2"></i>
         <strong>Estado:</strong> {{syncMessage}}
       </div>
 
       <!-- Resultados detallados -->
       <div *ngIf="syncResult" class="alert alert-info">
-        <h6><i class="fas fa-list me-2"></i>Detalles de la sincronización:</h6>
+        <h6><i class="fas fa-list me-2"></i>Detalles del reseteo completo:</h6>
         <div *ngFor="let item of syncResult | keyvalue" class="mb-2">
           <i class="fas fa-database me-2"></i>
           <strong>{{item.key}}:</strong> 

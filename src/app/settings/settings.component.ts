@@ -76,13 +76,13 @@ export class SettingsComponent {
         this.syncMessage = response.message; // El mensaje general está en message
         
         // Mostrar notificación de éxito
-        this.notificationService.showSuccessMessage('Sincronización completada exitosamente');
+        this.notificationService.showSuccessMessage('Reseteo completo de base de datos completado exitosamente');
       }
     } catch (err: any) {
-      this.error = err.message || 'Error durante la sincronización';
+      this.error = err.message || 'Error durante el reseteo completo';
       this.notificationService.showError(
-        'Error de Sincronización',
-        'No se pudo completar la sincronización: ' + err.message
+        'Error de Reseteo',
+        'No se pudo completar el reseteo completo: ' + err.message
       );
     } finally {
       this.isSyncing = false;

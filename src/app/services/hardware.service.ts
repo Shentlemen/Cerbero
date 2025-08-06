@@ -36,4 +36,9 @@ export class HardwareService {
   getHardwareByIds(ids: number[]): Observable<any[]> {
     return this.http.post<any[]>(`${this.apiUrl}/by-ids`, { ids });
   }
+
+  // Eliminar hardware y todos sus registros relacionados
+  deleteHardwareComplete(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}/complete`);
+  }
 }

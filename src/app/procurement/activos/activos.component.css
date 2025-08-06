@@ -164,6 +164,85 @@
   padding: 1rem;
 }
 
+/* Estilos específicos para el modal de activos - Solo lo que es diferente */
+:host ::ng-deep .modal-dialog {
+  max-width: 90% !important;
+  width: 90% !important;
+}
+
+:host ::ng-deep .modal-xl {
+  max-width: 95% !important;
+  width: 95% !important;
+}
+
+/* Estilos específicos para los botones de creación por rango */
+.btn-group .btn-check:checked + .btn {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+.btn-group .btn {
+  border: 1px solid #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.btn-group .btn:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+}
+
+.alert-warning i {
+  color: #f39c12;
+}
+
+/* Estilos para validación de campos */
+.is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.invalid-feedback {
+  display: block;
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Estilos para campos deshabilitados */
+.disabled-field {
+  background-color: #e9ecef !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.disabled-field:focus {
+  box-shadow: none !important;
+  border-color: #ced4da !important;
+}
+
+/* Responsive para pantallas más pequeñas */
+@media (max-width: 1200px) {
+  :host ::ng-deep .modal-dialog {
+    max-width: 95% !important;
+    width: 95% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :host ::ng-deep .modal-dialog {
+    max-width: 98% !important;
+    width: 98% !important;
+    margin: 10px auto;
+  }
+}
+
 @media (max-width: 768px) {
   .detail-row {
     flex-direction: column;
@@ -357,5 +436,67 @@
   
   .filter-btn {
     justify-content: center;
+  }
+}
+
+/* Estilos para la información de validación */
+.validation-info {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+}
+
+.validation-errors h6 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.validation-error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.validation-error-list li {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: #856404;
+  display: flex;
+  align-items: center;
+}
+
+.validation-error-list li:last-child {
+  margin-bottom: 0;
+}
+
+.validation-error-list li i {
+  font-size: 0.8rem;
+}
+
+/* Ajuste del footer del modal para la validación */
+.modal-footer {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.modal-footer .d-flex {
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .validation-info {
+    padding: 0.75rem;
+  }
+  
+  .validation-errors h6 {
+    font-size: 0.85rem;
+  }
+  
+  .validation-error-list li {
+    font-size: 0.8rem;
   }
 }

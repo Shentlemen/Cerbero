@@ -76,19 +76,26 @@
         <i class="fas fa-shopping-bag"></i>
         <span>COMPRAS</span>
       </a>
-      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-industry"></i>
-        <span>PROVEEDORES</span>
-      </a>
     </div>
   </div>
 
-  <a routerLink="/menu/subnets" routerLinkActive="active">
-    <i class="fas fa-network-wired"></i>
-    <span>SUB REDES</span>
-  </a>
-
-
+  <!-- Menú expandible de Almacén -->
+  <div class="menu-item" [class.expanded]="isAlmacenExpanded">
+    <div class="menu-header" (click)="toggleAlmacenMenu()">
+      <i class="fas fa-warehouse"></i>
+      <span>ALMACÉN</span>
+    </div>
+    <div class="submenu" [class.show]="isAlmacenExpanded">
+      <a routerLink="/menu/almacen/almacenes" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-building"></i>
+        <span>ALMACENES</span>
+      </a>
+      <a routerLink="/menu/almacen/ubicaciones" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-boxes"></i>
+        <span>STOCK</span>
+      </a>
+    </div>
+  </div>
 
   <!-- Menú expandible de Configuración - Solo visible para GM y Admin -->
   <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canAccessConfiguration()">
@@ -104,6 +111,14 @@
       <a routerLink="/menu/locations" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-map-marker-alt"></i>
         <span>UBICACIONES</span>
+      </a>
+      <a routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-network-wired"></i>
+        <span>SUB REDES</span>
+      </a>
+      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-industry"></i>
+        <span>PROVEEDORES</span>
       </a>
       <a routerLink="/menu/procurement/tipos-activo" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-tags"></i>

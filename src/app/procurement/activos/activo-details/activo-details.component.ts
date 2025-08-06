@@ -90,7 +90,11 @@ export class ActivoDetailsComponent implements OnInit {
         console.log('Respuesta del activo:', activo);
         this.activo = activo;
         if (this.activo) {
-          this.cargarUbicacionInfo(this.activo.idUbicacion);
+          if (this.activo.idUbicacion !== null && this.activo.idUbicacion !== undefined) {
+            this.cargarUbicacionInfo(this.activo.idUbicacion);
+          } else {
+            this.ubicacionInfo = 'No asignada';
+          }
           this.cargarUsuarioInfo(this.activo.idUsuario);
           this.cargarTipoActivoInfo(this.activo.idTipoActivo);
           this.cargarServicioGarantiaInfo(this.activo.idServicioGarantia);
@@ -340,7 +344,11 @@ export class ActivoDetailsComponent implements OnInit {
     });
   }
 
-  verDetallesUbicacion(idUbicacion: number, ubicacionModal: any) {
+  verDetallesUbicacion(idUbicacion: number | null, ubicacionModal: any) {
+    if (!idUbicacion) {
+      this.error = 'No hay ubicación asignada';
+      return;
+    }
     this.ubicacionesService.getUbicacionEquipo(idUbicacion).subscribe({
       next: (ubicacion: UbicacionDTO) => {
         this.ubicacionSeleccionada = ubicacion;

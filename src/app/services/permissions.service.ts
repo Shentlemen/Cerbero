@@ -92,6 +92,10 @@ export class PermissionsService {
     return this.isGMOrAdmin(); // GM and Admin can access configuration menu
   }
 
+  canUpdateNetworkDevices(): boolean {
+    return this.isGMOrAdmin(); // GM and Admin can update network devices
+  }
+
   // Helper method to check if user is logged in
   isLoggedIn(): boolean {
     return this.currentUser !== null;

@@ -104,7 +104,7 @@
               </th>
               <th>
                 <div class="th-content">
-                  <span>Nombre del PC</span>
+                  <span>Número de Activo</span>
                 </div>
               </th>
               <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
@@ -190,7 +190,7 @@
                   <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(activoModal, activo)" *ngIf="permissionsService.canEditAssets()">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarActivo(activo.idActivo)" *ngIf="permissionsService.canEditAssets()">
+                  <button class="btn btn-danger btn-sm" (click)="eliminarActivo(activo)" *ngIf="permissionsService.canEditAssets()">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </div>
@@ -222,209 +222,390 @@
 
 <!-- Modal para crear/editar activo -->
 <ng-template #activoModal let-modal>
-  <form [formGroup]="activoForm" (ngSubmit)="guardarActivo()">
-    <div class="modal-header">
-      <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
-      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  <div class="modal-header">
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
     </div>
-    <div class="modal-body">
-      <div *ngIf="errorMessage" class="alert alert-danger">
-        <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
-      </div>
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Nombre del PC</label>
-          <input type="text" class="form-control" formControlName="name" placeholder="Ingrese el nombre del PC">
-          <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched">
-            El nombre del PC es requerido.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Tipo de Activo</label>
-          <select class="form-select" formControlName="idTipoActivo">
-            <option value="">Seleccione un tipo de activo</option>
-            <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">
-              {{tipo.nombre}} - {{tipo.descripcion}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched">
-            El tipo de activo es requerido.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Clasificación de INFO</label>
-          <select class="form-select" formControlName="clasificacionDeINFO">
-            <option value="">Seleccione una clasificación</option>
-            <option value="CONFIDENCIAL">Confidencial</option>
-            <option value="NO CONFIDENCIAL">No confidencial</option>
-            <option value="PUBLICA">Pública</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
-            La clasificación es requerida.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Criticidad</label>
-          <select class="form-select" formControlName="criticidad">
-            <option value="">Seleccione una criticidad</option>
-            <option value="ALTA">Alta</option>
-            <option value="MEDIA">Media</option>
-            <option value="BAJA">Baja</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched">
-            La criticidad es requerida.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Estado</label>
-          <select class="form-select" formControlName="estado">
-            <option value="">Seleccione un estado</option>
-            <option value="ACTIVO">Activo</option>
-            <option value="INACTIVO">Inactivo</option>
-            <option value="MANTENIMIENTO">Mantenimiento</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched">
-            El estado es requerido.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Número de Compra</label>
-          <select class="form-select" formControlName="idNumeroCompra">
-            <option value="">Seleccione una compra</option>
-            <option *ngFor="let compra of comprasList" [value]="compra.idCompra">
-              {{compra.idCompra}} - {{compra.descripcion}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched">
-            El número de compra es requerido.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Item</label>
-          <select class="form-select" formControlName="idItem">
-            <option value="">Seleccione un item</option>
-            <option *ngFor="let lote of lotesList" [value]="lote.idItem">
-              {{lote.descripcion}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched">
-            El item es requerido.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Entrega</label>
-          <select class="form-select" formControlName="idEntrega">
-            <option value="">Seleccione una entrega</option>
-            <option *ngFor="let entrega of entregasList" [value]="entrega.idEntrega">
-              Entrega #{{entrega.idEntrega}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched">
-            La entrega es requerida.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Ubicación</label>
-          <select class="form-select" formControlName="idUbicacion">
-            <option value="">Seleccione una ubicación</option>
-            <option *ngFor="let ubicacion of ubicacionesList" [value]="ubicacion.id">
-              {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idUbicacion')?.errors?.['required'] && activoForm.get('idUbicacion')?.touched">
-            La ubicación es requerida.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Usuario</label>
-          <select class="form-select" formControlName="idUsuario">
-            <option value="">Seleccione un usuario</option>
-            <option *ngFor="let usuario of usuarios | keyvalue" [value]="usuario.key">
-              {{usuario.value.nombre}} {{usuario.value.apellido}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched">
-            El usuario es requerido.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">ID Secundario</label>
-          <input type="text" class="form-control" formControlName="idSecundario">
-          <div class="invalid-feedback" *ngIf="activoForm.get('idSecundario')?.errors?.['required'] && activoForm.get('idSecundario')?.touched">
-            El ID secundario es requerido.
-          </div>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Servicio de Garantía</label>
-          <select class="form-select" formControlName="idServicioGarantia">
-            <option value="">Seleccione un servicio de garantía</option>
-            <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
-              {{servicio.nombreComercial}}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched">
-            El servicio de garantía es requerido.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Fecha Fin Garantía</label>
-          <input type="date" class="form-control" formControlName="fechaFinGarantia">
-          <div class="invalid-feedback" *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required'] && activoForm.get('fechaFinGarantia')?.touched">
-            La fecha de fin de garantía es requerida.
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-12 mb-3">
-          <label class="form-label">Activos Relacionados</label>
-          <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">
-            <div class="selected-asset-badge" *ngFor="let assetId of selectedRelatedAssets">
-              <span>{{getAssetDescription(assetId)}}</span>
-              <button type="button" class="btn-close" (click)="removeRelatedAsset(assetId)"></button>
+    
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
+      <li [ngbNavItem]="'1'">
+        <a ngbNavLink>Datos del activo</a>
+        <ng-template ngbNavContent>
+          <form [formGroup]="activoForm">
+            <!-- Selector de modo de creación -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <label class="form-label">Modo de Creación</label>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" name="creationMode" id="singleMode" 
+                         [(ngModel)]="creationMode" value="single" [ngModelOptions]="{standalone: true}">
+                  <label class="btn btn-outline-primary" for="singleMode">
+                    <i class="fas fa-desktop me-2"></i>Activo Individual
+                  </label>
+                  
+                  <input type="radio" class="btn-check" name="creationMode" id="rangeMode" 
+                         [(ngModel)]="creationMode" value="range" [ngModelOptions]="{standalone: true}">
+                  <label class="btn btn-outline-primary" for="rangeMode">
+                    <i class="fas fa-layer-group me-2"></i>Rango de Activos
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="input-group">
-            <select class="form-select" [(ngModel)]="selectedAssetId" [ngModelOptions]="{standalone: true}">
-              <option [ngValue]="null">Seleccione un activo para relacionar</option>
-              <option *ngFor="let activo of activos" [value]="activo.idActivo" 
-                      [disabled]="isAssetRelated(activo.idActivo)">
-                {{getAssetDescription(activo.idActivo)}}
-              </option>
-            </select>
-            <button class="btn btn-outline-primary" type="button" 
-                    (click)="addRelatedAsset(selectedAssetId)" 
-                    [disabled]="!selectedAssetId">
-              <i class="fas fa-plus"></i> Agregar
-            </button>
-          </div>
-          <small class="text-muted">Puede seleccionar múltiples activos para relacionar</small>
-        </div>
+
+            <!-- Modo Individual -->
+            <div class="row" *ngIf="creationMode === 'single'">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Número de Activo</label>
+                <input type="text" class="form-control" formControlName="name" placeholder="Ej: PC14000, PC1, 14000, 1">
+                <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched">
+                  El número de activo es requerido.
+                </div>
+              </div>
+            </div>
+
+            <!-- Modo Rango -->
+            <div class="row" *ngIf="creationMode === 'range'">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Número Inicial</label>
+                <input type="text" class="form-control" [(ngModel)]="rangeStart" 
+                       [ngModelOptions]="{standalone: true}" placeholder="Ej: PC14000, PC1, 14000, 1">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Formato PC: PC + números (ej: PC14000, PC1, PC123)<br>
+                  Formato numérico: solo números (ej: 14000, 1, 123)
+                </small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Número Final</label>
+                <input type="text" class="form-control" [(ngModel)]="rangeEnd" 
+                       [ngModelOptions]="{standalone: true}" placeholder="Ej: PC15000, PC10, 15000, 10">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Debe usar el mismo formato que el inicial
+                </small>
+              </div>
+            </div>
+
+            <!-- Información del rango -->
+            <div class="row" *ngIf="creationMode === 'range' && getRangeInfo().count > 0">
+              <div class="col-12">
+                <div class="alert" [ngClass]="getRangeInfo().count > 100 ? 'alert-warning' : 'alert-info'">
+                  <i class="fas" [ngClass]="getRangeInfo().count > 100 ? 'fa-exclamation-triangle' : 'fa-info-circle'"></i>
+                  <span class="me-2"></span>
+                  Se crearán <strong>{{ getRangeInfo().count }}</strong> activos desde 
+                  <strong>{{ getRangeInfo().start }}</strong> hasta <strong>{{ getRangeInfo().end }}</strong>
+                  <span class="ms-2">
+                    <i class="fas" [ngClass]="getRangeInfo().isPcFormat ? 'fa-desktop' : 'fa-box'"></i>
+                    <span class="ms-1">{{ getRangeInfo().isPcFormat ? 'Formato PC' : 'Formato numérico' }}</span>
+                  </span>
+                  <span *ngIf="getRangeInfo().count > 100" class="ms-2">
+                    <i class="fas fa-clock me-1"></i>Esta operación puede tomar varios minutos.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Tipo de Activo</label>
+                <select class="form-select" formControlName="idTipoActivo">
+                  <option value="">Seleccione un tipo de activo</option>
+                  <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">
+                    {{tipo.descripcion}}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched">
+                  El tipo de activo es requerido.
+                </div>
+                <small class="text-muted">
+                  Al seleccionar un tipo de activo, el usuario responsable se asignará automáticamente
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Clasificación de INFO</label>
+                <select class="form-select" formControlName="clasificacionDeINFO">
+                  <option value="">Seleccione una clasificación</option>
+                  <option value="CONFIDENCIAL">Confidencial</option>
+                  <option value="NO CONFIDENCIAL">No confidencial</option>
+                  <option value="PUBLICA">Pública</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
+                  La clasificación es requerida.
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Criticidad</label>
+                <select class="form-select" formControlName="criticidad">
+                  <option value="">Seleccione una criticidad</option>
+                  <option value="ALTA">Alta</option>
+                  <option value="MEDIA">Media</option>
+                  <option value="BAJA">Baja</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched">
+                  La criticidad es requerida.
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Estado</label>
+                <select class="form-select" formControlName="estado">
+                  <option value="">Seleccione un estado</option>
+                  <option value="ACTIVO">Activo</option>
+                  <option value="INACTIVO">Inactivo</option>
+                  <option value="MANTENIMIENTO">Mantenimiento</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched">
+                  El estado es requerido.
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Número de Compra</label>
+                <select class="form-select" formControlName="idNumeroCompra">
+                  <option value="">Seleccione una compra</option>
+                  <option *ngFor="let compra of comprasList" [value]="compra.idCompra">
+                    {{compra.numeroCompra}} - {{compra.descripcion}}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched">
+                  El número de compra es requerido.
+                </div>
+                <small class="text-muted">
+                  Al seleccionar una compra, se mostrarán solo los items disponibles para esa compra
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Item</label>
+                <select class="form-select" formControlName="idItem" [class.disabled-field]="isItemDisabled()">
+                  <option value="">Seleccione un item</option>
+                  <option *ngFor="let lote of lotesFiltrados" [value]="lote.idItem">
+                    {{lote.nombreItem}}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched">
+                  El item es requerido.
+                </div>
+                <small class="text-muted" *ngIf="!activoForm.get('idNumeroCompra')?.value">
+                  Primero seleccione una compra para ver los items disponibles
+                </small>
+                <small class="text-muted" *ngIf="activoForm.get('idNumeroCompra')?.value && lotesFiltrados.length === 0">
+                  No hay items disponibles para la compra seleccionada
+                </small>
+                <small class="text-muted" *ngIf="activoForm.get('idNumeroCompra')?.value && lotesFiltrados.length > 0">
+                  Al seleccionar un item, se mostrarán solo las entregas disponibles para ese item
+                </small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Entrega</label>
+                <select class="form-select" formControlName="idEntrega" [class.disabled-field]="isEntregaDisabled()">
+                  <option value="">Seleccione una entrega</option>
+                  <option *ngFor="let entrega of entregasFiltradas" [value]="entrega.idEntrega">
+                    Entrega #{{entrega.idEntrega}} - {{entrega.descripcion}}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched">
+                  La entrega es requerida.
+                </div>
+                <small class="text-muted" *ngIf="!activoForm.get('idItem')?.value">
+                  Primero seleccione un item para ver las entregas disponibles
+                </small>
+                <small class="text-muted" *ngIf="activoForm.get('idItem')?.value && entregasFiltradas.length === 0">
+                  No hay entregas disponibles para el item seleccionado
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Ubicación</label>
+                <select class="form-select" formControlName="idUbicacion">
+                  <option value="">Seleccione una ubicación</option>
+                  <option *ngFor="let ubicacion of ubicacionesList" [value]="ubicacion.id">
+                    {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}}
+                  </option>
+                </select>
+                <small class="text-muted">
+                  La ubicación es opcional y puede ser definida posteriormente
+                </small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Usuario</label>
+                <select class="form-select" formControlName="idUsuario" [class.disabled-field]="isUsuarioDisabled()">
+                  <option value="">Seleccione un usuario</option>
+                  <option *ngFor="let usuario of usuarios | keyvalue" [value]="usuario.key">
+                    {{usuario.value.nombre}} {{usuario.value.apellido}}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched">
+                  El usuario es requerido.
+                </div>
+                <small class="text-muted" *ngIf="isUsuarioDisabled()">
+                  El usuario se asigna automáticamente según el tipo de activo seleccionado
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">ID Secundario</label>
+                <input type="text" class="form-control" formControlName="idSecundario">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idSecundario')?.errors?.['required'] && activoForm.get('idSecundario')?.touched">
+                  El ID secundario es requerido.
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Servicio de Garantía</label>
+                <select class="form-select" formControlName="idServicioGarantia">
+                  <option value="">Seleccione un servicio de garantía</option>
+                  <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
+                    {{servicio.nombreComercial}}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched">
+                  El servicio de garantía es requerido.
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha Fin Garantía</label>
+                <input type="date" class="form-control" formControlName="fechaFinGarantia">
+                <div class="invalid-feedback" *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required'] && activoForm.get('fechaFinGarantia')?.touched">
+                  La fecha de fin de garantía es requerida.
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Activos Relacionados</label>
+                <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">
+                  <div class="selected-asset-badge" *ngFor="let assetId of selectedRelatedAssets">
+                    <span>{{getAssetDescription(assetId)}}</span>
+                    <button type="button" class="btn-close" (click)="removeRelatedAsset(assetId)"></button>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <select class="form-select" [(ngModel)]="selectedAssetId" [ngModelOptions]="{standalone: true}">
+                    <option [ngValue]="null">Seleccione un activo para relacionar</option>
+                    <option *ngFor="let activo of activos" [value]="activo.idActivo" 
+                            [disabled]="isAssetRelated(activo.idActivo)">
+                      {{getAssetDescription(activo.idActivo)}}
+                    </option>
+                  </select>
+                  <button class="btn btn-outline-primary" type="button" 
+                          (click)="addRelatedAsset(selectedAssetId)" 
+                          [disabled]="!selectedAssetId">
+                    <i class="fas fa-plus"></i> Agregar
+                  </button>
+                </div>
+                <small class="text-muted">Puede seleccionar múltiples activos para relacionar</small>
+              </div>
+            </div>
+          </form>
+        </ng-template>
+      </li>
+    </ul>
+    <div [ngbNavOutlet]="nav"></div>
+  </div>
+  <div class="modal-footer">
+    <!-- Información de validación -->
+    <div class="validation-info" *ngIf="!activoForm.valid">
+      <div class="validation-errors">
+        <h6 class="text-danger mb-2">
+          <i class="fas fa-exclamation-triangle me-1"></i>
+          Errores de validación:
+        </h6>
+        <ul class="validation-error-list">
+          <li *ngIf="activoForm.get('name')?.errors?.['required'] && creationMode !== 'range'">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Nombre del PC es requerido
+          </li>
+          <li *ngIf="activoForm.get('idTipoActivo')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Tipo de activo es requerido
+          </li>
+          <li *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Clasificación de INFO es requerida
+          </li>
+          <li *ngIf="activoForm.get('criticidad')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Criticidad es requerida
+          </li>
+          <li *ngIf="activoForm.get('estado')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Estado es requerido
+          </li>
+          <li *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Número de compra es requerido
+          </li>
+          <li *ngIf="activoForm.get('idItem')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Item es requerido
+          </li>
+          <li *ngIf="activoForm.get('idEntrega')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Entrega es requerida
+          </li>
+          <li *ngIf="activoForm.get('idUsuario')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Usuario es requerido
+          </li>
+          <li *ngIf="activoForm.get('idSecundario')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            ID Secundario es requerido
+          </li>
+          <li *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Servicio de garantía es requerido
+          </li>
+          <li *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Fecha fin garantía es requerida
+          </li>
+          <!-- Errores específicos para modo rango -->
+          <li *ngIf="creationMode === 'range' && (!rangeStart || !rangeEnd)">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            Debe especificar el rango de números (inicio y fin)
+          </li>
+          <li *ngIf="creationMode === 'range' && rangeStart && rangeEnd && !validateRangeFormat().isValid">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            {{ validateRangeFormat().errorMessage }}
+          </li>
+          <li *ngIf="creationMode === 'range' && rangeStart && rangeEnd && validateRangeFormat().isValid && getRangeInfo().count <= 0">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            El número inicial debe ser menor al número final
+          </li>
+        </ul>
       </div>
     </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-      <button type="submit" class="btn btn-primary">Guardar</button>
+    
+    <div class="d-flex justify-content-between align-items-center w-100">
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button type="button" class="btn btn-sm" 
+              [class.btn-success]="activoForm.valid" 
+              [class.btn-warning]="!activoForm.valid"
+              (click)="guardarActivo()">
+        <i class="fas" [ngClass]="{'fa-save': activoForm.valid, 'fa-exclamation-triangle': !activoForm.valid}"></i>
+        {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+        <span *ngIf="!activoForm.valid" class="ms-1">(Revisar errores)</span>
+      </button>
     </div>
-  </form>
+  </div>
 </ng-template>
 
 <!-- Modal para detalles de ubicación -->
@@ -437,62 +618,62 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    <div class="ubicacion-details" *ngIf="activoSeleccionado">
+    <div class="ubicacion-details" *ngIf="activoSeleccionado && activoSeleccionado.idUbicacion">
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-building"></i>
           Gerencia
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.nombreGerencia}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.nombreGerencia}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-door-open"></i>
           Oficina
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.nombreOficina}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.nombreOficina}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-city"></i>
           Ciudad
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.ciudad}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.ciudad}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-map"></i>
           Departamento
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.departamento}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.departamento}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-street-view"></i>
           Dirección
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.direccion}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.direccion}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-building"></i>
           Piso
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.piso}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.piso}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-door-closed"></i>
           Puerta
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.numeroPuerta}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.numeroPuerta}}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">
           <i class="fas fa-phone"></i>
           Interno
         </div>
-        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion)?.interno}}</div>
+        <div class="detail-value">{{ubicaciones.get(activoSeleccionado.idUbicacion!)?.interno}}</div>
       </div>
     </div>
   </div>
@@ -621,21 +802,23 @@
   </div>
 </ng-template> 
 
-<!-- Modal de confirmación para eliminar activo -->
-<div class="modal fade" #modalConfirmacion tabindex="-1" role="dialog" aria-labelledby="modalConfirmacionLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalConfirmacionLabel">Confirmar Eliminación</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        ¿Está seguro de que desea eliminar este activo? Esta acción no se puede deshacer.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="cancelarEliminacion()">Cancelar</button>
-        <button type="button" class="btn btn-danger" (click)="confirmarEliminacion()">Eliminar</button>
-      </div>
+<!-- Diálogo de confirmación -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro de que desea eliminar este activo? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">
+        Eliminar
+      </button>
     </div>
   </div>
 </div> 

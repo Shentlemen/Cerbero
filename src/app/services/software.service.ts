@@ -12,6 +12,8 @@ export interface SoftwareDTO {
   version: string;
   hidden: boolean;
   forbidden: boolean;
+  driver: boolean;
+  licenciado: boolean;
   hardwareId?: number;
   count?: number;
 }
@@ -88,6 +90,32 @@ export class SoftwareService {
   // Obtener software prohibido con conteo
   getForbiddenSoftwareWithCounts(): Observable<SoftwareDTO[]> {
     return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/forbidden`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  // Obtener software driver con conteo
+  getDriverSoftwareWithCounts(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/driver`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  // Obtener software licenciado con conteo
+  getLicenciadoSoftwareWithCounts(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/licenciado`).pipe(
       map(response => {
         if (response.success) {
           return response.data;
@@ -224,8 +252,15 @@ export class SoftwareService {
     return this.actualizarSoftware(id, software as SoftwareDTO);
   }
 
-  deleteSoftware(id: number): Observable<void> {
-    return this.eliminarSoftware(id);
+  deleteSoftware(software: SoftwareDTO): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${software.idSoftware}`).pipe(
+      map(response => {
+        if (!response || !response.success) {
+          throw new Error(response?.message || 'Error al eliminar software');
+        }
+        return;
+      })
+    );
   }
 
   // Actualizar visibilidad
@@ -252,4 +287,29 @@ export class SoftwareService {
       })
     );
   }
+
+  // Alternar estado driver
+  toggleSoftwareDriver(software: SoftwareDTO): Observable<SoftwareWithCountDTO> {
+    return this.http.put<ApiResponse<SoftwareWithCountDTO>>(`${this.apiUrl}/${software.idSoftware}/toggle-driver`, {}).pipe(
+      map(response => {
+        if (!response || !response.success) {
+          throw new Error(response?.message || 'Error al alternar el estado driver');
+        }
+        return response.data;
+      })
+    );
+  }
+
+  // Alternar estado licenciado
+  toggleSoftwareLicenciado(software: SoftwareDTO): Observable<SoftwareWithCountDTO> {
+    return this.http.put<ApiResponse<SoftwareWithCountDTO>>(`${this.apiUrl}/${software.idSoftware}/toggle-licenciado`, {}).pipe(
+      map(response => {
+        if (!response || !response.success) {
+          throw new Error(response?.message || 'Error al alternar el estado licenciado');
+        }
+        return response.data;
+      })
+    );
+  }
+
 } 

@@ -15,6 +15,7 @@ import { PermissionsService } from '../../services/permissions.service';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
+  tipoCompraAbreviado?: string;
 }
 
 @Component({
@@ -49,6 +50,7 @@ export class ComprasComponent implements OnInit {
   lotesDeLaCompra: LoteDTO[] = [];
   idItemsOriginales: number[] = [];
   idEntregasOriginales: number[] = [];
+  tipoCompraFiltroActivo: number | null = null;
 
   constructor(
     private comprasService: ComprasService,
@@ -78,7 +80,8 @@ export class ComprasComponent implements OnInit {
       descripcion: ['', Validators.required],
       fechaInicio: ['', Validators.required],
       fechaFinal: ['', Validators.required],
-      monto: ['', [Validators.required, Validators.min(0)]]
+      monto: ['', [Validators.required, Validators.min(0)]],
+      ano: [new Date().getFullYear(), Validators.required]
     });
 
     this.itemsFormArray = this.fb.array([]);
@@ -111,7 +114,8 @@ export class ComprasComponent implements OnInit {
         // Ahora procesar las compras con los tipos ya cargados
         this.comprasList = data.compras.map(compra => ({
           ...compra,
-          tipoCompraDescripcion: this.getTipoCompraDescripcion(compra.idTipoCompra)
+          tipoCompraDescripcion: this.getTipoCompraDescripcion(compra.idTipoCompra),
+          tipoCompraAbreviado: this.getTipoCompraAbreviado(compra.idTipoCompra)
         }));
         
         this.comprasFiltradas = [...this.comprasList];
@@ -146,7 +150,8 @@ export class ComprasComponent implements OnInit {
       next: (compras) => {
         this.comprasList = compras.map(compra => ({
           ...compra,
-          tipoCompraDescripcion: this.getTipoCompraDescripcion(compra.idTipoCompra)
+          tipoCompraDescripcion: this.getTipoCompraDescripcion(compra.idTipoCompra),
+          tipoCompraAbreviado: this.getTipoCompraAbreviado(compra.idTipoCompra)
         }));
         this.comprasFiltradas = [...this.comprasList];
         this.collectionSize = this.comprasFiltradas.length;
@@ -163,6 +168,40 @@ export class ComprasComponent implements OnInit {
   getTipoCompraDescripcion(idTipoCompra: number): string {
     const tipoCompra = this.tiposCompraList.find(tipo => tipo.idTipoCompra === idTipoCompra);
     return tipoCompra ? tipoCompra.descripcion : 'Tipo no encontrado';
+  }
+
+  getTipoCompraAbreviado(idTipoCompra: number): string {
+    const tipoCompra = this.tiposCompraList.find(tipo => tipo.idTipoCompra === idTipoCompra);
+    return tipoCompra ? (tipoCompra.abreviado || '') : '';
+  }
+
+  getNombreCompraFormateado(compra: CompraConTipo): string {
+    // Obtener el abreviado directamente del tipo de compra
+    const abreviado = this.getTipoCompraAbreviado(compra.idTipoCompra);
+    const numero = compra.numeroCompra || '';
+    const ano = compra.ano && compra.ano > 0 ? compra.ano.toString() : '';
+    
+    if (!abreviado && !numero && !ano) {
+      return 'Sin información';
+    }
+    
+    // Construir el nombre formateado: [abreviado] [número] / [año]
+    let nombreFormateado = '';
+    
+    if (abreviado) {
+      nombreFormateado += abreviado;
+    }
+    
+    if (numero) {
+      if (nombreFormateado) nombreFormateado += ' ';
+      nombreFormateado += numero;
+    }
+    
+    if (ano) {
+      nombreFormateado += ` / ${ano}`;
+    }
+    
+    return nombreFormateado || 'Sin información';
   }
 
   get pagedCompras(): CompraConTipo[] {
@@ -211,8 +250,21 @@ export class ComprasComponent implements OnInit {
         descripcion: compra.descripcion,
         fechaInicio: compra.fechaInicio,
         fechaFinal: compra.fechaFinal,
-        monto: compra.monto
+        monto: compra.monto,
+        ano: compra.ano && compra.ano > 0 ? compra.ano : null
       });
+      
+      // Formatear el monto en el input después de un pequeño delay para que el DOM se actualice
+      setTimeout(() => {
+        const montoInput = document.querySelector('input[formControlName="monto"]') as HTMLInputElement;
+        if (montoInput && compra.monto) {
+          const formateado = new Intl.NumberFormat('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(compra.monto);
+          montoInput.value = formateado;
+        }
+      }, 100);
       // Cargar lotes asociados a la compra
       this.lotesService.getLotesByCompra(compra.idCompra).subscribe({
         next: (lotes) => {
@@ -469,13 +521,76 @@ export class ComprasComponent implements OnInit {
 
   formatearMoneda(monto: number, moneda: string): string {
     return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: moneda
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(monto);
   }
 
+  formatearMontoInput(event: any): void {
+    const input = event.target;
+    let value = input.value;
+    
+    // Guardar la posición del cursor
+    const cursorPosition = input.selectionStart;
+    
+    // Remover todos los caracteres no numéricos excepto punto y coma
+    value = value.replace(/[^\d.,]/g, '');
+    
+    // Si hay múltiples puntos o comas, mantener solo el último
+    const parts = value.split(/[,.]/);
+    if (parts.length > 2) {
+      const integerPart = parts[0];
+      const decimalPart = parts[parts.length - 1];
+      value = integerPart + ',' + decimalPart;
+    }
+    
+    // Si no hay separador decimal, permitir escribir normalmente
+    if (!value.includes(',') && !value.includes('.')) {
+      // Formatear solo la parte entera con separadores de miles
+      const numero = parseInt(value) || 0;
+      const formateado = new Intl.NumberFormat('es-ES').format(numero);
+      
+      // Actualizar el valor del input
+      input.value = formateado;
+      
+      // Actualizar el FormControl con el valor numérico
+      this.compraForm.patchValue({ monto: numero });
+      
+      // Restaurar la posición del cursor
+      setTimeout(() => {
+        const newPosition = Math.min(cursorPosition, formateado.length);
+        input.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    } else {
+      // Hay separador decimal, formatear completo
+      let valueForCalculation = value.replace(',', '.');
+      const numero = parseFloat(valueForCalculation) || 0;
+      
+      // Formatear con separadores de miles y 2 decimales
+      const formateado = new Intl.NumberFormat('es-ES', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(numero);
+      
+      // Actualizar el valor del input
+      input.value = formateado;
+      
+      // Actualizar el FormControl con el valor numérico
+      this.compraForm.patchValue({ monto: numero });
+      
+      // Restaurar la posición del cursor al final
+      setTimeout(() => {
+        input.setSelectionRange(formateado.length, formateado.length);
+      }, 0);
+    }
+  }
+
   formatearFecha(fecha: string): string {
-    return new Date(fecha).toLocaleDateString('es-ES');
+    const date = new Date(fecha);
+    const dia = date.getDate().toString().padStart(2, '0');
+    const mes = (date.getMonth() + 1).toString().padStart(2, '0');
+    const año = date.getFullYear();
+    return `${dia}/${mes}/${año}`;
   }
 
   loadProveedores(): void {
@@ -512,5 +627,71 @@ export class ComprasComponent implements OnInit {
 
   getMonedaCount(moneda: string): number {
     return this.comprasList.filter(compra => compra.moneda === moneda).length;
+  }
+
+  getTipoCompraCount(idTipoCompra: number): number {
+    return this.comprasList.filter(compra => compra.idTipoCompra === idTipoCompra).length;
+  }
+
+  filtrarPorTipoCompra(idTipoCompra: number | null): void {
+    this.tipoCompraFiltroActivo = idTipoCompra;
+    
+    if (idTipoCompra === null) {
+      // Mostrar todas las compras
+      this.comprasFiltradas = [...this.comprasList];
+    } else {
+      // Filtrar por tipo de compra específico
+      this.comprasFiltradas = this.comprasList.filter(compra => compra.idTipoCompra === idTipoCompra);
+    }
+    this.collectionSize = this.comprasFiltradas.length;
+    this.page = 1; // Resetear a la primera página
+  }
+
+  getTipoColor(index: number): string {
+    const colors = [
+      '#0369a1', // Azul
+      '#92400e', // Naranja
+      '#00695c', // Verde
+      '#7b1fa2', // Púrpura
+      '#d32f2f', // Rojo
+      '#388e3c', // Verde oscuro
+      '#f57c00', // Naranja oscuro
+      '#6a1b9a', // Púrpura oscuro
+      '#2e7d32', // Verde
+      '#c62828'  // Rojo oscuro
+    ];
+    return colors[index % colors.length];
+  }
+
+  getTipoBgColor(index: number): string {
+    const bgColors = [
+      '#e0f2fe', // Azul claro
+      '#fef3c7', // Naranja claro
+      '#e0f7fa', // Verde claro
+      '#f3e5f5', // Púrpura claro
+      '#ffebee', // Rojo claro
+      '#e8f5e9', // Verde oscuro claro
+      '#fff3e0', // Naranja oscuro claro
+      '#f3e5f5', // Púrpura oscuro claro
+      '#e8f6f3', // Verde claro
+      '#ffebee'  // Rojo oscuro claro
+    ];
+    return bgColors[index % bgColors.length];
+  }
+
+  getTipoBorderColor(index: number): string {
+    const borderColors = [
+      '#bae6fd', // Azul
+      '#fde68a', // Naranja
+      '#b2ebf2', // Verde
+      '#e1bee7', // Púrpura
+      '#ffcdd2', // Rojo
+      '#c8e6c9', // Verde oscuro
+      '#ffe0b2', // Naranja oscuro
+      '#e1bee7', // Púrpura oscuro
+      '#c8e6c9', // Verde
+      '#ffcdd2'  // Rojo oscuro
+    ];
+    return borderColors[index % borderColors.length];
   }
 } 

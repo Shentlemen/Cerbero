@@ -8,12 +8,13 @@ import { Notification } from '../components/notification/notification.component'
 export class NotificationService {
   private notifications = new BehaviorSubject<Notification[]>([]);
   private nextId = 1;
+  private lastNotificationId: string | null = null;
 
   getNotifications(): Observable<Notification[]> {
     return this.notifications.asObservable();
   }
 
-  showSuccess(title: string, message: string, duration: number = 5000): string {
+  showSuccess(title: string, message: string, duration: number = 3333): string {
     return this.showNotification({
       type: 'success',
       title,
@@ -22,7 +23,7 @@ export class NotificationService {
     });
   }
 
-  showError(title: string, message: string, duration: number = 8000): string {
+  showError(title: string, message: string, duration: number = 5333): string {
     return this.showNotification({
       type: 'error',
       title,
@@ -31,7 +32,7 @@ export class NotificationService {
     });
   }
 
-  showWarning(title: string, message: string, duration: number = 6000): string {
+  showWarning(title: string, message: string, duration: number = 4000): string {
     return this.showNotification({
       type: 'warning',
       title,
@@ -40,7 +41,7 @@ export class NotificationService {
     });
   }
 
-  showInfo(title: string, message: string, duration: number = 5000): string {
+  showInfo(title: string, message: string, duration: number = 3333): string {
     return this.showNotification({
       type: 'info',
       title,
@@ -57,8 +58,16 @@ export class NotificationService {
       showClose: notification.showClose !== false
     };
 
+    // Cerrar la notificación anterior si existe
+    if (this.lastNotificationId) {
+      this.removeNotification(this.lastNotificationId);
+    }
+
     const currentNotifications = this.notifications.value;
     this.notifications.next([...currentNotifications, fullNotification]);
+
+    // Guardar la referencia de la nueva notificación
+    this.lastNotificationId = id;
 
     return id;
   }
@@ -67,10 +76,31 @@ export class NotificationService {
     const currentNotifications = this.notifications.value;
     const updatedNotifications = currentNotifications.filter(n => n.id !== id);
     this.notifications.next(updatedNotifications);
+    
+    // Limpiar la referencia si es la notificación actual
+    if (this.lastNotificationId === id) {
+      this.lastNotificationId = null;
+    }
   }
 
   clearAll(): void {
     this.notifications.next([]);
+    this.lastNotificationId = null;
+  }
+
+  // Método para mostrar notificación sin cerrar la anterior (útil para errores críticos)
+  showNotificationWithoutReplacing(notification: Omit<Notification, 'id'>): string {
+    const id = `notification-${this.nextId++}`;
+    const fullNotification: Notification = {
+      ...notification,
+      id,
+      showClose: notification.showClose !== false
+    };
+
+    const currentNotifications = this.notifications.value;
+    this.notifications.next([...currentNotifications, fullNotification]);
+
+    return id;
   }
 
   // Métodos específicos para errores comunes
@@ -78,7 +108,7 @@ export class NotificationService {
     return this.showError(
       'Conflicto de Concurrencia',
       message,
-      6000
+      4000
     );
   }
 
@@ -86,7 +116,7 @@ export class NotificationService {
     return this.showError(
       'Alerta No Encontrada',
       message,
-      6000
+      4000
     );
   }
 
@@ -94,7 +124,7 @@ export class NotificationService {
     return this.showError(
       'Error del Servidor',
       message,
-      8000
+      5333
     );
   }
 
@@ -102,7 +132,7 @@ export class NotificationService {
     return this.showError(
       'Error de Validación',
       message,
-      6000
+      4000
     );
   }
 
@@ -110,7 +140,7 @@ export class NotificationService {
     return this.showWarning(
       'Operación en Progreso',
       message,
-      5000
+      3333
     );
   }
 
@@ -118,7 +148,7 @@ export class NotificationService {
     return this.showSuccess(
       '¡Éxito!',
       message,
-      4000
+      2667
     );
   }
 } 

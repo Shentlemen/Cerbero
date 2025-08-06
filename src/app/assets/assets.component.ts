@@ -11,12 +11,14 @@ import { forkJoin, from, mergeMap } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
 import { ActivosService } from '../services/activos.service';
 import { PermissionsService } from '../services/permissions.service';
+import { NotificationService } from '../services/notification.service';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NotificationContainerComponent],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -45,6 +47,7 @@ export class AssetsComponent implements OnInit {
   desconocidoCount: number = 0; // Contador para Desconocido
   currentFilter: string = '';
   originalAssetsList: any[] = []; // Para guardar la lista original
+  deletingAssetId: number | null = null; // Para controlar el estado de eliminación
 
   // Control para el filtro de nombre
   nombreEquipoControl = new FormControl('');
@@ -57,7 +60,8 @@ export class AssetsComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     public route: ActivatedRoute,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private notificationService: NotificationService
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -485,6 +489,64 @@ export class AssetsComponent implements OnInit {
 
   canManageAssets(): boolean {
     return this.permissionsService.canManageAssets();
+  }
+
+  eliminarAsset(asset: any): void {
+    // Usar confirm() mejorado con más información
+    const confirmacion = confirm(
+      `🗑️ CONFIRMAR ELIMINACIÓN DE EQUIPO\n\n` +
+      `¿Está seguro de que desea eliminar el equipo "${asset.name}"?\n\n` +
+      `⚠️ ADVERTENCIA CRÍTICA:\n` +
+      `Esta acción eliminará PERMANENTEMENTE:\n\n` +
+      `• 📱 Información del equipo\n` +
+      `• 🖥️ Especificaciones de hardware (CPU, memoria, discos)\n` +
+      `• 💻 Software instalado\n` +
+      `• 🌐 Configuraciones de red\n` +
+      `• 💾 Datos de BIOS\n` +
+      `• 📋 Historial de cambios\n\n` +
+      `🚨 Esta acción es IRREVERSIBLE y no se puede deshacer.\n\n` +
+      `Presione "Aceptar" para confirmar la eliminación o "Cancelar" para abortar.`
+    );
+
+    if (confirmacion) {
+      this.procesarEliminacion(asset);
+    }
+  }
+
+  private procesarEliminacion(asset: any): void {
+    this.deletingAssetId = asset.id;
+
+    this.hardwareService.deleteHardwareComplete(asset.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Eliminar el asset de las listas locales
+          this.assetsList = this.assetsList.filter(a => a.id !== asset.id);
+          this.originalAssetsList = this.originalAssetsList.filter(a => a.id !== asset.id);
+          this.assetsFiltrados = this.assetsFiltrados.filter(a => a.id !== asset.id);
+          
+          // Actualizar contadores y paginación
+          this.updateSummary();
+          this.actualizarPaginacion();
+          
+          // Mostrar mensaje de éxito usando el sistema de notificaciones
+          this.notificationService.showSuccessMessage(
+            `Equipo "${asset.name}" eliminado exitosamente. Se eliminaron todos los datos relacionados de la base de datos.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al eliminar el equipo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al eliminar asset:', error);
+        this.notificationService.showError(
+          'Error al eliminar equipo',
+          `No se pudo eliminar el equipo "${asset.name}": ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.deletingAssetId = null;
+      }
+    });
   }
 
   private normalizeTypeFilter(filterValue: string): string {

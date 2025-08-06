@@ -10,15 +10,39 @@
   </header>
   <div class="charts-container">
     <div class="chart-card" *ngIf="pieChartOptions">
+      <div class="chart-header">
+        <h3>Terminales</h3>
+        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('terminales')" title="Ver gráfica en pantalla completa">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
       <canvasjs-chart [options]="pieChartOptions" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
     </div>
     <div class="chart-card main-chart" *ngIf="barChartOptions">
+      <div class="chart-header">
+        <h3>Fabricante</h3>
+        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('fabricante')" title="Ver gráfica en pantalla completa">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
       <canvasjs-chart [options]="barChartOptions" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
     </div>
     <div class="chart-card" *ngIf="pieChartOptions2">
+      <div class="chart-header">
+        <h3>Sistema Operativo</h3>
+        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('sistema-operativo')" title="Ver gráfica en pantalla completa">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
       <canvasjs-chart [options]="pieChartOptions2" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
     </div>
     <div class="chart-card" *ngIf="lineChartOptions">
+      <div class="chart-header">
+        <h3>Dispositivos de Red</h3>
+        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('red')" title="Ver gráfica en pantalla completa">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
       <canvasjs-chart [options]="lineChartOptions" [styles]="{width: '100%', height: '300px'}"></canvasjs-chart>
     </div>
   </div>
@@ -35,7 +59,7 @@
           (click)="checkHardwareChanges()" 
           [disabled]="isChecking"
           title="Verificar cambios en el hardware">
-          <i class="fas fa-sync-alt" [class.fa-spin]="isChecking"></i>
+          <i class="fas fa-sync-alt" [class.spinning]="isChecking"></i>
           {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
         </button>
         <button 
@@ -43,7 +67,7 @@
           (click)="cleanupOrphanedAlerts()" 
           [disabled]="isCleaning"
           title="Verificar y limpiar todas las alertas obsoletas (hardware eliminado, software ya no prohibido, equipos 'nuevos' que ya existen, cambios que ya no son válidos)">
-          <i class="fas fa-broom" [class.fa-spin]="isCleaning"></i>
+          <i class="fas fa-broom" [class.spinning]="isCleaning"></i>
           {{ isCleaning ? 'Limpiando...' : 'Limpiar alertas' }}
         </button>
       </div>
@@ -236,3 +260,22 @@
     </div>
   </div>
 </div>
+
+<!-- Modal para gráfica expandida usando NgbModal -->
+<ng-template #chartModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">{{ expandedChartTitle }}</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="closeModal(modal)"></button>
+  </div>
+  <div class="modal-body">
+    <div class="expanded-chart-container">
+      <canvasjs-chart 
+        [options]="expandedChartOptions" 
+        [styles]="{width: '100%', height: '100%'}">
+      </canvasjs-chart>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="closeModal(modal)">Cerrar</button>
+  </div>
+</ng-template>

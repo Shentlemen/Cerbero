@@ -33,7 +33,7 @@ export class SoftwareComponent implements OnInit {
   showOnlyForbidden: boolean = false;
   searchTerm: string = '';
   private searchSubject = new Subject<string>();
-  activeTab: 'total' | 'hidden' | 'forbidden' = 'total';
+  activeTab: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado' = 'total';
   page: number = 1;
   pageSize: number = 10;
   collectionSize: number = 0;
@@ -75,7 +75,7 @@ export class SoftwareComponent implements OnInit {
     this.loadSoftwareByFilter('total');
   }
 
-  loadSoftwareByFilter(filter: 'total' | 'hidden' | 'forbidden'): void {
+  loadSoftwareByFilter(filter: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado'): void {
     this.loading = true;
 
     let observable: Observable<SoftwareDTO[]>;
@@ -89,6 +89,12 @@ export class SoftwareComponent implements OnInit {
         break;
       case 'forbidden':
         observable = this.softwareService.getForbiddenSoftwareWithCounts();
+        break;
+      case 'driver':
+        observable = this.softwareService.getDriverSoftwareWithCounts();
+        break;
+      case 'licenciado':
+        observable = this.softwareService.getLicenciadoSoftwareWithCounts();
         break;
       default:
         observable = this.softwareService.getVisibleSoftwareWithCounts();
@@ -163,6 +169,18 @@ export class SoftwareComponent implements OnInit {
     this.loadSoftwareByFilter('forbidden');
   }
 
+  showOnlyDriverSoftware(): void {
+    this.activeTab = 'driver';
+    this.page = 1;
+    this.loadSoftwareByFilter('driver');
+  }
+
+  showOnlyLicenciadoSoftware(): void {
+    this.activeTab = 'licenciado';
+    this.page = 1;
+    this.loadSoftwareByFilter('licenciado');
+  }
+
   toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
 
@@ -205,6 +223,74 @@ export class SoftwareComponent implements OnInit {
         );
       }
     });
+  }
+
+  toggleSoftwareDriver(software: SoftwareDTO, event: Event): void {
+    event.stopPropagation();
+
+    this.softwareService.toggleSoftwareDriver(software).subscribe({
+      next: () => {
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage(
+          `Software ${software.driver ? 'desmarcado como driver' : 'marcado como driver'} exitosamente`
+        );
+        
+        // Recargar los datos del filtro actual
+        this.loadSoftwareByFilter(this.activeTab);
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al Actualizar Estado Driver',
+          'No se pudo actualizar el estado driver del software: ' + error.message
+        );
+      }
+    });
+  }
+
+  toggleSoftwareLicenciado(software: SoftwareDTO, event: Event): void {
+    event.stopPropagation();
+
+    this.softwareService.toggleSoftwareLicenciado(software).subscribe({
+      next: () => {
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage(
+          `Software ${software.licenciado ? 'desmarcado como licenciado' : 'marcado como licenciado'} exitosamente`
+        );
+        
+        // Recargar los datos del filtro actual
+        this.loadSoftwareByFilter(this.activeTab);
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al Actualizar Estado Licenciado',
+          'No se pudo actualizar el estado licenciado del software: ' + error.message
+        );
+      }
+    });
+  }
+
+  deleteSoftware(software: SoftwareDTO, event: Event): void {
+    event.stopPropagation();
+
+    if (confirm(`¿Está seguro de que desea eliminar el software "${software.nombre}"? Esta acción no se puede deshacer.`)) {
+      this.softwareService.deleteSoftware(software).subscribe({
+        next: () => {
+          // Mostrar notificación de éxito
+          this.notificationService.showSuccessMessage(
+            `Software "${software.nombre}" eliminado exitosamente`
+          );
+          
+          // Recargar los datos del filtro actual
+          this.loadSoftwareByFilter(this.activeTab);
+        },
+        error: (error) => {
+          this.notificationService.showError(
+            'Error al Eliminar Software',
+            'No se pudo eliminar el software: ' + error.message
+          );
+        }
+      });
+    }
   }
 
   navigateToAssets(software: SoftwareDTO): void {

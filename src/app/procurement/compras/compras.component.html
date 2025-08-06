@@ -10,7 +10,7 @@
             (click)="filterForm.patchValue({ moneda: '' })">
             <i class="fas fa-th-large"></i>
             <span>Todos</span>
-            <span class="count">({{collectionSize}})</span>
+            <span class="count">({{comprasList.length}})</span>
           </button>
           
           <button 
@@ -61,8 +61,31 @@
 
   <div class="content-section">
     <div class="row mb-3">
-      <div class="col-12">
-        <input type="text" class="form-control" placeholder="Buscar por número de compra..." [formControl]="numeroCompraControl" style="max-width: 320px;">
+      <div class="col-12 d-flex align-items-center gap-3">
+        <div class="search-container">
+          <input type="text" class="form-control" placeholder="Número de compra" [formControl]="numeroCompraControl" style="max-width: 320px;">
+        </div>
+        
+        <div class="tipo-compra-filters">
+          <button 
+            *ngFor="let tipo of tiposCompraList; let i = index" 
+            class="btn btn-outline-primary btn-sm tipo-compra-filter-btn" 
+            [class.active]="tipoCompraFiltroActivo === tipo.idTipoCompra"
+            [style.--tipo-color]="getTipoColor(i)"
+            [style.--tipo-bg-color]="getTipoBgColor(i)"
+            [style.--tipo-border-color]="getTipoBorderColor(i)"
+            (click)="filtrarPorTipoCompra(tipo.idTipoCompra)">
+            <span>{{tipo.abreviado || tipo.descripcion}}</span>
+            <span class="count">({{getTipoCompraCount(tipo.idTipoCompra)}})</span>
+          </button>
+          
+          <button 
+            *ngIf="tipoCompraFiltroActivo !== null"
+            class="btn btn-outline-secondary btn-sm tipo-compra-filter-btn limpiar-filtro-btn"
+            (click)="filtrarPorTipoCompra(null)">
+            <span>Limpiar filtro</span>
+          </button>
+        </div>
       </div>
     </div>
     <div class="table-container">
@@ -81,29 +104,19 @@
         <table class="generic-table">
           <thead>
             <tr>
-              <th (click)="sortData('numeroCompra')" [class.active]="sortColumn === 'numeroCompra'">
+              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
-                  <span>Número de Compra</span>
+                  <span>Nombre de Compra</span>
                   <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'numeroCompra' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'numeroCompra' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'numeroCompra'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('tipoCompraDescripcion')" [class.active]="sortColumn === 'tipoCompraDescripcion'">
-                <div class="th-content">
-                  <span>Tipo de Compra</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'tipoCompraDescripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'tipoCompraDescripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'tipoCompraDescripcion'
+                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'descripcion'
                   }"></i>
                 </div>
               </th>
               <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
-                  <span>Nombre de Compra</span>
+                  <span>Descripción</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
@@ -131,16 +144,6 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('monto')" [class.active]="sortColumn === 'monto'">
-                <div class="th-content">
-                  <span>Monto</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'monto' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'monto' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'monto'
-                  }"></i>
-                </div>
-              </th>
               <th (click)="sortData('moneda')" [class.active]="sortColumn === 'moneda'">
                 <div class="th-content">
                   <span>Moneda</span>
@@ -151,22 +154,31 @@
                   }"></i>
                 </div>
               </th>
+              <th (click)="sortData('monto')" [class.active]="sortColumn === 'monto'">
+                <div class="th-content">
+                  <span>Monto</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'monto' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'monto' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'monto'
+                  }"></i>
+                </div>
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let compra of pagedCompras" class="compra-row">
-              <td>{{compra.numeroCompra}}</td>
-              <td>{{compra.tipoCompraDescripcion}}</td>
+              <td>{{getNombreCompraFormateado(compra)}}</td>
               <td>{{compra.descripcion}}</td>
               <td>{{formatearFecha(compra.fechaInicio)}}</td>
               <td>{{formatearFecha(compra.fechaFinal)}}</td>
-              <td>{{formatearMoneda(compra.monto, compra.moneda)}}</td>
               <td>
                 <span class="moneda-badge" [ngClass]="compra.moneda.toLowerCase()">
                   {{compra.moneda}}
                 </span>
               </td>
+              <td>{{formatearMoneda(compra.monto, compra.moneda)}}</td>
               <td>
                 <div class="action-buttons" *ngIf="canManagePurchases()">
                   <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(compraModal, compra)">
@@ -221,11 +233,7 @@
         <ng-template ngbNavContent>
           <form [formGroup]="compraForm">
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Número de Compra</label>
-                <input type="text" class="form-control" formControlName="numeroCompra">
-              </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Tipo de Compra</label>
                 <select class="form-select" formControlName="idTipoCompra">
                   <option value="">Seleccione un tipo de compra</option>
@@ -234,9 +242,23 @@
                   </option>
                 </select>
               </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Número de Compra</label>
+                <input type="text" class="form-control" formControlName="numeroCompra">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Año</label>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  formControlName="ano" 
+                  min="2000" 
+                  max="2030"
+                  placeholder="2024">
+              </div>
             </div>
             <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Moneda</label>
                 <select class="form-select" formControlName="moneda">
                   <option value="USD">USD</option>
@@ -244,9 +266,17 @@
                   <option value="UYU">UYU</option>
                 </select>
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Monto</label>
-                <input type="number" class="form-control" formControlName="monto" step="0.01">
+                <input 
+                  type="text" 
+                  class="form-control text-end" 
+                  formControlName="monto" 
+                  placeholder="0.00"
+                  (input)="formatearMontoInput($event)">
+              </div>
+              <div class="col-md-4 mb-3">
+                <!-- Campo vacío para mantener el layout -->
               </div>
             </div>
             <div class="row">

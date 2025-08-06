@@ -1,0 +1,230 @@
+<div class="almacenes-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-warehouse"></i> 
+        Gestión de Almacenes
+      </h1>
+    </div>
+  </div>
+
+  <div class="almacenes-content">
+    <!-- Header del contenido con botón de crear -->
+    <div class="content-header">
+      <div class="search-section">
+        <div class="input-group" style="max-width: 400px;">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Buscar almacenes..." 
+            [(ngModel)]="searchTerm"
+            (input)="filtrarAlmacenes()">
+        </div>
+      </div>
+      
+      <!-- Botón para agregar nuevo almacén -->
+      <div class="actions-section" *ngIf="canManageAlmacenes()">
+        <button 
+          class="btn btn-primary" 
+          (click)="abrirModalAlmacen(modalAlmacen)">
+          <i class="fas fa-plus"></i>
+          Nuevo Almacén
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div *ngIf="loading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando almacenes...</p>
+    </div>
+
+    <!-- Mensaje de error -->
+    <div *ngIf="error" class="alert alert-danger m-3">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      {{ error }}
+    </div>
+
+    <!-- Tabla de almacenes -->
+    <div *ngIf="!loading && !error" class="table-container">
+      <table class="almacenes-table">
+        <thead>
+          <tr>
+            <th (click)="sortData('numero')" [class.active]="sortColumn === 'numero'">
+              <div class="th-content">
+                <span>Número</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'numero' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'numero' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'numero'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
+              <div class="th-content">
+                <span>Nombre</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'nombre'
+                }"></i>
+              </div>
+            </th>
+            <th *ngIf="canManageAlmacenes()">
+              <div class="th-content">
+                <span>Acciones</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let almacen of pagedAlmacenes" class="almacen-row">
+            <td>
+              <div class="almacen-numero">
+                <i class="fas fa-building me-2"></i>
+                <span>{{ almacen.numero }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="almacen-nombre">{{ almacen.nombre }}</span>
+            </td>
+            <td *ngIf="canManageAlmacenes()">
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-sm btn-outline-primary me-2" 
+                  (click)="abrirModalAlmacen(modalAlmacen, almacen)"
+                  title="Editar almacén">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button 
+                  class="btn btn-sm btn-outline-danger" 
+                  (click)="confirmarEliminacion(modalConfirmacion, almacen)"
+                  title="Eliminar almacén">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="pagedAlmacenes.length === 0">
+            <td colspan="3" class="text-center p-4">
+              <div class="alert alert-info m-0">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay almacenes disponibles
+                <span *ngIf="searchTerm"> que coincidan con la búsqueda</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Paginación -->
+    <div *ngIf="!loading && !error && collectionSize > pageSize" class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar almacén -->
+<ng-template #modalAlmacen let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-warehouse me-2"></i>
+      {{ modoEdicion ? 'Editar' : 'Nuevo' }} Almacén
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="almacenForm" (ngSubmit)="guardarAlmacen()">
+      <div class="mb-3">
+        <label for="numero" class="form-label">Número *</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          id="numero"
+          formControlName="numero"
+          placeholder="Ej: ALM001">
+        <div *ngIf="almacenForm.get('numero')?.invalid && almacenForm.get('numero')?.touched" class="text-danger mt-1">
+          <small *ngIf="almacenForm.get('numero')?.errors?.['required']">El número es requerido</small>
+          <small *ngIf="almacenForm.get('numero')?.errors?.['maxlength']">El número no puede exceder 50 caracteres</small>
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre *</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          id="nombre"
+          formControlName="nombre"
+          placeholder="Ej: Almacen 1 - Sexto Piso">
+        <div *ngIf="almacenForm.get('nombre')?.invalid && almacenForm.get('nombre')?.touched" class="text-danger mt-1">
+          <small *ngIf="almacenForm.get('nombre')?.errors?.['required']">El nombre es requerido</small>
+          <small *ngIf="almacenForm.get('nombre')?.errors?.['maxlength']">El nombre no puede exceder 255 caracteres</small>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-primary" 
+      (click)="guardarAlmacen()"
+      [disabled]="almacenForm.invalid">
+      <i class="fas fa-save me-1"></i>
+      {{ modoEdicion ? 'Actualizar' : 'Crear' }}
+    </button>
+  </div>
+</ng-template>
+
+<!-- Modal de confirmación para eliminar -->
+<ng-template #modalConfirmacion let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title text-danger">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      Confirmar Eliminación
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <p>
+      ¿Está seguro de que desea eliminar el almacén 
+      <strong>"{{ almacenAEliminar?.numero }} - {{ almacenAEliminar?.nombre }}"</strong>?
+    </p>
+    <p class="text-warning">
+      <i class="fas fa-warning me-1"></i>
+      Esta acción no se puede deshacer.
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button type="button" class="btn btn-danger" (click)="eliminarAlmacen()">
+      <i class="fas fa-trash me-1"></i>
+      Eliminar
+    </button>
+  </div>
+</ng-template> 

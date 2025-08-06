@@ -1,11 +1,75 @@
 <div class="helper-dog" [class.active]="isActive">
-  <img 
-    src="assets/awoo-awoo-shoppe.gif" 
-    alt="Helper Dog" 
-    (click)="toggleHelper()"
-    [class.bounce]="isActive">
-  
-  <div class="speech-bubble" *ngIf="showMessage">
-    {{ currentTip?.message }}
+  <!-- Helper Dog Principal -->
+  <div class="helper-dog-container">
+    <img 
+      src="assets/awoo-awoo-shoppe.gif" 
+      alt="Helper Dog" 
+      (click)="toggleHelper()"
+      [class.bounce]="isActive"
+      class="helper-dog-image">
+    
+
   </div>
+  
+  <!-- Burbuja de mensaje principal -->
+  <div class="speech-bubble main-message" *ngIf="showMessage && currentTip">
+    <div class="message-header">
+      <span class="message-type" [class]="currentTip.type || 'info'">
+        {{ currentTip.type === 'warning' ? '⚠️' : 
+           currentTip.type === 'success' ? '✅' : 
+           currentTip.type === 'tip' ? '💡' : 'ℹ️' }}
+      </span>
+      <span class="message-priority" [class]="currentTip.priority || 'low'">
+        {{ currentTip.priority === 'high' ? '🔥' : 
+           currentTip.priority === 'medium' ? '⚡' : '💤' }}
+      </span>
+    </div>
+    <div class="message-content">
+      {{ currentTip.message }}
+    </div>
+    <div class="message-footer" *ngIf="currentTip.relatedSections && currentTip.relatedSections.length > 0">
+      <small>🔗 Relacionado: {{ currentTip.relatedSections.join(', ') }}</small>
+    </div>
+  </div>
+
+  <!-- Panel de sugerencias inteligentes -->
+  <div class="suggestions-panel" *ngIf="showSuggestions">
+    <div class="suggestions-header">
+      <span class="ai-icon">🤖</span>
+      <span class="suggestions-title">Sugerencias IA</span>
+      <button class="close-btn" (click)="closeHelper()">×</button>
+    </div>
+    
+    <div class="suggestions-content">
+      <div class="suggestion-item" 
+           *ngFor="let suggestion of getFilteredSuggestions(); trackBy: trackBySuggestion"
+           [class]="suggestion.type">
+        <div class="suggestion-icon">
+          {{ suggestion.type === 'warning' ? '⚠️' : 
+             suggestion.type === 'suggestion' ? '💡' : '💡' }}
+        </div>
+        <div class="suggestion-text">
+          {{ suggestion.message }}
+        </div>
+        <div class="suggestion-confidence">
+          <div class="confidence-bar">
+            <div class="confidence-fill" [style.width.%]="suggestion.confidence * 100"></div>
+          </div>
+          <span class="confidence-text">{{ (suggestion.confidence * 100).toFixed(0) }}%</span>
+        </div>
+      </div>
+      
+      <div class="no-suggestions" *ngIf="getFilteredSuggestions().length === 0">
+        <span>🎯 No hay sugerencias específicas para esta sección.</span>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
 </div> 

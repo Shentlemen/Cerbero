@@ -27,6 +27,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   isAssetsExpanded: boolean = false;
   isConfigExpanded: boolean = false;
   isProcurementExpanded: boolean = false;
+  isAlmacenExpanded: boolean = false;
   isHelperActive = false;
   showHelperMessage = false;
   currentHelperTip?: HelpTip;
@@ -38,6 +39,8 @@ export class MenuComponent implements OnInit, OnDestroy {
   private configRoutes = [
     '/menu/settings',
     '/menu/locations',
+    '/menu/subnets',
+    '/menu/procurement/proveedores',
     '/menu/procurement/tipos-activo',
     '/menu/procurement/tipos-compra',
     '/menu/procurement/servicios-garantia',
@@ -48,8 +51,11 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/procurement/activos',
     '/menu/procurement/compras',
     '/menu/procurement/entregas',
-    '/menu/procurement/lotes',
-    '/menu/procurement/proveedores'
+    '/menu/procurement/lotes'
+  ];
+  private almacenRoutes = [
+    '/menu/almacen/almacenes',
+    '/menu/almacen/ubicaciones'
   ];
 
   constructor(
@@ -67,25 +73,35 @@ export class MenuComponent implements OnInit, OnDestroy {
       const isAssetsRoute = this.assetsRoutes.some(route => url.startsWith(route));
       const isConfigRoute = this.configRoutes.some(route => url.startsWith(route));
       const isProcurementRoute = this.procurementRoutes.some(route => url.startsWith(route));
+      const isAlmacenRoute = this.almacenRoutes.some(route => url.startsWith(route));
 
       // Actualizar estados de los submenús
-      if (isProcurementRoute && !url.includes('/tipos-')) {
+      if (isProcurementRoute) {
         this.isProcurementExpanded = true;
         this.isAssetsExpanded = false;
         this.isConfigExpanded = false;
+        this.isAlmacenExpanded = false;
       } else if (isAssetsRoute) {
         this.isAssetsExpanded = true;
         this.isProcurementExpanded = false;
         this.isConfigExpanded = false;
-      } else if (isConfigRoute || (url.includes('/procurement/tipos-'))) {
+        this.isAlmacenExpanded = false;
+      } else if (isConfigRoute) {
         this.isConfigExpanded = true;
         this.isProcurementExpanded = false;
         this.isAssetsExpanded = false;
+        this.isAlmacenExpanded = false;
+      } else if (isAlmacenRoute) {
+        this.isAlmacenExpanded = true;
+        this.isProcurementExpanded = false;
+        this.isAssetsExpanded = false;
+        this.isConfigExpanded = false;
       } else {
         // Si no es ninguna de las rutas anteriores, cerrar todos los submenús
         this.isAssetsExpanded = false;
         this.isConfigExpanded = false;
         this.isProcurementExpanded = false;
+        this.isAlmacenExpanded = false;
       }
       
       this.closeHelper();
@@ -113,6 +129,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isAssetsExpanded) {
       this.isConfigExpanded = false;
       this.isProcurementExpanded = false;
+      this.isAlmacenExpanded = false;
     }
   }
 
@@ -121,6 +138,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isConfigExpanded) {
       this.isAssetsExpanded = false;
       this.isProcurementExpanded = false;
+      this.isAlmacenExpanded = false;
     }
   }
 
@@ -129,6 +147,16 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isProcurementExpanded) {
       this.isAssetsExpanded = false;
       this.isConfigExpanded = false;
+      this.isAlmacenExpanded = false;
+    }
+  }
+
+  toggleAlmacenMenu(): void {
+    this.isAlmacenExpanded = !this.isAlmacenExpanded;
+    if (this.isAlmacenExpanded) {
+      this.isAssetsExpanded = false;
+      this.isConfigExpanded = false;
+      this.isProcurementExpanded = false;
     }
   }
 

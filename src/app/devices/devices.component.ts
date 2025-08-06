@@ -4,6 +4,11 @@ import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { ConfigService } from '../services/config.service';
+import { HttpClient } from '@angular/common/http';
+import { NotificationService } from '../services/notification.service';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { PermissionsService } from '../services/permissions.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -22,7 +27,7 @@ interface DeviceType {
 @Component({
   selector: 'app-devices',
   standalone: true,
-  imports: [CommonModule, NgbPaginationModule],
+  imports: [CommonModule, NgbPaginationModule, NotificationContainerComponent],
   templateUrl: './devices.component.html',
   styleUrls: ['./devices.component.css']
 })
@@ -31,6 +36,7 @@ export class DevicesComponent implements OnInit {
   filteredDevices: NetworkInfoDTO[] = [];
   errorMessage: string | null = null;
   loading: boolean = true;
+  isUpdatingDevices: boolean = false;
   
   // Variables para paginación
   page: number = 1;
@@ -46,15 +52,24 @@ export class DevicesComponent implements OnInit {
     { name: 'Teléfono IP', color: '#1976d2', backgroundColor: '#e3f2fd', borderColor: '#bbdefb', icon: 'fa-phone' },
     { name: 'Cámaras IP', color: '#7b1fa2', backgroundColor: '#f3e5f5', borderColor: '#e1bee7', icon: 'fa-video' },
     { name: 'Plotter', color: '#f57c00', backgroundColor: '#fff3e0', borderColor: '#ffe0b2', icon: 'fa-print' },
-    { name: 'Switch', color: '#388e3c', backgroundColor: '#e8f5e9', borderColor: '#c8e6c9', icon: 'fa-network-wired' },
+    { name: 'Switch', color: '#1b5e20', backgroundColor: '#c8e6c9', borderColor: '#81c784', icon: 'fa-network-wired' },
     { name: 'Router', color: '#d32f2f', backgroundColor: '#ffebee', borderColor: '#ffcdd2', icon: 'fa-wifi' },
-    { name: 'Reloj de Marcado', color: '#6a1b9a', backgroundColor: '#f3e5f5', borderColor: '#e1bee7', icon: 'fa-clock' }
+    { name: 'Reloj de Marcado', color: '#6a1b9a', backgroundColor: '#f3e5f5', borderColor: '#e1bee7', icon: 'fa-clock' },
+    { name: 'Access Point WiFi', color: '#0277bd', backgroundColor: '#e1f5fe', borderColor: '#b3e5fc', icon: 'fa-wifi' },
+    { name: 'Scanner', color: '#8e24aa', backgroundColor: '#f3e5f5', borderColor: '#e1bee7', icon: 'fa-camera' },
+    { name: 'UPS', color: '#e65100', backgroundColor: '#fff3e0', borderColor: '#ffcc02', icon: 'fa-battery-full' },
+    { name: 'Access Point', color: '#1565c0', backgroundColor: '#e3f2fd', borderColor: '#bbdefb', icon: 'fa-broadcast-tower' },
+    { name: 'Reloj Biométrico', color: '#4a148c', backgroundColor: '#f3e5f5', borderColor: '#ce93d8', icon: 'fa-fingerprint' }
   ];
 
   constructor(
     private networkInfoService: NetworkInfoService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private configService: ConfigService,
+    private http: HttpClient,
+    private notificationService: NotificationService,
+    private permissionsService: PermissionsService
   ) {}
 
   ngOnInit(): void {
@@ -100,9 +115,11 @@ export class DevicesComponent implements OnInit {
     if (filter === 'all') {
       this.filteredDevices = [...this.devices];
     } else {
-      this.filteredDevices = this.devices.filter(device => 
-        device.type && device.type.toLowerCase() === filter.toLowerCase()
-      );
+      this.filteredDevices = this.devices.filter(device => {
+        if (!device.type) return false;
+        return device.type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
+               filter.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      });
     }
     
     this.collectionSize = this.filteredDevices.length;
@@ -110,8 +127,19 @@ export class DevicesComponent implements OnInit {
 
   // Obtener configuración de color para un tipo de dispositivo
   getDeviceTypeConfig(type: string): DeviceType {
+    if (!type) {
+      return {
+        name: 'Desconocido',
+        color: '#6c757d',
+        backgroundColor: '#f8f9fa',
+        borderColor: '#dee2e6',
+        icon: 'fa-question-circle'
+      };
+    }
+    
     const deviceType = this.deviceTypes.find(dt => 
-      dt.name.toLowerCase() === type.toLowerCase()
+      dt.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
+      type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     );
     
     // Si no encuentra el tipo, usar un color por defecto
@@ -124,9 +152,23 @@ export class DevicesComponent implements OnInit {
     };
   }
 
+  // Obtener icono y color para un dispositivo
+  getDeviceIcon(device: NetworkInfoDTO): { icon: string, color: string } {
+    const config = this.getDeviceTypeConfig(device.type);
+    return {
+      icon: config.icon,
+      color: config.color
+    };
+  }
+
   // Verificar si un filtro está activo
   isFilterActive(filter: string): boolean {
     return this.activeFilter === filter;
+  }
+
+  // Verificar si el usuario tiene permisos para actualizar dispositivos
+  canUpdateDevices(): boolean {
+    return this.permissionsService.canUpdateNetworkDevices();
   }
 
   // Obtener el conteo de dispositivos por tipo
@@ -134,9 +176,11 @@ export class DevicesComponent implements OnInit {
     if (type === 'all') {
       return this.devices.length;
     }
-    return this.devices.filter(device => 
-      device.type && device.type.toLowerCase() === type.toLowerCase()
-    ).length;
+    return this.devices.filter(device => {
+      if (!device.type) return false;
+      return device.type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
+             type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }).length;
   }
 
   verDetallesDevice(device: NetworkInfoDTO) {
@@ -202,8 +246,80 @@ export class DevicesComponent implements OnInit {
       case 'reloj de marcado':
       case 'clock':
         return 'Reloj de Marcado';
+      case 'access point wifi':
+      case 'wifi':
+      case 'ap wifi':
+        return 'Access Point WiFi';
+      case 'scanner':
+        return 'Scanner';
+      case 'ups':
+        return 'UPS';
+      case 'access point':
+      case 'ap':
+        return 'Access Point';
+      case 'reloj biometrico':
+      case 'reloj biométrico':
+      case 'biometrico':
+      case 'biométrico':
+        return 'Reloj Biométrico';
       default:
         return normalizedValue;
+    }
+  }
+
+  async actualizarDispositivos(): Promise<void> {
+    // Verificar permisos antes de proceder
+    if (!this.canUpdateDevices()) {
+      this.notificationService.showError(
+        'Permisos Insuficientes', 
+        'No tienes permisos para actualizar dispositivos de red. Solo los administradores y Game Masters pueden realizar esta acción.'
+      );
+      return;
+    }
+
+    this.isUpdatingDevices = true;
+    this.errorMessage = null;
+    
+    try {
+      const response = await this.http.post<any>(`${this.configService.getApiUrl()}/sync/network-devices-reset`, {}).toPromise();
+      
+      if (response && response.success) {
+        // Recargar los dispositivos después de la actualización
+        this.cargarDispositivos();
+        
+        // Mostrar notificación de éxito con detalles
+        const data = response.data;
+        let message = 'Dispositivos actualizados exitosamente.';
+        
+        if (data) {
+          const details = [];
+          if (data.inserted_devices > 0) details.push(`${data.inserted_devices} insertados`);
+          if (data.deleted_network_devices > 0) details.push(`${data.deleted_network_devices} eliminados`);
+          if (data.error_devices > 0) details.push(`${data.error_devices} errores`);
+          
+          if (details.length > 0) {
+            message += ` ${details.join(', ')}.`;
+          }
+          
+          // Mostrar información adicional
+          message += `\nTotal OCS: ${data.total_ocs}, Total final Cerbero: ${data.final_cerbero_count}`;
+        }
+        
+        this.notificationService.showSuccessMessage(message);
+        console.log('Dispositivos actualizados exitosamente:', response.message);
+      } else {
+        const errorMsg = response?.message || 'Error al actualizar dispositivos';
+        this.errorMessage = errorMsg;
+        this.notificationService.showError('Error al Actualizar Dispositivos', errorMsg);
+        console.error('Error en la respuesta:', this.errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Error al actualizar dispositivos:', error);
+      const errorMsg = error.message || 'Error durante la actualización de dispositivos';
+      this.errorMessage = errorMsg;
+      this.notificationService.showError('Error al Actualizar Dispositivos', errorMsg);
+    } finally {
+      this.isUpdatingDevices = false;
     }
   }
 } 

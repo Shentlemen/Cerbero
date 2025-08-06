@@ -1,4 +1,7 @@
 <div class="assets-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
   <div class="header-section">
     <div class="title-wrapper">
       <h1>
@@ -14,7 +17,8 @@
         <button 
           class="filter-btn" 
           [class.active]="currentFilter === ''"
-          (click)="filterByType('')">
+          (click)="filterByType('')"
+          data-help="🎯 Filtro para mostrar todos los activos sin restricciones">
           <i class="fas fa-th-large"></i>
           <span>Todos</span>
           <span class="count">({{totalAssets}})</span>
@@ -116,7 +120,8 @@
           class="form-control" 
           placeholder="Buscar por nombre de equipo..." 
           [formControl]="nombreEquipoControl" 
-          style="max-width: 320px;">
+          style="max-width: 320px;"
+          data-help="🔍 Busca equipos específicos escribiendo parte del nombre del equipo">
       </div>
     </div>
 
@@ -132,7 +137,7 @@
       <table class="assets-table">
         <thead>
           <tr>
-            <th (click)="sortData('name')" [class.active]="sortColumn === 'name'">
+            <th (click)="sortData('name')" [class.active]="sortColumn === 'name'" data-help="📊 Haz clic para ordenar la lista por nombre de equipo">
               <div class="th-content">
                 <span>Equipo</span>
                 <i class="fas" [ngClass]="{
@@ -177,10 +182,15 @@
                 <span>Nro. Compra</span>
               </div>
             </th>
+            <th *ngIf="canManageAssets()">
+              <div class="th-content">
+                <span>Acciones</span>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let asset of pagedAssets" (click)="verDetallesAsset(asset)" class="asset-row">
+          <tr *ngFor="let asset of pagedAssets" (click)="verDetallesAsset(asset)" class="asset-row" data-help="👁️ Haz clic para ver los detalles completos de este equipo">
             <td>
               <div class="asset-name">
                 <i class="fas" [ngClass]="{
@@ -219,6 +229,19 @@
               <span class="compra-link" (click)="verDetallesActivo(asset.name); $event.stopPropagation()">
                 {{getNumeroCompra(asset.name)}}
               </span>
+            </td>
+            <td *ngIf="canManageAssets()">
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-danger btn-sm delete-btn" 
+                  (click)="eliminarAsset(asset); $event.stopPropagation()"
+                  [disabled]="deletingAssetId === asset.id"
+                  title="Eliminar este equipo y todos sus datos relacionados"
+                  data-help="🗑️ Elimina permanentemente este equipo y todos sus datos relacionados de la base de datos">
+                  <i class="fas" [ngClass]="deletingAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                  {{ deletingAssetId === asset.id ? 'Eliminando...' : 'Eliminar' }}
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>

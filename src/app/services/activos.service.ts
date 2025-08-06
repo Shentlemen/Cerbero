@@ -15,7 +15,7 @@ export interface ActivoDTO {
   idNumeroCompra: number;
   idItem: number;
   idEntrega: number;
-  idUbicacion: number;
+  idUbicacion: number | null; // Permitir null para ubicación opcional
   idUsuario: number;
   idSecundario: string;
   idServicioGarantia: number;
@@ -61,6 +61,19 @@ export class ActivosService {
 
   crearActivo(activo: ActivoDTO): Observable<ActivoDTO> {
     return this.http.post<ActivoDTO>(this.apiUrl, activo);
+  }
+
+  crearActivosBatch(activos: ActivoDTO[]): Observable<ActivoDTO[]> {
+    return this.http.post<ApiResponse<ActivoDTO[]>>(`${this.apiUrl}/batch`, activos).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   actualizarActivo(id: number, activo: ActivoDTO): Observable<ActivoDTO> {
@@ -128,20 +141,17 @@ export class ActivosService {
 
   eliminarRelacion(idActivoOrigen: number, idActivoDestino: number): Observable<ApiResponse<any>> {
     const url = `${this.apiUrl}/relacion`;
-    const body = {
-      idActivoOrigen,
-      idActivoDestino
+    const relacion = {
+      idActivoOrigen: idActivoOrigen,
+      idActivoDestino: idActivoDestino
     };
-    console.log('Eliminando relación:', body);
-    return this.http.delete<ApiResponse<any>>(url, { body }).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error(response.message || 'Error al eliminar relación');
-        }
-        return response;
-      }),
-      catchError(error => {
-        console.error('Error al eliminar relación:', error);
+    return this.http.delete<ApiResponse<any>>(url, { body: relacion });
+  }
+
+  private handleError(error: any): Observable<never> {
+    console.error('Error en ActivosService:', error);
+    return of().pipe(
+      map(() => {
         throw error;
       })
     );

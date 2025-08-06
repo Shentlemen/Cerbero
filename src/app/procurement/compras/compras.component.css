@@ -1,4 +1,106 @@
 /* Estilos específicos para compras */
+
+/* Eliminar outline de todos los botones */
+.btn:focus,
+button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn:focus-visible,
+button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Estilos específicos para el componente de compras */
+:host {
+  /* Eliminar outline de todos los elementos dentro del componente */
+  *:focus {
+    outline: none !important;
+  }
+  
+  *:focus-visible {
+    outline: none !important;
+  }
+  
+  /* Prevenir selección de texto */
+  * {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  /* Permitir selección de texto solo en inputs y textareas */
+  input, textarea {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+  }
+}
+
+/* Eliminar outline de elementos de texto dentro de botones */
+.btn span:focus,
+button span:focus,
+.btn i:focus,
+button i:focus,
+.btn *:focus,
+button *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevenir selección de texto en botones */
+.btn,
+button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Estilos específicos para eliminar outline en todos los elementos */
+*:focus {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}
+
+/* Estilos específicos para botones y elementos dentro de botones */
+.btn *,
+button *,
+.filter-btn *,
+.tipo-compra-filter-btn * {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Eliminar outline específicamente en elementos de texto */
+span:focus,
+i:focus,
+div:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Estilos para prevenir selección de texto en toda la aplicación */
+.btn,
+button,
+.filter-btn,
+.tipo-compra-filter-btn {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -khtml-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
 .compra-row {
   cursor: pointer;
   transition: all 0.3s ease;
@@ -164,6 +266,12 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  outline: none;
+}
+
+.filter-btn:focus {
+  outline: none;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
@@ -376,5 +484,109 @@
   .modal-body .table td:nth-child(2) {
     min-width: 100px !important;
     max-width: 150px !important;
+  }
+}
+
+/* Estilos para los filtros de tipo de compra */
+.tipo-compra-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tipo-compra-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--tipo-border-color, #dee2e6);
+  background: var(--tipo-bg-color, #ffffff);
+  color: var(--tipo-color, #2c3e50);
+  font-weight: 500;
+  min-width: fit-content;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  outline: none;
+}
+
+.tipo-compra-filter-btn:focus {
+  outline: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.tipo-compra-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  background: var(--tipo-bg-color, #ffffff);
+  border-color: var(--tipo-border-color, #adb5bd);
+  color: var(--tipo-color, #2c3e50);
+}
+
+.tipo-compra-filter-btn.active {
+  background: var(--tipo-color, #2c3e50);
+  color: white;
+  border-color: var(--tipo-color, #2c3e50);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.limpiar-filtro-btn {
+  background: #f8f9fa !important;
+  color: #6c757d !important;
+  border-color: #dee2e6 !important;
+}
+
+.limpiar-filtro-btn:hover {
+  background: #e9ecef !important;
+  color: #495057 !important;
+  border-color: #adb5bd !important;
+}
+
+.limpiar-filtro-btn:focus {
+  outline: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+
+
+.tipo-compra-filter-btn .count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.search-container {
+  flex-shrink: 0;
+}
+
+/* Responsive para los filtros de tipo de compra */
+@media (max-width: 768px) {
+  .tipo-compra-filters {
+    gap: 0.25rem;
+  }
+  
+  .tipo-compra-filter-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .tipo-compra-filter-btn .count {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .tipo-compra-filters {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  
+  .tipo-compra-filter-btn {
+    justify-content: center;
+    width: 100%;
   }
 } 
