@@ -1,0 +1,145 @@
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0; /* Cubre toda la pantalla desde la izquierda */
+  right: 0;
+  height: 60px;
+  background-color: #1a1a1a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 0 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.app-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ecf0f1;
+  letter-spacing: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-name {
+  color: #ecf0f1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.user-name:hover {
+  color: #3498db;
+  text-decoration: underline;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 20px;
+  color: #e74c3c;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: rgba(231, 76, 60, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+.btn-logout i {
+  font-size: 0.9rem;
+}
+
+.logout-text {
+  font-weight: 500;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+  .app-header {
+    left: 0; /* Siempre cubre toda la pantalla */
+  }
+  
+  .app-name {
+    display: none; /* Ocultar nombre en pantallas pequeñas */
+  }
+  
+  .logout-text {
+    display: none; /* Ocultar texto del botón en pantallas pequeñas */
+  }
+  
+  .user-name {
+    font-size: 0.8rem;
+  }
+  
+  .badge {
+    font-size: 0.6rem;
+    padding: 3px 6px;
+  }
+}
+
+/* Ajuste para el contenido principal */
+.main-content {
+  margin-top: 60px; /* Espacio para el header */
+} 

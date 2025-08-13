@@ -4,7 +4,7 @@
   
   <div class="header-section">
     <div class="title-wrapper">
-      <h1>
+      <h1 style="text-align: left; justify-content: flex-start;">
         <i class="fas fa-boxes"></i> 
         Gestión de Stock de Almacén
       </h1>
@@ -63,10 +63,10 @@
       <!-- Botón para agregar nueva ubicación -->
       <div class="actions-section" *ngIf="canManageUbicaciones()">
         <button 
-          class="btn btn-primary" 
+          class="btn btn-outline-secondary" 
           (click)="abrirModalUbicacion(modalUbicacion)">
           <i class="fas fa-plus"></i>
-          Nueva Ubicación
+          Registrar Stock
         </button>
       </div>
     </div>
@@ -160,16 +160,16 @@
             <td *ngIf="canManageUbicaciones()">
               <div class="action-buttons">
                 <button 
-                  class="btn btn-sm btn-outline-primary me-2" 
+                  class="btn btn-warning btn-sm me-2" 
                   (click)="abrirModalUbicacion(modalUbicacion, ubicacion)"
                   title="Editar ubicación">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button 
-                  class="btn btn-sm btn-outline-danger" 
-                  (click)="confirmarEliminacion(modalConfirmacion, ubicacion)"
+                  class="btn btn-danger btn-sm" 
+                  (click)="confirmarEliminacion(ubicacion)"
                   title="Eliminar ubicación">
-                  <i class="fas fa-trash"></i>
+                  <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
             </td>
@@ -203,33 +203,175 @@
   </div>
 </div>
 
+<!-- Diálogo de confirmación -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar esta ubicación? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="eliminarUbicacion()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal para crear/editar ubicación -->
 <ng-template #modalUbicacion let-modal>
   <div class="modal-header">
     <h4 class="modal-title">
       <i class="fas fa-map-pin me-2"></i>
-      {{ modoEdicion ? 'Editar' : 'Nueva' }} Ubicación
+      {{ modoEdicion ? 'Editar' : 'Registrar' }} Stock
     </h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
     <form [formGroup]="ubicacionForm" (ngSubmit)="guardarUbicacion()">
-      <div class="mb-3">
-        <label for="activoId" class="form-label">Activo *</label>
-        <select 
-          class="form-select" 
-          id="activoId"
-          formControlName="activoId">
-          <option value="">Seleccionar activo</option>
-          <option *ngFor="let activo of activos" [value]="activo.idActivo">
-            {{ activo.name }}
-          </option>
-        </select>
-        <div *ngIf="ubicacionForm.get('activoId')?.invalid && ubicacionForm.get('activoId')?.touched" class="text-danger mt-1">
-          <small *ngIf="ubicacionForm.get('activoId')?.errors?.['required']">El activo es requerido</small>
+      <!-- Selector de modo de creación - Solo visible en modo creación -->
+      <div class="row mb-3" *ngIf="!modoEdicion">
+        <div class="col-12">
+          <label class="form-label">Modo de Creación</label>
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="creationMode" id="singleMode" 
+                   [(ngModel)]="creationMode" value="single" [ngModelOptions]="{standalone: true}" (change)="onCreationModeChange()">
+            <label class="btn btn-outline-primary" for="singleMode">
+              <i class="fas fa-map-pin me-2"></i>Ubicación Individual
+            </label>
+            
+            <input type="radio" class="btn-check" name="creationMode" id="rangeMode" 
+                   [(ngModel)]="creationMode" value="range" [ngModelOptions]="{standalone: true}" (change)="onCreationModeChange()">
+            <label class="btn btn-outline-primary" for="rangeMode">
+              <i class="fas fa-layer-group me-2"></i>Múltiples Activos
+            </label>
+          </div>
         </div>
       </div>
-      
+
+      <!-- Modo Individual -->
+      <div class="row" *ngIf="creationMode === 'single'">
+        <div class="col-md-6 mb-3">
+          <label for="activoId" class="form-label">Activo *</label>
+          
+          <!-- Campo editable para nueva ubicación con búsqueda -->
+          <div *ngIf="!modoEdicion" class="position-relative">
+            <input 
+              type="text" 
+              class="form-control" 
+              id="activoSearch"
+              placeholder="Escriba para buscar activos..."
+              [(ngModel)]="activoSearchTerm"
+              [ngModelOptions]="{standalone: true}"
+              (input)="filtrarActivos()"
+              (focus)="mostrarDropdownActivos = true"
+              (blur)="onActivoBlur()"
+              autocomplete="off">
+            
+            <!-- Dropdown de activos filtrados -->
+            <div *ngIf="mostrarDropdownActivos && activosFiltrados.length > 0" 
+                 class="activos-dropdown">
+              <div *ngFor="let activo of activosFiltrados" 
+                   class="activo-option"
+                   (click)="seleccionarActivo(activo)"
+                   [class.selected]="activo.idActivo === ubicacionForm.get('activoId')?.value">
+                <i class="fas fa-desktop me-2"></i>
+                {{ activo.name }}
+              </div>
+            </div>
+            
+            <!-- Mensaje cuando no hay resultados -->
+            <div *ngIf="mostrarDropdownActivos && activosFiltrados.length === 0 && activoSearchTerm" 
+                 class="activos-dropdown no-results">
+              <div class="activo-option disabled">
+                <i class="fas fa-search me-2"></i>
+                No se encontraron activos
+              </div>
+            </div>
+          </div>
+          
+          <!-- Campo de solo lectura para edición -->
+          <input 
+            *ngIf="modoEdicion"
+            type="text" 
+            class="form-control" 
+            id="activoId"
+            [value]="ubicacionSeleccionada && ubicacionSeleccionada.activoId ? getActivoName(ubicacionSeleccionada.activoId) : ''"
+            readonly
+            style="background-color: #f8f9fa; cursor: not-allowed;">
+          
+          <div *ngIf="!modoEdicion && ubicacionForm.get('activoId')?.invalid && ubicacionForm.get('activoId')?.touched" class="text-danger mt-1">
+            <small *ngIf="ubicacionForm.get('activoId')?.errors?.['required']">El activo es requerido</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modo Múltiples Activos -->
+      <div class="row" *ngIf="creationMode === 'range'">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Número Inicial *</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            [(ngModel)]="rangeStart" 
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Ej: PC14000, PC1, 14000, 1">
+          <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Formato PC: PC + números (ej: PC14000, PC1, PC123)<br>
+            Formato numérico: solo números (ej: 14000, 1, 123)
+          </small>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Número Final *</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            [(ngModel)]="rangeEnd" 
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Ej: PC15000, PC10, 15000, 10">
+          <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Debe usar el mismo formato que el inicial
+          </small>
+        </div>
+      </div>
+
+      <!-- Información del rango -->
+      <div class="row" *ngIf="creationMode === 'range' && getRangeInfo().count > 0">
+        <div class="col-12">
+          <div class="alert" [ngClass]="getRangeInfo().count > 100 ? 'alert-warning' : 'alert-info'">
+            <i class="fas" [ngClass]="getRangeInfo().count > 100 ? 'fa-exclamation-triangle' : 'fa-info-circle'"></i>
+            <span class="me-2"></span>
+            Se registrarán <strong>{{ getRangeInfo().count }}</strong> activos desde 
+            <strong>{{ getRangeInfo().start }}</strong> hasta <strong>{{ getRangeInfo().end }}</strong>
+            <span class="ms-2">
+              <i class="fas" [ngClass]="getRangeInfo().isPcFormat ? 'fa-desktop' : 'fa-box'"></i>
+              <span class="ms-1">{{ getRangeInfo().isPcFormat ? 'Formato PC' : 'Formato numérico' }}</span>
+            </span>
+            <span *ngIf="getRangeInfo().count > 100" class="ms-2">
+              <i class="fas fa-clock me-1"></i>Esta operación puede tomar varios minutos.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje de error si hay activos no encontrados -->
+      <div class="row" *ngIf="creationMode === 'range' && getRangeInfo().isValid && getActivosInfo().errorMessage">
+        <div class="col-12">
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ getActivosInfo().errorMessage }}
+          </div>
+        </div>
+      </div>
+
       <div class="mb-3">
         <label for="almacenId" class="form-label">Almacén *</label>
         <select 
@@ -284,41 +426,11 @@
       type="button" 
       class="btn btn-primary" 
       (click)="guardarUbicacion()"
-      [disabled]="ubicacionForm.invalid">
+      [disabled]="!isFormValid()">
       <i class="fas fa-save me-1"></i>
-      {{ modoEdicion ? 'Actualizar' : 'Crear' }}
+      {{ modoEdicion ? 'Actualizar' : 'Registrar' }}
     </button>
   </div>
 </ng-template>
 
-<!-- Modal de confirmación para eliminar -->
-<ng-template #modalConfirmacion let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title text-danger">
-      <i class="fas fa-exclamation-triangle me-2"></i>
-      Confirmar Eliminación
-    </h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-  </div>
-  <div class="modal-body">
-    <p>
-      ¿Está seguro de que desea eliminar la ubicación del activo 
-      <strong>"{{ getActivoName(ubicacionAEliminar?.activoId || 0) }}"</strong>
-      en el almacén <strong>"{{ ubicacionAEliminar?.almacen?.numero }} - {{ ubicacionAEliminar?.almacen?.nombre }}"</strong>?
-    </p>
-    <p class="text-warning">
-      <i class="fas fa-warning me-1"></i>
-      Esta acción no se puede deshacer.
-    </p>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
-      <i class="fas fa-times me-1"></i>
-      Cancelar
-    </button>
-    <button type="button" class="btn btn-danger" (click)="eliminarUbicacion()">
-      <i class="fas fa-trash me-1"></i>
-      Eliminar
-    </button>
-  </div>
-</ng-template> 
+ 

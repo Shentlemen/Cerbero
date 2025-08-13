@@ -10,9 +10,9 @@ html, body {
 .sidenav {
   width: 220px;
   position: fixed;
-  top: 0;
+  top: 60px; /* Empieza debajo del header */
   left: 0;
-  height: 100%;
+  height: calc(100% - 60px); /* Altura total menos el header */
   background-color: #1a1a1a;
   padding-top: 15px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
@@ -89,26 +89,27 @@ html, body {
   width: 100%;
 }
 
+.sidenav .user-section .user-info-line {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
 .sidenav .user-section .user-name {
   color: #ecf0f1 !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
-  margin-bottom: 2px !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.3s ease;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidenav .user-section .user-name:hover {
   color: #3498db !important;
-}
-
-.sidenav .user-section .user-role-container {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  justify-content: space-between !important;
 }
 
 .sidenav .user-section .badge {
@@ -185,6 +186,7 @@ html, body {
 /* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
   margin-left: 220px;
+  margin-top: 60px; /* Espacio para el header superior */
   padding: 15px;
   min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
   background-color: #ecf0f1;
@@ -217,10 +219,11 @@ html, body {
 
 /* Estilo para la imagen del logo */
 .logo {
-  width: 120px;
+  width: 150px;
   max-width: 100%;
   height: auto;
   border-radius: 10px; /* Bordes redondeados para la imagen */
+  object-fit: cover; /* Mantiene la proporción de la imagen */
 }
 
 /* Efecto hover para los íconos */
@@ -249,8 +252,8 @@ html, body {
   }
   
   .logo {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: auto;
   }
   
   .submenu-item {
@@ -370,6 +373,15 @@ html, body {
   max-width: 100%;
   height: auto;
   width: 120px;
+}
+
+/* Estilos para el logo del título */
+.logo-title {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .title-container {

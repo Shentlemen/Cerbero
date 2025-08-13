@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -10,7 +10,7 @@ import { forkJoin } from 'rxjs';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
-import { EntregasService } from '../../services/entregas.service';
+import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { PermissionsService } from '../../services/permissions.service';
 
 interface CompraConTipo extends CompraDTO {
@@ -51,6 +51,12 @@ export class ComprasComponent implements OnInit {
   idItemsOriginales: number[] = [];
   idEntregasOriginales: number[] = [];
   tipoCompraFiltroActivo: number | null = null;
+  compraSeleccionada: CompraConTipo | null = null;
+  lotesDetalles: LoteDTO[] = [];
+  entregasDetalles: EntregaDTO[] = [];
+  isCompactView: boolean = false;
+
+  @ViewChild('detallesModal') detallesModal!: TemplateRef<any>;
 
   constructor(
     private comprasService: ComprasService,
@@ -258,6 +264,7 @@ export class ComprasComponent implements OnInit {
       setTimeout(() => {
         const montoInput = document.querySelector('input[formControlName="monto"]') as HTMLInputElement;
         if (montoInput && compra.monto) {
+          // Formatear con separadores de miles y coma decimal
           const formateado = new Intl.NumberFormat('es-ES', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -348,13 +355,81 @@ export class ComprasComponent implements OnInit {
   }
 
   agregarEntrega() {
+    const hoy = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    
+    console.log('Agregando nueva entrega con fecha:', hoy);
+    
     this.entregasFormArray.push(this.fb.group({
       idItem: [null, Validators.required],
       cantidad: [1, [Validators.required, Validators.min(1)]],
       descripcion: [''],
-      fechaPedido: ['', Validators.required],
+      fechaPedido: [hoy, Validators.required],
       fechaFinGarantia: ['', Validators.required]
     }));
+    
+    console.log('Entrega agregada, total de entregas:', this.entregasFormArray.length);
+  }
+
+  calcularFechaFinGarantia(index: number): void {
+    console.log('Calculando fecha fin garantía para entrega:', index);
+    
+    const entregaControl = this.entregasFormArray.at(index);
+    const idItem = entregaControl.get('idItem')?.value;
+    const nombreItem = entregaControl.get('nombreItem')?.value;
+    const fechaPedido = entregaControl.get('fechaPedido')?.value;
+    
+    console.log('Valores de la entrega:', { idItem, nombreItem, fechaPedido });
+    
+    if ((idItem || nombreItem) && fechaPedido) {
+      // Buscar el ítem seleccionado para obtener los meses de garantía
+      let itemEncontrado = null;
+      
+      if (this.modoEdicion) {
+        // En modo edición, buscar en lotesDeLaCompra
+        itemEncontrado = this.lotesDeLaCompra.find(lote => lote.idItem === idItem);
+      } else {
+        // En modo creación, buscar en itemsControls
+        itemEncontrado = this.itemsControls.find(itemControl => 
+          itemControl.get('nombreItem')?.value === nombreItem
+        );
+      }
+      
+      console.log('Ítem encontrado:', itemEncontrado);
+      
+      if (itemEncontrado) {
+        let mesesGarantia = 0;
+        
+        if (this.modoEdicion) {
+          // En modo edición, obtener de lotesDeLaCompra
+          const lote = itemEncontrado as LoteDTO;
+          mesesGarantia = lote.mesesGarantia || 0;
+        } else {
+          // En modo creación, obtener de itemsControls
+          const itemControl = itemEncontrado as FormGroup;
+          mesesGarantia = itemControl.get('mesesGarantia')?.value || 0;
+        }
+        
+        console.log('Meses de garantía:', mesesGarantia);
+        
+        if (mesesGarantia > 0) {
+          // Calcular fecha de fin de garantía
+          const fechaInicio = new Date(fechaPedido);
+          const fechaFin = new Date(fechaInicio);
+          fechaFin.setMonth(fechaFin.getMonth() + mesesGarantia);
+          
+          // Formatear a YYYY-MM-DD
+          const fechaFinFormateada = fechaFin.toISOString().split('T')[0];
+          
+          console.log('Fecha fin garantía calculada:', fechaFinFormateada);
+          
+          // Actualizar el campo fechaFinGarantia
+          entregaControl.get('fechaFinGarantia')?.setValue(fechaFinFormateada);
+          
+          // Forzar detección de cambios
+          this.cdr.detectChanges();
+        }
+      }
+    }
   }
 
   eliminarEntrega(index: number) {
@@ -530,58 +605,157 @@ export class ComprasComponent implements OnInit {
     const input = event.target;
     let value = input.value;
     
-    // Guardar la posición del cursor
+    // Obtener la posición del cursor antes del formateo
     const cursorPosition = input.selectionStart;
     
-    // Remover todos los caracteres no numéricos excepto punto y coma
-    value = value.replace(/[^\d.,]/g, '');
+    // Remover todos los caracteres no numéricos
+    value = value.replace(/[^\d]/g, '');
     
-    // Si hay múltiples puntos o comas, mantener solo el último
-    const parts = value.split(/[,.]/);
-    if (parts.length > 2) {
-      const integerPart = parts[0];
-      const decimalPart = parts[parts.length - 1];
-      value = integerPart + ',' + decimalPart;
+    // Si no hay valor, mostrar 0,00
+    if (!value) {
+      input.value = '0,00';
+      this.compraForm.patchValue({ monto: 0 });
+      return;
     }
     
-    // Si no hay separador decimal, permitir escribir normalmente
-    if (!value.includes(',') && !value.includes('.')) {
-      // Formatear solo la parte entera con separadores de miles
-      const numero = parseInt(value) || 0;
-      const formateado = new Intl.NumberFormat('es-ES').format(numero);
-      
-      // Actualizar el valor del input
-      input.value = formateado;
-      
-      // Actualizar el FormControl con el valor numérico
-      this.compraForm.patchValue({ monto: numero });
-      
-      // Restaurar la posición del cursor
-      setTimeout(() => {
-        const newPosition = Math.min(cursorPosition, formateado.length);
-        input.setSelectionRange(newPosition, newPosition);
-      }, 0);
+    // Convertir a centavos (dividir por 100)
+    const centavos = parseInt(value);
+    const monto = centavos / 100;
+    
+    // Formatear manualmente para asegurar que use coma como separador decimal
+    let formateado = '';
+    
+    if (monto < 1) {
+      // Para valores menores a 1, mostrar como 0,XX
+      formateado = '0,' + centavos.toString().padStart(2, '0');
     } else {
-      // Hay separador decimal, formatear completo
-      let valueForCalculation = value.replace(',', '.');
-      const numero = parseFloat(valueForCalculation) || 0;
+      // Para valores mayores o iguales a 1
+      const parteEntera = Math.floor(monto);
+      const parteDecimal = centavos % 100;
       
-      // Formatear con separadores de miles y 2 decimales
-      const formateado = new Intl.NumberFormat('es-ES', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(numero);
+      // Formatear parte entera con separadores de miles (puntos) manualmente
+      let parteEnteraFormateada = parteEntera.toString();
       
-      // Actualizar el valor del input
+      // Agregar puntos para separadores de miles de forma más simple
+      if (parteEntera >= 1000) {
+        const numStr = parteEntera.toString();
+        let result = '';
+        for (let i = 0; i < numStr.length; i++) {
+          if (i > 0 && (numStr.length - i) % 3 === 0) {
+            result += '.';
+          }
+          result += numStr[i];
+        }
+        parteEnteraFormateada = result;
+      }
+      
+      // Construir el resultado final
+      formateado = parteEnteraFormateada + ',' + parteDecimal.toString().padStart(2, '0');
+    }
+    
+    // Actualizar el input con el valor formateado
+    input.value = formateado;
+    
+    // Actualizar el FormControl con el valor numérico
+    this.compraForm.patchValue({ monto: monto });
+    
+    // Forzar la actualización del input después de un pequeño delay
+    setTimeout(() => {
       input.value = formateado;
+    }, 10);
+    
+    // Calcular nueva posición del cursor después del formateo
+    let newCursorPosition = cursorPosition;
+    
+    // Ajustar posición del cursor considerando los separadores agregados
+    if (formateado.length > value.length) {
+      const addedSeparators = formateado.length - value.length;
+      newCursorPosition += addedSeparators;
+    }
+    
+    // Posicionar cursor en la posición correcta
+    setTimeout(() => {
+      const finalPosition = Math.min(newCursorPosition, formateado.length);
+      input.setSelectionRange(finalPosition, finalPosition);
+    }, 0);
+  }
+
+  formatearMontoOnBlur(event: any): void {
+    const input = event.target;
+    let value = input.value;
+    
+    // Si el campo está vacío, mostrar 0,00
+    if (!value.trim()) {
+      input.value = '0,00';
+      this.compraForm.patchValue({ monto: 0 });
+      return;
+    }
+    
+    // Remover todos los caracteres no numéricos
+    value = value.replace(/[^\d]/g, '');
+    
+    // Si no hay valor, mostrar 0,00
+    if (!value) {
+      input.value = '0,00';
+      this.compraForm.patchValue({ monto: 0 });
+      return;
+    }
+    
+    // Convertir a centavos (dividir por 100)
+    const centavos = parseInt(value);
+    const monto = centavos / 100;
+    
+    // Formatear manualmente para asegurar que use coma como separador decimal
+    let formateado = '';
+    
+    if (monto < 1) {
+      // Para valores menores a 1, mostrar como 0,XX
+      formateado = '0,' + centavos.toString().padStart(2, '0');
+    } else {
+      // Para valores mayores o iguales a 1
+      const parteEntera = Math.floor(monto);
+      const parteDecimal = centavos % 100;
       
-      // Actualizar el FormControl con el valor numérico
-      this.compraForm.patchValue({ monto: numero });
+      // Formatear parte entera con separadores de miles (puntos) manualmente
+      let parteEnteraFormateada = parteEntera.toString();
       
-      // Restaurar la posición del cursor al final
-      setTimeout(() => {
-        input.setSelectionRange(formateado.length, formateado.length);
-      }, 0);
+      // Agregar puntos para separadores de miles de forma más simple
+      if (parteEntera >= 1000) {
+        const numStr = parteEntera.toString();
+        let result = '';
+        for (let i = 0; i < numStr.length; i++) {
+          if (i > 0 && (numStr.length - i) % 3 === 0) {
+            result += '.';
+          }
+          result += numStr[i];
+        }
+        parteEnteraFormateada = result;
+      }
+      
+      // Construir el resultado final
+      formateado = parteEnteraFormateada + ',' + parteDecimal.toString().padStart(2, '0');
+    }
+    
+    // Actualizar el input y el FormControl
+    input.value = formateado;
+    this.compraForm.patchValue({ monto: monto });
+  }
+
+  verificarBorradoCompleto(event: any): void {
+    const input = event.target;
+    
+    // Si se presiona Backspace o Delete y el campo está casi vacío
+    if ((event.key === 'Backspace' || event.key === 'Delete') && 
+        (input.value.length <= 3 || input.value === '0,00')) {
+      
+      // Si se presiona Backspace en 0,00 o similar, volver a 0,00
+      if (input.value === '0,00' || input.value === '0,0' || input.value === '0,') {
+        event.preventDefault();
+        input.value = '0,00';
+        this.compraForm.patchValue({ monto: 0 });
+        input.setSelectionRange(0, 0);
+        return;
+      }
     }
   }
 
@@ -693,5 +867,58 @@ export class ComprasComponent implements OnInit {
       '#ffcdd2'  // Rojo oscuro
     ];
     return borderColors[index % borderColors.length];
+  }
+
+  verDetallesCompra(compra: CompraConTipo): void {
+    this.compraSeleccionada = compra;
+    
+    // Cargar lotes de la compra
+    this.lotesService.getLotesByCompra(compra.idCompra).subscribe({
+      next: (lotes) => {
+        this.lotesDetalles = lotes;
+        
+        // Cargar entregas de todos los lotes
+        const entregasObservables = lotes.map(lote => 
+          this.entregasService.getEntregasByItem(lote.idItem).toPromise()
+        );
+        
+        Promise.all(entregasObservables).then(entregasPorLote => {
+          this.entregasDetalles = entregasPorLote.flat().filter(e => !!e);
+          this.cdr.detectChanges();
+        });
+      },
+      error: (error) => {
+        console.error('Error al cargar los detalles de la compra:', error);
+        this.lotesDetalles = [];
+        this.entregasDetalles = [];
+      }
+    });
+    
+    // Abrir el modal de detalles
+    this.modalService.open(this.detallesModal, { 
+      size: 'xl', 
+      backdrop: 'static',
+      keyboard: false,
+      centered: true
+    });
+  }
+
+  getProveedorNombre(idProveedor: number): string {
+    const proveedor = this.proveedoresList.find(p => p.idProveedores === idProveedor);
+    return proveedor ? proveedor.nombreComercial : 'No disponible';
+  }
+
+  getServicioGarantiaNombre(idServicio: number): string {
+    const servicio = this.serviciosGarantiaList.find(s => s.idServicioGarantia === idServicio);
+    return servicio ? servicio.nombreComercial : 'No disponible';
+  }
+
+  getLoteNombre(idItem: number): string {
+    const lote = this.lotesDetalles.find(l => l.idItem === idItem);
+    return lote ? lote.nombreItem : 'No disponible';
+  }
+
+  toggleCompactView(): void {
+    this.isCompactView = !this.isCompactView;
   }
 } 

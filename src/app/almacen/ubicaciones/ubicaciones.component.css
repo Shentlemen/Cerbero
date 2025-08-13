@@ -14,7 +14,7 @@
 
 .title-wrapper {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* Cambiar de center a flex-start */
   align-items: center;
   gap: 1rem;
 }
@@ -26,6 +26,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  text-align: left;
+  justify-content: flex-start; /* Asegurar alineación a la izquierda */
 }
 
 .title-wrapper h1 i {
@@ -37,6 +39,38 @@
   display: flex;
   gap: 1rem;
 }
+
+/* Estilos personalizados para el botón de registrar stock */
+.actions-section .btn-outline-secondary {
+  background: white;
+  color: #2c3e50;
+  border: 2px solid #dee2e6;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.actions-section .btn-outline-secondary:hover {
+  background: #f8f9fa;
+  color: #495057;
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.actions-section .btn-outline-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.actions-section .btn-outline-secondary i {
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+}
+
+
 
 .ubicaciones-content {
   background: white;
@@ -320,3 +354,106 @@ mark.bg-warning {
     gap: 0.25rem;
   }
 } 
+
+/* Estilos para los botones de creación por rango */
+.btn-group .btn-check:checked + .btn {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+.btn-group .btn {
+  border: 1px solid #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.btn-group .btn:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+}
+
+.alert-warning i {
+  color: #f39c12;
+}
+
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.alert-info i {
+  color: #17a2b8;
+} 
+
+
+
+/* Estilos para el dropdown de búsqueda de activos */
+.activos-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1050;
+  margin-top: 2px;
+}
+
+.activo-option {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f8f9fa;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.activo-option:last-child {
+  border-bottom: none;
+}
+
+.activo-option:hover {
+  background: #f8f9fa;
+  color: #2c3e50;
+}
+
+.activo-option.selected {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.activo-option.disabled {
+  cursor: not-allowed;
+  color: #6c757d;
+  background: #f8f9fa;
+}
+
+.activo-option i {
+  color: #6c757d;
+  width: 16px;
+}
+
+.activo-option.selected i {
+  color: #1976d2;
+}
+
+.activos-dropdown.no-results {
+  border-color: #ffc107;
+}
+
+.activos-dropdown.no-results .activo-option {
+  color: #856404;
+  background: #fff3cd;
+}

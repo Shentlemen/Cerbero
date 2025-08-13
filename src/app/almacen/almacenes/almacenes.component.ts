@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { Router } from '@angular/router';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
+import { ActivoAlmacenService } from '../../services/activo-almacen.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
@@ -30,22 +32,20 @@ export class AlmacenesComponent implements OnInit {
   almacenSeleccionado: Almacen | null = null;
   almacenAEliminar: Almacen | null = null;
 
-  // Paginación
-  page = 1;
-  pageSize = 10;
-  collectionSize = 0;
 
-  // Ordenamiento
-  sortColumn: string = '';
-  sortDirection: 'asc' | 'desc' = 'asc';
 
-  // Filtrado
-  searchTerm: string = '';
+  // Stock por almacén
+  almacenStock: { [key: number]: number } = {};
+
+  // Propiedades para el diálogo de confirmación
+  showConfirmDialog: boolean = false;
 
   constructor(
     private almacenService: AlmacenService,
+    private activoAlmacenService: ActivoAlmacenService,
     private modalService: NgbModal,
     private fb: FormBuilder,
+    private router: Router,
     public permissionsService: PermissionsService,
     private notificationService: NotificationService
   ) {
@@ -63,18 +63,26 @@ export class AlmacenesComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.almacenService.getAllAlmacenes().subscribe({
-      next: (almacenes) => {
+    // Cargar almacenes y stock en paralelo
+    Promise.all([
+      this.almacenService.getAllAlmacenes().toPromise(),
+      this.activoAlmacenService.getAllUbicaciones().toPromise()
+    ]).then(([almacenes, ubicaciones]) => {
+      if (almacenes) {
         this.almacenes = almacenes;
         this.almacenesFiltrados = [...this.almacenes];
-        this.actualizarPaginacion();
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error al cargar almacenes:', error);
-        this.error = 'Error al cargar almacenes. Por favor, intente nuevamente.';
-        this.loading = false;
       }
+
+      if (ubicaciones) {
+        // Calcular stock por almacén
+        this.calcularStockPorAlmacen(ubicaciones);
+      }
+
+      this.loading = false;
+    }).catch(error => {
+      console.error('Error al cargar almacenes:', error);
+      this.error = 'Error al cargar almacenes. Por favor, intente nuevamente.';
+      this.loading = false;
     });
   }
 
@@ -135,75 +143,70 @@ export class AlmacenesComponent implements OnInit {
     }
   }
 
-  confirmarEliminacion(modal: any, almacen: Almacen): void {
+  confirmarEliminacion(almacen: Almacen): void {
     this.almacenAEliminar = almacen;
-    this.modalService.open(modal);
+    this.showConfirmDialog = true;
   }
 
   eliminarAlmacen(): void {
     if (this.almacenAEliminar) {
       this.almacenService.deleteAlmacen(this.almacenAEliminar.id).subscribe({
         next: () => {
-          this.modalService.dismissAll();
+          this.showConfirmDialog = false;
+          this.almacenAEliminar = null;
           this.cargarAlmacenes();
         },
         error: (error) => {
           console.error('Error al eliminar almacén:', error);
+          this.showConfirmDialog = false;
         }
       });
     }
   }
 
-  filtrarAlmacenes(): void {
-    if (!this.searchTerm.trim()) {
-      this.almacenesFiltrados = [...this.almacenes];
-    } else {
-      const termino = this.searchTerm.toLowerCase();
-      this.almacenesFiltrados = this.almacenes.filter(almacen =>
-        almacen.numero.toLowerCase().includes(termino) ||
-        almacen.nombre.toLowerCase().includes(termino)
-      );
-    }
-    this.actualizarPaginacion();
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.almacenAEliminar = null;
   }
 
-  sortData(column: string): void {
-    if (this.sortColumn === column) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortColumn = column;
-      this.sortDirection = 'asc';
-    }
 
-    this.almacenesFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof Almacen];
-      let valueB = b[column as keyof Almacen];
-
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
-
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }
-
-  private actualizarPaginacion(): void {
-    this.collectionSize = this.almacenesFiltrados.length;
-    this.page = 1;
-  }
-
-  get pagedAlmacenes(): Almacen[] {
-    const start = (this.page - 1) * this.pageSize;
-    const end = this.page * this.pageSize;
-    return this.almacenesFiltrados.slice(start, end);
-  }
 
   canManageAlmacenes(): boolean {
     return this.permissionsService.canManageAssets();
+  }
+
+  verStockAlmacen(almacen: Almacen): void {
+    console.log('Navegando a stock del almacén:', almacen);
+    console.log('Ruta destino:', `/menu/almacen/stock/${almacen.id}`);
+    this.router.navigate(['/menu/almacen/stock', almacen.id]);
+  }
+
+  /**
+   * Calcula el stock disponible por almacén
+   */
+  private calcularStockPorAlmacen(ubicaciones: any[]): void {
+    this.almacenStock = {};
+    
+    ubicaciones.forEach(ubicacion => {
+      const almacenId = ubicacion.almacen.id;
+      if (!this.almacenStock[almacenId]) {
+        this.almacenStock[almacenId] = 0;
+      }
+      this.almacenStock[almacenId]++;
+    });
+  }
+
+  /**
+   * Verifica si un almacén tiene stock disponible
+   */
+  tieneStock(almacenId: number): boolean {
+    return this.almacenStock[almacenId] > 0;
+  }
+
+  /**
+   * Obtiene el stock disponible de un almacén
+   */
+  getStockDisponible(almacenId: number): number {
+    return this.almacenStock[almacenId] || 0;
   }
 } 

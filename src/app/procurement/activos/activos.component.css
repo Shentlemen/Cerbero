@@ -500,3 +500,351 @@
     font-size: 0.8rem;
   }
 }
+
+/* Estilos específicos para el modal de detalles de compra */
+.details-header {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #374151;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.details-header .modal-title {
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+
+.details-body {
+  padding: 2rem;
+  background: #f8f9fa;
+}
+
+/* Estilos específicos para el modal de detalles de compra */
+.details-header + .details-body + .modal-footer {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.details-header + .details-body + .modal-footer .btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.details-header + .details-body + .modal-footer .btn-secondary:hover {
+  background-color: #5c636a;
+  border-color: #565e64;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.details-header + .details-body + .modal-footer .btn-secondary:focus {
+  background-color: #5c636a;
+  border-color: #565e64;
+  box-shadow: 0 0 0 0.25rem rgba(130,138,145,0.5);
+}
+
+/* Información principal */
+.compra-main-info {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.compra-title {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #2c3e50;
+}
+
+.compra-description {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.compra-status {
+  text-align: right;
+}
+
+.compra-amount {
+  margin-top: 1rem;
+}
+
+.amount-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.amount-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Badges de moneda */
+.moneda-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.moneda-badge.usd {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.moneda-badge.eur {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.moneda-badge.uyu {
+  background: #e0f7fa;
+  color: #00695c;
+}
+
+/* Secciones de detalles */
+.details-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.section-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e9ecef;
+  display: flex;
+  align-items: center;
+}
+
+.section-title i {
+  color: #1f2937;
+}
+
+.items-count {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 400;
+  margin-left: 0.5rem;
+}
+
+/* Grid de detalles */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.detail-item .detail-label {
+  font-weight: 600;
+  color: #495057;
+  min-width: 140px;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.detail-item .detail-label i {
+  color: #1f2937;
+  width: 16px;
+  margin-right: 0.5rem;
+}
+
+.detail-item .detail-value {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Tarjetas en modal de detalles */
+.details-body .item-card,
+.details-body .entrega-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.details-body .item-card:hover,
+.details-body .entrega-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #dee2e6;
+}
+
+.details-body .item-header,
+.details-body .entrega-header {
+  margin-bottom: 1rem;
+}
+
+.details-body .item-title,
+.details-body .entrega-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.details-body .item-title i,
+.details-body .entrega-title i {
+  color: #1f2937;
+}
+
+.details-body .item-details .row,
+.details-body .entrega-details .row {
+  margin: 0;
+}
+
+.details-body .item-detail,
+.details-body .entrega-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.details-body .item-detail:last-child,
+.details-body .entrega-detail:last-child {
+  border-bottom: none;
+}
+
+.details-body .item-detail .detail-label,
+.details-body .entrega-detail .detail-label {
+  font-weight: 500;
+  color: #6c757d;
+  min-width: auto;
+  margin-right: 1rem;
+}
+
+.details-body .item-detail .detail-value,
+.details-body .entrega-detail .detail-value {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.details-body .item-description,
+.details-body .entrega-description {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  margin-top: 1rem;
+}
+
+/* Estado cuando no hay elementos */
+.no-items {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.no-items i {
+  color: #adb5bd;
+  margin-bottom: 1rem;
+}
+
+.no-items p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Media queries para responsive */
+@media (max-width: 768px) {
+  .details-body {
+    padding: 1rem;
+  }
+  
+  .compra-main-info {
+    padding: 1.5rem;
+  }
+  
+  .compra-title {
+    font-size: 1.5rem;
+  }
+  
+  .details-section {
+    padding: 1rem;
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detail-item .detail-label {
+    min-width: auto;
+    margin-right: 0;
+  }
+  
+  .details-body .item-detail,
+  .details-body .entrega-detail {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .details-body .item-detail .detail-label,
+  .details-body .entrega-detail .detail-label {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .details-body {
+    padding: 0.75rem;
+  }
+  
+  .compra-main-info {
+    padding: 1rem;
+  }
+  
+  .compra-title {
+    font-size: 1.3rem;
+  }
+  
+  .details-section {
+    padding: 0.75rem;
+  }
+  
+  .details-body .item-card,
+  .details-body .entrega-card {
+    padding: 0.75rem;
+  }
+  
+  .details-body .item-detail,
+  .details-body .entrega-detail {
+    padding: 0.75rem 0;
+  }
+}

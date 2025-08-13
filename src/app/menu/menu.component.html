@@ -1,35 +1,6 @@
 <div class="sidenav">
-  <div class="logo-name-container">
-    <div class="title-container">
-      <h1 class="app-title">
-        <span class="k-letter">K</span>
-        <span class="title-text">erbero</span>
-        <div class="title-decoration"></div>
-      </h1>
-    </div>
-  </div>
   <div class="logo-container">
     <app-helper-dog></app-helper-dog>
-  </div>
-
-  <!-- Header de usuario integrado en el menú -->
-  <div class="user-section" *ngIf="currentUser">
-    <div class="user-info">
-      <div class="user-details">
-        <div class="user-name" (click)="goToProfile()" style="cursor: pointer; text-decoration: underline;">
-          {{ currentUser.firstName }} {{ currentUser.lastName }}
-        </div>
-        <div class="user-role-container">
-          <span class="badge" 
-                [class]="currentUser.role === 'GM' ? 'bg-danger' : currentUser.role === 'ADMIN' ? 'bg-warning' : 'bg-secondary'">
-            {{ getRoleLabel(currentUser.role) }}
-          </span>
-          <button class="btn-logout-small" (click)="logout()" title="Cerrar sesión">
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Menú de navegación -->
@@ -61,23 +32,15 @@
     <span>SOFTWARE</span>
   </a>
 
-  <!-- Menú expandible de Adquisiciones -->
-  <div class="menu-item" [class.expanded]="isProcurementExpanded">
-    <div class="menu-header" (click)="toggleProcurementMenu()">
-      <i class="fas fa-shopping-cart"></i>
-      <span>ADQUISICIONES</span>
-    </div>
-    <div class="submenu" [class.show]="isProcurementExpanded">
-      <a routerLink="/menu/procurement/activos" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-box"></i>
-        <span>ACTIVOS</span>
-      </a>
-      <a routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-shopping-bag"></i>
-        <span>COMPRAS</span>
-      </a>
-    </div>
-  </div>
+  <a routerLink="/menu/procurement/activos" routerLinkActive="active">
+    <i class="fas fa-box"></i>
+    <span>INVENTARIO</span>
+  </a>
+
+  <a routerLink="/menu/procurement/compras" routerLinkActive="active">
+    <i class="fas fa-shopping-bag"></i>
+    <span>COMPRAS</span>
+  </a>
 
   <!-- Menú expandible de Almacén -->
   <div class="menu-item" [class.expanded]="isAlmacenExpanded">
@@ -143,6 +106,7 @@
     </div>
   </div>
 </div>
+<app-header></app-header>
 <div class="main-content">
   <router-outlet></router-outlet>
 </div>

@@ -55,16 +55,36 @@ import { NotificationService } from '../../services/notification.service';
         </div>
         <div class="col-12">
           <label class="form-label">Subnet *</label>
-          <select class="form-control shadow-sm" formControlName="idSubnet">
-            <option [ngValue]="null">Seleccione una subnet</option>
-            <option *ngFor="let subnet of subnets" [ngValue]="subnet.pk">
-              {{subnet.name}}
-            </option>
-          </select>
+          <div class="subnet-selector-container">
+            <input 
+              type="text" 
+              class="form-control shadow-sm" 
+              placeholder="Escriba para filtrar subnets..."
+              (input)="filtrarSubnets($event)"
+              (focus)="mostrarTodasSubnets()"
+              (blur)="cerrarDropdown()"
+              [value]="subnetFiltro"
+              autocomplete="off">
+            <div class="subnet-dropdown" *ngIf="subnetsFiltradas.length > 0 && mostrarDropdown">
+              <div 
+                *ngFor="let subnet of subnetsFiltradas" 
+                class="subnet-option"
+                (click)="seleccionarSubnet(subnet)">
+                <span class="subnet-name">{{subnet.name}}</span>
+                <span class="subnet-id">- {{subnet.id}}</span>
+              </div>
+            </div>
+          </div>
           <div *ngIf="ubicacionForm.get('idSubnet')?.errors?.['required'] && ubicacionForm.get('idSubnet')?.touched" 
                class="text-danger mt-1 small">
             <i class="fas fa-exclamation-circle me-1"></i>
             La subnet es requerida
+          </div>
+          <div *ngIf="subnetSeleccionada" class="subnet-seleccionada mt-2">
+            <small class="text-muted">
+              <i class="fas fa-check-circle text-success me-1"></i>
+              Subnet seleccionada: <strong>{{subnetSeleccionada.name}} - {{subnetSeleccionada.id}}</strong>
+            </small>
           </div>
         </div>
         <div class="col-12 mt-4">
@@ -134,6 +154,70 @@ import { NotificationService } from '../../services/notification.service';
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
     }
+    
+    /* Estilos para el selector de subnets */
+    .subnet-selector-container {
+      position: relative;
+    }
+    
+    .subnet-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      margin-top: 2px;
+    }
+    
+    .subnet-option {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #f8f9fa;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .subnet-option:last-child {
+      border-bottom: none;
+    }
+    
+    .subnet-option:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .subnet-option:active {
+      background-color: #e9ecef;
+    }
+    
+    .subnet-name {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+    
+    .subnet-id {
+      color: #6c757d;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    
+    .subnet-seleccionada {
+      padding: 0.5rem;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .subnet-seleccionada strong {
+      color: #2c3e50;
+    }
   `]
 })
 export class LocationSelectorModalComponent implements OnInit {
@@ -142,6 +226,10 @@ export class LocationSelectorModalComponent implements OnInit {
   @Output() ubicacionSeleccionada = new EventEmitter<UbicacionDTO>();
   ubicacionForm: FormGroup;
   subnets: SubnetDTO[] = [];
+  subnetsFiltradas: SubnetDTO[] = [];
+  subnetFiltro: string = '';
+  mostrarDropdown: boolean = false;
+  subnetSeleccionada: SubnetDTO | null = null;
 
   constructor(
     public activeModal: NgbActiveModal,
@@ -179,6 +267,20 @@ export class LocationSelectorModalComponent implements OnInit {
         interno: this.ubicacion.interno,
         idSubnet: this.ubicacion.idSubnet
       });
+      
+      // Si hay una subnet seleccionada, buscar su información completa
+      if (this.ubicacion.idSubnet) {
+        this.subnetService.getSubnets().subscribe({
+          next: (subnets) => {
+            const subnetEncontrada = subnets.find(s => s.pk === this.ubicacion?.idSubnet);
+            if (subnetEncontrada) {
+              this.subnetSeleccionada = subnetEncontrada;
+              this.subnetFiltro = `${subnetEncontrada.name} - ${subnetEncontrada.id}`;
+            }
+          }
+        });
+      }
+      
       console.log('Formulario actualizado:', this.ubicacionForm.value);
     }
   }
@@ -188,6 +290,7 @@ export class LocationSelectorModalComponent implements OnInit {
       next: (subnets) => {
         console.log('Subnets cargadas:', subnets);
         this.subnets = subnets;
+        this.subnetsFiltradas = [...subnets]; // Inicializar subnets filtradas
       },
       error: (error) => {
         console.error('Error al cargar subnets:', error);
@@ -197,6 +300,41 @@ export class LocationSelectorModalComponent implements OnInit {
         );
       }
     });
+  }
+
+  filtrarSubnets(event: any) {
+    const filtro = event.target.value.toLowerCase();
+    this.subnetFiltro = filtro;
+    
+    if (filtro.trim() === '') {
+      this.subnetsFiltradas = [...this.subnets];
+      this.mostrarDropdown = true;
+    } else {
+      this.subnetsFiltradas = this.subnets.filter(subnet => 
+        subnet.name.toLowerCase().includes(filtro) || 
+        subnet.id.toLowerCase().includes(filtro) ||
+        subnet.pk.toString().includes(filtro)
+      );
+      this.mostrarDropdown = true;
+    }
+  }
+
+  mostrarTodasSubnets() {
+    this.subnetsFiltradas = [...this.subnets];
+    this.mostrarDropdown = true;
+  }
+
+  seleccionarSubnet(subnet: SubnetDTO) {
+    this.subnetSeleccionada = subnet;
+    this.subnetFiltro = `${subnet.name} - ${subnet.id}`;
+    this.ubicacionForm.patchValue({ idSubnet: subnet.pk });
+    this.mostrarDropdown = false;
+  }
+
+  cerrarDropdown() {
+    setTimeout(() => {
+      this.mostrarDropdown = false;
+    }, 200);
   }
 
   guardarUbicacion() {

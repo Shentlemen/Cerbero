@@ -120,25 +120,19 @@
             <div class="col-lg-6 mb-3">
               <h4 class="text-secondary">Información del Sistema</h4>
               <ul class="list-group list-group-flush">
-                <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante del Sistema:</strong> {{componentData.bios?.smanufacturer}}</li>
-                <li class="list-group-item"><i class="fas fa-laptop me-2"></i><strong>Modelo del Sistema:</strong> {{componentData.bios?.smodel}}</li>
-                <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie del Sistema:</strong> {{componentData.bios?.ssn}}</li>
-                <li class="list-group-item"><i class="fas fa-tag me-2"></i><strong>Etiqueta de Activo:</strong> {{componentData.bios?.assettag}}</li>
-              </ul>
-              <h4 class="text-secondary mt-3">Información del BIOS</h4>
-              <ul class="list-group list-group-flush">
-                <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Tipo de BIOS:</strong> {{componentData.bios?.type}}</li>
-                <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante del BIOS:</strong> {{componentData.bios?.bmanufacturer}}</li>
-                <li class="list-group-item"><i class="fas fa-code me-2"></i><strong>Versión del BIOS:</strong> {{componentData.bios?.bversion}}</li>
-                <li class="list-group-item"><i class="fas fa-calendar-alt me-2"></i><strong>Fecha del BIOS:</strong> {{componentData.bios?.bdate}}</li>
+                <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante del Sistema:</strong> {{componentData.bios?.smanufacturer || 'No disponible'}}</li>
+                <li class="list-group-item"><i class="fas fa-laptop me-2"></i><strong>Modelo del Sistema:</strong> {{componentData.bios?.smodel || 'No disponible'}}</li>
+                <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie del Sistema:</strong> {{componentData.bios?.ssn || 'No disponible'}}</li>
+                <li class="list-group-item"><i class="fas fa-tag me-2"></i><strong>Etiqueta de Activo:</strong> {{componentData.bios?.assettag || 'No disponible'}}</li>
               </ul>
             </div>
             <div class="col-lg-6 mb-3">
-              <h4 class="text-secondary">Información de la Placa Base</h4>
+              <h4 class="text-secondary">Información del BIOS</h4>
               <ul class="list-group list-group-flush">
-                <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante:</strong> {{componentData.bios?.mmanufacturer}}</li>
-                <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Modelo:</strong> {{componentData.bios?.mmodel}}</li>
-                <li class="list-group-item"><i class="fas fa-barcode me-2"></i><strong>Número de Serie:</strong> {{componentData.bios?.msn}}</li>
+                <li class="list-group-item"><i class="fas fa-microchip me-2"></i><strong>Tipo de BIOS:</strong> {{componentData.bios?.type || 'No disponible'}}</li>
+                <li class="list-group-item"><i class="fas fa-industry me-2"></i><strong>Fabricante del BIOS:</strong> {{componentData.bios?.bmanufacturer || 'No disponible'}}</li>
+                <li class="list-group-item"><i class="fas fa-code me-2"></i><strong>Versión del BIOS:</strong> {{componentData.bios?.bversion || 'No disponible'}}</li>
+                <li class="list-group-item"><i class="fas fa-calendar-alt me-2"></i><strong>Fecha del BIOS:</strong> {{componentData.bios?.bdate || 'No disponible'}}</li>
               </ul>
             </div>
           </div>

@@ -28,24 +28,108 @@
             {{ activeTab === 'licenciado' ? 'Solo licenciados' : 'Mostrar solo licenciados' }}
           </button>
         </div>
-        <div class="search-box">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-search"></i>
-            </span>
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="Buscar software..." 
-              [ngModel]="searchTerm"
-              (input)="filterSoftware($event)"
-            >
+        
+        <!-- Contenedor para buscador y selección múltiple -->
+        <div class="search-and-multi-select">
+          <div class="search-box">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fas fa-search"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Buscar software..." 
+                [ngModel]="searchTerm"
+                (input)="filterSoftware($event)"
+              >
+            </div>
+          </div>
+          
+          <!-- Panel de selección múltiple -->
+          <div class="multi-select-controls" *ngIf="canManageSoftware()">
+            <button class="multi-select-toggle" 
+                    [class.active]="multiSelectMode"
+                    (click)="toggleMultiSelectMode()"
+                    [disabled]="isUpdatingMultiple">
+              <i class="fas" [ngClass]="multiSelectMode ? 'fa-check-square' : 'fa-square'"></i>
+              {{ multiSelectMode ? 'Cancelar Selección' : 'Selección Múltiple' }}
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Panel de acciones en lote -->
+  <div class="batch-actions" *ngIf="multiSelectMode && selectedCount > 0">
+    <span class="selected-count">
+      <i class="fas fa-check-circle"></i>
+      {{ selectedCount }} seleccionado{{ selectedCount !== 1 ? 's' : '' }}
+    </span>
+    
+    <div class="batch-buttons">
+      <button class="batch-btn" 
+              (click)="selectAllVisible()"
+              title="Seleccionar todos los visibles">
+        <i class="fas fa-check-double"></i>
+        Todos
+      </button>
+      <button class="batch-btn" 
+              (click)="deselectAll()"
+              title="Deseleccionar todos">
+        <i class="fas fa-times"></i>
+        Ninguno
+      </button>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="action-btn visibility" 
+                      [class.toggle-active]="hasAnyHiddenSoftware()"
+                      (click)="updateMultipleSoftware('visibility', !hasAnyHiddenSoftware())"
+                      [disabled]="isUpdatingMultiple"
+                      [title]="hasAnyHiddenSoftware() ? 'Mostrar software oculto' : 'Ocultar software visible'">
+                <i class="fas" [ngClass]="hasAnyHiddenSoftware() ? 'fa-eye' : 'fa-eye-slash'"></i>
+                {{ hasAnyHiddenSoftware() ? 'Mostrar' : 'Ocultar' }}
+              </button>
+              <button class="action-btn forbidden" 
+                      [class.toggle-active]="hasAnyForbiddenSoftware()"
+                      (click)="updateMultipleSoftware('forbidden', !hasAnyForbiddenSoftware())"
+                      [disabled]="isUpdatingMultiple"
+                      [title]="hasAnyForbiddenSoftware() ? 'Desmarcar como prohibido' : 'Marcar como prohibido'">
+                <i class="fas" [ngClass]="hasAnyForbiddenSoftware() ? 'fa-check-circle' : 'fa-ban'"></i>
+                {{ hasAnyForbiddenSoftware() ? 'Desmarcar Prohibido' : 'Marcar Prohibido' }}
+              </button>
+      <button class="action-btn driver" 
+                      [class.toggle-active]="hasAnyDriverSoftware()"
+                      (click)="updateMultipleSoftware('driver', !hasAnyDriverSoftware())"
+                      [disabled]="isUpdatingMultiple"
+                      [title]="hasAnyDriverSoftware() ? 'Desmarcar como driver' : 'Marcar como driver'">
+                <i class="fas" [ngClass]="hasAnyDriverSoftware() ? 'fa-cogs' : 'fa-cog'"></i>
+                {{ hasAnyDriverSoftware() ? 'Desmarcar Driver' : 'Marcar Driver' }}
+              </button>
+      <button class="action-btn licenciado" 
+              (click)="updateMultipleSoftware('licenciado', !hasAnyLicenciadoSoftware())"
+              [disabled]="isUpdatingMultiple"
+              [title]="hasAnyLicenciadoSoftware() ? 'Desmarcar como licenciado' : 'Marcar como licenciado'">
+        <i class="fas" [ngClass]="hasAnyLicenciadoSoftware() ? 'fa-unlock' : 'fa-key'"></i>
+        {{ hasAnyLicenciadoSoftware() ? 'Desmarcar Licenciado' : 'Marcar Licenciado' }}
+      </button>
+      <button class="action-btn delete" 
+              (click)="deleteMultipleSoftware()"
+              [disabled]="isUpdatingMultiple"
+              title="Eliminar software seleccionado">
+        <i class="fas fa-trash"></i>
+        Eliminar
+      </button>
+    </div>
+  </div>
+  
+  <!-- Mensaje cuando no hay elementos seleccionados -->
+  <div class="no-selection-message" *ngIf="multiSelectMode && selectedCount === 0">
+    <i class="fas fa-info-circle"></i>
+    <span>Selecciona software de la lista para realizar acciones en lote</span>
+  </div>
 
 
   <!-- Indicador de carga -->
@@ -56,11 +140,28 @@
     <p class="mt-2">Cargando datos...</p>
   </div>
 
+  <!-- Indicador de carga para operaciones en lote -->
+  <div *ngIf="isUpdatingMultiple" class="text-center my-4">
+    <div class="spinner-border text-warning" role="status">
+      <span class="visually-hidden">Actualizando...</span>
+    </div>
+    <p class="mt-2">Actualizando software seleccionado...</p>
+    <small class="text-muted">Esta operación puede tomar varios segundos</small>
+  </div>
+
   <div class="content-section" *ngIf="!loading">
     <div class="table-container">
-      <table class="software-table">
+      <table class="software-table" [class.multi-select]="multiSelectMode">
         <thead>
           <tr>
+            <th *ngIf="multiSelectMode" class="checkbox-header">
+              <div class="th-content">
+                              <input type="checkbox" 
+                     [checked]="selectedCount === pagedSoftwareList.length && pagedSoftwareList.length > 0"
+                     (change)="toggleSelectAll()"
+                     [class.partial-selection]="selectedCount > 0 && selectedCount < pagedSoftwareList.length">
+              </div>
+            </th>
             <th>
               <div class="th-content">
                 <span>Nombre</span>
@@ -93,6 +194,12 @@
               class="software-row"
               [class.hidden]="software.hidden"
               [class.forbidden]="software.forbidden">
+            <td *ngIf="multiSelectMode" class="checkbox-cell">
+              <input type="checkbox" 
+                     [checked]="isSoftwareSelected(software.idSoftware)"
+                     (change)="toggleSoftwareSelection(software.idSoftware)"
+                     [disabled]="isUpdatingMultiple">
+            </td>
             <td>
               <div class="software-name">
                 <i class="fas fa-cube"></i>
@@ -159,7 +266,7 @@
     </div>
     <div class="pagination-container">
       <ngb-pagination
-        [(page)]="page"
+        [(page)]="currentPage"
         [pageSize]="pageSize"
         [collectionSize]="collectionSize"
         [boundaryLinks]="true"
@@ -168,6 +275,48 @@
         [ellipses]="false"
         class="custom-pagination">
       </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación para eliminación individual -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar el software "{{ softwareToDelete?.nombre }}"? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación para eliminación múltiple -->
+<div *ngIf="showConfirmDialogMultiple" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación Múltiple
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar {{ selectedCount }} software seleccionado{{ selectedCount !== 1 ? 's' : '' }}? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacionMultiple()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="confirmarEliminacionMultiple()">
+        Eliminar
+      </button>
     </div>
   </div>
 </div>

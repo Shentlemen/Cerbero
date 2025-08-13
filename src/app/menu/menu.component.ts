@@ -6,6 +6,7 @@ import { HelpTip } from '../services/helper.service';
 import { filter, Subscription } from 'rxjs';
 import { HelperDogComponent } from '../components/helper-dog/helper-dog.component';
 import { UserHeaderComponent } from '../components/user-header/user-header.component';
+import { AppHeaderComponent } from '../components/app-header/app-header.component';
 import { AuthService } from '../services/auth.service';
 import { User } from '../interfaces/auth.interface';
 import { PermissionsService } from '../services/permissions.service';
@@ -18,7 +19,8 @@ import { PermissionsService } from '../services/permissions.service';
     RouterOutlet,
     RouterModule,
     HelperDogComponent,
-    UserHeaderComponent
+    UserHeaderComponent,
+    AppHeaderComponent
   ],
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.css']
@@ -26,7 +28,6 @@ import { PermissionsService } from '../services/permissions.service';
 export class MenuComponent implements OnInit, OnDestroy {
   isAssetsExpanded: boolean = false;
   isConfigExpanded: boolean = false;
-  isProcurementExpanded: boolean = false;
   isAlmacenExpanded: boolean = false;
   isHelperActive = false;
   showHelperMessage = false;
@@ -47,12 +48,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/procurement/usuarios',
     '/menu/user-management'
   ];
-  private procurementRoutes = [
-    '/menu/procurement/activos',
-    '/menu/procurement/compras',
-    '/menu/procurement/entregas',
-    '/menu/procurement/lotes'
-  ];
   private almacenRoutes = [
     '/menu/almacen/almacenes',
     '/menu/almacen/ubicaciones'
@@ -72,35 +67,25 @@ export class MenuComponent implements OnInit, OnDestroy {
       // Verificar si la ruta actual pertenece a alguna sección
       const isAssetsRoute = this.assetsRoutes.some(route => url.startsWith(route));
       const isConfigRoute = this.configRoutes.some(route => url.startsWith(route));
-      const isProcurementRoute = this.procurementRoutes.some(route => url.startsWith(route));
       const isAlmacenRoute = this.almacenRoutes.some(route => url.startsWith(route));
 
       // Actualizar estados de los submenús
-      if (isProcurementRoute) {
-        this.isProcurementExpanded = true;
-        this.isAssetsExpanded = false;
-        this.isConfigExpanded = false;
-        this.isAlmacenExpanded = false;
-      } else if (isAssetsRoute) {
+      if (isAssetsRoute) {
         this.isAssetsExpanded = true;
-        this.isProcurementExpanded = false;
         this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
       } else if (isConfigRoute) {
         this.isConfigExpanded = true;
-        this.isProcurementExpanded = false;
         this.isAssetsExpanded = false;
         this.isAlmacenExpanded = false;
       } else if (isAlmacenRoute) {
         this.isAlmacenExpanded = true;
-        this.isProcurementExpanded = false;
         this.isAssetsExpanded = false;
         this.isConfigExpanded = false;
       } else {
         // Si no es ninguna de las rutas anteriores, cerrar todos los submenús
         this.isAssetsExpanded = false;
         this.isConfigExpanded = false;
-        this.isProcurementExpanded = false;
         this.isAlmacenExpanded = false;
       }
       
@@ -128,7 +113,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.isAssetsExpanded = !this.isAssetsExpanded;
     if (this.isAssetsExpanded) {
       this.isConfigExpanded = false;
-      this.isProcurementExpanded = false;
       this.isAlmacenExpanded = false;
     }
   }
@@ -137,16 +121,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.isConfigExpanded = !this.isConfigExpanded;
     if (this.isConfigExpanded) {
       this.isAssetsExpanded = false;
-      this.isProcurementExpanded = false;
-      this.isAlmacenExpanded = false;
-    }
-  }
-
-  toggleProcurementMenu(): void {
-    this.isProcurementExpanded = !this.isProcurementExpanded;
-    if (this.isProcurementExpanded) {
-      this.isAssetsExpanded = false;
-      this.isConfigExpanded = false;
       this.isAlmacenExpanded = false;
     }
   }
@@ -156,7 +130,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isAlmacenExpanded) {
       this.isAssetsExpanded = false;
       this.isConfigExpanded = false;
-      this.isProcurementExpanded = false;
     }
   }
 

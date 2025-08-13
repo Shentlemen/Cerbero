@@ -13,6 +13,8 @@ import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { ConfigService } from '../services/config.service';
+import { HttpClient } from '@angular/common/http';
 
 declare var bootstrap: any;
 
@@ -46,6 +48,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   alerts: Alerta[] = [];
   isChecking: boolean = false;
   isCleaning: boolean = false;
+  isUpdatingDevices: boolean = false;
   page: number = 1;
   pageSize: number = 14;
   collectionSize: number = 0;
@@ -71,7 +74,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private configService: ConfigService,
+    private http: HttpClient
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -129,9 +134,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           return {
             ...item,
             y: displayValue,
-            toolTipContent: realValue < minValue 
-              ? `${item.label}: ${realValue} (altura ampliada para visibilidad)`
-              : `${item.label}: ${realValue}`,
+            toolTipContent: `${item.label}: ${realValue}`,
+            indexLabel: `${item.label}: ${realValue}`, // Mostrar "Nombre: Número"
             indexLabelFontSize: this.getResponsiveFontSize(14) // Tamaño de fuente específico
           };
         });
@@ -693,6 +697,54 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
+  async actualizarDispositivos(): Promise<void> {
+    // Verificar permisos antes de proceder
+    if (!this.permissionsService.canUpdateNetworkDevices()) {
+      this.notificationService.showError(
+        'Permisos Insuficientes', 
+        'No tienes permisos para actualizar dispositivos de red. Solo los administradores y Game Masters pueden realizar esta acción.'
+      );
+      return;
+    }
+
+    this.isUpdatingDevices = true;
+    
+    try {
+      const response = await this.http.post<any>(`${this.configService.getApiUrl()}/sync/network-devices-reset`, {}).toPromise();
+      
+      if (response && response.success) {
+        // Mostrar notificación de éxito con detalles
+        const data = response.data;
+        let message = 'Dispositivos actualizados exitosamente.';
+        
+        if (data) {
+          const details = [];
+          if (data.inserted_devices > 0) details.push(`${data.inserted_devices} insertados`);
+          if (data.deleted_network_devices > 0) details.push(`${data.deleted_network_devices} eliminados`);
+          if (data.error_devices > 0) details.push(`${data.error_devices} errores`);
+          
+          if (details.length > 0) {
+            message += ` ${details.join(', ')}.`;
+          }
+          
+          // Mostrar información adicional
+          message += `\nTotal OCS: ${data.total_ocs}, Total final Cerbero: ${data.final_cerbero_count}`;
+        }
+        
+        this.notificationService.showSuccessMessage(message);
+      } else {
+        const errorMsg = response?.message || 'Error al actualizar dispositivos';
+        this.notificationService.showError('Error al Actualizar Dispositivos', errorMsg);
+      }
+    } catch (error: any) {
+      console.error('Error al actualizar dispositivos:', error);
+      const errorMsg = error.message || 'Error durante la actualización de dispositivos';
+      this.notificationService.showError('Error al Actualizar Dispositivos', errorMsg);
+    } finally {
+      this.isUpdatingDevices = false;
+    }
+  }
+
   navigateToAssetDetails(hardwareId: number): void {
     this.router.navigate(['/menu/asset-details', hardwareId])
       .then(() => {
@@ -740,21 +792,20 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       return acc;
     }, {});
 
-    // Aplicar el mismo procesamiento de datos que en la gráfica de terminales
-    const dataPoints = Object.entries(devicesByType).map(([type, devices]) => {
-      const realValue = devices.length;
-      const minValue = 25; // Mismo valor mínimo que en terminales
-      const displayValue = realValue < minValue ? minValue : realValue;
-      
-      return {
-        label: type,
-        y: displayValue,
-        toolTipContent: realValue < minValue 
-          ? `${type}: ${realValue} (altura ampliada para visibilidad)`
-          : `${type}: ${realValue}`,
-        indexLabelFontSize: this.getResponsiveFontSize(14) // Tamaño de fuente específico
-      };
-    });
+            // Aplicar el mismo procesamiento de datos que en la gráfica de terminales
+        const dataPoints = Object.entries(devicesByType).map(([type, devices]) => {
+          const realValue = devices.length;
+          const minValue = 25; // Mismo valor mínimo que en terminales
+          const displayValue = realValue < minValue ? minValue : realValue;
+          
+          return {
+            label: type,
+            y: displayValue,
+            toolTipContent: `${type}: ${realValue}`,
+            indexLabel: `${type}: ${realValue}`, // Mostrar "Nombre: Número"
+            indexLabelFontSize: this.getResponsiveFontSize(14) // Tamaño de fuente específico
+          };
+        });
 
     this.lineChartOptions = {
       ...commonOptions,
@@ -816,6 +867,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   canConfirmAlerts(): boolean {
     return this.permissionsService.canConfirmAlerts();
+  }
+
+  canUpdateDevices(): boolean {
+    return this.permissionsService.canUpdateNetworkDevices();
   }
 
   expandChart(chartType: string): void {

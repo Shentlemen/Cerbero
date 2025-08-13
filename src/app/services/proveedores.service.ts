@@ -97,12 +97,29 @@ export class ProveedoresService {
       }),
       catchError(error => {
         if (error.error && typeof error.error === 'object') {
-          return throwError(() => new Error(error.error.message || 'Error al crear el proveedor'));
+          if (error.error.message && error.error.message !== 'Error al crear el proveedor') {
+            return throwError(() => new Error(error.error.message));
+          }
+          if (error.error.error) {
+            return throwError(() => new Error(error.error.error));
+          }
         }
-        return throwError(() => new Error('Error al crear el proveedor'));
+        
+        if (error.status === 400) {
+          // Intentar obtener más detalles del error
+          let errorMessage = 'Datos inválidos para el proveedor.';
+          if (error.error && error.error.message) {
+            errorMessage += ` Detalles: ${error.error.message}`;
+          }
+          return throwError(() => new Error(errorMessage));
+        }
+        
+        return throwError(() => new Error(`Error al crear el proveedor (${error.status}). Por favor, intente nuevamente.`));
       })
     );
   }
+
+
 
   actualizarProveedor(id: number, proveedor: ProveedorDTO): Observable<ProveedorDTO> {
     return this.http.put<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/${id}`, proveedor, { 

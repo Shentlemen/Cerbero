@@ -106,7 +106,7 @@
             <tr>
               <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
                 <div class="th-content">
-                  <span>Nombre de Compra</span>
+                  <span>Compra</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
@@ -181,7 +181,10 @@
               <td>{{formatearMoneda(compra.monto, compra.moneda)}}</td>
               <td>
                 <div class="action-buttons" *ngIf="canManagePurchases()">
-                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(compraModal, compra)">
+                  <button class="btn btn-info btn-sm me-2" (click)="verDetallesCompra(compra)" title="Ver detalles completos">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-warning btn-sm me-2" (click)="abrirModal(compraModal, compra)">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn btn-danger btn-sm" (click)="eliminarCompra(compra.idCompra)">
@@ -189,6 +192,9 @@
                   </button>
                 </div>
                 <div class="action-buttons" *ngIf="!canManagePurchases()">
+                  <button class="btn btn-info btn-sm me-2" (click)="verDetallesCompra(compra)" title="Ver detalles completos">
+                    <i class="fas fa-eye"></i>
+                  </button>
                   <span class="read-only-badge">
                     <i class="fas fa-eye"></i>
                     Solo lectura
@@ -231,184 +237,269 @@
       <li [ngbNavItem]="'1'">
         <a ngbNavLink>Datos de la compra</a>
         <ng-template ngbNavContent>
-          <form [formGroup]="compraForm">
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo de Compra</label>
-                <select class="form-select" formControlName="idTipoCompra">
-                  <option value="">Seleccione un tipo de compra</option>
-                  <option *ngFor="let tipo of tiposCompraList" [value]="tipo.idTipoCompra">
-                    {{tipo.descripcion}}
-                  </option>
-                </select>
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Número de Compra</label>
-                <input type="text" class="form-control" formControlName="numeroCompra">
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Año</label>
-                <input 
-                  type="number" 
-                  class="form-control" 
-                  formControlName="ano" 
-                  min="2000" 
-                  max="2030"
-                  placeholder="2024">
-              </div>
+          <div class="compra-data-card">
+            <div class="card-header-custom mb-4">
+              <h5 class="mb-0 text-secondary">
+                <i class="fas fa-edit me-2"></i>Información de la Compra
+              </h5>
             </div>
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Moneda</label>
-                <select class="form-select" formControlName="moneda">
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="UYU">UYU</option>
-                </select>
+            
+            <form [formGroup]="compraForm">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-shopping-cart me-2"></i>Tipo de Compra <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" formControlName="idTipoCompra">
+                    <option value="">Seleccione un tipo de compra</option>
+                    <option *ngFor="let tipo of tiposCompraList" [value]="tipo.idTipoCompra">
+                      {{tipo.descripcion}}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-hashtag me-2"></i>Número de Compra <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" formControlName="numeroCompra">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-calendar-alt me-2"></i>Año <span class="text-danger">*</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    formControlName="ano" 
+                    min="2000" 
+                    max="2030"
+                    placeholder="2024">
+                </div>
               </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Monto</label>
-                <input 
-                  type="text" 
-                  class="form-control text-end" 
-                  formControlName="monto" 
-                  placeholder="0.00"
-                  (input)="formatearMontoInput($event)">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-money-bill-wave me-2"></i>Moneda <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" formControlName="moneda">
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="UYU">UYU</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-dollar-sign me-2"></i>Monto <span class="text-danger">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    class="form-control text-end" 
+                    formControlName="monto" 
+                    placeholder="0,00"
+                    (input)="formatearMontoInput($event)"
+                    (keydown)="verificarBorradoCompleto($event)"
+                    (blur)="formatearMontoOnBlur($event)">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <!-- Campo vacío para mantener el layout -->
+                </div>
               </div>
-              <div class="col-md-4 mb-3">
-                <!-- Campo vacío para mantener el layout -->
+              <div class="row">
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-tag me-2"></i>Nombre de Compra <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" formControlName="descripcion" placeholder="Ingrese el nombre de la compra">
+                </div>
               </div>
-            </div>
-            <div class="row">
-              <div class="col-md-12 mb-3">
-                <label class="form-label">Nombre de Compra</label>
-                <input type="text" class="form-control" formControlName="descripcion" placeholder="Ingrese el nombre de la compra">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-calendar-plus me-2"></i>Fecha Apertura <span class="text-danger">*</span>
+                  </label>
+                  <input type="date" class="form-control" formControlName="fechaInicio">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-calendar-check me-2"></i>Fecha Adjudicación <span class="text-danger">*</span>
+                  </label>
+                  <input type="date" class="form-control" formControlName="fechaFinal">
+                </div>
               </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha Apertura</label>
-                <input type="date" class="form-control" formControlName="fechaInicio">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha Adjudicación</label>
-                <input type="date" class="form-control" formControlName="fechaFinal">
-              </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </ng-template>
       </li>
       <li [ngbNavItem]="'2'">
         <a ngbNavLink>Ítems</a>
         <ng-template ngbNavContent>
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Ítems de la compra</h6>
-            <button class="btn btn-success btn-sm" (click)="agregarItem()">
-              <i class="fas fa-plus"></i> Agregar ítem
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="mb-0 text-secondary">Ítems de la compra</h5>
+            <button class="btn btn-success" (click)="agregarItem()">
+              <i class="fas fa-plus me-2"></i>Agregar ítem
             </button>
           </div>
-          <div class="table-responsive">
-            <table class="table table-bordered table-sm">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Observación</th>
-                  <th>Cantidad</th>
-                  <th>Meses Garantía</th>
-                  <th>Proveedor</th>
-                  <th>Servicio Garantía</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of itemsControls; let i = index" [formGroup]="item">
-                  <td><input type="text" class="form-control" formControlName="nombreItem" required></td>
-                  <td><input type="text" class="form-control" formControlName="descripcion" placeholder="Observación opcional"></td>
-                  <td><input type="number" class="form-control" formControlName="cantidad" min="1" required></td>
-                  <td><input type="number" class="form-control" formControlName="mesesGarantia" min="0" required></td>
-                  <td>
-                    <select class="form-select" formControlName="idProveedor" required>
-                      <option value="">Seleccione un proveedor</option>
-                      <option *ngFor="let proveedor of proveedoresList" [value]="proveedor.idProveedores">
-                        {{proveedor.nombreComercial}}
-                      </option>
-                    </select>
-                  </td>
-                  <td>
-                    <select class="form-select" formControlName="idServicioGarantia" required>
-                      <option value="">Seleccione un servicio de garantía</option>
-                      <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
-                        {{servicio.nombreComercial}}
-                      </option>
-                    </select>
-                  </td>
-                  <td>
-                    <button class="btn btn-danger btn-sm" (click)="eliminarItem(i)">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="itemsControls.length === 0">
-                  <td colspan="7" class="text-center text-muted">No hay ítems agregados.</td>
-                </tr>
-              </tbody>
-            </table>
+          
+          <div *ngIf="itemsControls.length === 0" class="text-center py-5">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay ítems agregados. Haga clic en "Agregar ítem" para comenzar.</p>
+          </div>
+          
+          <div *ngFor="let item of itemsControls; let i = index" [formGroup]="item" class="item-card mb-4">
+            <div class="item-header d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0 text-primary">
+                <i class="fas fa-box me-2"></i>Ítem {{i + 1}}
+              </h6>
+              <button class="btn btn-outline-danger btn-sm" (click)="eliminarItem(i)" title="Eliminar ítem">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-tag me-2"></i>Nombre del ítem <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="nombreItem" 
+                       placeholder="Ingrese el nombre del ítem" required>
+              </div>
+              
+              <div class="col-md-4 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-sort-numeric-up me-2"></i>Cantidad <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" formControlName="cantidad" 
+                       min="1" placeholder="1" required>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-calendar-check me-2"></i>Meses de Garantía <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" formControlName="mesesGarantia" 
+                       min="0" placeholder="0" required>
+              </div>
+              
+              <div class="col-md-4 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-truck me-2"></i>Proveedor <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="idProveedor" required>
+                  <option value="">Seleccione un proveedor</option>
+                  <option *ngFor="let proveedor of proveedoresList" [value]="proveedor.idProveedores">
+                    {{proveedor.nombreComercial}}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="col-md-4 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-shield-alt me-2"></i>Servicio de Garantía <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="idServicioGarantia" required>
+                  <option value="">Seleccione un servicio de garantía</option>
+                  <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
+                    {{servicio.nombreComercial}}
+                  </option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-info-circle me-2"></i>Observación
+                </label>
+                <input type="text" class="form-control" formControlName="descripcion" 
+                       placeholder="Observación opcional">
+              </div>
+            </div>
           </div>
         </ng-template>
       </li>
       <li *ngIf="modoEdicion" [ngbNavItem]="'3'">
         <a ngbNavLink>Entregas</a>
         <ng-template ngbNavContent>
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Entregas de los ítems</h6>
-            <button class="btn btn-success btn-sm" (click)="agregarEntrega()">
-              <i class="fas fa-plus"></i> Agregar entrega
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="mb-0 text-secondary">Entregas de los ítems</h5>
+            <button class="btn btn-success" (click)="agregarEntrega()">
+              <i class="fas fa-plus me-2"></i>Entrega Item
             </button>
           </div>
-          <div class="table-responsive">
-            <table class="table table-bordered table-sm">
-              <thead>
-                <tr>
-                  <th>Ítem (ID)</th>
-                  <th>Cantidad</th>
-                  <th>Observación</th>
-                  <th>Fecha de Entrega</th>
-                  <th>Fecha Fin Garantía</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let entrega of entregasControls; let i = index" [formGroup]="entrega">
-                  <td>
-                    <select class="form-select" [formControlName]="modoEdicion ? 'idItem' : 'nombreItem'" required>
-                      <option value="">Seleccione un ítem</option>
-                      <ng-container *ngIf="modoEdicion; else itemsLocal">
-                        <option *ngFor="let lote of lotesDeLaCompra" [value]="lote.idItem">
-                          {{lote.nombreItem}}
-                        </option>
-                      </ng-container>
-                      <ng-template #itemsLocal>
-                        <option *ngFor="let item of itemsControls" [value]="item.get('nombreItem')?.value">
-                          {{item.get('nombreItem')?.value}}
-                        </option>
-                      </ng-template>
-                    </select>
-                  </td>
-                  <td><input type="number" class="form-control" formControlName="cantidad" min="1" required></td>
-                  <td><input type="text" class="form-control" formControlName="descripcion" placeholder="Observación opcional"></td>
-                  <td><input type="date" class="form-control" formControlName="fechaPedido" required></td>
-                  <td><input type="date" class="form-control" formControlName="fechaFinGarantia" required></td>
-                  <td>
-                    <button class="btn btn-danger btn-sm" (click)="eliminarEntrega(i)">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="entregasControls.length === 0">
-                  <td colspan="6" class="text-center text-muted">No hay entregas agregadas.</td>
-                </tr>
-              </tbody>
-            </table>
+          
+          <div *ngIf="entregasControls.length === 0" class="text-center py-5">
+            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay entregas agregadas. Haga clic en "Agregar entrega" para comenzar.</p>
+          </div>
+          
+          <div *ngFor="let entrega of entregasControls; let i = index" [formGroup]="entrega" class="entrega-card mb-4">
+            <div class="entrega-header d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0 text-primary">
+                <i class="fas fa-truck me-2"></i>Entrega
+              </h6>
+              <button class="btn btn-outline-danger btn-sm" (click)="eliminarEntrega(i)" title="Eliminar entrega">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-box me-2"></i>Ítem <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" [formControlName]="modoEdicion ? 'idItem' : 'nombreItem'" required
+                        (change)="calcularFechaFinGarantia(i)">
+                  <option value="">Seleccione un ítem</option>
+                  <ng-container *ngIf="modoEdicion; else itemsLocal">
+                    <option *ngFor="let lote of lotesDeLaCompra" [value]="lote.idItem">
+                      {{lote.nombreItem}}
+                    </option>
+                  </ng-container>
+                  <ng-template #itemsLocal>
+                    <option *ngFor="let item of itemsControls" [value]="item.get('nombreItem')?.value">
+                      {{item.get('nombreItem')?.value}}
+                    </option>
+                  </ng-template>
+                </select>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-sort-numeric-up me-2"></i>Cantidad <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" formControlName="cantidad" 
+                       min="1" placeholder="1" required>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-calendar-plus me-2"></i>Fecha de Entrega <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="fechaPedido" required
+                       (change)="calcularFechaFinGarantia(i)">
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-calendar-check me-2"></i>Fecha Fin Garantía <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="fechaFinGarantia" required>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-info-circle me-2"></i>Observación
+                </label>
+                <input type="text" class="form-control" formControlName="descripcion" 
+                       placeholder="Observación opcional">
+              </div>
+            </div>
           </div>
         </ng-template>
       </li>
@@ -419,6 +510,271 @@
     <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
     <button type="button" class="btn btn-success btn-sm" (click)="guardarCompra()" [disabled]="!compraForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+    </button>
+  </div>
+</ng-template>
+
+<!-- Modal de detalles de la compra -->
+<ng-template #detallesModal let-modal>
+  <div class="modal-header details-header">
+    <h4 class="modal-title">
+      <i class="fas fa-shopping-cart me-2"></i>Detalles de la Compra
+    </h4>
+    <div class="header-actions">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary btn-sm view-toggle-btn"
+        (click)="toggleCompactView()"
+        [title]="isCompactView ? 'Vista detallada' : 'Vista compacta'">
+        <i class="fas" [ngClass]="isCompactView ? 'fa-expand-alt' : 'fa-compress-alt'"></i>
+        <span class="ms-1">{{ isCompactView ? 'Vista detallada' : 'Vista compacta' }}</span>
+      </button>
+      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    </div>
+  </div>
+  
+  <div class="modal-body details-body" *ngIf="!isCompactView">
+    <!-- Información principal de la compra -->
+    <div class="compra-main-info mb-4">
+      <div class="row">
+        <div class="col-md-8">
+          <h3 class="compra-title mb-3">
+            {{ compraSeleccionada ? getNombreCompraFormateado(compraSeleccionada) : 'Cargando...' }}
+          </h3>
+          <p class="compra-description text-muted mb-0">
+            {{ compraSeleccionada?.descripcion }}
+          </p>
+        </div>
+        <div class="col-md-4 text-end">
+          <div class="compra-status">
+            <span class="moneda-badge" [ngClass]="compraSeleccionada?.moneda?.toLowerCase()">
+              {{ compraSeleccionada?.moneda }}
+            </span>
+            <div class="compra-amount mt-2">
+              <span class="amount-label">Monto Total:</span>
+              <span class="amount-value">{{ formatearMoneda(compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detalles de la compra -->
+    <div class="details-section mb-4">
+      <h5 class="section-title">
+        <i class="fas fa-info-circle me-2"></i>Información de la Compra
+      </h5>
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-shopping-cart me-2"></i>Tipo de Compra:
+          </span>
+          <span class="detail-value">{{ getTipoCompraDescripcion(compraSeleccionada?.idTipoCompra || 0) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-hashtag me-2"></i>Número:
+          </span>
+          <span class="detail-value">{{ compraSeleccionada?.numeroCompra || 'No disponible' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-calendar-alt me-2"></i>Año:
+          </span>
+          <span class="detail-value">{{ compraSeleccionada?.ano || 'No disponible' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-calendar-plus me-2"></i>Fecha Apertura:
+          </span>
+          <span class="detail-value">{{ formatearFecha(compraSeleccionada?.fechaInicio || '') }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-calendar-check me-2"></i>Fecha Adjudicación:
+          </span>
+          <span class="detail-value">{{ formatearFecha(compraSeleccionada?.fechaFinal || '') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ítems de la compra -->
+    <div class="details-section mb-4">
+      <h5 class="section-title">
+        <i class="fas fa-box me-2"></i>Ítems de la Compra
+        <span class="items-count">({{ lotesDetalles.length }} ítems)</span>
+      </h5>
+      
+      <div *ngIf="lotesDetalles.length === 0" class="no-items">
+        <i class="fas fa-box-open fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No hay ítems registrados para esta compra.</p>
+      </div>
+      
+      <div *ngFor="let lote of lotesDetalles; let i = index" class="item-card mb-3">
+        <div class="item-header">
+          <h6 class="item-title">
+            <i class="fas fa-box me-2"></i>Ítem {{ i + 1 }}: {{ lote.nombreItem }}
+          </h6>
+        </div>
+        <div class="item-details">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="item-detail">
+                <span class="detail-label">Cantidad:</span>
+                <span class="detail-value">{{ lote.cantidad }}</span>
+              </div>
+              <div class="item-detail">
+                <span class="detail-label">Meses de Garantía:</span>
+                <span class="detail-value">{{ lote.mesesGarantia }}</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="item-detail">
+                <span class="detail-label">Proveedor:</span>
+                <span class="detail-value">{{ getProveedorNombre(lote.idProveedor) }}</span>
+              </div>
+              <div class="item-detail">
+                <span class="detail-label">Servicio de Garantía:</span>
+                <span class="detail-value">{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</span>
+              </div>
+            </div>
+            <div class="col-md-4" *ngIf="lote.descripcion">
+              <div class="item-detail">
+                <span class="detail-label">Observación:</span>
+                <span class="detail-value">{{ lote.descripcion }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entregas -->
+    <div class="details-section">
+      <h5 class="section-title">
+        <i class="fas fa-truck me-2"></i>Entregas
+      </h5>
+      
+      <div *ngIf="entregasDetalles.length === 0" class="no-items">
+        <i class="fas fa-truck fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No hay entregas registradas para esta compra.</p>
+      </div>
+      
+      <div *ngFor="let entrega of entregasDetalles; let i = index" class="entrega-card mb-3">
+        <div class="entrega-header">
+          <h6 class="entrega-title">
+            <i class="fas fa-truck me-2"></i>Entrega
+          </h6>
+        </div>
+        <div class="entrega-details">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="entrega-detail">
+                <span class="detail-label">Ítem:</span>
+                <span class="detail-value">{{ getLoteNombre(entrega.idItem) }}</span>
+              </div>
+              <div class="entrega-detail">
+                <span class="detail-label">Cantidad:</span>
+                <span class="detail-value">{{ entrega.cantidad }}</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="entrega-detail">
+                <span class="detail-label">Fecha de Entrega:</span>
+                <span class="detail-value">{{ formatearFecha(entrega.fechaPedido) }}</span>
+              </div>
+              <div class="entrega-detail">
+                <span class="detail-label">Fin de Garantía:</span>
+                <span class="detail-value">{{ formatearFecha(entrega.fechaFinGarantia) }}</span>
+              </div>
+            </div>
+            <div class="col-md-4" *ngIf="entrega.descripcion">
+              <div class="entrega-detail">
+                <span class="detail-label">Observación:</span>
+                <span class="detail-value">{{ entrega.descripcion }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Vista compacta (estilo Excel) -->
+  <div class="modal-body compact-view" *ngIf="isCompactView">
+    <!-- Información principal compacta -->
+    <div class="compact-header mb-3">
+      <h5 class="compact-title">{{ compraSeleccionada ? getNombreCompraFormateado(compraSeleccionada) : 'Cargando...' }}</h5>
+      <div class="compact-meta">
+        <span class="badge bg-secondary me-2">{{ compraSeleccionada?.moneda }}</span>
+        <span class="text-muted">{{ formatearMoneda(compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
+      </div>
+    </div>
+
+    <!-- Tabla compacta de ítems -->
+    <div class="compact-section mb-3">
+      <h6 class="compact-section-title">
+        <i class="fas fa-box me-2"></i>Ítems ({{ lotesDetalles.length }})
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered compact-table">
+          <thead class="table-light">
+            <tr>
+              <th>Ítem</th>
+              <th>Cantidad</th>
+              <th>Garantía</th>
+              <th>Proveedor</th>
+              <th>Servicio</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lote of lotesDetalles">
+              <td>{{ lote.nombreItem }}</td>
+              <td class="text-center">{{ lote.cantidad }}</td>
+              <td class="text-center">{{ lote.mesesGarantia }} meses</td>
+              <td>{{ getProveedorNombre(lote.idProveedor) }}</td>
+              <td>{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</td>
+              <td>{{ lote.descripcion || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabla compacta de entregas -->
+    <div class="compact-section">
+      <h6 class="compact-section-title">
+        <i class="fas fa-truck me-2"></i>Entregas ({{ entregasDetalles.length }})
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered compact-table">
+          <thead class="table-light">
+            <tr>
+              <th>Ítem</th>
+              <th>Cantidad</th>
+              <th>Fecha Entrega</th>
+              <th>Fin Garantía</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entrega of entregasDetalles">
+              <td>{{ getLoteNombre(entrega.idItem) }}</td>
+              <td class="text-center">{{ entrega.cantidad }}</td>
+              <td>{{ formatearFecha(entrega.fechaPedido) }}</td>
+              <td>{{ formatearFecha(entrega.fechaFinGarantia) }}</td>
+              <td>{{ entrega.descripcion || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      <i class="fas fa-times me-2"></i>Cerrar
     </button>
   </div>
 </ng-template>

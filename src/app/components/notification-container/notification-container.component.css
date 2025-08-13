@@ -1,6 +1,6 @@
 .notification-wrapper {
   position: fixed;
-  top: 20px;
+  top: 80px; /* 20px + 60px del header */
   right: 20px;
   z-index: 9999;
   display: flex;
@@ -32,7 +32,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .notification-wrapper {
-    top: 10px;
+    top: 70px; /* 10px + 60px del header */
     right: 10px;
     left: 10px;
   }

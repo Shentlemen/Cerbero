@@ -6,6 +6,9 @@ import { ProcurementComponent } from './procurement/procurement.component';
 import { SubnetsComponent } from './subnets/subnets.component';
 import { DevicesComponent } from './devices/devices.component';
 import { DeviceDetailsComponent } from './device-details/device-details.component';
+import { AlmacenesComponent } from './almacen/almacenes/almacenes.component';
+import { StockAlmacenComponent } from './almacen/stock-almacen/stock-almacen.component';
+import { UbicacionesComponent } from './almacen/ubicaciones/ubicaciones.component';
 
 export const routes: Routes = [
   {
@@ -51,8 +54,10 @@ export const routes: Routes = [
       { path: 'device-details/:mac', component: DeviceDetailsComponent },
       { path: 'locations', loadComponent: () => import('./locations/locations.component')
         .then(m => m.LocationsComponent) },
-      { path: 'almacen/almacenes', loadComponent: () => import('./almacen/almacenes/almacenes.component').then(m => m.AlmacenesComponent) },
-      { path: 'almacen/ubicaciones', loadComponent: () => import('./almacen/ubicaciones/ubicaciones.component').then(m => m.UbicacionesComponent) }
+      // Rutas de almacén dentro del menu para mantener el layout completo
+      { path: 'almacen/almacenes', component: AlmacenesComponent },
+      { path: 'almacen/stock/:id', component: StockAlmacenComponent },
+      { path: 'almacen/ubicaciones', component: UbicacionesComponent }
     ]
   },
   {

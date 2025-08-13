@@ -1,106 +1,45 @@
-/* Estilos específicos para compras */
+/* Estilos específicos para compras - Versión optimizada */
 
-/* Eliminar outline de todos los botones */
-.btn:focus,
-button:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.btn:focus-visible,
-button:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Estilos específicos para el componente de compras */
+/* Estilos globales para el componente */
 :host {
-  /* Eliminar outline de todos los elementos dentro del componente */
-  *:focus {
-    outline: none !important;
-  }
-  
+  /* Eliminar outline y prevenir selección de texto en todo el componente */
+  *:focus,
   *:focus-visible {
     outline: none !important;
+    box-shadow: none !important;
   }
   
-  /* Prevenir selección de texto */
   * {
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-    user-select: none !important;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
   
-  /* Permitir selección de texto solo en inputs y textareas */
+  /* Permitir selección solo en inputs y textareas */
   input, textarea {
-    -webkit-user-select: text !important;
-    -moz-user-select: text !important;
-    -ms-user-select: text !important;
-    user-select: text !important;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
   }
 }
 
-/* Eliminar outline de elementos de texto dentro de botones */
-.btn span:focus,
-button span:focus,
-.btn i:focus,
-button i:focus,
-.btn *:focus,
-button *:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Prevenir selección de texto en botones */
-.btn,
-button {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-/* Estilos específicos para eliminar outline en todos los elementos */
-*:focus {
-  outline: none !important;
-}
-
-*:focus-visible {
-  outline: none !important;
-}
-
-/* Estilos específicos para botones y elementos dentro de botones */
-.btn *,
-button *,
-.filter-btn *,
-.tipo-compra-filter-btn * {
-  outline: none !important;
-  box-shadow: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-}
-
-/* Eliminar outline específicamente en elementos de texto */
-span:focus,
-i:focus,
-div:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Estilos para prevenir selección de texto en toda la aplicación */
+/* Estilos para botones */
 .btn,
 button,
 .filter-btn,
 .tipo-compra-filter-btn {
-  -webkit-tap-highlight-color: transparent !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -khtml-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
+
+/* Estilos para filas de compra */
 .compra-row {
   cursor: pointer;
   transition: all 0.3s ease;
@@ -112,7 +51,7 @@ button,
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* Estilos para los badges de moneda */
+/* Badges de moneda */
 .moneda-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -136,8 +75,7 @@ button,
   color: #00695c;
 }
 
-
-
+/* Badges de estado */
 .estado-badge.pendiente {
   background: #fef3c7;
   color: #d97706;
@@ -158,6 +96,7 @@ button,
   color: #4f46e5;
 }
 
+/* Enlaces y detalles */
 .proveedor-link {
   color: #41A1AF;
   cursor: pointer;
@@ -213,9 +152,9 @@ button,
   flex: 1;
 }
 
-/* Personalización de pestañas ngbNav */
+/* Pestañas ngbNav */
 .nav-tabs .nav-link.active {
-  color: #2c3e50 !important; /* gris oscuro, igual que los títulos */
+  color: #2c3e50 !important;
   background-color: #f8f9fa !important;
   border-color: #dee2e6 #dee2e6 #fff;
   font-weight: 600;
@@ -233,19 +172,7 @@ button,
   color: #41A1AF !important;
 }
 
-@media (max-width: 768px) {
-  .detail-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .detail-label {
-    min-width: auto;
-  }
-}
-
-/* Estilos para los botones de filtro */
+/* Botones de filtro */
 .filters-container {
   display: flex;
   gap: 1rem;
@@ -270,16 +197,9 @@ button,
   outline: none;
 }
 
-.filter-btn:focus {
-  outline: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
 .filter-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  background: var(--device-bg-color, #ffffff);
-  border-color: var(--device-border-color, #dee2e6);
 }
 
 .filter-btn.active {
@@ -298,196 +218,7 @@ button,
   opacity: 0.8;
 }
 
-@media (max-width: 768px) {
-  .filters-container {
-    gap: 0.5rem;
-  }
-  
-  .filter-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-  }
-  
-  .filter-btn .count {
-    display: none;
-  }
-}
-
-@media (max-width: 576px) {
-  .filters-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .filter-btn {
-    justify-content: center;
-  }
-}
-
-/* Estilos para las tablas en modales */
-.modal-body .table th,
-.modal-body .table td {
-  padding: 0.5rem;
-  vertical-align: middle;
-}
-
-/* Hacer que la columna del nombre del ítem sea más ancha */
-.modal-body .table th:first-child,
-.modal-body .table td:first-child {
-  min-width: 130px;
-  max-width: 250px;
-  width: 20%;
-}
-
-/* Asegurar que el texto del ítem se vea completo */
-.modal-body .table td:first-child .form-select,
-.modal-body .table td:first-child input {
-  width: 100%;
-  min-width: 110px;
-}
-
-/* Anchos mínimos para proveedor y servicio de garantía */
-.modal-body .table th:nth-child(5),
-.modal-body .table td:nth-child(5) {
-  min-width: 160px;
-  max-width: 220px;
-}
-
-.modal-body .table th:nth-child(6),
-.modal-body .table td:nth-child(6) {
-  min-width: 180px;
-  max-width: 240px;
-}
-
-/* Asegurar que los controles de proveedor y servicio se vean completos */
-.modal-body .table td:nth-child(5) .form-select,
-.modal-body .table td:nth-child(6) .form-select {
-  width: 100%;
-  min-width: 120px;
-}
-
-/* Ancho específico para la columna Acciones en entregas */
-.modal-body .table th:last-child,
-.modal-body .table td:last-child {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
-  text-align: center;
-}
-
-/* Configuración responsive para tablas en modales */
-.modal-body .table {
-  table-layout: auto !important;
-  width: 100% !important;
-}
-
-/* Ancho específico para la columna Observación en ítems */
-.modal-body .table th:nth-child(2),
-.modal-body .table td:nth-child(2) {
-  min-width: 180px !important;
-  max-width: 300px !important;
-  width: auto !important;
-}
-
-/* Ancho específico para la columna Cantidad en ítems */
-.modal-body .table th:nth-child(3),
-.modal-body .table td:nth-child(3) {
-  min-width: 80px !important;
-  max-width: 100px !important;
-  width: auto !important;
-  text-align: center !important;
-}
-
-/* Ancho específico para la columna Meses Garantía en ítems */
-.modal-body .table th:nth-child(4),
-.modal-body .table td:nth-child(4) {
-  min-width: 80px !important;
-  max-width: 100px !important;
-  width: auto !important;
-  text-align: center !important;
-}
-
-/* Ancho específico para la columna Acciones */
-.modal-body .table th:last-child,
-.modal-body .table td:last-child {
-  min-width: 60px !important;
-  max-width: 80px !important;
-  width: auto !important;
-  text-align: center !important;
-}
-
-/* Ancho específico para la columna Cantidad en entregas */
-.modal-body .table th:nth-child(2),
-.modal-body .table td:nth-child(2) {
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
-  text-align: center !important;
-}
-
-/* Ancho específico para la columna Observación en entregas */
-.modal-body .table th:nth-child(3),
-.modal-body .table td:nth-child(3) {
-  min-width: 200px !important;
-  max-width: 350px !important;
-  width: auto !important;
-}
-
-/* Ancho específico para las columnas de fechas */
-.modal-body .table th:nth-child(4),
-.modal-body .table td:nth-child(4),
-.modal-body .table th:nth-child(5),
-.modal-body .table td:nth-child(5) {
-  width: 160px;
-  min-width: 160px;
-  max-width: 160px;
-  text-align: center;
-}
-
-/* Responsive para pantallas pequeñas */
-@media (max-width: 768px) {
-  .modal-body .table {
-    font-size: 0.9rem !important;
-  }
-  
-  .modal-body .table th,
-  .modal-body .table td {
-    padding: 0.5rem 0.3rem !important;
-  }
-  
-  .modal-body .table th:nth-child(2),
-  .modal-body .table td:nth-child(2) {
-    min-width: 120px !important;
-    max-width: 200px !important;
-  }
-  
-  .modal-body .table th:nth-child(3),
-  .modal-body .table td:nth-child(3),
-  .modal-body .table th:nth-child(4),
-  .modal-body .table td:nth-child(4) {
-    min-width: 60px !important;
-    max-width: 80px !important;
-  }
-}
-
-@media (max-width: 576px) {
-  .modal-body .table {
-    font-size: 0.8rem !important;
-  }
-  
-  .modal-body .table th,
-  .modal-body .table td {
-    padding: 0.3rem 0.2rem !important;
-  }
-  
-  .modal-body .table th:nth-child(2),
-  .modal-body .table td:nth-child(2) {
-    min-width: 100px !important;
-    max-width: 150px !important;
-  }
-}
-
-/* Estilos para los filtros de tipo de compra */
+/* Filtros de tipo de compra */
 .tipo-compra-filters {
   display: flex;
   gap: 0.5rem;
@@ -514,17 +245,9 @@ button,
   outline: none;
 }
 
-.tipo-compra-filter-btn:focus {
-  outline: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
 .tipo-compra-filter-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  background: var(--tipo-bg-color, #ffffff);
-  border-color: var(--tipo-border-color, #adb5bd);
-  color: var(--tipo-color, #2c3e50);
 }
 
 .tipo-compra-filter-btn.active {
@@ -546,13 +269,6 @@ button,
   border-color: #adb5bd !important;
 }
 
-.limpiar-filtro-btn:focus {
-  outline: none !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-}
-
-
-
 .tipo-compra-filter-btn .count {
   font-size: 0.8rem;
   opacity: 0.8;
@@ -562,8 +278,511 @@ button,
   flex-shrink: 0;
 }
 
-/* Responsive para los filtros de tipo de compra */
+/* Estilos para tablas en modales */
+.modal-body .table th,
+.modal-body .table td {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+.modal-body .table {
+  table-layout: auto !important;
+  width: 100% !important;
+}
+
+/* Anchos de columnas para ítems */
+.modal-body .table th:first-child,
+.modal-body .table td:first-child {
+  min-width: 130px;
+  max-width: 250px;
+  width: 20%;
+}
+
+.modal-body .table th:nth-child(2),
+.modal-body .table td:nth-child(2) {
+  min-width: 180px !important;
+  max-width: 300px !important;
+  width: auto !important;
+}
+
+.modal-body .table th:nth-child(3),
+.modal-body .table td:nth-child(3) {
+  min-width: 80px !important;
+  max-width: 100px !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+.modal-body .table th:nth-child(4),
+.modal-body .table td:nth-child(4) {
+  min-width: 80px !important;
+  max-width: 100px !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+.modal-body .table th:nth-child(5),
+.modal-body .table td:nth-child(5) {
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.modal-body .table th:nth-child(6),
+.modal-body .table td:nth-child(6) {
+  min-width: 180px;
+  max-width: 240px;
+}
+
+.modal-body .table th:last-child,
+.modal-body .table td:last-child {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  text-align: center;
+}
+
+/* Anchos de columnas para entregas */
+.modal-body .table th:nth-child(2),
+.modal-body .table td:nth-child(2) {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  text-align: center !important;
+}
+
+.modal-body .table th:nth-child(3),
+.modal-body .table td:nth-child(3) {
+  min-width: 200px !important;
+  max-width: 350px !important;
+  width: auto !important;
+}
+
+.modal-body .table th:nth-child(4),
+.modal-body .table td:nth-child(4),
+.modal-body .table th:nth-child(5),
+.modal-body .table td:nth-child(5) {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  text-align: center;
+}
+
+/* Estilos para tarjetas */
+.item-card,
+.compra-data-card,
+.entrega-card {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.item-card:hover,
+.compra-data-card:hover,
+.entrega-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #dee2e6;
+}
+
+/* Headers de tarjetas */
+.item-header,
+.entrega-header,
+.card-header-custom {
+  border-bottom: 2px solid #f8f9fa;
+  padding-bottom: 0.75rem;
+}
+
+.item-header h6,
+.entrega-header h6,
+.card-header-custom h5 {
+  font-weight: 600;
+  color: #495057;
+}
+
+.card-header-custom h5 i {
+  color: #41A1AF;
+}
+
+/* Botones de acción en headers */
+.item-header .btn-outline-danger,
+.entrega-header .btn-outline-danger {
+  border-radius: 20px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.item-header .btn-outline-danger:hover,
+.entrega-header .btn-outline-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+/* Labels y campos de formulario */
+.item-card .form-label,
+.compra-data-card .form-label,
+.entrega-card .form-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.item-card .form-label i,
+.compra-data-card .form-label i,
+.entrega-card .form-label i {
+  color: #6c757d;
+  width: 16px;
+}
+
+/* Texto de ayuda para campos */
+.form-text {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.form-text i {
+  color: #41A1AF;
+  margin-right: 0.25rem;
+}
+
+/* Campos de entrada */
+.item-card .form-control,
+.item-card .form-select,
+.compra-data-card .form-control,
+.compra-data-card .form-select,
+.entrega-card .form-control,
+.entrega-card .form-select {
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.item-card .form-control:focus,
+.item-card .form-select:focus,
+.compra-data-card .form-control:focus,
+.compra-data-card .form-select:focus,
+.entrega-card .form-control:focus,
+.entrega-card .form-select:focus {
+  border-color: #41A1AF;
+  box-shadow: 0 0 0 0.2rem rgba(65, 161, 175, 0.25);
+}
+
+/* Mensaje cuando no hay ítems */
+.text-center.py-5 {
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.text-center.py-5 i {
+  color: #adb5bd;
+}
+
+.text-center.py-5 p {
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+/* Modal de detalles */
+.details-header {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #374151;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.details-header .modal-title {
+  font-weight: 600;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-toggle-btn {
+  border-radius: 20px;
+  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+  transition: all 0.2s ease;
+  border: 1px solid #6c757d;
+  color: #6c757d;
+  background: transparent;
+}
+
+.view-toggle-btn:hover {
+  background-color: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.view-toggle-btn:focus {
+  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25);
+}
+
+.details-body {
+  padding: 2rem;
+  background: #f8f9fa;
+}
+
+/* Información principal */
+.compra-main-info {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.compra-title {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #2c3e50;
+}
+
+.compra-description {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.compra-status {
+  text-align: right;
+}
+
+.compra-amount {
+  margin-top: 1rem;
+}
+
+.amount-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.amount-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Secciones de detalles */
+.details-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.section-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e9ecef;
+  display: flex;
+  align-items: center;
+}
+
+.section-title i {
+  color: #1f2937;
+}
+
+.items-count {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 400;
+  margin-left: 0.5rem;
+}
+
+/* Grid de detalles */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.detail-item .detail-label {
+  font-weight: 600;
+  color: #495057;
+  min-width: 140px;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.detail-item .detail-label i {
+  color: #1f2937;
+  width: 16px;
+  margin-right: 0.5rem;
+}
+
+.detail-item .detail-value {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Tarjetas en modal de detalles */
+.details-body .item-card,
+.details-body .entrega-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.details-body .item-card:hover,
+.details-body .entrega-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #dee2e6;
+}
+
+.details-body .item-header,
+.details-body .entrega-header {
+  margin-bottom: 1rem;
+}
+
+.details-body .item-title,
+.details-body .entrega-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.details-body .item-title i,
+.details-body .entrega-title i {
+  color: #1f2937;
+}
+
+.details-body .item-details .row,
+.details-body .entrega-details .row {
+  margin: 0;
+}
+
+.details-body .item-detail,
+.details-body .entrega-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.details-body .item-detail:last-child,
+.details-body .entrega-detail:last-child {
+  border-bottom: none;
+}
+
+.details-body .item-detail .detail-label,
+.details-body .entrega-detail .detail-label {
+  font-weight: 500;
+  color: #6c757d;
+  min-width: auto;
+  margin-right: 1rem;
+  font-size: 0.9rem;
+}
+
+.details-body .item-detail .detail-value,
+.details-body .entrega-detail .detail-value {
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: right;
+  flex: 1;
+}
+
+/* Ajustes para el nuevo layout de 3 columnas */
+.details-body .item-details .col-md-4,
+.details-body .entrega-details .col-md-4 {
+  padding: 0 0.5rem;
+}
+
+.details-body .item-detail,
+.details-body .entrega-detail {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.75rem 0;
+}
+
+.details-body .item-detail .detail-label,
+.details-body .entrega-detail .detail-label {
+  margin-right: 0;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.details-body .item-detail .detail-value,
+.details-body .entrega-detail .detail-value {
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.details-body .item-description,
+.details-body .entrega-description {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  margin-top: 1rem;
+}
+
+/* Estado cuando no hay elementos */
+.no-items {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.no-items i {
+  color: #adb5bd;
+  margin-bottom: 1rem;
+}
+
+.no-items p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Media queries consolidados */
 @media (max-width: 768px) {
+  .filters-container {
+    gap: 0.5rem;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .filter-btn .count {
+    display: none;
+  }
+  
   .tipo-compra-filters {
     gap: 0.25rem;
   }
@@ -576,9 +795,112 @@ button,
   .tipo-compra-filter-btn .count {
     display: none;
   }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detail-label {
+    min-width: auto;
+  }
+  
+  .modal-body .table {
+    font-size: 0.9rem !important;
+  }
+  
+  .modal-body .table th,
+  .modal-body .table td {
+    padding: 0.5rem 0.3rem !important;
+  }
+  
+  .modal-body .table th:nth-child(2),
+  .modal-body .table td:nth-child(2) {
+    min-width: 120px !important;
+    max-width: 200px !important;
+  }
+  
+  .modal-body .table th:nth-child(3),
+  .modal-body .table td:nth-child(3),
+  .modal-body .table th:nth-child(4),
+  .modal-body .table td:nth-child(4) {
+    min-width: 60px !important;
+    max-width: 80px !important;
+  }
+  
+  .item-card,
+  .compra-data-card,
+  .entrega-card {
+    padding: 1rem;
+  }
+  
+  .item-header,
+  .entrega-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  
+  .item-header .btn-outline-danger,
+  .entrega-header .btn-outline-danger {
+    align-self: flex-end;
+  }
+  
+  .details-body {
+    padding: 1rem;
+  }
+  
+  .compra-main-info {
+    padding: 1.5rem;
+  }
+  
+  .compra-title {
+    font-size: 1.5rem;
+  }
+  
+  .details-section {
+    padding: 1rem;
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detail-item .detail-label {
+    min-width: auto;
+    margin-right: 0;
+  }
+  
+  .details-body .item-detail,
+  .details-body .entrega-detail {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .details-body .item-detail .detail-label,
+  .details-body .entrega-detail .detail-label {
+    margin-right: 0;
+  }
 }
 
 @media (max-width: 576px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-btn {
+    justify-content: center;
+  }
+  
   .tipo-compra-filters {
     flex-direction: column;
     align-items: stretch;
@@ -588,5 +910,203 @@ button,
   .tipo-compra-filter-btn {
     justify-content: center;
     width: 100%;
+  }
+  
+  .modal-body .table {
+    font-size: 0.8rem !important;
+  }
+  
+  .modal-body .table th,
+  .modal-body .table td {
+    padding: 0.3rem 0.2rem !important;
+  }
+  
+  .modal-body .table th:nth-child(2),
+  .modal-body .table td:nth-child(2) {
+    min-width: 100px !important;
+    max-width: 150px !important;
+  }
+  
+  .item-card,
+  .compra-data-card,
+  .entrega-card {
+    padding: 0.75rem;
+  }
+  
+  .item-card .row,
+  .compra-data-card .row,
+  .entrega-card .row {
+    margin: 0;
+  }
+  
+  .item-card .col-md-6,
+  .item-card .col-md-4,
+  .compra-data-card .col-md-6,
+  .compra-data-card .col-md-4,
+  .compra-data-card .col-md-12,
+  .entrega-card .col-md-6,
+  .entrega-card .col-md-12 {
+    padding: 0 0.25rem;
+  }
+  
+  .compra-main-info {
+    padding: 1rem;
+  }
+  
+  .compra-title {
+    font-size: 1.3rem;
+  }
+  
+  .details-section {
+    padding: 0.75rem;
+  }
+  
+  .details-body .item-card,
+  .details-body .entrega-card {
+    padding: 0.75rem;
+  }
+  
+  .details-body .item-detail,
+  .details-body .entrega-detail {
+    padding: 0.75rem 0;
+  }
+}
+
+/* Estilos para la vista compacta */
+.compact-view {
+  padding: 1rem;
+  background: #f8f9fa;
+}
+
+.compact-header {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.compact-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.compact-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compact-section {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.compact-section-title {
+  background: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 0.95rem;
+}
+
+/* Estilos específicos para la tabla compacta con mayor especificidad */
+.compact-view .compact-section .table-responsive .table.compact-table {
+  margin: 0 !important;
+  font-size: 0.85rem !important;
+  table-layout: auto !important;
+  width: 100% !important;
+}
+
+.compact-view .compact-section .table-responsive .table.compact-table th {
+  background: #f8f9fa !important;
+  color: #495057 !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 0.5rem !important;
+  border-color: #dee2e6 !important;
+  white-space: nowrap !important;
+}
+
+.compact-view .compact-section .table-responsive .table.compact-table td {
+  padding: 0.5rem !important;
+  border-color: #dee2e6 !important;
+  vertical-align: middle !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Anchos mínimos para columnas que necesitan espacio específico */
+.compact-view .compact-section .table-responsive .table.compact-table th:nth-child(2), /* Cantidad */
+.compact-view .compact-section .table-responsive .table.compact-table td:nth-child(2) {
+  min-width: 60px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+.compact-view .compact-section .table-responsive .table.compact-table th:nth-child(3), /* Garantía */
+.compact-view .compact-section .table-responsive .table.compact-table td:nth-child(3) {
+  min-width: 80px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+/* Columnas de fecha centradas */
+.compact-view .compact-section .table-responsive .table.compact-table th:nth-child(3), /* Fecha Entrega en tabla entregas */
+.compact-view .compact-section .table-responsive .table.compact-table td:nth-child(3),
+.compact-view .compact-section .table-responsive .table.compact-table th:nth-child(4), /* Fin Garantía en tabla entregas */
+.compact-view .compact-section .table-responsive .table.compact-table td:nth-child(4) {
+  min-width: 100px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+/* Columna de observación con ancho máximo para evitar que ocupe todo el espacio */
+.compact-view .compact-section .table-responsive .table.compact-table th:nth-child(6), /* Obs. en tabla ítems */
+.compact-view .compact-section .table-responsive .table.compact-table td:nth-child(6),
+.compact-view .compact-section .table-responsive .table.compact-table th:nth-child(5) { /* Obs. en tabla entregas */
+  max-width: 200px !important;
+  min-width: 120px !important;
+}
+
+.compact-view .compact-section .table-responsive .table.compact-table tbody tr:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* Responsive para vista compacta */
+@media (max-width: 768px) {
+  .compact-view {
+    padding: 0.75rem;
+  }
+  
+  .compact-header {
+    padding: 0.75rem;
+  }
+  
+  .compact-title {
+    font-size: 1.1rem;
+  }
+  
+  .compact-section-title {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .compact-table {
+    font-size: 0.8rem;
+  }
+  
+  .compact-table th,
+  .compact-table td {
+    padding: 0.375rem;
   }
 } 

@@ -1,0 +1,296 @@
+.stock-almacen-container {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-wrapper h1 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-wrapper h1 i {
+  color: #3498db;
+  font-size: 2rem;
+}
+
+.stock-content {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+/* Resumen del almacén */
+.almacen-summary {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.summary-icon {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.summary-icon i {
+  font-size: 2.5rem;
+  color: #3498db;
+}
+
+.summary-info h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.summary-info p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Estanterías */
+.estanteria-section {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+  border: 1px solid #e9ecef;
+}
+
+.estanteria-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.estanteria-title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.estanteria-title i {
+  color: #3498db;
+}
+
+.estanteria-count {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Grid de estantes */
+.estantes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+/* Card de estante */
+.estante-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.estante-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-color: #3498db;
+}
+
+.estante-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.estante-title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.estante-title i {
+  color: #e74c3c;
+}
+
+.activos-count {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Lista de activos */
+.activos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activo-item {
+  background: white;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.activo-item:hover {
+  background: #f8f9fa;
+  border-color: #3498db;
+  transform: translateX(5px);
+}
+
+.activo-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.activo-info i {
+  font-size: 1rem;
+  color: #3498db;
+}
+
+.activo-nombre {
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.activo-details {
+  margin-left: 1.5rem;
+}
+
+.activo-details small {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+/* Estado vacío */
+.empty-state {
+  background: white;
+  border-radius: 15px;
+  padding: 3rem;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.empty-state i {
+  color: #dee2e6;
+  margin-bottom: 1rem;
+}
+
+.empty-state h5 {
+  margin-bottom: 0.5rem;
+  color: #6c757d;
+}
+
+.empty-state p {
+  margin-bottom: 1.5rem;
+  color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stock-almacen-container {
+    padding: 1rem;
+  }
+
+  .header-section {
+    padding: 1rem;
+  }
+
+  .stock-content {
+    padding: 1rem;
+  }
+
+  .title-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .title-wrapper h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .summary-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .estanteria-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .estantes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .estante-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+} 

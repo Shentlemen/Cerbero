@@ -86,4 +86,15 @@ export class ActivoAlmacenService extends BaseRestService {
       })
     );
   }
+
+  createUbicacionesBatch(ubicaciones: ActivoAlmacenCreate[]): Observable<ActivoAlmacen[]> {
+    // Enviar en el formato que espera el backend: { ubicaciones: [...] }
+    const batchRequest = { ubicaciones: ubicaciones };
+    return this.http.post<ActivoAlmacen[]>(`${this.apiUrl}/batch`, batchRequest).pipe(
+      map(result => {
+        this.showSuccessMessage(`Se crearon exitosamente ${result.length} ubicaciones`);
+        return result;
+      })
+    );
+  }
 } 

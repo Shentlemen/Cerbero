@@ -63,6 +63,15 @@
           {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
         </button>
         <button 
+          class="btn btn-update-devices" 
+          (click)="actualizarDispositivos()" 
+          [disabled]="isUpdatingDevices"
+          title="Actualizar dispositivos de red desde OCS"
+          *ngIf="canUpdateDevices()">
+          <i class="fas fa-network-wired" [class.spinning]="isUpdatingDevices"></i>
+          {{ isUpdatingDevices ? 'Actualizando...' : 'Actualizar Dispositivos' }}
+        </button>
+        <button 
           class="btn btn-cleanup-alerts" 
           (click)="cleanupOrphanedAlerts()" 
           [disabled]="isCleaning"

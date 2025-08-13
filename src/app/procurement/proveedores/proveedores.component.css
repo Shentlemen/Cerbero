@@ -155,6 +155,150 @@
   margin-top: 0.25rem;
 }
 
+/* Estilos para el mensaje de error del formulario */
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.alert-danger i {
+  color: #dc3545;
+}
+
+/* Estilos para el mensaje informativo */
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.alert-info i {
+  color: #17a2b8;
+}
+
+/* Estilos para las cards de contactos */
+.contactos-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.contacto-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.contacto-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.contacto-card-header {
+  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.contacto-card-header h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+}
+
+.contacto-card-header i {
+  color: #3498db;
+}
+
+.contacto-card-body {
+  padding: 1.5rem;
+}
+
+.contacto-card .form-label {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.contacto-card .form-label i {
+  color: #3498db;
+  width: 16px;
+}
+
+.contacto-card .form-control {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.contacto-card .form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.contacto-card .form-control.ng-invalid.ng-touched {
+  border-color: #e74c3c;
+}
+
+.contacto-card .invalid-feedback {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.contacto-card .btn-outline-danger {
+  border-color: #e74c3c;
+  color: #e74c3c;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.contacto-card .btn-outline-danger:hover {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.no-contactos-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  color: #6c757d;
+}
+
+.no-contactos-message i {
+  color: #adb5bd;
+}
+
+.no-contactos-message p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.no-contactos-message .small {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
 .modal-footer {
   padding: 1.5rem;
   border-top: 1px solid #edf2f7;
@@ -277,5 +421,185 @@
   
   .filter-btn {
     justify-content: center;
+  }
+}
+
+/* Estilos responsivos para las cards de contactos */
+@media (max-width: 768px) {
+  .contacto-card-body {
+    padding: 1rem;
+  }
+  
+  .contacto-card-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .contacto-card .form-control {
+    font-size: 1rem; /* Evitar zoom en iOS */
+  }
+}
+
+@media (max-width: 576px) {
+  .contacto-card-body .row {
+    margin: 0;
+  }
+  
+  .contacto-card-body .col-md-6,
+  .contacto-card-body .col-12 {
+    padding: 0 0.5rem;
+  }
+  
+  .contacto-card-body .mb-3 {
+    margin-bottom: 1rem !important;
+  }
+} 
+
+/* Estilos para las cards de contactos en el modal de vista */
+.contactos-vista-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.contacto-vista-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.contacto-vista-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.contacto-vista-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.contacto-avatar {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.contacto-info-principal {
+  flex: 1;
+}
+
+.contacto-nombre {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+}
+
+.contacto-cargo {
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(52, 152, 219, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  display: inline-block;
+}
+
+.contacto-vista-body {
+  padding: 1.5rem;
+}
+
+.contacto-detalle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.contacto-detalle:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.contacto-detalle:last-child {
+  margin-bottom: 0;
+}
+
+.contacto-detalle i {
+  width: 20px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.contacto-detalle span {
+  color: #2c3e50;
+  font-weight: 500;
+  flex: 1;
+}
+
+/* Responsive para las cards de contactos */
+@media (max-width: 768px) {
+  .contactos-vista-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .contacto-vista-header {
+    padding: 1rem;
+  }
+  
+  .contacto-vista-body {
+    padding: 1rem;
+  }
+  
+  .contacto-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .contacto-nombre {
+    font-size: 1rem;
+  }
+  
+  .contacto-cargo {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .contacto-vista-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .contacto-detalle {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .contacto-detalle i {
+    width: auto;
   }
 } 

@@ -7,16 +7,6 @@
       <div class="title-row">
         <h1><i class="fas fa-network-wired"></i> Dispositivos de Red</h1>
         
-        <!-- Botón de actualizar dispositivos -->
-        <button 
-          *ngIf="canUpdateDevices()"
-          class="filter-btn sync-filter-btn" 
-          (click)="actualizarDispositivos()"
-          [disabled]="isUpdatingDevices">
-          <i class="fas fa-sync-alt" [class.fa-spin]="isUpdatingDevices" style="color: #007bff;"></i>
-          <span>{{ isUpdatingDevices ? 'Actualizando...' : 'Actualizar Dispositivos' }}</span>
-        </button>
-        
         <!-- Mensaje informativo para usuarios sin permisos -->
         <div *ngIf="!canUpdateDevices()" class="permission-info">
           <i class="fas fa-info-circle" style="color: #6c757d;"></i>

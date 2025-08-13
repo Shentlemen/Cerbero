@@ -640,7 +640,41 @@
   opacity: 0.8;
 }
 
+/* Estilos para el botón de actualizar dispositivos */
+.btn-update-devices {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 15px rgba(52,152,219,0.3),
+    inset 0 -2px 0 rgba(0,0,0,0.1);
+}
+
+.btn-update-devices:hover:not(:disabled) {
+  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(52,152,219,0.4),
+    inset 0 -2px 0 rgba(0,0,0,0.1);
+}
+
+.btn-update-devices:disabled {
+  background: #95a5a6;
+  opacity: 0.8;
+}
+
 .btn-check-changes i {
+  margin-right: 8px;
+}
+
+.btn-update-devices i {
   margin-right: 8px;
 }
 

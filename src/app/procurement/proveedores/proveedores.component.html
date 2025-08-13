@@ -124,6 +124,12 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
+    <!-- Mensaje de error del formulario -->
+    <div *ngIf="formError" class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{ formError }}
+    </div>
+    
     <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
       <li [ngbNavItem]="1">
         <a ngbNavLink>Datos del proveedor</a>
@@ -158,12 +164,9 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label">Teléfono de Contacto</label>
-                <input type="tel" class="form-control" formControlName="telefonoContacto" maxlength="9">
+                <input type="tel" class="form-control" formControlName="telefonoContacto">
                 <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['required'] && proveedorForm.get('telefonoContacto')?.touched">
                   El teléfono es requerido.
-                </div>
-                <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['pattern'] && proveedorForm.get('telefonoContacto')?.touched">
-                  El teléfono debe tener 9 dígitos numéricos.
                 </div>
               </div>
             </div>
@@ -175,41 +178,88 @@
         <ng-template ngbNavContent>
           <div *ngIf="contactosCargados">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="mb-0">Contactos del proveedor</h6>
+              <h6 class="mb-0">Contactos del proveedor <span class="text-danger">*</span></h6>
               <button class="btn btn-success btn-sm" (click)="agregarContacto()">
                 <i class="fas fa-plus"></i> Agregar contacto
               </button>
             </div>
-            <div class="table-responsive">
-              <table class="table table-bordered table-sm">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Teléfono</th>
-                    <th>Email</th>
-                    <th>Cargo</th>
-                    <th>Observaciones</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let contacto of contactosControls; let i = index" [formGroup]="contacto">
-                    <td><input type="text" class="form-control" formControlName="nombre" required></td>
-                    <td><input type="text" class="form-control" formControlName="telefono" required></td>
-                    <td><input type="email" class="form-control" formControlName="email" required></td>
-                    <td><input type="text" class="form-control" formControlName="cargo" required></td>
-                    <td><input type="text" class="form-control" formControlName="observaciones"></td>
-                    <td>
-                      <button class="btn btn-danger btn-sm" (click)="eliminarContacto(i)">
-                        <i class="fas fa-trash-alt"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="contactosControls.length === 0">
-                    <td colspan="6" class="text-center text-muted">No hay contactos agregados.</td>
-                  </tr>
-                </tbody>
-              </table>
+
+            <div class="contactos-cards-container">
+              <div *ngFor="let contacto of contactosControls; let i = index" [formGroup]="contacto" class="contacto-card">
+                <div class="contacto-card-header">
+                  <h6 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    Contacto {{ i + 1 }}
+                  </h6>
+                  <button class="btn btn-outline-danger btn-sm" (click)="eliminarContacto(i)" title="Eliminar contacto">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+                
+                <div class="contacto-card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">
+                        <i class="fas fa-user me-1"></i>Nombre <span class="text-danger">*</span>
+                      </label>
+                      <input type="text" class="form-control" formControlName="nombre" placeholder="Nombre del contacto" required>
+                      <div class="invalid-feedback" *ngIf="contacto.get('nombre')?.errors?.['required'] && contacto.get('nombre')?.touched">
+                        El nombre es requerido.
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">
+                        <i class="fas fa-phone me-1"></i>Teléfono <span class="text-danger">*</span>
+                      </label>
+                      <input type="text" class="form-control" formControlName="telefono" placeholder="Teléfono del contacto" required>
+                      <div class="invalid-feedback" *ngIf="contacto.get('telefono')?.errors?.['required'] && contacto.get('telefono')?.touched">
+                        El teléfono es requerido.
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">
+                        <i class="fas fa-envelope me-1"></i>Email <span class="text-danger">*</span>
+                      </label>
+                      <input type="email" class="form-control" formControlName="email" placeholder="Email del contacto" required>
+                      <div class="invalid-feedback" *ngIf="contacto.get('email')?.errors?.['required'] && contacto.get('email')?.touched">
+                        El email es requerido.
+                      </div>
+                      <div class="invalid-feedback" *ngIf="contacto.get('email')?.errors?.['email'] && contacto.get('email')?.touched">
+                        Ingrese un email válido.
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">
+                        <i class="fas fa-briefcase me-1"></i>Cargo <span class="text-danger">*</span>
+                      </label>
+                      <input type="text" class="form-control" formControlName="cargo" placeholder="Cargo del contacto" required>
+                      <div class="invalid-feedback" *ngIf="contacto.get('cargo')?.errors?.['required'] && contacto.get('cargo')?.touched">
+                        El cargo es requerido.
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-12 mb-3">
+                      <label class="form-label">
+                        <i class="fas fa-comment me-1"></i>Observaciones
+                      </label>
+                      <textarea class="form-control" formControlName="observaciones" placeholder="Observaciones adicionales (opcional)" rows="2"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="contactosControls.length === 0" class="no-contactos-message">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-2">No hay contactos agregados.</p>
+                <p class="text-muted small">Haga clic en "Agregar contacto" para comenzar.</p>
+              </div>
             </div>
           </div>
           <div *ngIf="!contactosCargados" class="text-center p-3">
@@ -222,12 +272,12 @@
     </ul>
     <div [ngbNavOutlet]="nav"></div>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-success btn-sm" (click)="guardarProveedor()" [disabled]="!proveedorForm.valid">
-      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
-    </button>
-  </div>
+      <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button type="button" class="btn btn-success btn-sm" (click)="guardarProveedor()">
+        {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+      </button>
+    </div>
 </ng-template>
 
 <!-- Modal para ver contactos del proveedor -->
@@ -238,32 +288,41 @@
   </div>
   <div class="modal-body">
     <div *ngIf="contactosVista.length > 0; else sinContactos">
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Teléfono</th>
-              <th>Email</th>
-              <th>Cargo</th>
-              <th>Observaciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let contacto of contactosVista">
-              <td>{{contacto.nombre}}</td>
-              <td>{{contacto.telefono}}</td>
-              <td>{{contacto.email}}</td>
-              <td>{{contacto.cargo}}</td>
-              <td>{{contacto.observaciones}}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="contactos-vista-container">
+        <div *ngFor="let contacto of contactosVista" class="contacto-vista-card">
+          <div class="contacto-vista-header">
+            <div class="contacto-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="contacto-info-principal">
+              <h6 class="contacto-nombre">{{contacto.nombre}}</h6>
+              <span class="contacto-cargo">{{contacto.cargo}}</span>
+            </div>
+          </div>
+          
+          <div class="contacto-vista-body">
+            <div class="contacto-detalle">
+              <i class="fas fa-phone text-primary"></i>
+              <span>{{contacto.telefono}}</span>
+            </div>
+            
+            <div class="contacto-detalle">
+              <i class="fas fa-envelope text-primary"></i>
+              <span>{{contacto.email}}</span>
+            </div>
+            
+            <div *ngIf="contacto.observaciones" class="contacto-detalle">
+              <i class="fas fa-comment text-primary"></i>
+              <span>{{contacto.observaciones}}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <ng-template #sinContactos>
       <div class="alert alert-info text-center mb-0">
-        No hay contactos registrados para este proveedor.
+        <i class="fas fa-users fa-2x text-muted mb-3 d-block"></i>
+        <p class="mb-0">No hay contactos registrados para este proveedor.</p>
       </div>
     </ng-template>
   </div>

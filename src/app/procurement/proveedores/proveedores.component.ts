@@ -38,6 +38,7 @@ export class ProveedoresComponent implements OnInit {
   activeTab: number = 0;
   contactosVista: ContactoDTO[] = [];
   proveedorVistaNombre: string = '';
+  formError: string | null = null;
 
   readonly fb: FormBuilder;
 
@@ -57,7 +58,7 @@ export class ProveedoresComponent implements OnInit {
     this.proveedorForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       correoContacto: ['', [Validators.required, Validators.email]],
-      telefonoContacto: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
+      telefonoContacto: ['', [Validators.required]],
       nombreComercial: ['', [Validators.required, Validators.minLength(3)]]
     });
     this.contactosFormArray = this.fb.array([]);
@@ -122,6 +123,7 @@ export class ProveedoresComponent implements OnInit {
 
   abrirModal(modal: any, proveedor?: ProveedorDTO): void {
     this.activeTab = 1;
+    this.formError = null; // Limpiar errores del formulario
     if (proveedor) {
       this.modoEdicion = true;
       this.proveedorSeleccionado = proveedor;
@@ -134,6 +136,7 @@ export class ProveedoresComponent implements OnInit {
       this.contactosFormArray.clear();
       this.contactosEliminados = [];
       this.contactosCargados = true;
+      // No agregar contacto automáticamente, el usuario debe hacerlo manualmente
     }
     this.modalService.open(modal, { size: 'lg' });
   }
@@ -167,6 +170,38 @@ export class ProveedoresComponent implements OnInit {
     return (this.contactosFormArray.controls as FormGroup[] || []);
   }
 
+  obtenerErroresFormulario(): string[] {
+    const errores: string[] = [];
+    const controls = this.proveedorForm.controls;
+
+    if (controls['nombre']?.errors?.['required']) {
+      errores.push('El nombre es requerido');
+    }
+    if (controls['nombre']?.errors?.['minlength']) {
+      errores.push('El nombre debe tener al menos 3 caracteres');
+    }
+
+    if (controls['nombreComercial']?.errors?.['required']) {
+      errores.push('El nombre comercial es requerido');
+    }
+    if (controls['nombreComercial']?.errors?.['minlength']) {
+      errores.push('El nombre comercial debe tener al menos 3 caracteres');
+    }
+
+    if (controls['correoContacto']?.errors?.['required']) {
+      errores.push('El correo de contacto es requerido');
+    }
+    if (controls['correoContacto']?.errors?.['email']) {
+      errores.push('El correo de contacto debe tener un formato válido');
+    }
+
+    if (controls['telefonoContacto']?.errors?.['required']) {
+      errores.push('El teléfono de contacto es requerido');
+    }
+
+    return errores;
+  }
+
   agregarContacto() {
     this.contactosFormArray.push(this.fb.group({
       idContacto: [null],
@@ -188,77 +223,99 @@ export class ProveedoresComponent implements OnInit {
   }
 
   guardarProveedor(): void {
-    if (this.proveedorForm.valid) {
-      const proveedorData = this.proveedorForm.value;
-      console.log('Datos del formulario:', proveedorData);
-      // Validar que el teléfono tenga 9 dígitos
-      if (proveedorData.telefonoContacto && proveedorData.telefonoContacto.length !== 9) {
-        this.error = 'El teléfono debe tener 9 dígitos';
-        return;
+    // Limpiar errores previos
+    this.formError = null;
+    
+    // Marcar todos los campos como touched para mostrar los errores de validación
+    Object.keys(this.proveedorForm.controls).forEach(key => {
+      const control = this.proveedorForm.get(key);
+      control?.markAsTouched();
+    });
+
+    if (!this.proveedorForm.valid) {
+      // Obtener errores específicos del formulario
+      const errores = this.obtenerErroresFormulario();
+      this.formError = errores.join('. ');
+      return; // No cerrar el modal, solo mostrar errores
+    }
+
+    // Validar que haya al menos un contacto
+    if (this.contactosFormArray.length === 0) {
+      this.formError = 'Debe agregar al menos un contacto para el proveedor';
+      return;
+    }
+
+    // Validar que todos los contactos tengan datos válidos
+    const contactosConDatos = this.contactosFormArray.controls.filter(control => {
+      const contacto = control.value;
+      return contacto.nombre && contacto.telefono && contacto.email && contacto.cargo;
+    });
+
+    if (contactosConDatos.length === 0) {
+      this.formError = 'Debe completar al menos un contacto con todos los campos requeridos (nombre, teléfono, email y cargo)';
+      return;
+    }
+
+    // Validar que todos los contactos con datos sean válidos
+    const contactosInvalidos = this.contactosFormArray.controls.some(control => {
+      const contacto = control.value;
+      // Solo validar contactos que tengan al menos un campo lleno
+      if (contacto.nombre || contacto.telefono || contacto.email || contacto.cargo) {
+        return !control.valid;
       }
-      // Validar formato de correo electrónico
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(proveedorData.correoContacto)) {
-        this.error = 'El correo electrónico no tiene un formato válido';
+      return false; // No validar contactos completamente vacíos
+    });
+
+    if (contactosInvalidos) {
+      this.formError = 'Los contactos con datos deben tener todos los campos requeridos completos';
+      return;
+    }
+
+    const proveedorData = this.proveedorForm.value;
+    
+    // Validar formato de correo electrónico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(proveedorData.correoContacto)) {
+      this.formError = 'El correo electrónico no tiene un formato válido';
+      return;
+    }
+
+    if (this.modoEdicion && this.proveedorSeleccionado) {
+      if (!this.proveedorSeleccionado.idProveedores || isNaN(this.proveedorSeleccionado.idProveedores)) {
+        this.formError = 'ID de proveedor no válido';
         return;
       }
 
-      if (this.modoEdicion && this.proveedorSeleccionado) {
-        if (!this.proveedorSeleccionado.idProveedores || isNaN(this.proveedorSeleccionado.idProveedores)) {
-          this.error = 'ID de proveedor no válido';
-          return;
-        }
-
-        const proveedorActualizado: ProveedorDTO = {
-          ...proveedorData,
-          idProveedores: this.proveedorSeleccionado.idProveedores
-        };
-        
-        console.log('Actualizando proveedor:', proveedorActualizado);
-        this.proveedoresService.actualizarProveedor(this.proveedorSeleccionado.idProveedores, proveedorActualizado).subscribe({
-          next: (proveedorActualizado) => {
-            // Sincronizar contactos
-            this.sincronizarContactos(proveedorActualizado.idProveedores);
-            this.loadProveedores();
-            this.modalService.dismissAll();
-            this.error = null;
-          },
-          error: (error) => {
-            console.error('Error al actualizar el proveedor:', error);
-            this.error = error.message || 'Error al actualizar el proveedor';
-          },
-          complete: () => {
-            this.proveedorForm.reset();
-          }
-        });
-      } else {
-        console.log('Creando nuevo proveedor:', proveedorData);
-        this.proveedoresService.crearProveedor(proveedorData).subscribe({
-          next: (proveedorCreado) => {
-            // Guardar contactos nuevos
-            this.guardarContactosNuevos(proveedorCreado.idProveedores);
-            this.loadProveedores();
-            this.modalService.dismissAll();
-            this.error = null;
-          },
-          error: (error) => {
-            console.error('Error al crear el proveedor:', error);
-            this.error = error.message || 'Error al crear el proveedor';
-          },
-          complete: () => {
-            this.proveedorForm.reset();
-          }
-        });
-      }
-    } else {
-      // Marcar todos los campos como touched para mostrar los errores
-      Object.keys(this.proveedorForm.controls).forEach(key => {
-        const control = this.proveedorForm.get(key);
-        control?.markAsTouched();
-      });
+      const proveedorActualizado: ProveedorDTO = {
+        ...proveedorData,
+        idProveedores: this.proveedorSeleccionado.idProveedores
+      };
       
-      // Mostrar mensaje de error general
-      this.error = 'Por favor, complete todos los campos requeridos correctamente';
+      this.proveedoresService.actualizarProveedor(this.proveedorSeleccionado.idProveedores, proveedorActualizado).subscribe({
+        next: (proveedorActualizado) => {
+          // Sincronizar contactos
+          this.sincronizarContactos(proveedorActualizado.idProveedores);
+          this.loadProveedores();
+          this.modalService.dismissAll();
+          this.formError = null;
+        },
+        error: (error) => {
+          this.formError = error.message || 'Error al actualizar el proveedor';
+        }
+      });
+    } else {
+      this.proveedoresService.crearProveedor(proveedorData).subscribe({
+        next: (proveedorCreado) => {
+          // Guardar contactos nuevos
+          this.guardarContactosNuevos(proveedorCreado.idProveedores);
+          this.loadProveedores();
+          this.modalService.dismissAll();
+          this.formError = null;
+        },
+        error: (error) => {
+          this.formError = error.message || 'Error al crear el proveedor';
+        }
+      });
     }
   }
 

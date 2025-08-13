@@ -83,31 +83,48 @@
   border-collapse: separate;
   border-spacing: 0;
   background-color: white;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .software-table th,
 .software-table td {
-  padding: 0.75rem 0.5rem;
+  padding: 0.5rem 0.25rem;
   vertical-align: middle;
-  white-space: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Anchos fijos para las columnas principales */
 .software-table th:nth-child(1),
-.software-table td:nth-child(1) {
-  width: 28%;
-  min-width: 40px;
-  max-width: 1px;
+.software-table td:nth-child(1) { 
+  width: 28%; 
+  min-width: 200px;
 }
 
 .software-table th:nth-child(2),
-.software-table td:nth-child(2) { width: 22%; min-width: 100px; }
+.software-table td:nth-child(2) { 
+  width: 22%; 
+  min-width: 150px; 
+}
+
 .software-table th:nth-child(3),
-.software-table td:nth-child(3) { width: 18%; min-width: 80px; }
+.software-table td:nth-child(3) { 
+  width: 18%; 
+  min-width: 120px; 
+}
+
 .software-table th:nth-child(4),
-.software-table td:nth-child(4) { width: 16%; min-width: 70px; }
+.software-table td:nth-child(4) { 
+  width: 16%; 
+  min-width: 100px; 
+}
+
 .software-table th:nth-child(5),
-.software-table td:nth-child(5) { width: 16%; min-width: 90px; }
+.software-table td:nth-child(5) { 
+  width: 16%; 
+  min-width: 100px; 
+}
 
 .th-content {
   display: flex;
@@ -127,7 +144,7 @@
 }
 
 .software-row td {
-  padding: 1rem;
+  padding: 0.5rem;
   border-bottom: 1px solid #edf2f7;
   color: #2c3e50;
 }
@@ -140,7 +157,7 @@
 
 .software-name i {
   flex-shrink: 0;
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #3498db;
 }
 
@@ -151,21 +168,21 @@
 
 .version-badge {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
   background-color: #e8f5e9;
   color: #2e7d32;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .count-badge {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
   background-color: #e3f2fd;
   color: #1976d2;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -295,11 +312,11 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  min-width: 32px;
-  height: 32px;
+  min-width: 28px;
+  height: 28px;
 }
 
 .visibility-button:hover {
@@ -312,11 +329,11 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  min-width: 32px;
-  height: 32px;
+  min-width: 28px;
+  height: 28px;
   margin-left: 0.5rem;
 }
 
@@ -340,11 +357,11 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  min-width: 32px;
-  height: 32px;
+  min-width: 28px;
+  height: 28px;
   margin-left: 0.5rem;
 }
 
@@ -368,11 +385,11 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  min-width: 32px;
-  height: 32px;
+  min-width: 28px;
+  height: 28px;
   margin-left: 0.5rem;
 }
 
@@ -396,11 +413,11 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  min-width: 32px;
-  height: 32px;
+  min-width: 28px;
+  height: 28px;
   margin-left: 0.5rem;
 }
 
@@ -498,16 +515,56 @@
     font-size: 0.95rem;
     padding: 0.5rem 0.2rem;
   }
+  
+  /* Anchos fijos para pantallas medianas */
   .software-table th:nth-child(1),
-  .software-table td:nth-child(1) { width: 32%; }
+  .software-table td:nth-child(1) { 
+    width: 35% !important; 
+    min-width: 180px !important;
+  }
+  
   .software-table th:nth-child(2),
-  .software-table td:nth-child(2) { width: 22%; }
+  .software-table td:nth-child(2) { 
+    width: 25% !important; 
+    min-width: 120px !important;
+  }
+  
   .software-table th:nth-child(3),
-  .software-table td:nth-child(3) { width: 16%; }
+  .software-table td:nth-child(3) { 
+    width: 20% !important; 
+    min-width: 100px !important;
+  }
+  
   .software-table th:nth-child(4),
-  .software-table td:nth-child(4) { width: 15%; }
-  .software-table th:nth-child(5),
-  .software-table td:nth-child(5) { width: 15%; }
+  .software-table td:nth-child(4) { 
+    width: 20% !important; 
+    min-width: 80px !important;
+  }
+  
+  /* Ajustes para modo selección múltiple en pantallas medianas */
+  .software-table.multi-select th:nth-child(2),
+  .software-table.multi-select td:nth-child(2) { 
+    width: 35% !important; 
+    min-width: 180px !important;
+  }
+  
+  .software-table.multi-select th:nth-child(3),
+  .software-table.multi-select td:nth-child(3) { 
+    width: 25% !important; 
+    min-width: 120px !important;
+  }
+  
+  .software-table.multi-select th:nth-child(4),
+  .software-table.multi-select td:nth-child(4) { 
+    width: 20% !important; 
+    min-width: 100px !important;
+  }
+  
+  .software-table.multi-select th:nth-child(5),
+  .software-table.multi-select td:nth-child(5) { 
+    width: 20% !important; 
+    min-width: 80px !important;
+  }
 }
 
 @media (max-width: 600px) {
@@ -515,13 +572,52 @@
   .software-table td {
     font-size: 0.85rem;
     padding: 0.3rem 0.1rem;
-    min-width: 60px;
+  }
+  
+  /* Anchos fijos para pantallas pequeñas */
+  .software-table th:nth-child(1),
+  .software-table td:nth-child(1) { 
+    width: 40% !important; 
+    min-width: 150px !important;
+  }
+  
+  .software-table th:nth-child(2),
+  .software-table td:nth-child(2) { 
+    width: 30% !important; 
+    min-width: 100px !important;
+  }
+  
+  .software-table th:nth-child(3),
+  .software-table td:nth-child(3) { 
+    width: 30% !important; 
+    min-width: 80px !important;
+  }
+  
+  .checkbox-header,
+  .checkbox-cell {
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+  
+  .checkbox-cell input[type="checkbox"],
+  .checkbox-header input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
   }
 }
 
-.search-box {
+/* Contenedor para buscador y selección múltiple */
+.search-and-multi-select {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
   margin-top: 1rem;
-  width: 100%;
+}
+
+.search-box {
+  flex: 1;
   max-width: 400px;
 }
 
@@ -558,4 +654,303 @@
 
 .search-box .form-control::placeholder {
   color: #94a3b8;
+}
+
+/* Estilos para selección múltiple */
+.multi-select-controls {
+  display: flex;
+  align-items: center;
+}
+
+.multi-select-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 25px;
+  color: #495057;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.multi-select-toggle:hover {
+  background: #dee2e6;
+  border-color: #adb5bd;
+}
+
+.multi-select-toggle.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+.multi-select-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.batch-actions {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.selected-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #3498db;
+  font-size: 1rem;
+}
+
+.selected-count i {
+  color: #3498db;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.batch-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  color: #495057;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.batch-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn.visibility {
+  background: #6c757d;
+}
+
+.action-btn.visibility:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.action-btn.forbidden {
+  background: #dc3545;
+}
+
+.action-btn.forbidden:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.action-btn.driver {
+  background: #6f42c1;
+}
+
+.action-btn.driver:hover:not(:disabled) {
+  background: #5a32a3;
+  transform: translateY(-1px);
+}
+
+.action-btn.licenciado {
+  background: #28a745;
+}
+
+.action-btn.licenciado:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.action-btn.delete {
+  background: #dc3545;
+}
+
+.action-btn.delete:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Estados especiales para botones toggle */
+.action-btn.visibility.toggle-active {
+  background: #28a745;
+}
+
+.action-btn.forbidden.toggle-active {
+  background: #ffc107;
+  color: #212529;
+}
+
+.action-btn.driver.toggle-active {
+  background: #fd7e14;
+}
+
+.action-btn.licenciado.toggle-active {
+  background: #17a2b8;
+}
+
+/* Estilos para checkboxes - NO afectan el tamaño de otras celdas */
+.checkbox-header {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+}
+
+.checkbox-cell {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.5rem 0.25rem;
+}
+
+.checkbox-cell input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-header input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* Estilo para checkbox con selección parcial */
+.checkbox-header input[type="checkbox"].partial-selection {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  position: relative;
+}
+
+.checkbox-header input[type="checkbox"].partial-selection::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 2px;
+  background-color: white;
+  border-radius: 1px;
+}
+
+/* Cuando está en modo selección múltiple, ajustar solo la primera columna de datos */
+.software-table.multi-select th:nth-child(2),
+.software-table.multi-select td:nth-child(2) { 
+  width: 28% !important; 
+  min-width: 200px !important;
+}
+
+.software-table.multi-select th:nth-child(3),
+.software-table.multi-select td:nth-child(3) { 
+  width: 22% !important; 
+  min-width: 150px !important;
+}
+
+.software-table.multi-select th:nth-child(4),
+.software-table.multi-select td:nth-child(4) { 
+  width: 18% !important; 
+  min-width: 120px !important;
+}
+
+.software-table.multi-select th:nth-child(5),
+.software-table.multi-select td:nth-child(5) { 
+  width: 16% !important; 
+  min-width: 100px !important;
+}
+
+.software-table.multi-select th:nth-child(6),
+.software-table.multi-select td:nth-child(6) { 
+  width: 16% !important; 
+  min-width: 100px !important;
+}
+
+/* Ajustes responsive para selección múltiple */
+@media (max-width: 768px) {
+  .multi-select-controls {
+    padding: 0.75rem;
+  }
+  
+  .batch-actions {
+    padding: 0.75rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    justify-content: center;
+  }
+  
+  .batch-buttons {
+    justify-content: center;
+  }
+}
+
+.no-selection-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  color: #1976d2;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.no-selection-message i {
+  color: #1976d2;
+  font-size: 1rem;
 }

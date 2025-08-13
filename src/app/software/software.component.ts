@@ -35,8 +35,18 @@ export class SoftwareComponent implements OnInit {
   private searchSubject = new Subject<string>();
   activeTab: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado' = 'total';
   page: number = 1;
-  pageSize: number = 10;
+  pageSize: number = 20;
   collectionSize: number = 0;
+
+  // Propiedades para selección múltiple
+  multiSelectMode: boolean = false;
+  selectedSoftware: Set<number> = new Set();
+  isUpdatingMultiple: boolean = false;
+
+  // Propiedades para diálogos de confirmación
+  showConfirmDialog: boolean = false;
+  showConfirmDialogMultiple: boolean = false;
+  softwareToDelete: SoftwareDTO | null = null;
 
   constructor(
     private softwareService: SoftwareService,
@@ -62,6 +72,18 @@ export class SoftwareComponent implements OnInit {
     const start = (this.page - 1) * this.pageSize;
     const end = this.page * this.pageSize;
     return this.filteredSoftwareList.slice(start, end);
+  }
+
+  // Getter para la página que cierra la selección múltiple al cambiar
+  get currentPage(): number {
+    return this.page;
+  }
+
+  set currentPage(value: number) {
+    if (this.page !== value) {
+      this.page = value;
+      this.closeMultiSelectMode();
+    }
   }
 
   get totalSoftware(): number {
@@ -148,36 +170,42 @@ export class SoftwareComponent implements OnInit {
   filterSoftware(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.page = 1; // Resetear página cuando se busca
+    this.closeMultiSelectMode(); // Cerrar selección múltiple al buscar
     this.searchSubject.next(input.value);
   }
 
   showTotalSoftware(): void {
     this.activeTab = 'total';
     this.page = 1;
+    this.closeMultiSelectMode();
     this.loadSoftwareByFilter('total');
   }
 
   showOnlyHiddenSoftware(): void {
     this.activeTab = 'hidden';
     this.page = 1;
+    this.closeMultiSelectMode();
     this.loadSoftwareByFilter('hidden');
   }
 
   showOnlyForbiddenSoftware(): void {
     this.activeTab = 'forbidden';
     this.page = 1;
+    this.closeMultiSelectMode();
     this.loadSoftwareByFilter('forbidden');
   }
 
   showOnlyDriverSoftware(): void {
     this.activeTab = 'driver';
     this.page = 1;
+    this.closeMultiSelectMode();
     this.loadSoftwareByFilter('driver');
   }
 
   showOnlyLicenciadoSoftware(): void {
     this.activeTab = 'licenciado';
     this.page = 1;
+    this.closeMultiSelectMode();
     this.loadSoftwareByFilter('licenciado');
   }
 
@@ -271,26 +299,8 @@ export class SoftwareComponent implements OnInit {
 
   deleteSoftware(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
-
-    if (confirm(`¿Está seguro de que desea eliminar el software "${software.nombre}"? Esta acción no se puede deshacer.`)) {
-      this.softwareService.deleteSoftware(software).subscribe({
-        next: () => {
-          // Mostrar notificación de éxito
-          this.notificationService.showSuccessMessage(
-            `Software "${software.nombre}" eliminado exitosamente`
-          );
-          
-          // Recargar los datos del filtro actual
-          this.loadSoftwareByFilter(this.activeTab);
-        },
-        error: (error) => {
-          this.notificationService.showError(
-            'Error al Eliminar Software',
-            'No se pudo eliminar el software: ' + error.message
-          );
-        }
-      });
-    }
+    this.softwareToDelete = software;
+    this.showConfirmDialog = true;
   }
 
   navigateToAssets(software: SoftwareDTO): void {
@@ -304,5 +314,225 @@ export class SoftwareComponent implements OnInit {
 
   canManageSoftware(): boolean {
     return this.permissionsService.canManageSoftware();
+  }
+
+  // Métodos para selección múltiple
+  toggleMultiSelectMode(): void {
+    this.multiSelectMode = !this.multiSelectMode;
+    if (!this.multiSelectMode) {
+      this.selectedSoftware.clear();
+    }
+  }
+
+  closeMultiSelectMode(): void {
+    this.multiSelectMode = false;
+    this.selectedSoftware.clear();
+  }
+
+  toggleSoftwareSelection(softwareId: number): void {
+    if (this.selectedSoftware.has(softwareId)) {
+      this.selectedSoftware.delete(softwareId);
+    } else {
+      this.selectedSoftware.add(softwareId);
+    }
+  }
+
+  selectAllVisible(): void {
+    this.pagedSoftwareList.forEach(software => {
+      this.selectedSoftware.add(software.idSoftware);
+    });
+  }
+
+  toggleSelectAll(): void {
+    if (this.selectedCount === this.pagedSoftwareList.length && this.pagedSoftwareList.length > 0) {
+      this.deselectAll();
+    } else {
+      this.selectAllVisible();
+    }
+  }
+
+  deselectAll(): void {
+    this.selectedSoftware.clear();
+  }
+
+  get selectedCount(): number {
+    return this.selectedSoftware.size;
+  }
+
+  // Acciones en lote
+  async updateMultipleSoftware(action: 'visibility' | 'forbidden' | 'driver' | 'licenciado', value: boolean): Promise<void> {
+    if (this.selectedSoftware.size === 0) return;
+
+    this.isUpdatingMultiple = true;
+    const softwareIds = Array.from(this.selectedSoftware);
+    const softwareItems = this.softwareList.filter(s => softwareIds.includes(s.idSoftware));
+
+    try {
+      const promises = softwareItems.map(software => {
+        switch (action) {
+          case 'visibility':
+            return this.softwareService.toggleSoftwareVisibility(software, value).toPromise();
+          case 'forbidden':
+            return this.softwareService.toggleSoftwareForbidden(software).toPromise();
+          case 'driver':
+            return this.softwareService.toggleSoftwareDriver(software).toPromise();
+          case 'licenciado':
+            return this.softwareService.toggleSoftwareLicenciado(software).toPromise();
+          default:
+            return Promise.resolve();
+        }
+      });
+
+      await Promise.all(promises);
+
+      // Mostrar notificación de éxito con información más detallada
+      const actionText = this.getActionText(action, value);
+      const actionDescription = this.getActionDescription(action, value);
+      this.notificationService.showSuccessMessage(
+        `${softwareIds.length} software ${actionText}. ${actionDescription}`
+      );
+
+      // Limpiar selección y recargar datos
+      this.selectedSoftware.clear();
+      this.loadSoftwareByFilter(this.activeTab);
+    } catch (error: any) {
+      this.notificationService.showError(
+        'Error al Actualizar Software',
+        'No se pudieron actualizar algunos elementos: ' + (error?.message || 'Error desconocido')
+      );
+    } finally {
+      this.isUpdatingMultiple = false;
+    }
+  }
+
+  async deleteMultipleSoftware(): Promise<void> {
+    if (this.selectedSoftware.size === 0) return;
+    this.showConfirmDialogMultiple = true;
+  }
+
+  private getActionText(action: string, value: boolean): string {
+    switch (action) {
+      case 'visibility':
+        return value ? 'mostrados' : 'ocultados';
+      case 'forbidden':
+        return 'marcados como prohibidos';
+      case 'driver':
+        return 'marcados como drivers';
+      case 'licenciado':
+        return 'marcados como licenciados';
+      default:
+        return 'actualizados';
+    }
+  }
+
+  private getActionDescription(action: string, value: boolean): string {
+    switch (action) {
+      case 'visibility':
+        return value ? 'Software ocultado exitosamente' : 'Software mostrado exitosamente';
+      case 'forbidden':
+        return value ? 'Software desmarcado como prohibido exitosamente' : 'Software marcado como prohibido exitosamente';
+      case 'driver':
+        return value ? 'Software desmarcado como driver exitosamente' : 'Software marcado como driver exitosamente';
+      case 'licenciado':
+        return value ? 'Software desmarcado como licenciado exitosamente' : 'Software marcado como licenciado exitosamente';
+      default:
+        return '';
+    }
+  }
+
+  isSoftwareSelected(softwareId: number): boolean {
+    return this.selectedSoftware.has(softwareId);
+  }
+
+  // Métodos helper para determinar el estado de los botones de selección múltiple
+  hasAnyHiddenSoftware(): boolean {
+    return this.softwareList
+      .filter(s => this.selectedSoftware.has(s.idSoftware))
+      .some(s => s.hidden);
+  }
+
+  hasAnyForbiddenSoftware(): boolean {
+    return this.softwareList
+      .filter(s => this.selectedSoftware.has(s.idSoftware))
+      .some(s => s.forbidden);
+  }
+
+  hasAnyDriverSoftware(): boolean {
+    return this.softwareList
+      .filter(s => this.selectedSoftware.has(s.idSoftware))
+      .some(s => s.driver);
+  }
+
+  hasAnyLicenciadoSoftware(): boolean {
+    return this.softwareList
+      .filter(s => this.selectedSoftware.has(s.idSoftware))
+      .some(s => s.licenciado);
+  }
+
+  // Métodos para diálogos de confirmación
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.softwareToDelete = null;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.softwareToDelete) {
+      this.softwareService.deleteSoftware(this.softwareToDelete).subscribe({
+        next: () => {
+          // Mostrar notificación de éxito
+          this.notificationService.showSuccessMessage(
+            `Software "${this.softwareToDelete!.nombre}" eliminado exitosamente`
+          );
+          
+          // Recargar los datos del filtro actual
+          this.loadSoftwareByFilter(this.activeTab);
+        },
+        error: (error) => {
+          this.notificationService.showError(
+            'Error al Eliminar Software',
+            'No se pudo eliminar el software: ' + error.message
+          );
+        }
+      });
+      
+      this.showConfirmDialog = false;
+      this.softwareToDelete = null;
+    }
+  }
+
+  cancelarEliminacionMultiple(): void {
+    this.showConfirmDialogMultiple = false;
+  }
+
+  async confirmarEliminacionMultiple(): Promise<void> {
+    if (this.selectedSoftware.size === 0) return;
+
+    const softwareIds = Array.from(this.selectedSoftware);
+    const softwareItems = this.softwareList.filter(s => softwareIds.includes(s.idSoftware));
+
+    this.isUpdatingMultiple = true;
+    this.showConfirmDialogMultiple = false;
+
+    try {
+      const promises = softwareItems.map(software => 
+        this.softwareService.deleteSoftware(software).toPromise()
+      );
+
+      await Promise.all(promises);
+
+      this.notificationService.showSuccessMessage(
+        `${softwareIds.length} software eliminados exitosamente`
+      );
+
+      this.selectedSoftware.clear();
+      this.loadSoftwareByFilter(this.activeTab);
+    } catch (error: any) {
+      this.notificationService.showError(
+        'Error al Eliminar Software',
+        'No se pudieron eliminar algunos elementos: ' + (error?.message || 'Error desconocido')
+      );
+    } finally {
+      this.isUpdatingMultiple = false;
+    }
   }
 }

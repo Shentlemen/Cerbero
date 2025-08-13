@@ -73,7 +73,7 @@
   <div class="content-section">
     <div class="row mb-3">
       <div class="col-12">
-        <input type="text" class="form-control" placeholder="Buscar por número de compra..." [formControl]="numeroCompraControl" style="max-width: 320px;">
+        <input type="text" class="form-control" placeholder="Buscar por nombre de compra..." [formControl]="numeroCompraControl" style="max-width: 320px;">
       </div>
     </div>
     <div class="table-container">
@@ -94,7 +94,7 @@
             <tr>
               <th (click)="sortData('numeroCompra')" [class.active]="sortColumn === 'numeroCompra'">
                 <div class="th-content">
-                  <span>Número de Compra</span>
+                  <span>Compra</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'numeroCompra' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'numeroCompra' && sortDirection === 'desc',
@@ -154,7 +154,7 @@
             <tr *ngFor="let activo of pagedActivos" class="activo-row">
               <td>
                 <span class="compra-link" (click)="verDetallesCompra(activo.idNumeroCompra, compraModal)">
-                  {{getNumeroCompraString(activo.idNumeroCompra)}}
+                  {{getNombreCompraFormateado(activo.idNumeroCompra)}}
                 </span>
               </td>
               <td>
@@ -184,10 +184,10 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-primary btn-sm me-2" (click)="verDetalles(activo)">
+                  <button class="btn btn-info btn-sm me-2" (click)="verDetalles(activo)">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(activoModal, activo)" *ngIf="permissionsService.canEditAssets()">
+                  <button class="btn btn-warning btn-sm me-2" (click)="abrirModal(activoModal, activo)" *ngIf="permissionsService.canEditAssets()">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn btn-danger btn-sm" (click)="eliminarActivo(activo)" *ngIf="permissionsService.canEditAssets()">
@@ -744,61 +744,180 @@
 
 <!-- Modal para detalles de compra -->
 <ng-template #compraModal let-modal>
-  <div class="modal-header">
+  <div class="modal-header details-header">
     <h4 class="modal-title">
-      <i class="fas fa-shopping-cart me-2"></i>
-      Detalles de la Compra
+      <i class="fas fa-shopping-cart me-2"></i>Detalles de la Compra
     </h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
-  <div class="modal-body">
-    <div class="ubicacion-details" *ngIf="compraSeleccionada">
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-id-card"></i>
-          ID Compra
+  
+  <div class="modal-body details-body">
+    <!-- Información principal de la compra -->
+    <div class="compra-main-info mb-4">
+      <div class="row">
+        <div class="col-md-8">
+          <h3 class="compra-title mb-3">
+            {{ compraSeleccionada ? getNombreCompraFormateado(compraSeleccionada.idCompra) : 'Cargando...' }}
+          </h3>
+          <p class="compra-description text-muted mb-0">
+            {{ compraSeleccionada?.descripcion }}
+          </p>
         </div>
-        <div class="detail-value">{{compraSeleccionada.idCompra}}</div>
+        <div class="col-md-4 text-end">
+          <div class="compra-status">
+            <span class="moneda-badge" [ngClass]="compraSeleccionada?.moneda?.toLowerCase()">
+              {{ compraSeleccionada?.moneda }}
+            </span>
+            <div class="compra-amount mt-2">
+              <span class="amount-label">Monto Total:</span>
+              <span class="amount-value">{{ formatearMoneda(compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-tag"></i>
-          Tipo de Compra
+    </div>
+
+    <!-- Detalles de la compra -->
+    <div class="details-section mb-4">
+      <h5 class="section-title">
+        <i class="fas fa-info-circle me-2"></i>Información de la Compra
+      </h5>
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-shopping-cart me-2"></i>Tipo de Compra:
+          </span>
+          <span class="detail-value">{{ getTipoCompraDescripcion(compraSeleccionada?.idTipoCompra || 0) }}</span>
         </div>
-        <div class="detail-value">{{compraSeleccionada.idTipoCompra}}</div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-hashtag me-2"></i>Número:
+          </span>
+          <span class="detail-value">{{ compraSeleccionada?.numeroCompra || 'No disponible' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-calendar-alt me-2"></i>Año:
+          </span>
+          <span class="detail-value">{{ compraSeleccionada?.ano || 'No disponible' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-calendar-plus me-2"></i>Fecha Apertura:
+          </span>
+          <span class="detail-value">{{ formatearFecha(compraSeleccionada?.fechaInicio || '') }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">
+            <i class="fas fa-calendar-check me-2"></i>Fecha Adjudicación:
+          </span>
+          <span class="detail-value">{{ formatearFecha(compraSeleccionada?.fechaFinal || '') }}</span>
+        </div>
       </div>
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-align-left"></i>
-          Descripción
-        </div>
-        <div class="detail-value">{{compraSeleccionada.descripcion}}</div>
+    </div>
+
+    <!-- Ítems de la compra -->
+    <div class="details-section mb-4">
+      <h5 class="section-title">
+        <i class="fas fa-box me-2"></i>Ítems de la Compra
+        <span class="items-count">({{ lotesDetalles.length }} ítems)</span>
+      </h5>
+      
+      <div *ngIf="lotesDetalles.length === 0" class="no-items">
+        <i class="fas fa-box-open fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No hay ítems registrados para esta compra.</p>
       </div>
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-calendar-alt"></i>
-          Fecha Inicio
+      
+      <div *ngFor="let lote of lotesDetalles; let i = index" class="item-card mb-3">
+        <div class="item-header">
+          <h6 class="item-title">
+            <i class="fas fa-box me-2"></i>Ítem {{ i + 1 }}: {{ lote.nombreItem }}
+          </h6>
         </div>
-        <div class="detail-value">{{compraSeleccionada.fechaInicio | date:'dd/MM/yyyy'}}</div>
+        <div class="item-details">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="item-detail">
+                <span class="detail-label">Cantidad:</span>
+                <span class="detail-value">{{ lote.cantidad }}</span>
+              </div>
+              <div class="item-detail">
+                <span class="detail-label">Meses de Garantía:</span>
+                <span class="detail-value">{{ lote.mesesGarantia }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="item-detail">
+                <span class="detail-label">Proveedor:</span>
+                <span class="detail-value">{{ getProveedorNombre(lote.idProveedor) }}</span>
+              </div>
+              <div class="item-detail">
+                <span class="detail-label">Servicio de Garantía:</span>
+                <span class="detail-value">{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="lote.descripcion" class="item-description mt-2">
+            <span class="detail-label">Observación:</span>
+            <span class="detail-value">{{ lote.descripcion }}</span>
+          </div>
+        </div>
       </div>
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-calendar-check"></i>
-          Fecha Final
-        </div>
-        <div class="detail-value">{{compraSeleccionada.fechaFinal | date:'dd/MM/yyyy'}}</div>
+    </div>
+
+    <!-- Entregas -->
+    <div class="details-section">
+      <h5 class="section-title">
+        <i class="fas fa-truck me-2"></i>Entregas
+      </h5>
+      
+      <div *ngIf="entregasDetalles.length === 0" class="no-items">
+        <i class="fas fa-truck fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No hay entregas registradas para esta compra.</p>
       </div>
-      <div class="detail-row">
-        <div class="detail-label">
-          <i class="fas fa-dollar-sign"></i>
-          Monto
+      
+      <div *ngFor="let entrega of entregasDetalles; let i = index" class="entrega-card mb-3">
+        <div class="entrega-header">
+          <h6 class="entrega-title">
+            <i class="fas fa-truck me-2"></i>Entrega
+          </h6>
         </div>
-        <div class="detail-value">{{compraSeleccionada.monto}} {{compraSeleccionada.moneda}}</div>
+        <div class="entrega-details">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="entrega-detail">
+                <span class="detail-label">Ítem:</span>
+                <span class="detail-value">{{ getLoteNombre(entrega.idItem) }}</span>
+              </div>
+              <div class="entrega-detail">
+                <span class="detail-label">Cantidad:</span>
+                <span class="detail-value">{{ entrega.cantidad }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="entrega-detail">
+                <span class="detail-label">Fecha de Entrega:</span>
+                <span class="detail-value">{{ formatearFecha(entrega.fechaPedido) }}</span>
+              </div>
+              <div class="entrega-detail">
+                <span class="detail-label">Fin de Garantía:</span>
+                <span class="detail-value">{{ formatearFecha(entrega.fechaFinGarantia) }}</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="entrega.descripcion" class="entrega-description mt-2">
+            <span class="detail-label">Observación:</span>
+            <span class="detail-value">{{ entrega.descripcion }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+  
   <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cerrar</button>
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      <i class="fas fa-times me-2"></i>Cerrar
+    </button>
   </div>
 </ng-template> 
 

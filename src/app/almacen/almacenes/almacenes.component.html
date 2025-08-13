@@ -4,7 +4,7 @@
   
   <div class="header-section">
     <div class="title-wrapper">
-      <h1>
+      <h1 style="text-align: left; justify-content: flex-start;">
         <i class="fas fa-warehouse"></i> 
         Gestión de Almacenes
       </h1>
@@ -14,24 +14,10 @@
   <div class="almacenes-content">
     <!-- Header del contenido con botón de crear -->
     <div class="content-header">
-      <div class="search-section">
-        <div class="input-group" style="max-width: 400px;">
-          <span class="input-group-text">
-            <i class="fas fa-search"></i>
-          </span>
-          <input 
-            type="text" 
-            class="form-control" 
-            placeholder="Buscar almacenes..." 
-            [(ngModel)]="searchTerm"
-            (input)="filtrarAlmacenes()">
-        </div>
-      </div>
-      
       <!-- Botón para agregar nuevo almacén -->
       <div class="actions-section" *ngIf="canManageAlmacenes()">
         <button 
-          class="btn btn-primary" 
+          class="btn btn-outline-secondary" 
           (click)="abrirModalAlmacen(modalAlmacen)">
           <i class="fas fa-plus"></i>
           Nuevo Almacén
@@ -53,91 +39,86 @@
       {{ error }}
     </div>
 
-    <!-- Tabla de almacenes -->
-    <div *ngIf="!loading && !error" class="table-container">
-      <table class="almacenes-table">
-        <thead>
-          <tr>
-            <th (click)="sortData('numero')" [class.active]="sortColumn === 'numero'">
-              <div class="th-content">
-                <span>Número</span>
-                <i class="fas" [ngClass]="{
-                  'fa-sort-up': sortColumn === 'numero' && sortDirection === 'asc',
-                  'fa-sort-down': sortColumn === 'numero' && sortDirection === 'desc',
-                  'fa-sort': sortColumn !== 'numero'
-                }"></i>
+          <!-- Cards de almacenes -->
+      <div *ngIf="!loading && !error" class="cards-container">
+
+      <!-- Grid de cards -->
+      <div class="almacenes-grid">
+        <div *ngFor="let almacen of almacenesFiltrados" class="almacen-card" 
+             [class.clickable]="true">
+          <div class="card-header">
+            <div class="almacen-numero">
+              <i class="fas fa-building"></i>
+              <span>{{ almacen.numero }}</span>
+            </div>
+            <div class="card-actions" *ngIf="canManageAlmacenes()">
+              <button 
+                class="btn btn-warning btn-sm" 
+                (click)="abrirModalAlmacen(modalAlmacen, almacen)"
+                title="Editar almacén">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button 
+                class="btn btn-danger btn-sm" 
+                (click)="confirmarEliminacion(almacen)"
+                title="Eliminar almacén">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body" (click)="verStockAlmacen(almacen)">
+            <div class="almacen-info">
+              <div class="info-item">
+                <i class="fas fa-warehouse text-primary"></i>
+                <span>{{ almacen.nombre }}</span>
               </div>
-            </th>
-            <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
-              <div class="th-content">
-                <span>Nombre</span>
-                <i class="fas" [ngClass]="{
-                  'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
-                  'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
-                  'fa-sort': sortColumn !== 'nombre'
-                }"></i>
+              <div class="info-item" [ngClass]="{'no-stock': !tieneStock(almacen.id)}">
+                <i class="fas" [ngClass]="tieneStock(almacen.id) ? 'fa-boxes text-success' : 'fa-box-open text-muted'"></i>
+                <span *ngIf="tieneStock(almacen.id); else noStock">
+                  {{ getStockDisponible(almacen.id) }} item(s) en stock
+                </span>
+                <ng-template #noStock>
+                  <span>Sin stock disponible</span>
+                </ng-template>
               </div>
-            </th>
-            <th *ngIf="canManageAlmacenes()">
-              <div class="th-content">
-                <span>Acciones</span>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let almacen of pagedAlmacenes" class="almacen-row">
-            <td>
-              <div class="almacen-numero">
-                <i class="fas fa-building me-2"></i>
-                <span>{{ almacen.numero }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="almacen-nombre">{{ almacen.nombre }}</span>
-            </td>
-            <td *ngIf="canManageAlmacenes()">
-              <div class="action-buttons">
-                <button 
-                  class="btn btn-sm btn-outline-primary me-2" 
-                  (click)="abrirModalAlmacen(modalAlmacen, almacen)"
-                  title="Editar almacén">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button 
-                  class="btn btn-sm btn-outline-danger" 
-                  (click)="confirmarEliminacion(modalConfirmacion, almacen)"
-                  title="Eliminar almacén">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="pagedAlmacenes.length === 0">
-            <td colspan="3" class="text-center p-4">
-              <div class="alert alert-info m-0">
-                <i class="fas fa-info-circle me-2"></i>
-                No hay almacenes disponibles
-                <span *ngIf="searchTerm"> que coincidan con la búsqueda</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje cuando no hay almacenes -->
+      <div *ngIf="almacenesFiltrados.length === 0" class="text-center p-5">
+        <div class="empty-state">
+          <i class="fas fa-warehouse fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay almacenes disponibles</h5>
+          <p class="text-muted">
+            Comienza creando tu primer almacén
+          </p>
+        </div>
+      </div>
     </div>
     
-    <!-- Paginación -->
-    <div *ngIf="!loading && !error && collectionSize > pageSize" class="pagination-container">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+
+  </div>
+</div>
+
+<!-- Diálogo de confirmación -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar este almacén? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="eliminarAlmacen()">
+        Eliminar
+      </button>
     </div>
   </div>
 </div>

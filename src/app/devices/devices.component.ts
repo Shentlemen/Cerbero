@@ -36,7 +36,6 @@ export class DevicesComponent implements OnInit {
   filteredDevices: NetworkInfoDTO[] = [];
   errorMessage: string | null = null;
   loading: boolean = true;
-  isUpdatingDevices: boolean = false;
   
   // Variables para paginación
   page: number = 1;
@@ -264,62 +263,6 @@ export class DevicesComponent implements OnInit {
         return 'Reloj Biométrico';
       default:
         return normalizedValue;
-    }
-  }
-
-  async actualizarDispositivos(): Promise<void> {
-    // Verificar permisos antes de proceder
-    if (!this.canUpdateDevices()) {
-      this.notificationService.showError(
-        'Permisos Insuficientes', 
-        'No tienes permisos para actualizar dispositivos de red. Solo los administradores y Game Masters pueden realizar esta acción.'
-      );
-      return;
-    }
-
-    this.isUpdatingDevices = true;
-    this.errorMessage = null;
-    
-    try {
-      const response = await this.http.post<any>(`${this.configService.getApiUrl()}/sync/network-devices-reset`, {}).toPromise();
-      
-      if (response && response.success) {
-        // Recargar los dispositivos después de la actualización
-        this.cargarDispositivos();
-        
-        // Mostrar notificación de éxito con detalles
-        const data = response.data;
-        let message = 'Dispositivos actualizados exitosamente.';
-        
-        if (data) {
-          const details = [];
-          if (data.inserted_devices > 0) details.push(`${data.inserted_devices} insertados`);
-          if (data.deleted_network_devices > 0) details.push(`${data.deleted_network_devices} eliminados`);
-          if (data.error_devices > 0) details.push(`${data.error_devices} errores`);
-          
-          if (details.length > 0) {
-            message += ` ${details.join(', ')}.`;
-          }
-          
-          // Mostrar información adicional
-          message += `\nTotal OCS: ${data.total_ocs}, Total final Cerbero: ${data.final_cerbero_count}`;
-        }
-        
-        this.notificationService.showSuccessMessage(message);
-        console.log('Dispositivos actualizados exitosamente:', response.message);
-      } else {
-        const errorMsg = response?.message || 'Error al actualizar dispositivos';
-        this.errorMessage = errorMsg;
-        this.notificationService.showError('Error al Actualizar Dispositivos', errorMsg);
-        console.error('Error en la respuesta:', this.errorMessage);
-      }
-    } catch (error: any) {
-      console.error('Error al actualizar dispositivos:', error);
-      const errorMsg = error.message || 'Error durante la actualización de dispositivos';
-      this.errorMessage = errorMsg;
-      this.notificationService.showError('Error al Actualizar Dispositivos', errorMsg);
-    } finally {
-      this.isUpdatingDevices = false;
     }
   }
 } 

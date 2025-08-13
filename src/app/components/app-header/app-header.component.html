@@ -1,0 +1,27 @@
+<header class="app-header">
+  <div class="header-container">
+    <div class="header-left">
+      <div class="app-brand">
+        <img src="assets/logoHeader.jpg" alt="Cerbero Logo" class="header-logo">
+        <span class="app-name">Cerbero</span>
+      </div>
+    </div>
+    
+    <div class="header-right" *ngIf="currentUser">
+      <div class="user-info">
+        <div class="user-details">
+          <span class="user-name" (click)="goToProfile()" title="Ver perfil">
+            {{ currentUser.firstName }} {{ currentUser.lastName }}
+          </span>
+          <span class="badge" [class]="getRoleClass(currentUser.role)">
+            {{ getRoleLabel(currentUser.role) }}
+          </span>
+        </div>
+        <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="logout-text">Salir</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header> 

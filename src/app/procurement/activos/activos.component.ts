@@ -13,6 +13,7 @@ import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
+import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
 import { firstValueFrom } from 'rxjs';
 import { importProvidersFrom } from '@angular/core';
 import { PermissionsService } from '../../services/permissions.service';
@@ -79,6 +80,7 @@ export class ActivosComponent implements OnInit {
   ubicacionesList: UbicacionDTO[] = [];
   serviciosGarantiaList: ServicioGarantiaDTO[] = [];
   tiposActivoList: TipoDeActivoDTO[] = [];
+  tiposCompraList: TipoDeCompraDTO[] = [];
 
   selectedAssetId: number | null = null;
   selectedRelatedAssets: number[] = [];
@@ -108,6 +110,10 @@ export class ActivosComponent implements OnInit {
   activoAEliminar: any = null;
   showConfirmDialog: boolean = false;
 
+  // Propiedades para el modal de detalles de compra
+  lotesDetalles: LoteDTO[] = [];
+  entregasDetalles: EntregaDTO[] = [];
+
   constructor(
     private activosService: ActivosService,
     private ubicacionesService: UbicacionesService,
@@ -118,6 +124,7 @@ export class ActivosComponent implements OnInit {
     private entregasService: EntregasService,
     private serviciosGarantiaService: ServiciosGarantiaService,
     private tiposActivoService: TiposActivoService,
+    private tiposCompraService: TiposCompraService,
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router,
@@ -152,6 +159,7 @@ export class ActivosComponent implements OnInit {
     this.cargarEntregas();
     this.cargarServiciosGarantia();
     this.cargarTiposActivo();
+    this.cargarTiposCompra();
     
     // Suscribirse a cambios en el control de búsqueda
     this.numeroCompraControl.valueChanges.subscribe(() => {
@@ -258,8 +266,73 @@ export class ActivosComponent implements OnInit {
     const compra = this.compras.get(idCompra);
     if (compra) {
       this.compraSeleccionada = compra;
-      this.modalService.open(compraModal, { size: 'lg' });
+      
+      // Cargar lotes de la compra
+      this.lotesService.getLotesByCompra(idCompra).subscribe({
+        next: (lotes) => {
+          this.lotesDetalles = lotes;
+          
+          // Cargar entregas de todos los lotes
+          const entregasObservables = lotes.map(lote => 
+            this.entregasService.getEntregasByItem(lote.idItem).toPromise()
+          );
+          
+          Promise.all(entregasObservables).then(entregasPorLote => {
+            this.entregasDetalles = entregasPorLote.flat().filter(e => !!e);
+            this.changeDetectorRef.detectChanges();
+          });
+        },
+        error: (error) => {
+          console.error('Error al cargar los detalles de la compra:', error);
+          this.lotesDetalles = [];
+          this.entregasDetalles = [];
+        }
+      });
+      
+      this.modalService.open(compraModal, { 
+        size: 'xl', 
+        backdrop: 'static',
+        keyboard: false,
+        centered: true
+      });
     }
+  }
+
+  // Métodos auxiliares para el modal de detalles de compra
+  formatearMoneda(monto: number, moneda: string): string {
+    return new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(monto);
+  }
+
+  formatearFecha(fecha: string): string {
+    if (!fecha) return 'No disponible';
+    const date = new Date(fecha);
+    const dia = date.getDate().toString().padStart(2, '0');
+    const mes = (date.getMonth() + 1).toString().padStart(2, '0');
+    const año = date.getFullYear();
+    return `${dia}/${mes}/${año}`;
+  }
+
+  getTipoCompraDescripcion(idTipoCompra: number): string {
+    // Por ahora retornamos el ID, pero podrías implementar la lógica completa
+    return `Tipo ${idTipoCompra}`;
+  }
+
+  getProveedorNombre(idProveedor: number): string {
+    // Por ahora retornamos el ID, pero podrías implementar la lógica completa
+    return `Proveedor ${idProveedor}`;
+  }
+
+  getServicioGarantiaNombre(idServicio: number): string {
+    // Por ahora retornamos el ID, pero podrías implementar la lógica completa
+    return `Servicio ${idServicio}`;
+  }
+
+  getLoteNombre(idItem: number): string {
+    const lote = this.lotesDetalles.find(l => l.idItem === idItem);
+    return lote ? lote.nombreItem : 'No disponible';
   }
 
   cargarActivos() {
@@ -920,6 +993,17 @@ export class ActivosComponent implements OnInit {
     });
   }
 
+  cargarTiposCompra() {
+    this.tiposCompraService.getTiposCompra().subscribe({
+      next: (tipos) => {
+        this.tiposCompraList = tipos;
+      },
+      error: (error) => {
+        console.error('Error al cargar tipos de compra:', error);
+      }
+    });
+  }
+
   updateSummary(): void {
     this.totalActivos = this.activos.length;
     this.altaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'ALTA').length;
@@ -1005,6 +1089,46 @@ export class ActivosComponent implements OnInit {
     return compra && compra.numeroCompra ? compra.numeroCompra : 'No asignado';
   }
 
+  getNombreCompraFormateado(idCompra: number): string {
+    const compra = this.compras.get(idCompra);
+    if (!compra) return 'No asignado';
+    
+    // Obtener el tipo de compra para el abreviado
+    let abreviado = '';
+    if (compra.idTipoCompra) {
+      // Buscar en la lista de tipos de compra
+      const tipoCompra = this.tiposCompraList.find(t => t.idTipoCompra === compra.idTipoCompra);
+      if (tipoCompra) {
+        abreviado = tipoCompra.abreviado || '';
+      }
+    }
+    
+    const numero = compra.numeroCompra || '';
+    const ano = compra.ano && compra.ano > 0 ? compra.ano.toString() : '';
+    
+    if (!abreviado && !numero && !ano) {
+      return 'Sin información';
+    }
+    
+    // Construir el nombre formateado: [abreviado] [número] / [año]
+    let nombreFormateado = '';
+    
+    if (abreviado) {
+      nombreFormateado += abreviado;
+    }
+    
+    if (numero) {
+      if (nombreFormateado) nombreFormateado += ' ';
+      nombreFormateado += numero;
+    }
+    
+    if (ano) {
+      nombreFormateado += ` / ${ano}`;
+    }
+    
+    return nombreFormateado || 'Sin información';
+  }
+
   aplicarFiltroBusqueda(): void {
     const valorBusqueda = this.numeroCompraControl.value?.toLowerCase() || '';
     
@@ -1012,9 +1136,8 @@ export class ActivosComponent implements OnInit {
       this.activosFiltrados = [...this.activos];
     } else {
       this.activosFiltrados = this.activos.filter(activo => {
-        const compra = this.compras.get(activo.idNumeroCompra);
-        const numeroCompra = compra && compra.numeroCompra ? compra.numeroCompra.toLowerCase() : '';
-        return numeroCompra.includes(valorBusqueda);
+        const nombreCompra = this.getNombreCompraFormateado(activo.idNumeroCompra).toLowerCase();
+        return nombreCompra.includes(valorBusqueda);
       });
     }
     

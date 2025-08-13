@@ -48,6 +48,8 @@ export class AssetsComponent implements OnInit {
   currentFilter: string = '';
   originalAssetsList: any[] = []; // Para guardar la lista original
   deletingAssetId: number | null = null; // Para controlar el estado de eliminación
+  showConfirmDialog: boolean = false; // Para controlar el diálogo de confirmación
+  assetToDelete: any = null; // Para almacenar el asset a eliminar
 
   // Control para el filtro de nombre
   nombreEquipoControl = new FormControl('');
@@ -492,25 +494,8 @@ export class AssetsComponent implements OnInit {
   }
 
   eliminarAsset(asset: any): void {
-    // Usar confirm() mejorado con más información
-    const confirmacion = confirm(
-      `🗑️ CONFIRMAR ELIMINACIÓN DE EQUIPO\n\n` +
-      `¿Está seguro de que desea eliminar el equipo "${asset.name}"?\n\n` +
-      `⚠️ ADVERTENCIA CRÍTICA:\n` +
-      `Esta acción eliminará PERMANENTEMENTE:\n\n` +
-      `• 📱 Información del equipo\n` +
-      `• 🖥️ Especificaciones de hardware (CPU, memoria, discos)\n` +
-      `• 💻 Software instalado\n` +
-      `• 🌐 Configuraciones de red\n` +
-      `• 💾 Datos de BIOS\n` +
-      `• 📋 Historial de cambios\n\n` +
-      `🚨 Esta acción es IRREVERSIBLE y no se puede deshacer.\n\n` +
-      `Presione "Aceptar" para confirmar la eliminación o "Cancelar" para abortar.`
-    );
-
-    if (confirmacion) {
-      this.procesarEliminacion(asset);
-    }
+    this.assetToDelete = asset;
+    this.showConfirmDialog = true;
   }
 
   private procesarEliminacion(asset: any): void {
@@ -547,6 +532,20 @@ export class AssetsComponent implements OnInit {
         this.deletingAssetId = null;
       }
     });
+  }
+
+  // Métodos para el diálogo de confirmación
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.assetToDelete = null;
+  }
+
+  confirmarEliminacion(): void {
+    if (this.assetToDelete) {
+      this.procesarEliminacion(this.assetToDelete);
+      this.showConfirmDialog = false;
+      this.assetToDelete = null;
+    }
   }
 
   private normalizeTypeFilter(filterValue: string): string {

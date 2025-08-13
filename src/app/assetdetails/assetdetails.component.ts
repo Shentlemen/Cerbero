@@ -132,6 +132,8 @@ export class AssetdetailsComponent implements OnInit {
 
               if (this.asset?.id) {
                 this.cargarUbicacion();
+                
+
               }
             },
             (error) => {
@@ -206,6 +208,8 @@ export class AssetdetailsComponent implements OnInit {
             this.componentData[component] = Array.isArray(data) ? data : [data];
           }
           console.log(`Datos de ${component} cargados:`, this.componentData[component]);
+          
+
         },
         (error: unknown) => {
           console.error(`Error al cargar datos de ${component}:`, error);
@@ -376,6 +380,9 @@ export class AssetdetailsComponent implements OnInit {
     }
 
     const bios = this.componentData.bios;
+    
+
+    
     return [
       ['Fabricante del Sistema', bios.smanufacturer || 'N/A'],
       ['Modelo del Sistema', bios.smodel || 'N/A'],
@@ -722,4 +729,6 @@ export class AssetdetailsComponent implements OnInit {
       }
     );
   }
+
+
 }
