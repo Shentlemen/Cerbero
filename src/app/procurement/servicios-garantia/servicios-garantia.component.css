@@ -147,6 +147,97 @@ ngb-pagination {
   justify-content: center;
 }
 
+.search-container {
+  flex-shrink: 0;
+}
+
+/* Estilos específicos para el campo de búsqueda - anulan los estilos generales */
+.search-container .form-control {
+  padding: 0.375rem 0.75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.375rem !important;
+  min-height: calc(1.5em + 0.75rem + 2px) !important;
+}
+
+.search-container .form-control:focus {
+  border-color: #86b7fe !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Estilos para la card del servicio de garantía */
+.servicio-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.servicio-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.servicio-card-header {
+  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.servicio-card-header h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+}
+
+.servicio-card-header i {
+  color: #3498db;
+}
+
+.servicio-card-body {
+  padding: 1.5rem;
+}
+
+.servicio-card .form-label {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.servicio-card .form-label i {
+  color: #3498db;
+  width: 16px;
+}
+
+.servicio-card .form-control {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.servicio-card .form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.servicio-card .form-control.ng-invalid.ng-touched {
+  border-color: #e74c3c;
+}
+
+.servicio-card .text-danger {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
 body ngb-pagination.custom-pagination {
   margin: 2rem 0 !important;
   display: flex !important;
@@ -218,18 +309,17 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
     padding: 1rem;
   }
 
-  .action-buttons {
-    flex-direction: column;
+  /* Responsive para la card del servicio */
+  .servicio-card-body {
+    padding: 1rem;
   }
-
-  .pagination-container {
-    flex-direction: column;
-    align-items: center;
+  
+  .servicio-card-header {
+    padding: 0.75rem 1rem;
   }
-
-  .pagination-info {
-    margin-top: 1rem;
-    text-align: center;
+  
+  .servicio-card .form-control {
+    font-size: 1rem; /* Evitar zoom en iOS */
   }
 
   body ngb-pagination.custom-pagination .page-item .page-link {
@@ -241,5 +331,21 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   body ngb-pagination.custom-pagination .page-item:first-child .page-link,
   body ngb-pagination.custom-pagination .page-item:last-child .page-link {
     padding: 0 12px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Responsive para la card del servicio */
+  .servicio-card-body .row {
+    margin: 0;
+  }
+  
+  .servicio-card-body .col-md-6,
+  .servicio-card-body .col-12 {
+    padding: 0 0.5rem;
+  }
+  
+  .servicio-card-body .mb-3 {
+    margin-bottom: 1rem !important;
   }
 } 

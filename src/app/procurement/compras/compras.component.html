@@ -386,24 +386,54 @@
                 <label class="form-label">
                   <i class="fas fa-truck me-2"></i>Proveedor <span class="text-danger">*</span>
                 </label>
-                <select class="form-select" formControlName="idProveedor" required>
-                  <option value="">Seleccione un proveedor</option>
-                  <option *ngFor="let proveedor of proveedoresList" [value]="proveedor.idProveedores">
-                    {{proveedor.nombreComercial}}
-                  </option>
-                </select>
+                <div class="dropdown-search-container">
+                  <input 
+                    type="text" 
+                    class="form-control dropdown-input" 
+                    placeholder="Buscar y seleccionar proveedor..."
+                    (input)="filtrarProveedores($event, i)"
+                    (focus)="mostrarDropdownProveedores(i)"
+                    (blur)="ocultarDropdownProveedores(i)"
+                    [value]="getProveedorDisplayValue(i)">
+                  <div class="dropdown-options" *ngIf="isDropdownProveedoresVisible(i)">
+                    <div 
+                      *ngFor="let proveedor of getProveedoresFiltrados(i)" 
+                      class="dropdown-option"
+                      (click)="seleccionarProveedor(proveedor, i)">
+                      {{proveedor.nombreComercial}}
+                    </div>
+                    <div *ngIf="getProveedoresFiltrados(i).length === 0" class="dropdown-no-results">
+                      No se encontraron resultados
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div class="col-md-4 mb-3">
                 <label class="form-label">
                   <i class="fas fa-shield-alt me-2"></i>Servicio de Garantía <span class="text-danger">*</span>
                 </label>
-                <select class="form-select" formControlName="idServicioGarantia" required>
-                  <option value="">Seleccione un servicio de garantía</option>
-                  <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
-                    {{servicio.nombreComercial}}
-                  </option>
-                </select>
+                <div class="dropdown-search-container">
+                  <input 
+                    type="text" 
+                    class="form-control dropdown-input" 
+                    placeholder="Buscar y seleccionar servicio..."
+                    (input)="filtrarServiciosGarantia($event, i)"
+                    (focus)="mostrarDropdownServiciosGarantia(i)"
+                    (blur)="ocultarDropdownServiciosGarantia(i)"
+                    [value]="getServicioGarantiaDisplayValue(i)">
+                  <div class="dropdown-options" *ngIf="isDropdownServiciosGarantiaVisible(i)">
+                    <div 
+                      *ngFor="let servicio of getServiciosGarantiaFiltrados(i)" 
+                      class="dropdown-option"
+                      (click)="seleccionarServicioGarantia(servicio, i)">
+                      {{servicio.nombreComercial}}
+                    </div>
+                    <div *ngIf="getServiciosGarantiaFiltrados(i).length === 0" class="dropdown-no-results">
+                      No se encontraron resultados
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             

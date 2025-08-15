@@ -39,7 +39,7 @@ export class DevicesComponent implements OnInit {
   
   // Variables para paginación
   page: number = 1;
-  pageSize: number = 10;
+  pageSize: number = 20;
   collectionSize: number = 0;
 
   // Filtro activo

@@ -29,6 +29,8 @@ export class MenuComponent implements OnInit, OnDestroy {
   isAssetsExpanded: boolean = false;
   isConfigExpanded: boolean = false;
   isAlmacenExpanded: boolean = false;
+  isAdminExpanded: boolean = false;
+  isAdquisicionesExpanded: boolean = false;
   isHelperActive = false;
   showHelperMessage = false;
   currentHelperTip?: HelpTip;
@@ -36,21 +38,26 @@ export class MenuComponent implements OnInit, OnDestroy {
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección
-  private assetsRoutes = ['/menu/assets', '/menu/devices'];
+  private assetsRoutes = ['/menu/assets', '/menu/devices', '/menu/cementerio'];
   private configRoutes = [
-    '/menu/settings',
     '/menu/locations',
     '/menu/subnets',
-    '/menu/procurement/proveedores',
     '/menu/procurement/tipos-activo',
     '/menu/procurement/tipos-compra',
-    '/menu/procurement/servicios-garantia',
-    '/menu/procurement/usuarios',
+    '/menu/procurement/usuarios'
+  ];
+  private adminRoutes = [
+    '/menu/settings',
     '/menu/user-management'
+  ];
+  private adquisicionesRoutes = [
+    '/menu/procurement/compras',
+    '/menu/procurement/proveedores',
+    '/menu/procurement/servicios-garantia'
   ];
   private almacenRoutes = [
     '/menu/almacen/almacenes',
-    '/menu/almacen/ubicaciones'
+            '/menu/almacen/stock'
   ];
 
   constructor(
@@ -68,25 +75,47 @@ export class MenuComponent implements OnInit, OnDestroy {
       const isAssetsRoute = this.assetsRoutes.some(route => url.startsWith(route));
       const isConfigRoute = this.configRoutes.some(route => url.startsWith(route));
       const isAlmacenRoute = this.almacenRoutes.some(route => url.startsWith(route));
+      const isAdminRoute = this.adminRoutes.some(route => url.startsWith(route));
+      const isAdquisicionesRoute = this.adquisicionesRoutes.some(route => url.startsWith(route));
 
       // Actualizar estados de los submenús
       if (isAssetsRoute) {
         this.isAssetsExpanded = true;
         this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
+        this.isAdminExpanded = false;
+        this.isAdquisicionesExpanded = false;
       } else if (isConfigRoute) {
         this.isConfigExpanded = true;
         this.isAssetsExpanded = false;
         this.isAlmacenExpanded = false;
+        this.isAdminExpanded = false;
+        this.isAdquisicionesExpanded = false;
       } else if (isAlmacenRoute) {
         this.isAlmacenExpanded = true;
         this.isAssetsExpanded = false;
         this.isConfigExpanded = false;
+        this.isAdminExpanded = false;
+        this.isAdquisicionesExpanded = false;
+      } else if (isAdminRoute) {
+        this.isAdminExpanded = true;
+        this.isAssetsExpanded = false;
+        this.isConfigExpanded = false;
+        this.isAlmacenExpanded = false;
+        this.isAdquisicionesExpanded = false;
+      } else if (isAdquisicionesRoute) {
+        this.isAdquisicionesExpanded = true;
+        this.isAssetsExpanded = false;
+        this.isConfigExpanded = false;
+        this.isAlmacenExpanded = false;
+        this.isAdminExpanded = false;
       } else {
         // Si no es ninguna de las rutas anteriores, cerrar todos los submenús
         this.isAssetsExpanded = false;
         this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
+        this.isAdminExpanded = false;
+        this.isAdquisicionesExpanded = false;
       }
       
       this.closeHelper();
@@ -114,6 +143,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isAssetsExpanded) {
       this.isConfigExpanded = false;
       this.isAlmacenExpanded = false;
+      this.isAdquisicionesExpanded = false;
     }
   }
 
@@ -122,6 +152,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isConfigExpanded) {
       this.isAssetsExpanded = false;
       this.isAlmacenExpanded = false;
+      this.isAdquisicionesExpanded = false;
     }
   }
 
@@ -130,6 +161,27 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.isAlmacenExpanded) {
       this.isAssetsExpanded = false;
       this.isConfigExpanded = false;
+      this.isAdquisicionesExpanded = false;
+    }
+  }
+
+  toggleAdminMenu(): void {
+    this.isAdminExpanded = !this.isAdminExpanded;
+    if (this.isAdminExpanded) {
+      this.isAssetsExpanded = false;
+      this.isConfigExpanded = false;
+      this.isAlmacenExpanded = false;
+      this.isAdquisicionesExpanded = false;
+    }
+  }
+
+  toggleAdquisicionesMenu(): void {
+    this.isAdquisicionesExpanded = !this.isAdquisicionesExpanded;
+    if (this.isAdquisicionesExpanded) {
+      this.isAssetsExpanded = false;
+      this.isConfigExpanded = false;
+      this.isAlmacenExpanded = false;
+      this.isAdminExpanded = false;
     }
   }
 
@@ -152,6 +204,10 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   canAccessConfiguration(): boolean {
     return this.permissionsService.canAccessConfiguration();
+  }
+
+  canAccessAdministration(): boolean {
+    return this.permissionsService.canAccessConfiguration(); // Misma lógica que configuración
   }
 
   canManageUsers(): boolean {

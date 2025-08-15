@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
@@ -13,12 +13,13 @@ import { ActivosService } from '../services/activos.service';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { EstadoEquipoService, CambioEstadoRequest } from '../services/estado-equipo.service';
 import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NotificationContainerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NotificationContainerComponent],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -32,7 +33,7 @@ export class AssetsComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 11;
+  pageSize = 20;
   collectionSize = 0;
   loading: boolean = true; // Agregar propiedad loading
 
@@ -51,6 +52,13 @@ export class AssetsComponent implements OnInit {
   showConfirmDialog: boolean = false; // Para controlar el diálogo de confirmación
   assetToDelete: any = null; // Para almacenar el asset a eliminar
 
+  // Variables para cambio de estado
+  showEstadoDialog: boolean = false;
+  estadoAction: 'baja' | 'almacen' | null = null;
+  assetToChangeState: any = null;
+  estadoObservaciones: string = '';
+  changingStateAssetId: number | null = null;
+
   // Control para el filtro de nombre
   nombreEquipoControl = new FormControl('');
 
@@ -63,7 +71,8 @@ export class AssetsComponent implements OnInit {
     private router: Router,
     public route: ActivatedRoute,
     private permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private estadoEquipoService: EstadoEquipoService
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -172,11 +181,33 @@ export class AssetsComponent implements OnInit {
   loadAssets(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.loading = true; // Activar loading
+      
       forkJoin([
-        this.hardwareService.getHardware(),
-        this.biosService.getAllBios()
+        this.hardwareService.getActiveHardware().pipe(
+          catchError(error => {
+            console.warn('⚠️ Error al obtener hardware, usando array vacío:', error);
+            return of([]); // Devolver array vacío si falla
+          })
+        ),
+        this.biosService.getAllBios().pipe(
+          catchError(error => {
+            console.warn('⚠️ Error al obtener BIOS, usando array vacío:', error);
+            return of([]); // Devolver array vacío si falla
+          })
+        )
       ]).subscribe({
         next: ([hardwareList, biosList]) => {
+          // Manejar el caso donde alguno de los servicios devuelve array vacío
+          if (!Array.isArray(hardwareList)) {
+            console.warn('⚠️ Hardware no es un array, convirtiendo...');
+            hardwareList = [];
+          }
+          
+          if (!Array.isArray(biosList)) {
+            console.warn('⚠️ BIOS no es un array, convirtiendo...');
+            biosList = [];
+          }
+          
           const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
           
           this.assetsList = hardwareList.map(h => ({
@@ -194,7 +225,12 @@ export class AssetsComponent implements OnInit {
           resolve();
         },
         error: (error) => {
-          console.error('Error al cargar los assets:', error);
+          console.error('❌ Error crítico al cargar los assets:', error);
+          // Intentar mostrar al menos algunos datos si es posible
+          this.assetsList = [];
+          this.originalAssetsList = [];
+          this.assetsFiltrados = [];
+          this.updateSummary();
           this.loading = false; // Desactivar loading en caso de error
           reject(error);
         }
@@ -241,7 +277,7 @@ export class AssetsComponent implements OnInit {
     this.softwareService.getHardwaresBySoftware({ idSoftware: softwareId }).subscribe({
       next: (hardwareIds) => {
         forkJoin([
-          this.hardwareService.getHardware(),
+          this.hardwareService.getActiveHardware(),
           this.biosService.getAllBios()
         ]).subscribe({
           next: ([hardwareList, biosList]) => {
@@ -281,7 +317,7 @@ export class AssetsComponent implements OnInit {
     console.log('Aplicando filtros:', filtros);
 
     forkJoin({
-      hardware: this.hardwareService.getHardware(),
+      hardware: this.hardwareService.getActiveHardware(),
       bios: this.biosService.getAllBios()
     }).subscribe(
       ({ hardware, bios }) => {
@@ -493,6 +529,24 @@ export class AssetsComponent implements OnInit {
     return this.permissionsService.canManageAssets();
   }
 
+  // Verificar si el usuario puede gestionar estados de equipos
+  canManageAssetStates(): boolean {
+    // Solo GM y administradores pueden gestionar estados de equipos
+    return this.permissionsService.isGM() || this.permissionsService.isAdmin();
+  }
+
+  // Método de utilidad para debugging - obtener información del usuario actual
+  getCurrentUserInfo(): string {
+    const isGM = this.permissionsService.isGM();
+    const isAdmin = this.permissionsService.isAdmin();
+    const isUser = this.permissionsService.isUser();
+    
+    if (isGM) return 'GM';
+    if (isAdmin) return 'Administrador';
+    if (isUser) return 'Usuario';
+    return 'Sin rol definido';
+  }
+
   eliminarAsset(asset: any): void {
     this.assetToDelete = asset;
     this.showConfirmDialog = true;
@@ -576,5 +630,89 @@ export class AssetsComponent implements OnInit {
         // Si no coincide con ningún tipo conocido, intentar filtrar por el valor exacto
         return normalizedValue;
     }
+  }
+
+  // Métodos para cambio de estado
+  darDeBaja(asset: any): void {
+    this.estadoAction = 'baja';
+    this.assetToChangeState = asset;
+    this.estadoObservaciones = '';
+    this.showEstadoDialog = true;
+  }
+
+  enviarAAlmacen(asset: any): void {
+    this.estadoAction = 'almacen';
+    this.assetToChangeState = asset;
+    this.estadoObservaciones = '';
+    this.showEstadoDialog = true;
+  }
+
+  confirmarCambioEstado(): void {
+    if (!this.assetToChangeState || !this.estadoAction) {
+      return;
+    }
+
+    this.changingStateAssetId = this.assetToChangeState.id;
+
+    const request: CambioEstadoRequest = {
+      observaciones: this.estadoObservaciones.trim(),
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    const observable = this.estadoAction === 'baja' 
+      ? this.estadoEquipoService.darDeBaja(this.assetToChangeState.id, request)
+      : this.estadoEquipoService.enviarAAlmacen(this.assetToChangeState.id, request);
+
+    observable.subscribe({
+      next: (response) => {
+        if (response.success) {
+          // En lugar de eliminar manualmente, recargar la lista completa
+          // para asegurar consistencia con el backend
+          this.loadAssets();
+          
+          const accionTexto = this.estadoAction === 'baja' ? 'dado de baja' : 'enviado a almacén';
+          this.notificationService.showSuccessMessage(
+            `Equipo "${this.assetToChangeState.name}" ${accionTexto} exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al cambiar el estado del equipo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al cambiar estado:', error);
+        const accionTexto = this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
+        
+        // Manejo específico para errores de permisos
+        if (error.status === 403) {
+          this.notificationService.showError(
+            'Sin permisos suficientes',
+            `Para ${accionTexto} equipos necesitas rol de GM o Administrador. Contacta al administrador del sistema.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Error al cambiar estado',
+            `No se pudo ${accionTexto} el equipo "${this.assetToChangeState.name}": ${error.message || 'Error desconocido'}`
+          );
+        }
+      },
+      complete: () => {
+        this.changingStateAssetId = null;
+        this.showEstadoDialog = false;
+        this.assetToChangeState = null;
+        this.estadoAction = null;
+        this.estadoObservaciones = '';
+      }
+    });
+  }
+
+  cancelarCambioEstado(): void {
+    this.showEstadoDialog = false;
+    this.assetToChangeState = null;
+    this.estadoAction = null;
+    this.estadoObservaciones = '';
+  }
+
+  getEstadoActionText(): string {
+    return this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
   }
 }

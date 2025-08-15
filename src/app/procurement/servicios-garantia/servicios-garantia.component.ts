@@ -45,9 +45,14 @@ export class ServiciosGarantiaComponent implements OnInit {
       idServicioGarantia: [null],
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       correoDeContacto: ['', [Validators.required, Validators.email]],
-      telefonoDeContacto: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
+      telefonoDeContacto: ['', [Validators.required, Validators.pattern(/^[\+]?[0-9\s\-\(\)]{7,20}$/)]],
       nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
-      ruc: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]]
+      ruc: ['', [Validators.required]]
+    });
+
+    // Suscribirse a cambios en el formulario de filtro
+    this.filterForm.valueChanges.subscribe(() => {
+      this.aplicarFiltros();
     });
   }
 
@@ -134,15 +139,13 @@ export class ServiciosGarantiaComponent implements OnInit {
     if (this.servicioForm.valid) {
       const servicioData = this.servicioForm.value;
       
-      if (!servicioData.ruc || servicioData.ruc.length !== 11) {
-        this.error = 'El RUC debe tener 11 dígitos';
+      if (!servicioData.ruc || servicioData.ruc.trim() === '') {
+        this.error = 'El RUT es requerido';
         return;
       }
 
-      if (!servicioData.telefonoDeContacto || servicioData.telefonoDeContacto.length !== 9) {
-        this.error = 'El teléfono debe tener 9 dígitos';
-        return;
-      }
+      // La validación del teléfono ahora se hace con el patrón del formulario
+      // No es necesario validar la longitud específica aquí
 
       if (this.modoEdicion) {
         if (!servicioData.idServicioGarantia || isNaN(servicioData.idServicioGarantia)) {

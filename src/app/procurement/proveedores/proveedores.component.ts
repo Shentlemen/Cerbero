@@ -24,7 +24,7 @@ export class ProveedoresComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 11;
+  pageSize = 20;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -58,10 +58,17 @@ export class ProveedoresComponent implements OnInit {
     this.proveedorForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       correoContacto: ['', [Validators.required, Validators.email]],
-      telefonoContacto: ['', [Validators.required]],
-      nombreComercial: ['', [Validators.required, Validators.minLength(3)]]
+      telefonoContacto: ['', [Validators.required, Validators.pattern(/^[\+]?[0-9\s\-\(\)]{7,20}$/)]],
+      nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
+      direccion: ['', [Validators.minLength(5)]],
+      observaciones: ['']
     });
     this.contactosFormArray = this.fb.array([]);
+
+    // Suscribirse a cambios en el formulario de filtro
+    this.filterForm.valueChanges.subscribe(() => {
+      this.aplicarFiltros();
+    });
   }
 
   ngOnInit(): void {
@@ -127,7 +134,15 @@ export class ProveedoresComponent implements OnInit {
     if (proveedor) {
       this.modoEdicion = true;
       this.proveedorSeleccionado = proveedor;
-      this.proveedorForm.patchValue(proveedor);
+      
+      // Preparar los datos del proveedor para el formulario
+      const datosProveedor = {
+        ...proveedor,
+        direccion: proveedor.direccion === 'Sin especificar' ? '' : proveedor.direccion,
+        observaciones: proveedor.observaciones || ''
+      };
+      
+      this.proveedorForm.patchValue(datosProveedor);
       this.cargarContactosProveedor(proveedor.idProveedores);
     } else {
       this.modoEdicion = false;
@@ -197,6 +212,13 @@ export class ProveedoresComponent implements OnInit {
 
     if (controls['telefonoContacto']?.errors?.['required']) {
       errores.push('El teléfono de contacto es requerido');
+    }
+    if (controls['telefonoContacto']?.errors?.['pattern']) {
+      errores.push('El formato del teléfono no es válido');
+    }
+
+    if (controls['direccion']?.errors?.['minlength']) {
+      errores.push('La dirección debe tener al menos 5 caracteres');
     }
 
     return errores;
@@ -272,6 +294,11 @@ export class ProveedoresComponent implements OnInit {
     }
 
     const proveedorData = this.proveedorForm.value;
+    
+    // Asegurar que la dirección no esté vacía
+    if (!proveedorData.direccion || proveedorData.direccion.trim() === '') {
+      proveedorData.direccion = 'Sin especificar';
+    }
     
     // Validar formato de correo electrónico
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

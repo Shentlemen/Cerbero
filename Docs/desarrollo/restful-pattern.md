@@ -309,4 +309,4 @@ export class MiServicioService extends BaseRestService {
 - [BaseRestService](../src/app/services/base-rest.service.ts)
 - [ApiResponse Interface](../src/app/interfaces/api-response.interface.ts)
 - [AlmacenService Example](../src/app/services/almacen.service.ts)
-- [ActivoAlmacenService Example](../src/app/services/activo-almacen.service.ts) 
+- [StockAlmacenService Example](../src/app/services/stock-almacen.service.ts) 

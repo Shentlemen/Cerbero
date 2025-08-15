@@ -1,0 +1,180 @@
+<div class="cementerio-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-skull-crossbones"></i> 
+        Cementerio de Equipos
+        <span class="subtitle">Equipos dados de baja</span>
+      </h1>
+    </div>
+  </div>
+
+  <div class="cementerio-content">
+    <!-- Filtro de búsqueda -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Buscar por nombre de equipo..." 
+          [formControl]="nombreEquipoControl" 
+          style="max-width: 320px;"
+          data-help="🔍 Busca equipos específicos en el cementerio">
+      </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div *ngIf="loading" class="text-center my-4">
+      <div class="spinner-border text-warning" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando equipos del cementerio...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay equipos -->
+    <div *ngIf="!loading && equiposFiltrados.length === 0" class="empty-state">
+      <i class="fas fa-smile"></i>
+      <h3>¡No hay equipos en el cementerio!</h3>
+      <p>Todos los equipos están activos o en almacén.</p>
+    </div>
+
+    <!-- Tabla de equipos en baja -->
+    <div class="table-container" *ngIf="!loading && equiposFiltrados.length > 0">
+      <table class="cementerio-table">
+        <thead>
+          <tr>
+            <th>
+              <div class="th-content">
+                <span>Equipo</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Tipo</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Sistema Operativo</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Fecha de Baja</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Usuario</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Observaciones</span>
+              </div>
+            </th>
+            <th *ngIf="canManageAssets()">
+              <div class="th-content">
+                <span>Acciones</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let equipo of pagedEquipos" class="equipo-row" (click)="verDetallesEquipo(equipo)" data-help="👁️ Haz clic para ver los detalles del equipo">
+            <td>
+              <div class="equipo-name">
+                <i class="fas equipment-icon" [ngClass]="getEquipoIcon(equipo.biosType)"></i>
+                <div class="equipo-info">
+                  <span class="name">{{ equipo.name }}</span>
+                  <small class="ip" *ngIf="equipo.ipAddr">{{ equipo.ipAddr }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="type-badge" [ngClass]="getTypeBadgeClass(equipo.biosType)">
+                {{ equipo.biosType || 'Desconocido' }}
+              </span>
+            </td>
+            <td>
+              <div class="os-badge" [ngClass]="{'windows': equipo.osName?.includes('Windows'), 'linux': equipo.osName?.includes('Linux')}">
+                <i class="fab" [ngClass]="{'fa-windows': equipo.osName?.includes('Windows'), 'fa-linux': equipo.osName?.includes('Linux')}"></i>
+                {{ equipo.osName || 'Desconocido' }}
+              </div>
+            </td>
+            <td>
+              <div class="fecha-baja">
+                <i class="fas fa-calendar-times"></i>
+                <span>{{ formatFecha(equipo.fechaBaja) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="usuario-cambio">{{ equipo.usuarioCambio || 'No especificado' }}</span>
+            </td>
+            <td>
+              <div class="observaciones" [title]="equipo.observaciones">
+                {{ equipo.observaciones || 'Sin observaciones' }}
+              </div>
+            </td>
+            <td *ngIf="canManageAssets()">
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-success btn-sm reactivar-btn" 
+                  (click)="reactivarEquipo(equipo); $event.stopPropagation()"
+                  [disabled]="reactivatingEquipoId === equipo.id"
+                  title="Reactivar este equipo"
+                  data-help="🔄 Reactivar equipo y devolverlo a la lista activa">
+                  <i class="fas" [ngClass]="reactivatingEquipoId === equipo.id ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+                  {{ reactivatingEquipoId === equipo.id ? 'Reactivando...' : 'Reactivar' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination-container" *ngIf="!loading && equiposFiltrados.length > 0">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de reactivación -->
+<div *ngIf="showReactivarDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog reactivar-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-undo"></i>
+      Reactivar Equipo
+    </div>
+    <div class="confirm-dialog-message">
+      <p>¿Está seguro que desea reactivar el equipo <strong>{{ equipoToReactivar?.name }}</strong>?</p>
+      <p class="text-muted">El equipo volverá a aparecer en la lista de activos y se eliminará del cementerio.</p>
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarReactivacion()">
+        Cancelar
+      </button>
+      <button 
+        class="confirm-dialog-button confirm reactivar" 
+        (click)="confirmarReactivacion()"
+        [disabled]="reactivatingEquipoId === equipoToReactivar?.id">
+        <i class="fas" [ngClass]="reactivatingEquipoId === equipoToReactivar?.id ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+        {{ reactivatingEquipoId === equipoToReactivar?.id ? 'Reactivando...' : 'Reactivar' }}
+      </button>
+    </div>
+  </div>
+</div> 

@@ -38,4 +38,11 @@ export interface UpdateUserRequest {
   role: string;
   enabled: boolean;
   password?: string; // Agregar campo para contraseña
+}
+
+export interface UpdateProfileRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password?: string; // Opcional para cambios de contraseña
 } 

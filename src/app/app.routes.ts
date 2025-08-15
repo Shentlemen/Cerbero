@@ -8,7 +8,7 @@ import { DevicesComponent } from './devices/devices.component';
 import { DeviceDetailsComponent } from './device-details/device-details.component';
 import { AlmacenesComponent } from './almacen/almacenes/almacenes.component';
 import { StockAlmacenComponent } from './almacen/stock-almacen/stock-almacen.component';
-import { UbicacionesComponent } from './almacen/ubicaciones/ubicaciones.component';
+import { UbicacionesComponent } from './almacen/stock/stock.component';
 
 export const routes: Routes = [
   {
@@ -34,6 +34,7 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },
+      { path: 'cementerio', loadComponent: () => import('./cementerio/cementerio.component').then(m => m.CementerioComponent) },
       { path: 'asset-details/:id', loadComponent: () => import('./assetdetails/assetdetails.component').then(m => m.AssetdetailsComponent) },
       { path: 'software', component: SoftwareComponent },
       { path: 'settings', loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },
@@ -57,7 +58,7 @@ export const routes: Routes = [
       // Rutas de almacén dentro del menu para mantener el layout completo
       { path: 'almacen/almacenes', component: AlmacenesComponent },
       { path: 'almacen/stock/:id', component: StockAlmacenComponent },
-      { path: 'almacen/ubicaciones', component: UbicacionesComponent }
+      { path: 'almacen/stock', component: UbicacionesComponent }
     ]
   },
   {

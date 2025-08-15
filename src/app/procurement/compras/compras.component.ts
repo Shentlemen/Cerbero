@@ -55,6 +55,12 @@ export class ComprasComponent implements OnInit {
   lotesDetalles: LoteDTO[] = [];
   entregasDetalles: EntregaDTO[] = [];
   isCompactView: boolean = false;
+  proveedoresFiltrados: { [key: number]: ProveedorDTO[] } = {};
+  serviciosGarantiaFiltrados: { [key: number]: ServicioGarantiaDTO[] } = {};
+  proveedorSearchValues: { [key: number]: string } = {};
+  servicioGarantiaSearchValues: { [key: number]: string } = {};
+  dropdownProveedoresVisible: { [key: number]: boolean } = {};
+  dropdownServiciosGarantiaVisible: { [key: number]: boolean } = {};
 
   @ViewChild('detallesModal') detallesModal!: TemplateRef<any>;
 
@@ -920,5 +926,125 @@ export class ComprasComponent implements OnInit {
 
   toggleCompactView(): void {
     this.isCompactView = !this.isCompactView;
+  }
+
+  // Métodos para búsqueda en dropdowns
+  filtrarProveedores(event: any, index: number): void {
+    const searchTerm = event.target.value.toLowerCase();
+    this.proveedorSearchValues[index] = searchTerm;
+    
+    if (!searchTerm) {
+      this.proveedoresFiltrados[index] = [...this.proveedoresList];
+    } else {
+      this.proveedoresFiltrados[index] = this.proveedoresList.filter(proveedor =>
+        proveedor.nombreComercial.toLowerCase().includes(searchTerm) ||
+        proveedor.nombre.toLowerCase().includes(searchTerm)
+      );
+    }
+  }
+
+  filtrarServiciosGarantia(event: any, index: number): void {
+    const searchTerm = event.target.value.toLowerCase();
+    this.servicioGarantiaSearchValues[index] = searchTerm;
+    
+    if (!searchTerm) {
+      this.serviciosGarantiaFiltrados[index] = [...this.serviciosGarantiaList];
+    } else {
+      this.serviciosGarantiaFiltrados[index] = this.serviciosGarantiaList.filter(servicio =>
+        servicio.nombreComercial.toLowerCase().includes(searchTerm) ||
+        servicio.nombre.toLowerCase().includes(searchTerm)
+      );
+    }
+  }
+
+  getProveedoresFiltrados(index: number): ProveedorDTO[] {
+    if (!this.proveedoresFiltrados[index]) {
+      this.proveedoresFiltrados[index] = [...this.proveedoresList];
+    }
+    return this.proveedoresFiltrados[index];
+  }
+
+  getServiciosGarantiaFiltrados(index: number): ServicioGarantiaDTO[] {
+    if (!this.serviciosGarantiaFiltrados[index]) {
+      this.serviciosGarantiaFiltrados[index] = [...this.serviciosGarantiaList];
+    }
+    return this.serviciosGarantiaFiltrados[index];
+  }
+
+  getProveedorSearchValue(index: number): string {
+    return this.proveedorSearchValues[index] || '';
+  }
+
+  getServicioGarantiaSearchValue(index: number): string {
+    return this.servicioGarantiaSearchValues[index] || '';
+  }
+
+  // Métodos para manejar dropdowns integrados
+  mostrarDropdownProveedores(index: number): void {
+    this.dropdownProveedoresVisible[index] = true;
+    this.proveedoresFiltrados[index] = [...this.proveedoresList];
+  }
+
+  ocultarDropdownProveedores(index: number): void {
+    setTimeout(() => {
+      this.dropdownProveedoresVisible[index] = false;
+    }, 200);
+  }
+
+  mostrarDropdownServiciosGarantia(index: number): void {
+    this.dropdownServiciosGarantiaVisible[index] = true;
+    this.serviciosGarantiaFiltrados[index] = [...this.serviciosGarantiaList];
+  }
+
+  ocultarDropdownServiciosGarantia(index: number): void {
+    setTimeout(() => {
+      this.dropdownServiciosGarantiaVisible[index] = false;
+    }, 200);
+  }
+
+  isDropdownProveedoresVisible(index: number): boolean {
+    return this.dropdownProveedoresVisible[index] || false;
+  }
+
+  isDropdownServiciosGarantiaVisible(index: number): boolean {
+    return this.dropdownServiciosGarantiaVisible[index] || false;
+  }
+
+  seleccionarProveedor(proveedor: ProveedorDTO, index: number): void {
+    const itemControl = this.itemsFormArray.at(index);
+    itemControl.patchValue({
+      idProveedor: proveedor.idProveedores
+    });
+    this.proveedorSearchValues[index] = proveedor.nombreComercial;
+    this.dropdownProveedoresVisible[index] = false;
+  }
+
+  seleccionarServicioGarantia(servicio: ServicioGarantiaDTO, index: number): void {
+    const itemControl = this.itemsFormArray.at(index);
+    itemControl.patchValue({
+      idServicioGarantia: servicio.idServicioGarantia
+    });
+    this.servicioGarantiaSearchValues[index] = servicio.nombreComercial;
+    this.dropdownServiciosGarantiaVisible[index] = false;
+  }
+
+  getProveedorDisplayValue(index: number): string {
+    const itemControl = this.itemsFormArray.at(index);
+    const idProveedor = itemControl.get('idProveedor')?.value;
+    if (idProveedor) {
+      const proveedor = this.proveedoresList.find(p => p.idProveedores === idProveedor);
+      return proveedor ? proveedor.nombreComercial : '';
+    }
+    return this.proveedorSearchValues[index] || '';
+  }
+
+  getServicioGarantiaDisplayValue(index: number): string {
+    const itemControl = this.itemsFormArray.at(index);
+    const idServicio = itemControl.get('idServicioGarantia')?.value;
+    if (idServicio) {
+      const servicio = this.serviciosGarantiaList.find(s => s.idServicioGarantia === idServicio);
+      return servicio ? servicio.nombreComercial : '';
+    }
+    return this.servicioGarantiaSearchValues[index] || '';
   }
 } 

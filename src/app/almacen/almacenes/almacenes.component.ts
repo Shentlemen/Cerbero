@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
+import { StockAlmacenService } from '../../services/stock-almacen.service';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
-import { ActivoAlmacenService } from '../../services/activo-almacen.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
@@ -19,12 +19,13 @@ import { NotificationContainerComponent } from '../../components/notification-co
     NgbModule,
     NotificationContainerComponent
   ],
-  templateUrl: 'almacenes.component.html',
-  styleUrls: ['almacenes.component.css']
+  templateUrl: './almacenes.component.html',
+  styleUrls: ['./almacenes.component.css']
 })
 export class AlmacenesComponent implements OnInit {
   almacenes: Almacen[] = [];
   almacenesFiltrados: Almacen[] = [];
+  stock: any[] = []; // Stock del sistema
   loading: boolean = false;
   error: string | null = null;
   almacenForm: FormGroup;
@@ -32,17 +33,25 @@ export class AlmacenesComponent implements OnInit {
   almacenSeleccionado: Almacen | null = null;
   almacenAEliminar: Almacen | null = null;
 
+  // Paginación
+  page = 1;
+  pageSize = 10;
+  collectionSize = 0;
 
+  // Ordenamiento
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
-  // Stock por almacén
-  almacenStock: { [key: number]: number } = {};
+  // Filtrado
+  searchTerm: string = '';
+  searchResultsCount: number = 0;
 
   // Propiedades para el diálogo de confirmación
   showConfirmDialog: boolean = false;
 
   constructor(
+    private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
-    private activoAlmacenService: ActivoAlmacenService,
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router,
@@ -51,37 +60,37 @@ export class AlmacenesComponent implements OnInit {
   ) {
     this.almacenForm = this.fb.group({
       numero: ['', [Validators.required, Validators.maxLength(50)]],
-      nombre: ['', [Validators.required, Validators.maxLength(255)]]
+      nombre: ['', [Validators.required, Validators.maxLength(100)]],
+      descripcion: ['', Validators.maxLength(500)]
     });
   }
 
   ngOnInit(): void {
-    this.cargarAlmacenes();
+    this.cargarDatos();
   }
 
-  cargarAlmacenes(): void {
+  cargarDatos(): void {
     this.loading = true;
     this.error = null;
 
     // Cargar almacenes y stock en paralelo
     Promise.all([
       this.almacenService.getAllAlmacenes().toPromise(),
-      this.activoAlmacenService.getAllUbicaciones().toPromise()
-    ]).then(([almacenes, ubicaciones]) => {
+      this.stockAlmacenService.getAllStock().toPromise()
+    ]).then(([almacenes, stock]) => {
       if (almacenes) {
         this.almacenes = almacenes;
         this.almacenesFiltrados = [...this.almacenes];
+        this.actualizarPaginacion();
       }
-
-      if (ubicaciones) {
-        // Calcular stock por almacén
-        this.calcularStockPorAlmacen(ubicaciones);
+      if (stock) {
+        this.stock = stock; // Asignar el stock cargado
+        // Aquí podrías procesar el stock si es necesario
       }
-
-      this.loading = false;
     }).catch(error => {
-      console.error('Error al cargar almacenes:', error);
-      this.error = 'Error al cargar almacenes. Por favor, intente nuevamente.';
+      console.error('Error al cargar datos:', error);
+      this.error = 'Error al cargar los datos';
+    }).finally(() => {
       this.loading = false;
     });
   }
@@ -117,7 +126,7 @@ export class AlmacenesComponent implements OnInit {
         this.almacenService.updateAlmacen(this.almacenSeleccionado.id, almacenActualizado).subscribe({
           next: () => {
             this.modalService.dismissAll();
-            this.cargarAlmacenes();
+            this.cargarDatos();
           },
           error: (error) => {
             console.error('Error al actualizar almacén:', error);
@@ -133,7 +142,7 @@ export class AlmacenesComponent implements OnInit {
         this.almacenService.createAlmacen(nuevoAlmacen).subscribe({
           next: () => {
             this.modalService.dismissAll();
-            this.cargarAlmacenes();
+            this.cargarDatos();
           },
           error: (error) => {
             console.error('Error al crear almacén:', error);
@@ -154,7 +163,7 @@ export class AlmacenesComponent implements OnInit {
         next: () => {
           this.showConfirmDialog = false;
           this.almacenAEliminar = null;
-          this.cargarAlmacenes();
+          this.cargarDatos();
         },
         error: (error) => {
           console.error('Error al eliminar almacén:', error);
@@ -176,37 +185,37 @@ export class AlmacenesComponent implements OnInit {
   }
 
   verStockAlmacen(almacen: Almacen): void {
-    console.log('Navegando a stock del almacén:', almacen);
-    console.log('Ruta destino:', `/menu/almacen/stock/${almacen.id}`);
+    // Navegar al componente stock-almacen con el ID del almacén
     this.router.navigate(['/menu/almacen/stock', almacen.id]);
   }
 
   /**
    * Calcula el stock disponible por almacén
    */
-  private calcularStockPorAlmacen(ubicaciones: any[]): void {
-    this.almacenStock = {};
-    
-    ubicaciones.forEach(ubicacion => {
-      const almacenId = ubicacion.almacen.id;
-      if (!this.almacenStock[almacenId]) {
-        this.almacenStock[almacenId] = 0;
-      }
-      this.almacenStock[almacenId]++;
-    });
+  private calcularStockPorAlmacen(stock: any[]): void {
+    // Esta función se puede implementar si es necesario para cálculos adicionales
   }
 
   /**
    * Verifica si un almacén tiene stock disponible
    */
   tieneStock(almacenId: number): boolean {
-    return this.almacenStock[almacenId] > 0;
+    // Buscar en el stock si hay items para este almacén
+    return this.stock && this.stock.some((item: any) => item.almacen.id === almacenId);
   }
 
   /**
    * Obtiene el stock disponible de un almacén
    */
   getStockDisponible(almacenId: number): number {
-    return this.almacenStock[almacenId] || 0;
+    if (!this.stock) return 0;
+    return this.stock
+      .filter((item: any) => item.almacen.id === almacenId)
+      .reduce((total: number, item: any) => total + (item.cantidad || 1), 0);
+  }
+
+  actualizarPaginacion(): void {
+    this.collectionSize = this.almacenesFiltrados.length;
+    this.page = 1;
   }
 } 

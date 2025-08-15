@@ -232,6 +232,36 @@
             </td>
             <td *ngIf="canManageAssets()">
               <div class="action-buttons">
+                <!-- Botones de cambio de estado solo si hay permisos -->
+                <ng-container *ngIf="canManageAssetStates()">
+                  <button 
+                    class="btn btn-warning btn-sm estado-btn baja-btn" 
+                    (click)="darDeBaja(asset); $event.stopPropagation()"
+                    [disabled]="changingStateAssetId === asset.id"
+                    title="Dar de baja este equipo (enviar al cementerio)"
+                    data-help="⚰️ Marca este equipo como dado de baja y lo envía al cementerio">
+                    <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-times-circle'"></i>
+                    Baja
+                  </button>
+                  <!-- Botón de almacén temporalmente comentado
+                  <button 
+                    class="btn btn-info btn-sm estado-btn almacen-btn" 
+                    (click)="enviarAAlmacen(asset); $event.stopPropagation()"
+                    [disabled]="changingStateAssetId === asset.id"
+                    title="Enviar este equipo al almacén"
+                    data-help="📦 Marca este equipo como almacenado">
+                    <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
+                    Almacén
+                  </button>
+                  -->
+                </ng-container>
+                
+                <!-- Mensaje informativo si no hay permisos para cambio de estado -->
+                <small *ngIf="!canManageAssetStates()" class="text-muted">
+                  Requiere permisos de GM o Administrador
+                </small>
+                
+                <!-- Botón de eliminar (siempre disponible si puede gestionar assets) -->
                 <button 
                   class="btn btn-danger btn-sm delete-btn" 
                   (click)="eliminarAsset(asset); $event.stopPropagation()"
@@ -279,6 +309,42 @@
       </button>
       <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">
         Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de cambio de estado -->
+<div *ngIf="showEstadoDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog estado-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas" [ngClass]="estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive'"></i>
+      {{ estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén' }}
+    </div>
+    <div class="confirm-dialog-message">
+      <p>¿Está seguro que desea {{ getEstadoActionText() }} el equipo <strong>{{ assetToChangeState?.name }}</strong>?</p>
+      <div class="observaciones-container">
+        <label for="observaciones">Observaciones (opcional):</label>
+        <textarea 
+          id="observaciones"
+          [(ngModel)]="estadoObservaciones" 
+          placeholder="Ingrese observaciones sobre el cambio de estado..."
+          maxlength="500"
+          rows="3"></textarea>
+        <small class="text-muted">{{ estadoObservaciones.length }}/500 caracteres</small>
+      </div>
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarCambioEstado()">
+        Cancelar
+      </button>
+      <button 
+        class="confirm-dialog-button confirm" 
+        [ngClass]="estadoAction === 'baja' ? 'baja' : 'almacen'"
+        (click)="confirmarCambioEstado()"
+        [disabled]="changingStateAssetId === assetToChangeState?.id">
+        <i class="fas" [ngClass]="changingStateAssetId === assetToChangeState?.id ? 'fa-spinner fa-spin' : (estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive')"></i>
+        {{ changingStateAssetId === assetToChangeState?.id ? 'Procesando...' : (estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén') }}
       </button>
     </div>
   </div>

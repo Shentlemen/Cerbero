@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, throwError, switchMap } from 'rxjs';
-import { LoginRequest, AuthResponse, User, CreateUserRequest, UpdateUserRequest } from '../interfaces/auth.interface';
+import { LoginRequest, AuthResponse, User, CreateUserRequest, UpdateUserRequest, UpdateProfileRequest } from '../interfaces/auth.interface';
 import { environment } from '../../environments/environment';
 import { PermissionsService } from './permissions.service';
 
@@ -196,6 +196,19 @@ export class AuthService {
         }),
         catchError(error => {
           console.error('AuthService: Update error:', error);
+          throw error;
+        })
+      );
+  }
+
+  updateProfile(profileData: UpdateProfileRequest): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/auth/profile`, profileData)
+      .pipe(
+        tap(response => {
+          console.log('AuthService: Profile updated successfully:', response);
+        }),
+        catchError(error => {
+          console.error('AuthService: Profile update error:', error);
           throw error;
         })
       );

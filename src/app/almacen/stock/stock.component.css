@@ -144,32 +144,7 @@
   color: #2c3e50;
 }
 
-.activo-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: #2c3e50;
-  font-weight: 500;
-}
-
-.activo-info i {
-  font-size: 1.2rem;
-  color: #3498db;
-}
-
 /* Estilos para resaltado de búsqueda */
-.activo-info.search-match {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  border-radius: 8px;
-  padding: 0.5rem;
-  border-left: 4px solid #f39c12;
-  animation: searchPulse 0.6s ease-in-out;
-}
-
-.activo-info.search-match i {
-  color: #f39c12;
-  animation: iconPulse 1s ease-in-out infinite;
-}
 
 .almacen-info.search-match {
   background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
@@ -202,6 +177,43 @@ mark.bg-warning {
   padding: 0.1rem 0.2rem;
   border-radius: 3px;
   font-weight: bold;
+}
+
+/* Estilos para el badge de cantidad */
+.cantidad-badge {
+  color: #2c3e50;
+  font-weight: 500;
+  background: #ecf0f1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* Estilos para la información del ítem */
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.item-info i {
+  font-size: 1.2rem;
+  color: #28a745;
+}
+
+.item-info.search-match {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-radius: 8px;
+  padding: 0.5rem;
+  border-left: 4px solid #f39c12;
+  animation: searchPulse 0.6s ease-in-out;
+}
+
+.item-info.search-match i {
+  color: #f39c12;
+  animation: iconPulse 1s ease-in-out infinite;
 }
 
 /* Estilos para el indicador de prioridad */
@@ -240,6 +252,15 @@ mark.bg-warning {
   color: #2c3e50;
   font-weight: 500;
   background: #d5f4e6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.numero-info {
+  color: #2c3e50;
+  font-weight: 500;
+  background: #e8f4fd;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -347,7 +368,7 @@ mark.bg-warning {
     width: 100%;
   }
 
-  .activo-info,
+  .item-info,
   .almacen-info {
     flex-direction: column;
     align-items: flex-start;
@@ -456,4 +477,264 @@ mark.bg-warning {
 .activos-dropdown.no-results .activo-option {
   color: #856404;
   background: #fff3cd;
+}
+
+/* Estilos para el dropdown de compras */
+.items-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.item-option {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.item-option:hover {
+  background: #f8f9fa;
+  transform: translateX(5px);
+}
+
+.item-option.selected {
+  background: #e3f2fd;
+  border-left: 3px solid #3498db;
+}
+
+.item-option.disabled {
+  color: #6c757d;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
+.item-option i {
+  color: #3498db;
+  width: 20px;
+  text-align: center;
+}
+
+.item-option strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.item-option small {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.no-results {
+  padding: 1rem;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Estilos específicos para el segundo dropdown (ítems) */
+.item-option[data-type="item"] {
+  border-left: 3px solid #28a745;
+}
+
+.item-option[data-type="item"]:hover {
+  background: #f8fff9;
+}
+
+.item-option[data-type="item"].selected {
+  background: #e8f5e8;
+  border-left-color: #28a745;
+}
+
+/* Estilos para campos deshabilitados */
+.form-control:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Mensaje informativo */
+.text-muted small {
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+/* Estilos para el modal */
+.modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #dee2e6;
+}
+
+.modal-title {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.modal-title i {
+  color: #3498db;
+}
+
+/* Estilos para las cards del formulario */
+.form-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
+}
+
+.form-card:hover {
+  border-color: #3498db;
+  box-shadow: 0 4px 15px rgba(52,152,219,0.1);
+}
+
+.form-card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 12px 12px 0 0;
+}
+
+.form-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+}
+
+.form-card-title i {
+  color: #3498db;
+  font-size: 1.1rem;
+}
+
+.form-card-body {
+  padding: 1.5rem;
+}
+
+/* Estilos para los campos del formulario */
+.form-label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.form-control {
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  transition: all 0.3s ease;
+  padding: 0.75rem;
+}
+
+.form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  transform: translateY(-1px);
+}
+
+.form-select {
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  transition: all 0.3s ease;
+  padding: 0.75rem;
+}
+
+.form-select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Textarea específico */
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Estilos para campos de solo lectura */
+.form-control[readonly] {
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Estilos para validaciones */
+.text-danger {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.text-muted {
+  font-size: 0.85rem;
+  color: #6c757d !important;
+}
+
+/* Estilos para el botón de guardar */
+.btn-primary {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  border: none;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2980b9 0%, #1f5f8b 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-primary:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  border: none;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108,117,125,0.3);
+}
+
+/* Estilos para el modal responsive */
+@media (max-width: 768px) {
+  .form-card-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .form-card-body {
+    padding: 1rem;
+  }
+  
+  .form-card-title {
+    font-size: 0.9rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
 }

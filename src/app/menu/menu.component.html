@@ -24,6 +24,10 @@
         <i class="fas fa-hdd"></i>
         <span>DISPOSITIVOS</span>
       </a>
+      <a routerLink="/menu/cementerio" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-skull-crossbones"></i>
+        <span>CEMENTERIO</span>
+      </a>
     </div>
   </div>
 
@@ -37,10 +41,27 @@
     <span>INVENTARIO</span>
   </a>
 
-  <a routerLink="/menu/procurement/compras" routerLinkActive="active">
-    <i class="fas fa-shopping-bag"></i>
-    <span>COMPRAS</span>
-  </a>
+  <!-- Menú expandible de Adquisiciones -->
+  <div class="menu-item" [class.expanded]="isAdquisicionesExpanded">
+    <div class="menu-header" (click)="toggleAdquisicionesMenu()">
+      <i class="fas fa-shopping-cart"></i>
+      <span>ADQUISICIONES</span>
+    </div>
+    <div class="submenu" [class.show]="isAdquisicionesExpanded">
+      <a routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-shopping-bag"></i>
+        <span>COMPRAS</span>
+      </a>
+      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-industry"></i>
+        <span>PROVEEDORES</span>
+      </a>
+      <a routerLink="/menu/procurement/servicios-garantia" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-shield-alt"></i>
+        <span>GARANTÍA</span>
+      </a>
+    </div>
+  </div>
 
   <!-- Menú expandible de Almacén -->
   <div class="menu-item" [class.expanded]="isAlmacenExpanded">
@@ -53,7 +74,7 @@
         <i class="fas fa-building"></i>
         <span>ALMACENES</span>
       </a>
-      <a routerLink="/menu/almacen/ubicaciones" routerLinkActive="active" class="submenu-item">
+              <a routerLink="/menu/almacen/stock" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-boxes"></i>
         <span>STOCK</span>
       </a>
@@ -67,10 +88,6 @@
       <span>CONFIGURACIÓN</span>
     </div>
     <div class="submenu" [class.show]="isConfigExpanded">
-      <a *ngIf="isGM()" routerLink="/menu/settings" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-database"></i>
-        <span>BASE DE DATOS</span>
-      </a>
       <a routerLink="/menu/locations" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-map-marker-alt"></i>
         <span>UBICACIONES</span>
@@ -78,10 +95,6 @@
       <a routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-network-wired"></i>
         <span>SUB REDES</span>
-      </a>
-      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-industry"></i>
-        <span>PROVEEDORES</span>
       </a>
       <a routerLink="/menu/procurement/tipos-activo" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-tags"></i>
@@ -91,17 +104,27 @@
         <i class="fas fa-file-invoice-dollar"></i>
         <span>TIPOS DE COMPRA</span>
       </a>
-      <a routerLink="/menu/procurement/servicios-garantia" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-shield-alt"></i>
-        <span>GARANTÍA</span>
-      </a>
       <a routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-users"></i>
         <span>USUARIOS</span>
       </a>
+    </div>
+  </div>
+
+  <!-- Menú expandible de Administración - Solo visible para GM y Admin -->
+  <div class="menu-item" [class.expanded]="isAdminExpanded" *ngIf="canAccessAdministration()">
+    <div class="menu-header" (click)="toggleAdminMenu()">
+      <i class="fas fa-user-shield"></i>
+      <span>ADMINISTRACIÓN</span>
+    </div>
+    <div class="submenu" [class.show]="isAdminExpanded">
+      <a *ngIf="isGM()" routerLink="/menu/settings" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-database"></i>
+        <span>BASE DE DATOS</span>
+      </a>
       <a *ngIf="canManageUsers()" routerLink="/menu/user-management" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-user-cog"></i>
-        <span>Users</span>
+        <span>USUARIOS</span>
       </a>
     </div>
   </div>

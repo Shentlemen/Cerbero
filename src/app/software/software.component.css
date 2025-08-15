@@ -718,30 +718,6 @@
   color: #3498db;
 }
 
-.batch-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.batch-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 20px;
-  color: #495057;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-}
-
-.batch-btn:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
-
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -929,10 +905,6 @@
   }
   
   .action-btn {
-    justify-content: center;
-  }
-  
-  .batch-buttons {
     justify-content: center;
   }
 }

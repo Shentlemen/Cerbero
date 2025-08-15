@@ -68,21 +68,6 @@
       {{ selectedCount }} seleccionado{{ selectedCount !== 1 ? 's' : '' }}
     </span>
     
-    <div class="batch-buttons">
-      <button class="batch-btn" 
-              (click)="selectAllVisible()"
-              title="Seleccionar todos los visibles">
-        <i class="fas fa-check-double"></i>
-        Todos
-      </button>
-      <button class="batch-btn" 
-              (click)="deselectAll()"
-              title="Deseleccionar todos">
-        <i class="fas fa-times"></i>
-        Ninguno
-      </button>
-    </div>
-    
     <div class="action-buttons">
       <button class="action-btn visibility" 
                       [class.toggle-active]="hasAnyHiddenSoftware()"

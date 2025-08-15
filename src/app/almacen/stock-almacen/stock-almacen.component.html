@@ -6,12 +6,13 @@
     <div class="title-wrapper">
       <h1>
         <i class="fas fa-boxes"></i> 
-        Stock del Almacén: {{ almacen?.numero }} - {{ almacen?.nombre }}
+        <span *ngIf="almacenSeleccionado; else defaultTitle">
+          Stock del {{ almacenSeleccionado.numero }} - {{ almacenSeleccionado.nombre }}
+        </span>
+        <ng-template #defaultTitle>
+          Gestión de Stock de Almacén
+        </ng-template>
       </h1>
-      <button class="btn btn-outline-secondary" (click)="volverAAlmacenes()">
-        <i class="fas fa-arrow-left me-2"></i>
-        Volver a Almacenes
-      </button>
     </div>
   </div>
 
@@ -21,7 +22,7 @@
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Cargando...</span>
       </div>
-      <p class="mt-2">Cargando stock del almacén...</p>
+      <p class="mt-2">Cargando stock...</p>
     </div>
 
     <!-- Mensaje de error -->
@@ -32,59 +33,119 @@
 
     <!-- Contenido del stock -->
     <div *ngIf="!loading && !error" class="stock-organizado">
-      <!-- Resumen del almacén -->
-      <div class="almacen-summary mb-4">
+      <!-- Resumen general -->
+      <div class="stock-summary mb-4">
         <div class="summary-card">
           <div class="summary-icon">
             <i class="fas fa-warehouse"></i>
           </div>
           <div class="summary-info">
-            <h4>{{ almacen?.numero }} - {{ almacen?.nombre }}</h4>
+            <h4 *ngIf="almacenSeleccionado; else defaultSummary">
+              Stock del {{ almacenSeleccionado.numero }}
+            </h4>
+            <ng-template #defaultSummary>
+              <h4>Stock Total del Sistema</h4>
+            </ng-template>
             <p class="text-muted mb-0">
-              <i class="fas fa-map-marker-alt me-2"></i>
-              {{ stockOrganizado.length }} estantería{{ stockOrganizado.length !== 1 ? 's' : '' }}
+              <i class="fas fa-boxes me-2"></i>
+              <span *ngIf="almacenSeleccionado; else defaultStockInfo">
+                {{ stock.length }} item(s) en este almacén
+              </span>
+              <ng-template #defaultStockInfo>
+                {{ getTotalAlmacenes() }} almacén{{ getTotalAlmacenes() !== 1 ? 'es' : '' }} con stock
+              </ng-template>
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Estanterías -->
-      <div *ngIf="stockOrganizado.length > 0; else noStock" class="estanterias-container">
-        <div *ngFor="let estanteria of stockOrganizado" class="estanteria-section mb-4">
-          <div class="estanteria-header">
-            <h3 class="estanteria-title">
-              <i class="fas fa-layer-group me-2"></i>
-              Estantería: {{ estanteria.estanteria }}
-            </h3>
-            <span class="estanteria-count">
-              {{ estanteria.estantes.length }} estante{{ estanteria.estantes.length !== 1 ? 's' : '' }}
-            </span>
+      <!-- Almacenes con stock -->
+      <div *ngIf="getAlmacenes().length > 0; else noStock" class="almacenes-container">
+        <div *ngFor="let almacenKey of getAlmacenes()" class="almacen-main-card">
+          <!-- Header principal del almacén -->
+          <div class="almacen-card-header">
+            <div class="almacen-info">
+              <div class="almacen-icon">
+                <i class="fas fa-warehouse"></i>
+              </div>
+              <div class="almacen-details">
+                <h2 class="almacen-name">{{ almacenKey }}</h2>
+                <p class="almacen-summary">
+                  <i class="fas fa-boxes me-2"></i>
+                  {{ getTotalStockPorAlmacen(almacenKey) }} items en stock
+                  <span class="separator">•</span>
+                  <i class="fas fa-layer-group me-2"></i>
+                  {{ getEstanterias(almacenKey).length }} estanterías
+                </p>
+              </div>
+            </div>
           </div>
 
-          <!-- Estantes -->
-          <div class="estantes-grid">
-            <div *ngFor="let estante of estanteria.estantes" class="estante-card">
-              <div class="estante-header">
-                <h5 class="estante-title">
-                  <i class="fas fa-shelf me-2"></i>
-                  Estante: {{ estante.estante }}
-                </h5>
-                <span class="activos-count">
-                  {{ estante.activos.length }} activo{{ estante.activos.length !== 1 ? 's' : '' }}
-                </span>
+          <!-- Estanterías del almacén -->
+          <div class="estanterias-grid">
+            <div *ngFor="let estanteriaKey of getEstanterias(almacenKey)" class="estanteria-main-card">
+              <!-- Header de la estantería -->
+              <div class="estanteria-card-header">
+                <div class="estanteria-icon">
+                  <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="estanteria-info">
+                  <h4 class="estanteria-name">Estantería {{ estanteriaKey }}</h4>
+                  <p class="estanteria-summary">
+                    {{ getTotalStockPorEstanteria(almacenKey, estanteriaKey) }} items
+                    <span class="separator">•</span>
+                    {{ getEstantesPorEstanteria(almacenKey, estanteriaKey).length }} estantes
+                  </p>
+                </div>
               </div>
-              
-              <!-- Activos en este estante -->
-              <div class="activos-list">
-                <div *ngFor="let ubicacion of estante.activos" class="activo-item">
-                  <div class="activo-info">
-                    <i class="fas fa-desktop text-primary me-2"></i>
-                    <span class="activo-nombre">{{ getActivoName(ubicacion.activoId) }}</span>
+
+              <!-- Estantes de la estantería -->
+              <div class="estantes-grid">
+                <div *ngFor="let estanteKey of getEstantesPorEstanteria(almacenKey, estanteriaKey)" class="estante-card">
+                  <!-- Header del estante -->
+                  <div class="estante-header">
+                    <div class="estante-icon">
+                      <i class="fas fa-cubes"></i>
+                    </div>
+                    <div class="estante-info">
+                      <h5 class="estante-name">Estante {{ estanteKey }}</h5>
+                      <span class="estante-count">{{ getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length }} items</span>
+                    </div>
                   </div>
-                  <div class="activo-details">
-                    <small class="text-muted">
-                      ID: {{ ubicacion.activoId }}
-                    </small>
+
+                  <!-- Items en este estante -->
+                  <div class="items-container">
+                    <div *ngFor="let item of getItemsPorEstante(almacenKey, estanteriaKey, estanteKey)" 
+                         class="item-card"
+                         (click)="abrirModalCantidad(item, modalCantidad)"
+                         [style.cursor]="canManageStock() ? 'pointer' : 'default'"
+                         [title]="canManageStock() ? 'Click para modificar cantidad' : ''">
+                      <div class="item-content">
+                        <div class="item-icon">
+                          <i class="fas fa-box"></i>
+                        </div>
+                        <div class="item-details">
+                          <h6 class="item-name">{{ item.item.nombreItem }}</h6>
+                          <div class="item-metadata">
+                            <span class="cantidad-badge">{{ item.cantidad }} unidades</span>
+                            <span *ngIf="item.numero" class="numero-badge">{{ item.numero }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Estado vacío -->
+                    <div *ngIf="getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length === 0" 
+                         class="estante-empty">
+                      <i class="fas fa-box-open"></i>
+                      <span>Sin items</span>
+                    </div>
+                  </div>
+
+                  <!-- Estado vacío del estante -->
+                  <div *ngIf="getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length === 0" class="estante-empty">
+                    <i class="fas fa-box-open"></i>
+                    <span>Estante vacío</span>
                   </div>
                 </div>
               </div>
@@ -97,16 +158,101 @@
       <ng-template #noStock>
         <div class="empty-state text-center p-5">
           <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-          <h5 class="text-muted">No hay stock en este almacén</h5>
+          <h5 class="text-muted">No hay stock disponible</h5>
           <p class="text-muted">
-            Este almacén no tiene activos registrados actualmente.
+            No se encontró stock en ningún almacén del sistema.
           </p>
-          <button class="btn btn-primary" (click)="volverAAlmacenes()">
-            <i class="fas fa-arrow-left me-2"></i>
-            Volver a Almacenes
-          </button>
         </div>
       </ng-template>
     </div>
   </div>
 </div> 
+
+<!-- Modal para modificar cantidad -->
+<ng-template #modalCantidad let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-edit me-2"></i>
+      Modificar Cantidad
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="itemSeleccionado" class="mb-4">
+      <!-- Información del item -->
+      <div class="item-info-card">
+        <div class="item-info-header">
+          <div class="item-icon-large">
+            <i class="fas fa-box"></i>
+          </div>
+          <div class="item-info-details">
+            <h5 class="item-name-modal">{{ itemSeleccionado.item.nombreItem }}</h5>
+            <div class="item-location">
+              <span class="badge bg-secondary me-1">{{ itemSeleccionado.almacen.numero }}</span>
+              <span class="badge bg-info me-1">{{ itemSeleccionado.estanteria }}</span>
+              <span class="badge bg-success">{{ itemSeleccionado.estante }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles de cantidad -->
+      <form [formGroup]="cantidadForm">
+        <div class="cantidad-controls">
+          <label class="form-label">Cantidad actual</label>
+          <div class="input-group input-group-lg">
+            <button 
+              type="button" 
+              class="btn btn-outline-danger"
+              (click)="reducirCantidad()"
+              [disabled]="cantidadForm.get('cantidad')?.value <= 0">
+              <i class="fas fa-minus"></i>
+            </button>
+            <input 
+              type="number" 
+              class="form-control text-center cantidad-input"
+              formControlName="cantidad"
+              min="0"
+              readonly>
+            <button 
+              type="button" 
+              class="btn btn-outline-success"
+              (click)="aumentarCantidad()">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div *ngIf="cantidadForm.get('cantidad')?.invalid && cantidadForm.get('cantidad')?.touched" 
+               class="text-danger mt-1">
+            <small>La cantidad debe ser un número válido (0 o mayor)</small>
+          </div>
+        </div>
+      </form>
+
+      <!-- Advertencia de eliminación -->
+      <div *ngIf="mostrarConfirmacionEliminacion" class="alert alert-warning mt-3">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <div>
+            <strong>¡Atención!</strong><br>
+            <small>Si confirmas con cantidad 0, el item será eliminado completamente del stock.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="cancelarCambios()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button 
+      type="button" 
+      class="btn" 
+      [ngClass]="mostrarConfirmacionEliminacion ? 'btn-danger' : 'btn-primary'"
+      (click)="guardarCantidad()"
+      [disabled]="!cantidadForm.valid">
+      <i class="fas" [ngClass]="mostrarConfirmacionEliminacion ? 'fa-trash' : 'fa-save'" class="me-1"></i>
+      {{ mostrarConfirmacionEliminacion ? 'Eliminar Item' : 'Actualizar Cantidad' }}
+    </button>
+  </div>
+</ng-template> 

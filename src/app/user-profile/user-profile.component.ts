@@ -6,6 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { User } from '../interfaces/auth.interface';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { UpdateProfileRequest } from '../interfaces/auth.interface';
 
 @Component({
   selector: 'app-user-profile',
@@ -106,7 +107,7 @@ export class UserProfileComponent implements OnInit {
       this.errorMessage = '';
       this.successMessage = '';
 
-      const updateData: any = {
+      const updateData: UpdateProfileRequest = {
         email: this.userForm.get('email')?.value,
         firstName: this.userForm.get('firstName')?.value,
         lastName: this.userForm.get('lastName')?.value
@@ -117,7 +118,7 @@ export class UserProfileComponent implements OnInit {
         updateData.password = password;
       }
 
-      this.authService.updateUser(this.currentUser.id, updateData).subscribe({
+      this.authService.updateProfile(updateData).subscribe({
         next: (updatedUser) => {
           this.successMessage = 'Perfil actualizado exitosamente';
           this.notificationService.showSuccessMessage('Perfil actualizado exitosamente');

@@ -11,6 +11,8 @@ export interface ProveedorDTO {
     correoContacto: string;    // Correo electrónico de contacto
     telefonoContacto: string;  // Teléfono de contacto
     nombreComercial: string;   // Nombre comercial del proveedor
+    direccion: string;         // Dirección del proveedor
+    observaciones?: string;    // Observaciones adicionales (opcional)
 }
 
 @Injectable({
@@ -174,4 +176,4 @@ export class ProveedoresService {
       })
     );
   }
-} 
+}

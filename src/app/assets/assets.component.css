@@ -52,7 +52,7 @@
 
 .assets-table th {
   background: #f8f9fa;
-  padding: 1rem;
+  padding: 0.75rem;
   font-weight: 600;
   color: #2c3e50;
   text-align: left;
@@ -64,7 +64,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .assets-table th:hover {
@@ -82,41 +82,43 @@
 
 .asset-row:hover {
   background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .asset-row td {
-  padding: 1rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #edf2f7;
   color: #2c3e50;
+  font-size: 0.9rem;
 }
 
 .asset-name {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   color: #2c3e50;
   font-weight: 500;
 }
 
 .asset-name i {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #3498db;
 }
 
 .asset-name span {
   color: #2c3e50;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .os-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.9rem;
+  gap: 0.375rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
 }
 
 .os-badge.windows {
@@ -132,13 +134,14 @@
 .ip-address {
   font-family: monospace;
   color: #2c3e50;
+  font-size: 0.85rem;
 }
 
 .type-badge {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.85rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
@@ -201,13 +204,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
+  gap: 0.375rem;
+  padding: 0.3rem 0.6rem;
   background: #f1f5f9;
-  border-radius: 6px;
+  border-radius: 5px;
   color: #2c3e50;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid #e2e8f0;
@@ -245,19 +248,50 @@
 /* Estilos para los botones de acción */
 .action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.estado-btn, .delete-btn {
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+  min-width: 60px;
+  text-align: center;
+}
+
+.baja-btn {
+  background: #ffc107;
+  border: 1px solid #ffc107;
+  color: #212529;
+}
+
+.baja-btn:hover:not(:disabled) {
+  background: #e0a800;
+  border-color: #d39e00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.almacen-btn {
+  background: #17a2b8;
+  border: 1px solid #17a2b8;
+  color: white;
+}
+
+.almacen-btn:hover:not(:disabled) {
+  background: #138496;
+  border-color: #117a8b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
 }
 
 .delete-btn {
   background: #dc3545;
   border: 1px solid #dc3545;
   color: white;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  min-width: 80px;
 }
 
 .delete-btn:hover:not(:disabled) {
@@ -267,14 +301,107 @@
   box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
 }
 
-.delete-btn:disabled {
+.estado-btn:disabled, .delete-btn:disabled {
   background: #6c757d;
   border-color: #6c757d;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  color: white;
 }
 
-.delete-btn i {
+.estado-btn i, .delete-btn i {
   margin-right: 0.25rem;
+}
+
+/* Estilos para el modal de cambio de estado */
+.estado-dialog {
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.observaciones-container {
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.observaciones-container label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.observaciones-container textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.observaciones-container textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.observaciones-container .text-muted {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.confirm-dialog-button.baja {
+  background: #ffc107;
+  color: #212529;
+}
+
+.confirm-dialog-button.baja:hover:not(:disabled) {
+  background: #e0a800;
+}
+
+.confirm-dialog-button.almacen {
+  background: #17a2b8;
+  color: white;
+}
+
+.confirm-dialog-button.almacen:hover:not(:disabled) {
+  background: #138496;
+}
+
+/* Responsive para botones de acción */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .estado-btn, .delete-btn {
+    min-width: 60px;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.375rem;
+  }
+  
+  .estado-dialog {
+    min-width: 300px;
+    max-width: 90vw;
+  }
+}
+
+/* Mensaje informativo de permisos */
+.action-buttons .text-muted {
+  font-size: 0.65rem;
+  text-align: center;
+  padding: 0.25rem 0.4rem;
+  background: #f8f9fa;
+  border-radius: 0.25rem;
+  border: 1px solid #e9ecef;
+  color: #6c757d;
+  margin: 0.1rem 0;
+  font-style: italic;
 }

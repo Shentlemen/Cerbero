@@ -278,6 +278,76 @@ button,
   flex-shrink: 0;
 }
 
+/* Estilos para búsqueda en dropdowns */
+.dropdown-search-container {
+  position: relative;
+}
+
+.dropdown-search-container .form-control {
+  border-radius: 6px;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.dropdown-search-container .form-control:focus {
+  border-color: #41A1AF;
+  box-shadow: 0 0 0 0.2rem rgba(65, 161, 175, 0.25);
+}
+
+.dropdown-search-container .form-select {
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* Estilos para dropdowns integrados */
+.dropdown-input {
+  cursor: pointer;
+  background-color: white;
+}
+
+.dropdown-input:focus {
+  cursor: text;
+}
+
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.dropdown-option {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.dropdown-option:hover {
+  background-color: #f8f9fa;
+  color: #41A1AF;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-no-results {
+  padding: 0.75rem;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  background-color: #f8f9fa;
+}
+
 /* Estilos para tablas en modales */
 .modal-body .table th,
 .modal-body .table td {

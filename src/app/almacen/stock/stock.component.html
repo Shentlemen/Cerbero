@@ -1,0 +1,524 @@
+<div class="ubicaciones-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1 style="text-align: left; justify-content: flex-start;">
+        <i class="fas fa-boxes"></i> 
+        Gestión de Stock de Almacén
+      </h1>
+    </div>
+  </div>
+
+  <div class="ubicaciones-content">
+    <!-- Header del contenido con botón de crear -->
+    <div class="content-header">
+      <div class="search-section">
+        <div class="input-group" style="max-width: 500px;">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Buscar por activo, número o almacén..." 
+            [(ngModel)]="searchTerm"
+            (input)="filtrarUbicaciones()">
+          <span class="input-group-text" *ngIf="searchTerm.trim()">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              Activo → Número → Almacén
+            </small>
+          </span>
+          <button 
+            *ngIf="searchTerm.trim()"
+            class="btn btn-outline-secondary" 
+            type="button"
+            (click)="clearSearch()"
+            title="Limpiar búsqueda">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <small class="text-muted mt-1">
+          <i class="fas fa-lightbulb me-1"></i>
+          La búsqueda incluye nombres de activos, números de stock y almacenes.
+        </small>
+        <div *ngIf="searchTerm.trim()" class="mt-2">
+          <span class="badge bg-info me-2">
+            <i class="fas fa-search me-1"></i>
+            {{ searchResultsCount }} resultado{{ searchResultsCount !== 1 ? 's' : '' }} encontrado{{ searchResultsCount !== 1 ? 's' : '' }}
+          </span>
+
+          <span *ngIf="getAlmacenMatchesCount() > 0" class="badge bg-danger">
+            <i class="fas fa-warehouse me-1"></i>
+            {{ getAlmacenMatchesCount() }} almacén{{ getAlmacenMatchesCount() !== 1 ? 'es' : '' }} coincidente{{ getAlmacenMatchesCount() !== 1 ? 's' : '' }}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Botón para agregar nueva ubicación -->
+      <div class="actions-section" *ngIf="canManageUbicaciones()">
+        <button 
+          class="btn btn-outline-secondary" 
+          (click)="abrirModalUbicacion(modalUbicacion)">
+          <i class="fas fa-box"></i>
+          Registrar Stock
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div *ngIf="loading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando ubicaciones...</p>
+    </div>
+
+    <!-- Mensaje de error -->
+    <div *ngIf="error" class="alert alert-danger m-3">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      {{ error }}
+    </div>
+
+    <!-- Tabla de ubicaciones -->
+    <div *ngIf="!loading && !error" class="table-container">
+      <table class="ubicaciones-table">
+        <thead>
+          <tr>
+            <th (click)="sortData('item')" [class.active]="sortColumn === 'item'">
+              <div class="th-content">
+                <span>Ítem</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'item' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'item' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'item'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('cantidad')" [class.active]="sortColumn === 'cantidad'">
+              <div class="th-content">
+                <span>Cantidad</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'cantidad' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'cantidad' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'cantidad'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('almacen')" [class.active]="sortColumn === 'almacen'">
+              <div class="th-content">
+                <span>Almacén</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'almacen' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'almacen' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'almacen'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('estanteria')" [class.active]="sortColumn === 'estanteria'">
+              <div class="th-content">
+                <span>Estantería</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'estanteria' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'estanteria' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'estanteria'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('estante')" [class.active]="sortColumn === 'estante'">
+              <div class="th-content">
+                <span>Estante</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'estante' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'estante' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'estante'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('numero')" [class.active]="sortColumn === 'numero'">
+              <div class="th-content">
+                <span>Número</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'numero' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'numero' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'numero'
+                }"></i>
+              </div>
+            </th>
+            <th *ngIf="canManageUbicaciones()">
+              <div class="th-content">
+                <span>Acciones</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ubicacion of pagedStock" class="ubicacion-row">
+            <td>
+              <div class="item-info" [class.search-match]="isItemMatch(ubicacion)">
+                <i class="fas fa-box me-2" [class.text-warning]="isItemMatch(ubicacion)"></i>
+                <span [innerHTML]="highlightItemName(ubicacion)"></span>
+                <small *ngIf="!ubicacion?.item?.nombreItem" class="text-muted">
+                  (Nombre no disponible)
+                </small>
+              </div>
+            </td>
+            <td>
+              <span class="cantidad-badge">{{ ubicacion?.cantidad || 0 }}</span>
+            </td>
+            <td>
+              <div class="almacen-info" [class.search-match]="isAlmacenMatch(ubicacion.almacen)">
+                <i class="fas fa-warehouse me-2" [class.text-warning]="isAlmacenMatch(ubicacion.almacen)"></i>
+                <span>
+                  {{ ubicacion?.almacen?.numero || 'N/A' }} - {{ ubicacion?.almacen?.nombre || 'Sin nombre' }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="estanteria-info">{{ ubicacion?.estanteria || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="estante-info">{{ ubicacion?.estante || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="numero-info">{{ ubicacion?.numero || 'N/A' }}</span>
+            </td>
+            <td *ngIf="canManageUbicaciones()">
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-warning btn-sm me-2" 
+                  (click)="abrirModalUbicacion(modalUbicacion, ubicacion)"
+                  title="Editar ubicación">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button 
+                  class="btn btn-danger btn-sm" 
+                  (click)="confirmarEliminacion(ubicacion)"
+                  title="Eliminar ubicación">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="pagedStock.length === 0">
+            <td colspan="6" class="text-center p-4">
+              <div class="alert alert-info m-0">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay ubicaciones disponibles
+                <span *ngIf="searchTerm"> que coincidan con la búsqueda</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Paginación -->
+    <div *ngIf="!loading && !error && collectionSize > pageSize" class="pagination-container">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar esta ubicación? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="eliminarUbicacion()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar ubicación -->
+<ng-template #modalUbicacion let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-box me-2"></i>
+      {{ modoEdicion ? 'Editar' : 'Registrar' }} Stock
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="stockForm" (ngSubmit)="guardarUbicacion()">
+      
+      <!-- Card de Compra e Ítem -->
+      <div class="form-card mb-4">
+        <div class="form-card-header">
+          <h6 class="form-card-title">
+            <i class="fas fa-shopping-cart me-2"></i>
+            Compra e Ítem
+          </h6>
+        </div>
+        <div class="form-card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="compraId" class="form-label">Compra *</label>
+              
+              <!-- Campo editable para nueva ubicación con búsqueda -->
+              <div *ngIf="!modoEdicion" class="position-relative">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="compraSearch"
+                  placeholder="Escriba para buscar compras por número..."
+                  [(ngModel)]="compraSearchTerm"
+                  [ngModelOptions]="{standalone: true}"
+                  (input)="filtrarCompras()"
+                  (focus)="mostrarDropdownCompras = true"
+                  (blur)="onCompraBlur()"
+                  autocomplete="off">
+                
+                <!-- Dropdown de compras filtradas -->
+                <div *ngIf="mostrarDropdownCompras && comprasFiltradas.length > 0" 
+                     class="items-dropdown">
+                  <div *ngFor="let compra of comprasFiltradas" 
+                       class="item-option"
+                       data-type="compra"
+                       (click)="seleccionarCompra(compra)"
+                       [class.selected]="compra.idCompra === stockForm.get('compraId')?.value">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    <strong>Compra {{ compra.numeroCompra }}</strong>
+                  </div>
+                </div>
+                
+                <!-- Mensaje cuando no hay resultados -->
+                <div *ngIf="mostrarDropdownCompras && comprasFiltradas.length === 0 && compraSearchTerm" 
+                     class="items-dropdown no-results">
+                  <div class="item-option disabled">
+                    <i class="fas fa-search me-2"></i>
+                    No se encontraron compras
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Campo de solo lectura para edición -->
+              <input 
+                *ngIf="modoEdicion"
+                type="text" 
+                class="form-control" 
+                id="compraId"
+                [value]="stockSeleccionado && stockSeleccionado.item.idItem ? getCompraInfo(stockSeleccionado.item.idItem)?.numeroCompra : ''"
+                readonly
+                style="background-color: #f8f9fa; cursor: not-allowed;">
+              
+              <div *ngIf="!modoEdicion && stockForm.get('compraId')?.invalid && stockForm.get('compraId')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('compraId')?.errors?.['required']">La compra es requerida</small>
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <label for="itemId" class="form-label">Ítem de la Compra *</label>
+              
+              <!-- Campo editable para nueva ubicación con búsqueda -->
+              <div *ngIf="!modoEdicion" class="position-relative">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="itemSearch"
+                  placeholder="Primero seleccione una compra..."
+                  [(ngModel)]="itemSearchTerm"
+                  [ngModelOptions]="{standalone: true}"
+                  (input)="filtrarItems()"
+                  (focus)="mostrarDropdownItems = true"
+                  (blur)="onItemBlur()"
+                  autocomplete="off"
+                  [disabled]="!stockForm.get('compraId')?.value">
+                
+                <!-- Dropdown de ítems filtrados -->
+                <div *ngIf="mostrarDropdownItems && itemsFiltrados.length > 0" 
+                     class="items-dropdown">
+                  <div *ngFor="let item of itemsFiltrados" 
+                       class="item-option"
+                       data-type="item"
+                       (click)="seleccionarItem(item)"
+                       [class.selected]="item.idItem === stockForm.get('itemId')?.value">
+                    <i class="fas fa-box me-2"></i>
+                    <strong>{{ item.nombreItem }}</strong>
+                  </div>
+                </div>
+                
+                <!-- Mensaje cuando no hay resultados -->
+                <div *ngIf="mostrarDropdownItems && itemsFiltrados.length === 0 && itemSearchTerm" 
+                     class="items-dropdown no-results">
+                  <div class="item-option disabled">
+                    <i class="fas fa-search me-2"></i>
+                    No se encontraron ítems
+                  </div>
+                </div>
+                
+                <!-- Mensaje cuando no hay compra seleccionada -->
+                <div *ngIf="!stockForm.get('compraId')?.value" class="text-muted mt-1">
+                  <small><i class="fas fa-info-circle me-1"></i>Primero seleccione una compra</small>
+                </div>
+              </div>
+              
+              <!-- Campo de solo lectura para edición -->
+              <input 
+                *ngIf="modoEdicion"
+                type="text" 
+                class="form-control" 
+                id="itemId"
+                [value]="stockSeleccionado && stockSeleccionado.item.idItem ? getItemInfo(stockSeleccionado.item.idItem)?.nombreItem : ''"
+                readonly
+                style="background-color: #f8f9fa; cursor: not-allowed;">
+              
+              <div *ngIf="!modoEdicion && stockForm.get('itemId')?.invalid && stockForm.get('itemId')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('itemId')?.errors?.['required']">El ítem es requerido</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card de Ubicación -->
+      <div class="form-card mb-4">
+        <div class="form-card-header">
+          <h6 class="form-card-title">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            Ubicación en Almacén
+          </h6>
+        </div>
+        <div class="form-card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="almacenId" class="form-label">Almacén *</label>
+              <select 
+                class="form-select" 
+                id="almacenId"
+                formControlName="almacenId">
+                <option value="">Seleccionar almacén</option>
+                <option *ngFor="let almacen of almacenes" [value]="almacen.id">
+                  {{ almacen.numero }} - {{ almacen.nombre }}
+                </option>
+              </select>
+              <div *ngIf="stockForm.get('almacenId')?.invalid && stockForm.get('almacenId')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('almacenId')?.errors?.['required']">El almacén es requerido</small>
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+              <label for="estanteria" class="form-label">Estantería *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="estanteria"
+                formControlName="estanteria"
+                placeholder="Ej: A1, B2, etc.">
+              <div *ngIf="stockForm.get('estanteria')?.invalid && stockForm.get('estanteria')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('estanteria')?.errors?.['required']">La estantería es requerida</small>
+                <small *ngIf="stockForm.get('estanteria')?.errors?.['maxlength']">La estantería no puede exceder 50 caracteres</small>
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+              <label for="estante" class="form-label">Estante *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="estante"
+                formControlName="estante"
+                placeholder="Ej: 1, 2, 3, etc.">
+              <div *ngIf="stockForm.get('estante')?.invalid && stockForm.get('estante')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('estante')?.errors?.['required']">El estante es requerido</small>
+                <small *ngIf="stockForm.get('estante')?.errors?.['maxlength']">El estante no puede exceder 50 caracteres</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card de Detalles -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <h6 class="form-card-title">
+            <i class="fas fa-info-circle me-2"></i>
+            Detalles del Stock
+          </h6>
+        </div>
+        <div class="form-card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="cantidad" class="form-label">Cantidad *</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="cantidad"
+                formControlName="cantidad"
+                min="1"
+                placeholder="1"
+                required>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="numero" class="form-label">Número</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="numero"
+                formControlName="numero"
+                placeholder="Número identificador (opcional)"
+                maxlength="50">
+              <div *ngIf="stockForm.get('numero')?.invalid && stockForm.get('numero')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('numero')?.errors?.['maxlength']">El número no puede exceder 50 caracteres</small>
+              </div>
+            </div>
+
+            <div class="col-md-12 mb-3">
+              <label for="descripcion" class="form-label">Descripción</label>
+              <textarea 
+                class="form-control" 
+                id="descripcion"
+                formControlName="descripcion"
+                placeholder="Descripción adicional del stock (opcional)"
+                maxlength="255"
+                rows="3"></textarea>
+              <div *ngIf="stockForm.get('descripcion')?.invalid && stockForm.get('descripcion')?.touched" class="text-danger mt-1">
+                <small *ngIf="stockForm.get('descripcion')?.errors?.['maxlength']">La descripción no puede exceder 255 caracteres</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-primary" 
+      (click)="guardarUbicacion()"
+      [disabled]="!isFormValid()">
+      <i class="fas fa-save me-1"></i>
+      {{ modoEdicion ? 'Actualizar' : 'Registrar' }}
+    </button>
+  </div>
+</ng-template>
+
+ 

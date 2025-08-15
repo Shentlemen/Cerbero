@@ -14,6 +14,17 @@
   </div>
 
   <div class="content-section">
+    <!-- Campo de búsqueda -->
+    <div class="row mb-3">
+      <div class="col-12 d-flex align-items-center gap-3">
+        <form [formGroup]="filterForm">
+          <div class="search-container">
+            <input type="text" class="form-control" placeholder="Nombre comercial" formControlName="nombreComercial" style="max-width: 320px;">
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -42,7 +53,7 @@
               </th>
               <th (click)="sortData('ruc')" [class.active]="sortColumn === 'ruc'">
                 <div class="th-content">
-                  <span>RUC</span>
+                  <span>RUT</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'ruc' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'ruc' && sortDirection === 'desc',
@@ -114,48 +125,73 @@
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    <form [formGroup]="servicioForm">
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input type="text" class="form-control" id="nombre" formControlName="nombre">
-        <div *ngIf="servicioForm.get('nombre')?.invalid && servicioForm.get('nombre')?.touched" class="text-danger">
-          <small *ngIf="servicioForm.get('nombre')?.errors?.['required']">El nombre es requerido</small>
-          <small *ngIf="servicioForm.get('nombre')?.errors?.['minlength']">El nombre debe tener al menos 3 caracteres</small>
-        </div>
+    <div class="servicio-card">
+      <div class="servicio-card-header">
+        <h6 class="mb-0">
+          <i class="fas fa-shield-alt me-2"></i>
+          Información del Servicio de Garantía
+        </h6>
       </div>
-      <div class="mb-3">
-        <label for="correoDeContacto" class="form-label">Correo de Contacto</label>
-        <input type="email" class="form-control" id="correoDeContacto" formControlName="correoDeContacto">
-        <div *ngIf="servicioForm.get('correoDeContacto')?.invalid && servicioForm.get('correoDeContacto')?.touched" class="text-danger">
-          <small *ngIf="servicioForm.get('correoDeContacto')?.errors?.['required']">El correo es requerido</small>
-          <small *ngIf="servicioForm.get('correoDeContacto')?.errors?.['email']">Ingrese un correo electrónico válido</small>
-        </div>
+      <div class="servicio-card-body">
+        <form [formGroup]="servicioForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="nombre" class="form-label">
+                <i class="fas fa-shield-alt me-1"></i>Nombre <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="nombre" formControlName="nombre" placeholder="Nombre del servicio">
+              <div *ngIf="servicioForm.get('nombre')?.invalid && servicioForm.get('nombre')?.touched" class="text-danger">
+                <small *ngIf="servicioForm.get('nombre')?.errors?.['required']">El nombre es requerido</small>
+                <small *ngIf="servicioForm.get('nombre')?.errors?.['minlength']">El nombre debe tener al menos 3 caracteres</small>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="nombreComercial" class="form-label">
+                <i class="fas fa-store me-1"></i>Nombre Comercial <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="nombreComercial" formControlName="nombreComercial" placeholder="Nombre comercial">
+              <div *ngIf="servicioForm.get('nombreComercial')?.invalid && servicioForm.get('nombreComercial')?.touched" class="text-danger">
+                <small *ngIf="servicioForm.get('nombreComercial')?.errors?.['required']">El nombre comercial es requerido</small>
+                <small *ngIf="servicioForm.get('nombreComercial')?.errors?.['minlength']">El nombre comercial debe tener al menos 3 caracteres</small>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="correoDeContacto" class="form-label">
+                <i class="fas fa-envelope me-1"></i>Correo de Contacto <span class="text-danger">*</span>
+              </label>
+              <input type="email" class="form-control" id="correoDeContacto" formControlName="correoDeContacto" placeholder="correo@empresa.com">
+              <div *ngIf="servicioForm.get('correoDeContacto')?.invalid && servicioForm.get('correoDeContacto')?.touched" class="text-danger">
+                <small *ngIf="servicioForm.get('correoDeContacto')?.errors?.['required']">El correo es requerido</small>
+                <small *ngIf="servicioForm.get('correoDeContacto')?.errors?.['email']">Ingrese un correo electrónico válido</small>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="telefonoDeContacto" class="form-label">
+                <i class="fas fa-phone me-1"></i>Teléfono de Contacto <span class="text-danger">*</span>
+              </label>
+              <input type="tel" class="form-control" id="telefonoDeContacto" formControlName="telefonoDeContacto" placeholder="+1234567890, (123) 456-7890">
+              <div *ngIf="servicioForm.get('telefonoDeContacto')?.invalid && servicioForm.get('telefonoDeContacto')?.touched" class="text-danger">
+                <small *ngIf="servicioForm.get('telefonoDeContacto')?.errors?.['required']">El teléfono es requerido</small>
+                <small *ngIf="servicioForm.get('telefonoDeContacto')?.errors?.['pattern']">Ingrese un formato de teléfono válido</small>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="ruc" class="form-label">
+                <i class="fas fa-id-card me-1"></i>RUT <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="ruc" formControlName="ruc" placeholder="Ingrese el RUT">
+              <div *ngIf="servicioForm.get('ruc')?.invalid && servicioForm.get('ruc')?.touched" class="text-danger">
+                <small *ngIf="servicioForm.get('ruc')?.errors?.['required']">El RUT es requerido</small>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
-      <div class="mb-3">
-        <label for="telefonoDeContacto" class="form-label">Teléfono de Contacto</label>
-        <input type="text" class="form-control" id="telefonoDeContacto" formControlName="telefonoDeContacto">
-        <div *ngIf="servicioForm.get('telefonoDeContacto')?.invalid && servicioForm.get('telefonoDeContacto')?.touched" class="text-danger">
-          <small *ngIf="servicioForm.get('telefonoDeContacto')?.errors?.['required']">El teléfono es requerido</small>
-          <small *ngIf="servicioForm.get('telefonoDeContacto')?.errors?.['pattern']">El teléfono debe tener entre 7 y 10 dígitos</small>
-        </div>
-      </div>
-      <div class="mb-3">
-        <label for="nombreComercial" class="form-label">Nombre Comercial</label>
-        <input type="text" class="form-control" id="nombreComercial" formControlName="nombreComercial">
-        <div *ngIf="servicioForm.get('nombreComercial')?.invalid && servicioForm.get('nombreComercial')?.touched" class="text-danger">
-          <small *ngIf="servicioForm.get('nombreComercial')?.errors?.['required']">El nombre comercial es requerido</small>
-          <small *ngIf="servicioForm.get('nombreComercial')?.errors?.['minlength']">El nombre comercial debe tener al menos 3 caracteres</small>
-        </div>
-      </div>
-      <div class="mb-3">
-        <label for="ruc" class="form-label">RUC</label>
-        <input type="text" class="form-control" id="ruc" formControlName="ruc" maxlength="11">
-        <div *ngIf="servicioForm.get('ruc')?.invalid && servicioForm.get('ruc')?.touched" class="text-danger">
-          <small *ngIf="servicioForm.get('ruc')?.errors?.['required']">El RUC es requerido</small>
-          <small *ngIf="servicioForm.get('ruc')?.errors?.['pattern']">El RUC debe tener 11 dígitos</small>
-        </div>
-      </div>
-    </form>
+    </div>
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>

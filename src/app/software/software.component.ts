@@ -337,22 +337,14 @@ export class SoftwareComponent implements OnInit {
     }
   }
 
-  selectAllVisible(): void {
-    this.pagedSoftwareList.forEach(software => {
-      this.selectedSoftware.add(software.idSoftware);
-    });
-  }
-
   toggleSelectAll(): void {
     if (this.selectedCount === this.pagedSoftwareList.length && this.pagedSoftwareList.length > 0) {
-      this.deselectAll();
+      this.selectedSoftware.clear();
     } else {
-      this.selectAllVisible();
+      this.pagedSoftwareList.forEach(software => {
+        this.selectedSoftware.add(software.idSoftware);
+      });
     }
-  }
-
-  deselectAll(): void {
-    this.selectedSoftware.clear();
   }
 
   get selectedCount(): number {
