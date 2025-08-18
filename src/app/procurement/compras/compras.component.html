@@ -533,6 +533,128 @@
           </div>
         </ng-template>
       </li>
+      <li *ngIf="modoEdicion" [ngbNavItem]="'4'">
+        <a ngbNavLink>Remitos</a>
+        <ng-template ngbNavContent>
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="mb-0 text-secondary">Remitos de Entrega</h5>
+          </div>
+          
+          <!-- Formulario para subir remito -->
+          <div class="remito-upload-card mb-4" *ngIf="canManagePurchases()">
+            <div class="card-header-custom mb-3">
+              <h6 class="mb-0 text-secondary">
+                <i class="fas fa-upload me-2"></i>Subir Nuevo Remito
+              </h6>
+            </div>
+            
+            <div class="row align-items-end">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-file me-2"></i>Seleccionar Archivo <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="file" 
+                  class="form-control" 
+                  (change)="onArchivoSeleccionado($event)"
+                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff">
+                <small class="text-muted">Máximo 10MB - Formatos: PDF, JPG, PNG, GIF, BMP, TIFF</small>
+              </div>
+              <div class="col-md-5 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-comment me-2"></i>Descripción (opcional)
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="descripcionRemito"
+                  placeholder="Descripción del remito de entrega...">
+              </div>
+              <div class="col-md-3 mb-3">
+                <button 
+                  type="button"
+                  class="btn btn-success w-100" 
+                  (click)="subirRemito()"
+                  [disabled]="!archivoSeleccionado || subiendoArchivo">
+                  <i class="fas fa-upload me-2"></i>
+                  <span *ngIf="!subiendoArchivo">Subir Remito</span>
+                  <span *ngIf="subiendoArchivo">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Subiendo...
+                  </span>
+                </button>
+              </div>
+            </div>
+            
+            <div *ngIf="archivoSeleccionado" class="alert alert-info mt-2">
+              <i class="fas fa-info-circle me-2"></i>
+              Archivo seleccionado: <strong>{{ archivoSeleccionado.name }}</strong> 
+              ({{ formatearTamanoArchivo(archivoSeleccionado.size) }})
+            </div>
+          </div>
+
+          <!-- Lista de remitos existentes -->
+          <div *ngIf="remitosCompra.length === 0" class="text-center py-5">
+            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay remitos subidos para esta compra.</p>
+            <p class="text-muted" *ngIf="canManagePurchases()">
+              <small>Use el formulario de arriba para subir el primer remito de entrega.</small>
+            </p>
+          </div>
+          
+          <div class="row" *ngIf="remitosCompra.length > 0">
+            <div class="col-md-6" *ngFor="let remito of remitosCompra; let i = index">
+              <div class="remito-card mb-3">
+                <div class="remito-header d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="mb-0 text-primary">
+                    <i [class]="getIconoArchivo(remito.tipoArchivo)" class="me-2"></i>
+                    {{ remito.nombreArchivoOriginal }}
+                  </h6>
+                  <div class="btn-group" role="group">
+                    <button 
+                      class="btn btn-outline-primary btn-sm" 
+                      (click)="visualizarRemito(remito)"
+                      title="Ver archivo">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button 
+                      class="btn btn-outline-success btn-sm" 
+                      (click)="descargarRemito(remito)"
+                      title="Descargar">
+                      <i class="fas fa-download"></i>
+                    </button>
+                    <button 
+                      *ngIf="canManagePurchases()"
+                      class="btn btn-outline-danger btn-sm" 
+                      (click)="eliminarRemito(remito)"
+                      title="Eliminar">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="remito-details">
+                  <div class="remito-detail">
+                    <span class="detail-label">Tamaño:</span>
+                    <span class="detail-value">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</span>
+                  </div>
+                  <div class="remito-detail">
+                    <span class="detail-label">Tipo:</span>
+                    <span class="detail-value">{{ remito.tipoArchivo }}</span>
+                  </div>
+                  <div class="remito-detail">
+                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-value">{{ formatearFecha(remito.fechaCreacion) }}</span>
+                  </div>
+                  <div class="remito-detail" *ngIf="remito.descripcion">
+                    <span class="detail-label">Descripción:</span>
+                    <span class="detail-value">{{ remito.descripcion }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </li>
     </ul>
     <div [ngbNavOutlet]="nav"></div>
   </div>
@@ -728,6 +850,72 @@
         </div>
       </div>
     </div>
+
+    <!-- Remitos de Entrega - Vista Detallada -->
+    <div class="details-section">
+      <h5 class="section-title">
+        <i class="fas fa-file-alt me-2"></i>Remitos de Entrega
+        <span class="items-count">({{ remitosCompra.length }} archivos)</span>
+      </h5>
+      
+      <div *ngIf="remitosCompra.length === 0" class="no-items">
+        <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No hay remitos adjuntos para esta compra.</p>
+      </div>
+      
+      <div *ngFor="let remito of remitosCompra; let i = index" class="item-card mb-3">
+        <div class="item-header">
+          <h6 class="item-title">
+            <i [class]="getIconoArchivo(remito.tipoArchivo)" class="me-2"></i>
+            {{ remito.nombreArchivoOriginal }}
+          </h6>
+          <div class="btn-group" role="group">
+            <button 
+              class="btn btn-outline-primary btn-sm" 
+              (click)="visualizarRemito(remito)"
+              title="Ver archivo">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button 
+              class="btn btn-outline-success btn-sm" 
+              (click)="descargarRemito(remito)"
+              title="Descargar">
+              <i class="fas fa-download"></i>
+            </button>
+          </div>
+        </div>
+        <div class="item-details">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="item-detail">
+                <span class="detail-label">Tipo de Archivo:</span>
+                <span class="detail-value">{{ remito.tipoArchivo }}</span>
+              </div>
+              <div class="item-detail">
+                <span class="detail-label">Tamaño:</span>
+                <span class="detail-value">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="item-detail">
+                <span class="detail-label">Fecha de Subida:</span>
+                <span class="detail-value">{{ formatearFecha(remito.fechaCreacion) }}</span>
+              </div>
+              <div class="item-detail" *ngIf="remito.fechaActualizacion !== remito.fechaCreacion">
+                <span class="detail-label">Última Modificación:</span>
+                <span class="detail-value">{{ formatearFecha(remito.fechaActualizacion) }}</span>
+              </div>
+            </div>
+            <div class="col-md-4" *ngIf="remito.descripcion">
+              <div class="item-detail">
+                <span class="detail-label">Descripción:</span>
+                <span class="detail-value">{{ remito.descripcion }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   
   <!-- Vista compacta (estilo Excel) -->
@@ -795,6 +983,60 @@
               <td>{{ formatearFecha(entrega.fechaPedido) }}</td>
               <td>{{ formatearFecha(entrega.fechaFinGarantia) }}</td>
               <td>{{ entrega.descripcion || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sección de remitos -->
+    <div class="compact-section mb-3">
+      <h6 class="compact-section-title">
+        <i class="fas fa-file-alt me-2"></i>Remitos de Entrega ({{ remitosCompra.length }})
+      </h6>
+      
+      <!-- Lista de remitos -->
+      <div *ngIf="remitosCompra.length === 0" class="text-center py-3 text-muted">
+        <i class="fas fa-file-alt fa-2x mb-2 d-block"></i>
+        No hay remitos adjuntos para esta compra.
+      </div>
+
+      <div class="table-responsive" *ngIf="remitosCompra.length > 0">
+        <table class="table table-sm table-bordered compact-table">
+          <thead class="table-light">
+            <tr>
+              <th>Archivo</th>
+              <th>Tamaño</th>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let remito of remitosCompra">
+              <td>
+                <i [class]="getIconoArchivo(remito.tipoArchivo)" class="me-2"></i>
+                {{ remito.nombreArchivoOriginal }}
+              </td>
+              <td class="text-center">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</td>
+              <td>{{ formatearFecha(remito.fechaCreacion) }}</td>
+              <td>{{ remito.descripcion || '-' }}</td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <button 
+                    class="btn btn-outline-primary btn-sm" 
+                    (click)="visualizarRemito(remito)"
+                    title="Ver archivo">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button 
+                    class="btn btn-outline-success btn-sm" 
+                    (click)="descargarRemito(remito)"
+                    title="Descargar">
+                    <i class="fas fa-download"></i>
+                  </button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>

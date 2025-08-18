@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
@@ -12,6 +12,7 @@ import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/se
 import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { PermissionsService } from '../../services/permissions.service';
+import { RemitosService, RemitoDTO } from '../../services/remitos.service';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
@@ -21,7 +22,7 @@ interface CompraConTipo extends CompraDTO {
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule],
   templateUrl: './compras.component.html',
   styleUrls: ['./compras.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -61,6 +62,12 @@ export class ComprasComponent implements OnInit {
   servicioGarantiaSearchValues: { [key: number]: string } = {};
   dropdownProveedoresVisible: { [key: number]: boolean } = {};
   dropdownServiciosGarantiaVisible: { [key: number]: boolean } = {};
+  
+  // Propiedades para remitos
+  remitosCompra: RemitoDTO[] = [];
+  archivoSeleccionado: File | null = null;
+  descripcionRemito: string = '';
+  subiendoArchivo: boolean = false;
 
   @ViewChild('detallesModal') detallesModal!: TemplateRef<any>;
 
@@ -74,7 +81,8 @@ export class ComprasComponent implements OnInit {
     private lotesService: LotesService,
     private entregasService: EntregasService,
     private cdr: ChangeDetectorRef,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private remitosService: RemitosService
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -324,12 +332,18 @@ export class ComprasComponent implements OnInit {
           this.entregasFormArray.clear();
         }
       });
+      
+      // Cargar remitos de la compra para el modo edición
+      this.cargarRemitosCompra(compra.idCompra);
     } else {
       this.modoEdicion = false;
       this.compraForm.reset();
       this.itemsFormArray.clear();
       this.entregasFormArray.clear();
       this.lotesDeLaCompra = [];
+      this.remitosCompra = [];
+      this.archivoSeleccionado = null;
+      this.descripcionRemito = '';
     }
     this.cdr.detectChanges();
     this.modalService.open(modal, { size: 'xl' });
@@ -900,6 +914,9 @@ export class ComprasComponent implements OnInit {
       }
     });
     
+    // Cargar remitos de la compra
+    this.cargarRemitosCompra(compra.idCompra);
+    
     // Abrir el modal de detalles
     this.modalService.open(this.detallesModal, { 
       size: 'xl', 
@@ -1046,5 +1063,138 @@ export class ComprasComponent implements OnInit {
       return servicio ? servicio.nombreComercial : '';
     }
     return this.servicioGarantiaSearchValues[index] || '';
+  }
+
+  // Métodos para remitos
+  cargarRemitosCompra(idCompra: number): void {
+    this.remitosService.getRemitosByCompra(idCompra).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.remitosCompra = response.data;
+        } else {
+          this.remitosCompra = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error al cargar remitos:', error);
+        this.remitosCompra = [];
+      }
+    });
+  }
+
+  onArchivoSeleccionado(event: any): void {
+    const archivo = event.target.files[0];
+    console.log('Archivo seleccionado:', archivo);
+    if (archivo) {
+      const validacion = this.remitosService.validarArchivo(archivo);
+      console.log('Validación archivo:', validacion);
+      if (validacion.valido) {
+        this.archivoSeleccionado = archivo;
+        this.error = null;
+        console.log('Archivo guardado correctamente:', this.archivoSeleccionado);
+      } else {
+        this.error = validacion.mensaje;
+        this.archivoSeleccionado = null;
+        event.target.value = '';
+      }
+    } else {
+      console.log('No se seleccionó archivo');
+      this.archivoSeleccionado = null;
+    }
+  }
+
+  subirRemito(): void {
+    // Obtener idCompra del formulario si no hay compraSeleccionada
+    const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
+    
+    console.log('Datos para subir remito:', {
+      archivoSeleccionado: this.archivoSeleccionado,
+      idCompra: idCompra,
+      compraSeleccionada: this.compraSeleccionada
+    });
+    
+    if (!this.archivoSeleccionado) {
+      this.error = 'Debe seleccionar un archivo';
+      return;
+    }
+    
+    if (!idCompra) {
+      this.error = 'No se puede identificar la compra';
+      return;
+    }
+
+    this.subiendoArchivo = true;
+    this.error = null;
+
+    this.remitosService.subirRemito(
+      idCompra, 
+      this.archivoSeleccionado, 
+      this.descripcionRemito || undefined
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Limpiar formulario
+          this.archivoSeleccionado = null;
+          this.descripcionRemito = '';
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) fileInput.value = '';
+          
+          // Recargar remitos
+          this.cargarRemitosCompra(idCompra);
+          
+          this.subiendoArchivo = false;
+        } else {
+          this.error = response.message || 'Error al subir archivo';
+          this.subiendoArchivo = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error al subir remito:', error);
+        this.error = 'Error al subir archivo';
+        this.subiendoArchivo = false;
+      }
+    });
+  }
+
+  descargarRemito(remito: RemitoDTO): void {
+    this.remitosService.descargarRemito(remito.idRemito);
+  }
+
+  visualizarRemito(remito: RemitoDTO): void {
+    this.remitosService.visualizarRemito(remito.idRemito);
+  }
+
+  eliminarRemito(remito: RemitoDTO): void {
+    if (confirm('¿Está seguro que desea eliminar este remito?')) {
+      this.remitosService.eliminarRemito(remito.idRemito).subscribe({
+        next: (response) => {
+          if (response.success) {
+            const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
+            if (idCompra) {
+              this.cargarRemitosCompra(idCompra);
+            }
+          } else {
+            this.error = response.message || 'Error al eliminar remito';
+          }
+        },
+        error: (error) => {
+          console.error('Error al eliminar remito:', error);
+          this.error = 'Error al eliminar remito';
+        }
+      });
+    }
+  }
+
+  formatearTamanoArchivo(bytes: number): string {
+    return this.remitosService.formatearTamaño(bytes);
+  }
+
+  getIconoArchivo(tipoArchivo: string): string {
+    return this.remitosService.getIconoArchivo(tipoArchivo);
+  }
+
+  esTipoImagen(tipoArchivo: string): boolean {
+    return this.remitosService.esTipoImagen(tipoArchivo);
   }
 } 
