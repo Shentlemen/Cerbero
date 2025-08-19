@@ -223,9 +223,18 @@ export class SoftwareComponent implements OnInit {
         this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
+        // Mostrar mensaje de error más claro
+        let errorMessage = 'No se pudo actualizar la visibilidad del software';
+        
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
         this.notificationService.showError(
           'Error al Actualizar Visibilidad',
-          'No se pudo actualizar la visibilidad del software: ' + error.message
+          errorMessage
         );
       }
     });
@@ -245,9 +254,18 @@ export class SoftwareComponent implements OnInit {
         this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
+        // Mostrar mensaje de error más claro
+        let errorMessage = 'No se pudo actualizar el estado prohibido del software';
+        
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
         this.notificationService.showError(
           'Error al Actualizar Estado Prohibido',
-          'No se pudo actualizar el estado prohibido del software: ' + error.message
+          errorMessage
         );
       }
     });
@@ -267,9 +285,18 @@ export class SoftwareComponent implements OnInit {
         this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
+        // Mostrar mensaje de error más claro
+        let errorMessage = 'No se pudo actualizar el estado driver del software';
+        
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
         this.notificationService.showError(
           'Error al Actualizar Estado Driver',
-          'No se pudo actualizar el estado driver del software: ' + error.message
+          errorMessage
         );
       }
     });
@@ -289,9 +316,18 @@ export class SoftwareComponent implements OnInit {
         this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
+        // Mostrar mensaje de error más claro
+        let errorMessage = 'No se pudo actualizar el estado licenciado del software';
+        
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
         this.notificationService.showError(
           'Error al Actualizar Estado Licenciado',
-          'No se pudo actualizar el estado licenciado del software: ' + error.message
+          errorMessage
         );
       }
     });

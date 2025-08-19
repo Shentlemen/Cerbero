@@ -10,21 +10,21 @@
   <div class="settings-section">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
-              <h3>Reseteo Completo de Base de Datos</h3>
+      <h3>Reseteo de Tablas OCS</h3>
     </div>
     
     <div class="sync-controls">
       <div class="info-box">
         <i class="fas fa-info-circle me-2"></i>
-        <span><strong>⚠️ ATENCIÓN:</strong> Esta operación realizará un RESETEO COMPLETO de la base de datos Cerbero. Se eliminarán TODOS los datos existentes y se importarán datos frescos desde OCS. Esta acción es irreversible y puede tomar varios minutos.</span>
+        <span><strong>⚠️ ATENCIÓN:</strong> Esta operación realizará un RESETEO de las tablas que se sincronizan desde OCS. Se eliminarán los datos de hardware, software y dispositivos, pero se PRESERVARÁN los usuarios, alertas y configuraciones específicas de Cerbero. Esta acción puede tomar varios minutos.</span>
       </div>
       
               <button 
-          class="btn btn-danger sync-button" 
+          class="btn btn-warning sync-button" 
           (click)="mostrarConfirmacion(confirmModal)"
           [disabled]="isSyncing">
-          <i class="fas fa-trash me-2" [class.fa-spin]="isSyncing"></i>
-          {{ isSyncing ? 'Reseteando base de datos...' : 'RESETEAR BASE DE DATOS COMPLETA' }}
+          <i class="fas fa-sync me-2" [class.fa-spin]="isSyncing"></i>
+          {{ isSyncing ? 'Reseteando tablas OCS...' : 'RESETEAR TABLAS OCS' }}
         </button>
     </div>
 
@@ -32,22 +32,24 @@
     <ng-template #confirmModal let-modal>
       <div class="modal-header">
         <h4 class="modal-title">
-          <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-          Confirmar Reseteo Completo
+          <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+          Confirmar Reseteo de Tablas OCS
         </h4>
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
       <div class="modal-body">
         <div class="confirmation-box">
-          <p class="confirmation-text">¿Está seguro de que desea realizar un RESETEO COMPLETO de la base de datos?</p>
+          <p class="confirmation-text">¿Está seguro de que desea realizar un RESETEO de las tablas que se sincronizan desde OCS?</p>
           <p class="confirmation-warning">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            <strong>⚠️ ADVERTENCIA CRÍTICA:</strong> Esta acción eliminará TODOS los datos existentes en Cerbero
+            <strong>⚠️ ADVERTENCIA:</strong> Esta acción eliminará los datos de hardware, software y dispositivos
           </p>
           <div class="confirmation-details">
-            <p><i class="fas fa-trash text-danger"></i> Se eliminarán TODOS los datos de hardware</p>
-            <p><i class="fas fa-trash text-danger"></i> Se eliminarán TODOS los datos de software</p>
-            <p><i class="fas fa-trash text-danger"></i> Se eliminarán TODAS las configuraciones</p>
+            <p><i class="fas fa-trash text-danger"></i> Se eliminarán los datos de hardware</p>
+            <p><i class="fas fa-trash text-danger"></i> Se eliminarán los datos de software</p>
+            <p><i class="fas fa-trash text-danger"></i> Se eliminarán los datos de dispositivos</p>
+            <p><i class="fas fa-shield text-success"></i> Se PRESERVARÁN los usuarios y configuraciones</p>
+            <p><i class="fas fa-shield text-success"></i> Se PRESERVARÁN las alertas y estados</p>
             <p><i class="fas fa-download text-success"></i> Se importarán datos frescos desde OCS</p>
             <p><i class="fas fa-clock text-warning"></i> Este proceso puede tomar varios minutos</p>
           </div>
@@ -69,7 +71,7 @@
     <div *ngIf="syncResult || syncMessage" class="sync-results">
       <h4>
         <i class="fas fa-check-circle me-2"></i>
-        Reseteo Completado
+        Reseteo de Tablas OCS Completado
       </h4>
       
       <!-- Mensaje general -->
@@ -94,6 +96,173 @@
     <div *ngIf="error" class="alert alert-danger">
       <i class="fas fa-exclamation-triangle me-2"></i>
       {{error}}
+    </div>
+  </div>
+
+  <!-- Nueva sección para comparar bases de datos -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-database me-2"></i>
+      <h3>Comparar Tablas Hardware (OCS vs Cerbero)</h3>
+    </div>
+    
+    <div class="sync-controls">
+      <div class="info-box">
+        <i class="fas fa-info-circle me-2"></i>
+        <span>Esta herramienta compara las tablas hardware de OCS y Cerbero para identificar equipos que están en una base pero no en la otra. Útil para detectar problemas de sincronización.</span>
+      </div>
+      
+      <button 
+        class="btn btn-info sync-button" 
+        (click)="compararBasesDatos()"
+        [disabled]="isComparingDatabases">
+        <i class="fas fa-balance-scale me-2" [class.fa-spin]="isComparingDatabases"></i>
+        {{ isComparingDatabases ? 'Comparando bases...' : 'Comparar Bases de Datos' }}
+      </button>
+    </div>
+
+    <!-- Resultados de comparación -->
+    <div *ngIf="comparisonResult" class="sync-results">
+      <h4>
+        <i class="fas fa-chart-bar me-2"></i>
+        Resultados de Comparación
+      </h4>
+      
+      <div class="comparison-summary mb-3">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="comparison-card ocs-card">
+              <h5><i class="fas fa-server me-2"></i>Base de Datos OCS</h5>
+              <div class="comparison-stats">
+                <p><strong>Total Equipos:</strong> {{comparisonResult.ocs.total}}</p>
+                <p><strong>Con Nombre:</strong> {{comparisonResult.ocs.conNombre}}</p>
+                <p><strong>Con IP:</strong> {{comparisonResult.ocs.conIP}}</p>
+                <p><strong>Con Sistema Operativo:</strong> {{comparisonResult.ocs.conSO}}</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="comparison-card cerbero-card">
+              <h5><i class="fas fa-database me-2"></i>Base de Datos Cerbero</h5>
+              <div class="comparison-stats">
+                <p><strong>Total Equipos:</strong> {{comparisonResult.cerbero.total}}</p>
+                <p><strong>Con Nombre:</strong> {{comparisonResult.cerbero.conNombre}}</p>
+                <p><strong>Con IP:</strong> {{comparisonResult.cerbero.conIP}}</p>
+                <p><strong>Con Sistema Operativo:</strong> {{comparisonResult.cerbero.conSO}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equipos solo en OCS -->
+      <div *ngIf="comparisonResult.soloEnOCS.length > 0" class="comparison-section mb-4">
+        <h5 class="text-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Equipos Solo en OCS ({{comparisonResult.soloEnOCS.length}})
+        </h5>
+        <p class="text-muted">Estos equipos están en OCS pero no se han sincronizado a Cerbero.</p>
+        
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-warning">
+              <tr>
+                <th>Nombre</th>
+                <th>IP</th>
+                <th>Sistema Operativo</th>
+                <th>Usuario</th>
+                <th>Grupo de Trabajo</th>
+                <th>Última Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let equipo of comparisonResult.soloEnOCS">
+                <td>{{equipo.name || 'N/A'}}</td>
+                <td>{{equipo.ipaddr || 'N/A'}}</td>
+                <td>{{equipo.osname || 'N/A'}}</td>
+                <td>{{equipo.userid || 'N/A'}}</td>
+                <td>{{equipo.workgroup || 'N/A'}}</td>
+                <td>{{equipo.lastdate ? (equipo.lastdate | date:'dd/MM/yyyy HH:mm') : 'N/A'}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Equipos solo en Cerbero -->
+      <div *ngIf="comparisonResult.soloEnCerbero.length > 0" class="comparison-section mb-4">
+        <h5 class="text-info">
+          <i class="fas fa-info-circle me-2"></i>
+          Equipos Solo en Cerbero ({{comparisonResult.soloEnCerbero.length}})
+        </h5>
+        <p class="text-muted">Estos equipos están en Cerbero pero no existen en OCS (posiblemente obsoletos).</p>
+        
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-info">
+              <tr>
+                <th>Nombre</th>
+                <th>IP</th>
+                <th>Sistema Operativo</th>
+                <th>Usuario</th>
+                <th>Grupo de Trabajo</th>
+                <th>Última Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let equipo of comparisonResult.soloEnCerbero">
+                <td>{{equipo.name || 'N/A'}}</td>
+                <td>{{equipo.ipaddr || 'N/A'}}</td>
+                <td>{{equipo.osname || 'N/A'}}</td>
+                <td>{{equipo.userid || 'N/A'}}</td>
+                <td>{{equipo.workgroup || 'N/A'}}</td>
+                <td>{{equipo.lastdate ? (equipo.lastdate | date:'dd/MM/yyyy HH:mm') : 'N/A'}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Equipos en ambas bases (OCULTO - Solo para debugging) -->
+      <div *ngIf="false && comparisonResult.enAmbas.length > 0" class="comparison-section">
+        <h5 class="text-success">
+          <i class="fas fa-check-circle me-2"></i>
+          Equipos Sincronizados ({{comparisonResult.enAmbas.length}})
+        </h5>
+        <p class="text-muted">Estos equipos están correctamente sincronizados en ambas bases de datos.</p>
+        
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-success">
+              <tr>
+                <th>Nombre</th>
+                <th>IP (OCS)</th>
+                <th>IP (Cerbero)</th>
+                <th>Sistema Operativo (OCS)</th>
+                <th>Sistema Operativo (Cerbero)</th>
+                <th>Última Fecha (OCS)</th>
+                <th>Última Fecha (Cerbero)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let equipo of comparisonResult.enAmbas">
+                <td>{{equipo.name || 'N/A'}}</td>
+                <td>{{equipo.ocs.ipaddr || 'N/A'}}</td>
+                <td>{{equipo.cerbero.ipaddr || 'N/A'}}</td>
+                <td>{{equipo.ocs.osname || 'N/A'}}</td>
+                <td>{{equipo.cerbero.osname || 'N/A'}}</td>
+                <td>{{equipo.ocs.lastdate ? (equipo.ocs.lastdate | date:'dd/MM/yyyy HH:mm') : 'N/A'}}</td>
+                <td>{{equipo.cerbero.lastdate ? (equipo.cerbero.lastdate | date:'dd/MM/yyyy HH:mm') : 'N/A'}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="comparisonError" class="alert alert-danger">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{comparisonError}}
     </div>
   </div>
 

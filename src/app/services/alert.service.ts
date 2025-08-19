@@ -23,17 +23,25 @@ export class AlertService {
 
   getAlertas(): Observable<Alerta[]> {
     return this.http.get<any[]>(this.apiUrl).pipe(
-      map(alertas => alertas.map(alerta => ({
-        ...alerta,
-        memory: Boolean(alerta.memory),
-        disk: Boolean(alerta.disk),
-        ip: Boolean(alerta.ip),
-        video: Boolean(alerta.video),
-        softwareForbidden: Boolean(alerta.softwareForbidden),
-        confirmada: Boolean(alerta.confirmada),
-        new_hardware: alerta.newHardware ? 1 : 0,
-        pcName: alerta.pcName || 'Desconocido'
-      }))),
+      map(alertas => alertas.map(alerta => {
+
+        
+        return {
+          ...alerta,
+          memory: Boolean(alerta.memory),
+          disk: Boolean(alerta.disk),
+          ip: Boolean(alerta.ip),
+          video: Boolean(alerta.video),
+          softwareForbidden: Boolean(alerta.softwareForbidden),
+          confirmada: Boolean(alerta.confirmada),
+          // ✅ CORREGIDO: Convertir boolean a number para new_hardware
+          new_hardware: alerta.newHardware ? 1 : 0,
+          // ✅ CORREGIDO: Usar el campo pcName que viene del backend
+          pcName: alerta.pcName || 'Desconocido',
+          // ✅ CORREGIDO: Usar el campo created_at si existe, sino fecha actual
+          fecha: alerta.created_at || new Date().toISOString()
+        };
+      })),
       catchError(error => {
         console.error('Error en getAlertas:', error);
         throw error;

@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, tap, catchError, throwError, switchMap } f
 import { LoginRequest, AuthResponse, User, CreateUserRequest, UpdateUserRequest, UpdateProfileRequest } from '../interfaces/auth.interface';
 import { environment } from '../../environments/environment';
 import { PermissionsService } from './permissions.service';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private router: Router
   ) {
     this.loadUserFromStorage();
     // Iniciar monitoreo automático de tokens
@@ -125,9 +127,96 @@ export class AuthService {
     }
   }
 
+  /**
+   * Verifica si el token actual está expirado
+   */
+  isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return true;
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationDate = new Date(payload.exp * 1000);
+      return expirationDate <= new Date();
+    } catch (error) {
+      console.error('Error verificando expiración del token:', error);
+      return true;
+    }
+  }
+
+  /**
+   * Limpia completamente la sesión del usuario
+   */
+  clearSession(): void {
+    console.log('🔄 Limpiando sesión completamente...');
+    
+    // Limpiar localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('currentUser');
+    
+    // Limpiar sessionStorage
+    sessionStorage.clear();
+    
+    // Limpiar cookies
+    document.cookie.split(";").forEach(function(c) { 
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+    });
+    
+    // Limpiar estado interno
+    this.currentUserSubject.next(null);
+    this.permissionsService.clearCurrentUser();
+    
+    console.log('✅ Sesión limpiada completamente');
+  }
+
   // Método para verificar el token con el backend
   verifyToken(): Observable<any> {
     return this.http.get(`${this.apiUrl}/auth/verify`);
+  }
+
+  /**
+   * Maneja el caso cuando la base de datos ha sido reseteada
+   * Este método debe ser llamado cuando se detectan errores 401 consistentes
+   */
+  handleDatabaseReset(): void {
+    console.log('🔄 Base de datos reseteada detectada - limpiando sesión');
+    
+    // Limpiar toda la información de sesión
+    this.logout();
+    
+    // Limpiar también el localStorage por si acaso
+    localStorage.clear();
+    
+    // Emitir evento de reseteo de base de datos
+    this.currentUserSubject.next(null);
+    this.permissionsService.clearCurrentUser();
+
+    // Redirigir al login
+    this.router.navigate(['/login']);
+    alert('La base de datos ha sido reseteada. Por favor, inicie sesión nuevamente.');
+  }
+
+  /**
+   * Verifica si el usuario actual existe en la base de datos
+   * Útil para detectar si la base de datos ha sido reseteada
+   */
+  verifyCurrentUserExists(): Observable<any> {
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      return throwError(() => new Error('No hay usuario autenticado'));
+    }
+    
+    return this.http.get(`${this.apiUrl}/auth/verify`).pipe(
+      tap(() => console.log('Usuario verificado exitosamente')),
+      catchError(error => {
+        if (error.status === 401 || error.status === 404) {
+          console.log('Usuario no encontrado en la base de datos - posible reseteo');
+          this.handleDatabaseReset();
+        }
+        return throwError(() => error);
+      })
+    );
   }
 
   // Método para iniciar el monitoreo automático de tokens

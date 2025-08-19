@@ -311,5 +311,4 @@ export class SoftwareService {
       })
     );
   }
-
 } 

@@ -15,6 +15,7 @@ import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { ConfigService } from '../services/config.service';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../services/auth.service';
 
 declare var bootstrap: any;
 
@@ -76,7 +77,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private cdr: ChangeDetectorRef,
     private modalService: NgbModal,
     private configService: ConfigService,
-    private http: HttpClient
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -297,6 +299,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       },
       (error) => {
         console.error('Error al cargar los datos', error);
+        
+        // Verificar si es un error de autenticación (posible reseteo de base de datos)
+        if (error.status === 401) {
+          console.log('Error 401 detectado - posible reseteo de base de datos');
+          this.authService.handleDatabaseReset();
+        }
       }
     );
   }
@@ -316,6 +324,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       },
       error => {
         console.error('Error al cargar las alertas', error);
+        
+        // Verificar si es un error de autenticación (posible reseteo de base de datos)
+        if (error.status === 401) {
+          console.log('Error 401 en loadAlertas - posible reseteo de base de datos');
+          this.authService.handleDatabaseReset();
+        }
       }
     );
   }
@@ -324,7 +338,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private reloadAlertasManteniendoPagina(currentPage: number): void {
     this.alertService.getAlertas().subscribe(
       (alertas: Alerta[]) => {
-        console.log('Alertas actualizadas:', alertas);
         this.alerts = alertas;
         
         // Aplicar el filtro actual a las nuevas alertas

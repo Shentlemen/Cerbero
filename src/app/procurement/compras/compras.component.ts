@@ -13,6 +13,11 @@ import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { RemitosService, RemitoDTO } from '../../services/remitos.service';
+import { PliegosService, PliegoDTO } from '../../services/pliegos.service';
+
+// Importaciones para PDF
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
@@ -68,6 +73,12 @@ export class ComprasComponent implements OnInit {
   archivoSeleccionado: File | null = null;
   descripcionRemito: string = '';
   subiendoArchivo: boolean = false;
+  
+  // Propiedades para pliego (un pliego por compra)
+  pliegoCompra: PliegoDTO | null = null;
+  pliegoSeleccionado: File | null = null;
+  descripcionPliego: string = '';
+  subiendoPliego: boolean = false;
 
   @ViewChild('detallesModal') detallesModal!: TemplateRef<any>;
 
@@ -82,7 +93,8 @@ export class ComprasComponent implements OnInit {
     private entregasService: EntregasService,
     private cdr: ChangeDetectorRef,
     private permissionsService: PermissionsService,
-    private remitosService: RemitosService
+    private remitosService: RemitosService,
+    private pliegosService: PliegosService
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -335,6 +347,9 @@ export class ComprasComponent implements OnInit {
       
       // Cargar remitos de la compra para el modo edición
       this.cargarRemitosCompra(compra.idCompra);
+      
+      // Cargar pliego de la compra para el modo edición
+      this.cargarPliegoCompra(compra.idCompra);
     } else {
       this.modoEdicion = false;
       this.compraForm.reset();
@@ -344,6 +359,9 @@ export class ComprasComponent implements OnInit {
       this.remitosCompra = [];
       this.archivoSeleccionado = null;
       this.descripcionRemito = '';
+      this.pliegoCompra = null;
+      this.pliegoSeleccionado = null;
+      this.descripcionPliego = '';
     }
     this.cdr.detectChanges();
     this.modalService.open(modal, { size: 'xl' });
@@ -917,6 +935,9 @@ export class ComprasComponent implements OnInit {
     // Cargar remitos de la compra
     this.cargarRemitosCompra(compra.idCompra);
     
+    // Cargar pliego de la compra
+    this.cargarPliegoCompra(compra.idCompra);
+    
     // Abrir el modal de detalles
     this.modalService.open(this.detallesModal, { 
       size: 'xl', 
@@ -1196,5 +1217,466 @@ export class ComprasComponent implements OnInit {
 
   esTipoImagen(tipoArchivo: string): boolean {
     return this.remitosService.esTipoImagen(tipoArchivo);
+  }
+
+  // Métodos para pliegos
+  cargarPliegoCompra(idCompra: number): void {
+    this.pliegosService.getPliegoByCompra(idCompra).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.pliegoCompra = response.data;
+        } else {
+          this.pliegoCompra = null;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error al cargar pliego:', error);
+        this.pliegoCompra = null;
+      }
+    });
+  }
+
+  onPliegoSeleccionado(event: any): void {
+    const archivo = event.target.files[0];
+    console.log('Pliego seleccionado:', archivo);
+    if (archivo) {
+      const validacion = this.pliegosService.validarArchivo(archivo);
+      console.log('Validación pliego:', validacion);
+      if (validacion.valido) {
+        this.pliegoSeleccionado = archivo;
+        this.error = null;
+        console.log('Pliego guardado correctamente:', this.pliegoSeleccionado);
+      } else {
+        this.error = validacion.mensaje;
+        this.pliegoSeleccionado = null;
+        event.target.value = '';
+      }
+    } else {
+      console.log('No se seleccionó pliego');
+      this.pliegoSeleccionado = null;
+    }
+  }
+
+  subirPliego(): void {
+    // Obtener idCompra del formulario si no hay compraSeleccionada
+    const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
+    
+    console.log('Datos para subir pliego:', {
+      pliegoSeleccionado: this.pliegoSeleccionado,
+      idCompra: idCompra,
+      compraSeleccionada: this.compraSeleccionada
+    });
+    
+    if (!this.pliegoSeleccionado) {
+      this.error = 'Debe seleccionar un pliego';
+      return;
+    }
+    
+    if (!idCompra) {
+      this.error = 'No se puede identificar la compra';
+      return;
+    }
+
+    this.subiendoPliego = true;
+    this.error = null;
+
+    this.pliegosService.subirPliego(
+      idCompra, 
+      this.pliegoSeleccionado, 
+      this.descripcionPliego || undefined
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Limpiar formulario
+          this.pliegoSeleccionado = null;
+          this.descripcionPliego = '';
+          const fileInput = document.querySelector('input[type="file"][accept*="pdf"]') as HTMLInputElement;
+          if (fileInput) fileInput.value = '';
+          
+          // Recargar pliego
+          this.cargarPliegoCompra(idCompra);
+          
+          this.subiendoPliego = false;
+        } else {
+          this.error = response.message || 'Error al subir pliego';
+          this.subiendoPliego = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error al subir pliego:', error);
+        this.error = 'Error al subir pliego';
+        this.subiendoPliego = false;
+      }
+    });
+  }
+
+  descargarPliego(pliego: PliegoDTO): void {
+    this.pliegosService.descargarPliego(pliego.idPliego);
+  }
+
+  visualizarPliego(pliego: PliegoDTO): void {
+    this.pliegosService.visualizarPliego(pliego.idPliego);
+  }
+
+  eliminarPliego(pliego: PliegoDTO): void {
+    if (confirm('¿Está seguro que desea eliminar este pliego?')) {
+      this.pliegosService.eliminarPliego(pliego.idPliego).subscribe({
+        next: (response) => {
+          if (response.success) {
+            const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
+            if (idCompra) {
+              this.cargarPliegoCompra(idCompra);
+            }
+          } else {
+            this.error = response.message || 'Error al eliminar pliego';
+          }
+        },
+        error: (error) => {
+          console.error('Error al eliminar pliego:', error);
+          this.error = 'Error al eliminar pliego';
+        }
+      });
+    }
+  }
+
+  formatearTamanoPliego(bytes: number): string {
+    return this.pliegosService.formatearTamano(bytes);
+  }
+
+  getIconoPliego(tipoArchivo: string): string {
+    return this.pliegosService.getIconoArchivo(tipoArchivo);
+  }
+
+  esTipoImagenPliego(tipoArchivo: string): boolean {
+    return this.pliegosService.esTipoImagen(tipoArchivo);
+  }
+
+  // Método para exportar a PDF
+  async exportarAPDF(): Promise<void> {
+    try {
+      // Deshabilitar el botón durante la exportación
+      const exportButton = document.querySelector('.export-pdf-btn') as HTMLButtonElement;
+      if (exportButton) {
+        exportButton.disabled = true;
+        exportButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i><span>Generando PDF...</span>';
+      }
+
+      // Verificar que tenemos la compra seleccionada
+      if (!this.compraSeleccionada) {
+        this.error = 'No hay compra seleccionada para exportar';
+        return;
+      }
+
+      // Crear el contenido del PDF
+      const pdfContent = this.generarContenidoPDF();
+      
+      // Generar y descargar el PDF
+      await this.generarPDF(pdfContent);
+
+      // Restaurar el botón
+      if (exportButton) {
+        exportButton.disabled = false;
+        exportButton.innerHTML = '<i class="fas fa-file-pdf me-1"></i><span>Exportar PDF</span>';
+      }
+
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      this.error = 'Error al generar el PDF. Por favor, intente nuevamente.';
+      
+      // Restaurar el botón en caso de error
+      const exportButton = document.querySelector('.export-pdf-btn') as HTMLButtonElement;
+      if (exportButton) {
+        exportButton.disabled = false;
+        exportButton.innerHTML = '<i class="fas fa-file-pdf me-1"></i><span>Exportar PDF</span>';
+      }
+    }
+  }
+
+  private generarContenidoPDF(): string {
+    if (!this.compraSeleccionada) return '';
+
+    const compra = this.compraSeleccionada;
+    const nombreCompra = this.getNombreCompraFormateado(compra);
+    const montoFormateado = this.formatearMoneda(compra.monto || 0, compra.moneda || 'USD');
+    const fechaInicio = this.formatearFecha(compra.fechaInicio || '');
+    const fechaFinal = this.formatearFecha(compra.fechaFinal || '');
+    const tipoCompra = this.getTipoCompraDescripcion(compra.idTipoCompra || 0);
+
+    let html = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #41A1AF; padding-bottom: 15px;">
+          <h1 style="color: #2c3e50; margin: 0; font-size: 20px;">${nombreCompra}</h1>
+          <p style="color: #6c757d; margin: 8px 0 0 0; font-size: 14px;">${compra.descripcion || ''}</p>
+          <div style="margin-top: 12px;">
+            <span style="background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 15px; font-weight: bold; font-size: 12px;">
+              ${compra.moneda || 'USD'}
+            </span>
+            <span style="margin-left: 12px; font-size: 16px; font-weight: bold; color: #2c3e50;">
+              ${montoFormateado}
+            </span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <h2 style="color: #2c3e50; font-size: 16px; border-bottom: 1px solid #e9ecef; padding-bottom: 8px; margin-bottom: 12px;">
+            <i class="fas fa-info-circle"></i> Información de la Compra
+          </h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
+              <strong style="color: #495057; font-size: 12px;">Tipo de Compra:</strong><br>
+              <span style="color: #2c3e50; font-size: 13px;">${tipoCompra}</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
+              <strong style="color: #495057; font-size: 12px;">Número:</strong><br>
+              <span style="color: #2c3e50; font-size: 13px;">${compra.numeroCompra || 'No disponible'}</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
+              <strong style="color: #495057; font-size: 12px;">Año:</strong><br>
+              <span style="color: #2c3e50; font-size: 13px;">${compra.ano || 'No disponible'}</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
+              <strong style="color: #495057; font-size: 12px;">Fecha Apertura:</strong><br>
+              <span style="color: #2c3e50; font-size: 13px;">${fechaInicio}</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
+              <strong style="color: #495057; font-size: 12px;">Fecha Adjudicación:</strong><br>
+              <span style="color: #2c3e50; font-size: 13px;">${fechaFinal}</span>
+            </div>
+          </div>
+        </div>
+    `;
+
+    // Agregar ítems si existen
+    if (this.lotesDetalles.length > 0) {
+      html += `
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
+            <i class="fas fa-box"></i> Ítems de la Compra (${this.lotesDetalles.length})
+          </h2>
+          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead style="background: #f8f9fa;">
+                <tr>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Ítem</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Cantidad</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Garantía</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Proveedor</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Servicio</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Obs.</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      this.lotesDetalles.forEach((lote, index) => {
+        html += `
+          <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.nombreItem}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.cantidad}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.mesesGarantia} meses</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.getProveedorNombre(lote.idProveedor)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.getServicioGarantiaNombre(lote.idServicioGarantia)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.descripcion || '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Agregar entregas si existen
+    if (this.entregasDetalles.length > 0) {
+      html += `
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
+            <i class="fas fa-truck"></i> Entregas (${this.entregasDetalles.length})
+          </h2>
+          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead style="background: #f8f9fa;">
+                <tr>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Ítem</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Cantidad</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fecha Entrega</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fin Garantía</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Obs.</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      this.entregasDetalles.forEach((entrega, index) => {
+        html += `
+          <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.getLoteNombre(entrega.idItem)}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${entrega.cantidad}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.formatearFecha(entrega.fechaPedido)}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.formatearFecha(entrega.fechaFinGarantia)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${entrega.descripcion || '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Agregar remitos si existen
+    if (this.remitosCompra.length > 0) {
+      html += `
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
+            <i class="fas fa-file-alt"></i> Remitos de Entrega (${this.remitosCompra.length})
+          </h2>
+          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead style="background: #f8f9fa;">
+                <tr>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Archivo</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Tamaño</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fecha</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      this.remitosCompra.forEach((remito, index) => {
+        html += `
+          <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${remito.nombreArchivoOriginal}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearTamanoArchivo(remito.tamanoArchivo)}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearFecha(remito.fechaCreacion)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${remito.descripcion || '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Agregar pliego si existe
+    if (this.pliegoCompra) {
+      html += `
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
+            <i class="fas fa-file-contract"></i> Pliego de la Compra
+          </h2>
+          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead style="background: #f8f9fa;">
+                <tr>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Archivo</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Tamaño</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Tipo</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fecha</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: #ffffff;">
+                  <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.pliegoCompra.nombreArchivoOriginal}</td>
+                  <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearTamanoPliego(this.pliegoCompra.tamanoArchivo)}</td>
+                  <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.pliegoCompra.tipoArchivo}</td>
+                  <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearFecha(this.pliegoCompra.fechaCreacion)}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.pliegoCompra.descripcion || '-'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Cerrar el HTML
+    html += `
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 12px;">
+          <p>Documento generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+          <p>Sistema Cerbero - Gestión de Compras</p>
+        </div>
+      </div>
+    `;
+
+    return html;
+  }
+
+  private async generarPDF(htmlContent: string): Promise<void> {
+    try {
+      // Crear un elemento temporal para renderizar el HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '-9999px';
+      tempDiv.style.width = '800px';
+      tempDiv.style.backgroundColor = 'white';
+      document.body.appendChild(tempDiv);
+
+      // Esperar a que el contenido se renderice
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Convertir HTML a canvas usando html2canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2, // Mejor calidad
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 800,
+        height: tempDiv.scrollHeight
+      });
+
+      // Crear el PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      // Calcular dimensiones
+      const imgWidth = 210; // A4 width en mm
+      const pageHeight = 295; // A4 height en mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0; // Posición inicial
+
+      // Agregar primera página
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Agregar páginas adicionales si es necesario
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Descargar el PDF
+      const fileName = `compra_${this.compraSeleccionada?.numeroCompra || 'detalles'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      // Limpiar
+      document.body.removeChild(tempDiv);
+      
+      // Mostrar mensaje de éxito
+      this.error = null;
+      
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      throw new Error('Error al generar el PDF. Por favor, intente nuevamente.');
+    }
   }
 } 

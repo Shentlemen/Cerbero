@@ -602,12 +602,12 @@
           </div>
           
           <div class="row" *ngIf="remitosCompra.length > 0">
-            <div class="col-md-6" *ngFor="let remito of remitosCompra; let i = index">
-              <div class="remito-card mb-3">
-                <div class="remito-header d-flex justify-content-between align-items-center mb-2">
-                  <h6 class="mb-0 text-primary">
-                    <i [class]="getIconoArchivo(remito.tipoArchivo)" class="me-2"></i>
-                    {{ remito.nombreArchivoOriginal }}
+            <div class="col-md-12" *ngFor="let remito of remitosCompra; let i = index">
+              <div class="remito-card">
+                <div class="remito-header">
+                  <h6>
+                    <i [class]="getIconoArchivo(remito.tipoArchivo)"></i>
+                    <span [title]="remito.nombreArchivoOriginal">{{ remito.nombreArchivoOriginal }}</span>
                   </h6>
                   <div class="btn-group" role="group">
                     <button 
@@ -647,9 +647,132 @@
                   </div>
                   <div class="remito-detail" *ngIf="remito.descripcion">
                     <span class="detail-label">Descripción:</span>
-                    <span class="detail-value">{{ remito.descripcion }}</span>
+                    <span class="detail-value" [title]="remito.descripcion">{{ remito.descripcion }}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+      <li [ngbNavItem]="'5'">
+        <a ngbNavLink>Pliego</a>
+        <ng-template ngbNavContent>
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="mb-0 text-secondary">Pliego de la Compra</h5>
+          </div>
+          
+          <!-- Formulario para subir pliego (solo si no existe o se quiere reemplazar) -->
+          <div class="pliego-upload-card mb-4" *ngIf="canManagePurchases()">
+            <div class="card-header-custom mb-3">
+              <h6 class="mb-0 text-secondary">
+                <i class="fas fa-upload me-2"></i>
+                {{ pliegoCompra ? 'Reemplazar Pliego' : 'Subir Pliego' }}
+              </h6>
+              <small class="text-muted" *ngIf="pliegoCompra">
+                <i class="fas fa-info-circle me-1"></i>
+                Al subir un nuevo pliego se reemplazará el actual
+              </small>
+            </div>
+            
+            <div class="row align-items-end">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-file me-2"></i>Seleccionar Archivo <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="file" 
+                  class="form-control" 
+                  (change)="onPliegoSeleccionado($event)"
+                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.doc,.docx">
+                <small class="text-muted">Máximo 15MB - Formatos: PDF, imágenes, documentos Word</small>
+              </div>
+              <div class="col-md-5 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-comment me-2"></i>Descripción (opcional)
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="descripcionPliego"
+                  placeholder="Descripción del pliego...">
+              </div>
+              <div class="col-md-3 mb-3">
+                <button 
+                  type="button"
+                  class="btn btn-primary w-100" 
+                  (click)="subirPliego()"
+                  [disabled]="!pliegoSeleccionado || subiendoPliego">
+                  <i class="fas fa-upload me-2"></i>
+                  <span *ngIf="!subiendoPliego">{{ pliegoCompra ? 'Reemplazar' : 'Subir Pliego' }}</span>
+                  <span *ngIf="subiendoPliego">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Subiendo...
+                  </span>
+                </button>
+              </div>
+            </div>
+            
+            <div *ngIf="pliegoSeleccionado" class="alert alert-info mt-2">
+              <i class="fas fa-info-circle me-2"></i>
+              Archivo seleccionado: <strong>{{ pliegoSeleccionado.name }}</strong> 
+              ({{ formatearTamanoPliego(pliegoSeleccionado.size) }})
+            </div>
+          </div>
+
+          <!-- Pliego existente -->
+          <div *ngIf="!pliegoCompra" class="text-center py-5">
+            <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay pliego adjunto para esta compra.</p>
+            <p class="text-muted" *ngIf="canManagePurchases()">
+              <small>Use el formulario de arriba para subir el pliego de la compra.</small>
+            </p>
+          </div>
+          
+          <div class="pliego-card" *ngIf="pliegoCompra">
+            <div class="pliego-header">
+              <h6>
+                <i [class]="getIconoPliego(pliegoCompra.tipoArchivo)"></i>
+                <span [title]="pliegoCompra.nombreArchivoOriginal">{{ pliegoCompra.nombreArchivoOriginal }}</span>
+              </h6>
+              <div class="btn-group" role="group">
+                <button 
+                  class="btn btn-outline-primary btn-sm" 
+                  (click)="visualizarPliego(pliegoCompra)"
+                  title="Ver archivo">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button 
+                  class="btn btn-outline-success btn-sm" 
+                  (click)="descargarPliego(pliegoCompra)"
+                  title="Descargar">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button 
+                  *ngIf="canManagePurchases()"
+                  class="btn btn-outline-danger btn-sm" 
+                  (click)="eliminarPliego(pliegoCompra)"
+                  title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="pliego-details">
+              <div class="pliego-detail">
+                <span class="detail-label">Tamaño:</span>
+                <span class="detail-value">{{ formatearTamanoPliego(pliegoCompra.tamanoArchivo) }}</span>
+              </div>
+              <div class="pliego-detail">
+                <span class="detail-label">Tipo:</span>
+                <span class="detail-value">{{ pliegoCompra.tipoArchivo }}</span>
+              </div>
+              <div class="pliego-detail">
+                <span class="detail-label">Fecha:</span>
+                <span class="detail-value">{{ formatearFecha(pliegoCompra.fechaCreacion) }}</span>
+              </div>
+              <div class="pliego-detail" *ngIf="pliegoCompra.descripcion">
+                <span class="detail-label">Descripción:</span>
+                <span class="detail-value" [title]="pliegoCompra.descripcion">{{ pliegoCompra.descripcion }}</span>
               </div>
             </div>
           </div>
@@ -680,6 +803,14 @@
         [title]="isCompactView ? 'Vista detallada' : 'Vista compacta'">
         <i class="fas" [ngClass]="isCompactView ? 'fa-expand-alt' : 'fa-compress-alt'"></i>
         <span class="ms-1">{{ isCompactView ? 'Vista detallada' : 'Vista compacta' }}</span>
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-outline-success btn-sm export-pdf-btn"
+        (click)="exportarAPDF()"
+        title="Exportar a PDF">
+        <i class="fas fa-file-pdf me-1"></i>
+        <span>Exportar PDF</span>
       </button>
       <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
     </div>
@@ -773,27 +904,31 @@
             <div class="col-md-4">
               <div class="item-detail">
                 <span class="detail-label">Cantidad:</span>
-                <span class="detail-value">{{ lote.cantidad }}</span>
+                <span class="detail-value" data-field="cantidad">{{ lote.cantidad }}</span>
               </div>
+            </div>
+            <div class="col-md-4">
               <div class="item-detail">
-                <span class="detail-label">Meses de Garantía:</span>
-                <span class="detail-value">{{ lote.mesesGarantia }}</span>
+                <span class="detail-label">Garantía:</span>
+                <span class="detail-value" data-field="garantia">{{ lote.mesesGarantia }} meses</span>
               </div>
             </div>
             <div class="col-md-4">
               <div class="item-detail">
                 <span class="detail-label">Proveedor:</span>
-                <span class="detail-value">{{ getProveedorNombre(lote.idProveedor) }}</span>
+                <span class="detail-value" data-field="proveedor">{{ getProveedorNombre(lote.idProveedor) }}</span>
               </div>
+            </div>
+            <div class="col-md-4">
               <div class="item-detail">
-                <span class="detail-label">Servicio de Garantía:</span>
-                <span class="detail-value">{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</span>
+                <span class="detail-label">Servicio:</span>
+                <span class="detail-value" data-field="servicio">{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</span>
               </div>
             </div>
             <div class="col-md-4" *ngIf="lote.descripcion">
               <div class="item-detail">
-                <span class="detail-label">Observación:</span>
-                <span class="detail-value">{{ lote.descripcion }}</span>
+                <span class="detail-label">Obs.:</span>
+                <span class="detail-value" data-field="observacion" [title]="lote.descripcion">{{ lote.descripcion }}</span>
               </div>
             </div>
           </div>
@@ -823,27 +958,31 @@
             <div class="col-md-4">
               <div class="entrega-detail">
                 <span class="detail-label">Ítem:</span>
-                <span class="detail-value">{{ getLoteNombre(entrega.idItem) }}</span>
-              </div>
-              <div class="entrega-detail">
-                <span class="detail-label">Cantidad:</span>
-                <span class="detail-value">{{ entrega.cantidad }}</span>
+                <span class="detail-value" data-field="nombreItem">{{ getLoteNombre(entrega.idItem) }}</span>
               </div>
             </div>
             <div class="col-md-4">
               <div class="entrega-detail">
-                <span class="detail-label">Fecha de Entrega:</span>
-                <span class="detail-value">{{ formatearFecha(entrega.fechaPedido) }}</span>
+                <span class="detail-label">Cantidad:</span>
+                <span class="detail-value" data-field="cantidad">{{ entrega.cantidad }}</span>
               </div>
+            </div>
+            <div class="col-md-4">
               <div class="entrega-detail">
-                <span class="detail-label">Fin de Garantía:</span>
-                <span class="detail-value">{{ formatearFecha(entrega.fechaFinGarantia) }}</span>
+                <span class="detail-label">Entrega:</span>
+                <span class="detail-value" data-field="fechaEntrega">{{ formatearFecha(entrega.fechaPedido) }}</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="entrega-detail">
+                <span class="detail-label">Fin Garantía:</span>
+                <span class="detail-value" data-field="fechaGarantia">{{ formatearFecha(entrega.fechaFinGarantia) }}</span>
               </div>
             </div>
             <div class="col-md-4" *ngIf="entrega.descripcion">
               <div class="entrega-detail">
-                <span class="detail-label">Observación:</span>
-                <span class="detail-value">{{ entrega.descripcion }}</span>
+                <span class="detail-label">Obs.:</span>
+                <span class="detail-value" data-field="observacion" [title]="entrega.descripcion">{{ entrega.descripcion }}</span>
               </div>
             </div>
           </div>
@@ -863,11 +1002,11 @@
         <p class="text-muted">No hay remitos adjuntos para esta compra.</p>
       </div>
       
-      <div *ngFor="let remito of remitosCompra; let i = index" class="item-card mb-3">
-        <div class="item-header">
-          <h6 class="item-title">
-            <i [class]="getIconoArchivo(remito.tipoArchivo)" class="me-2"></i>
-            {{ remito.nombreArchivoOriginal }}
+      <div *ngFor="let remito of remitosCompra; let i = index" class="remito-card">
+        <div class="remito-header">
+          <h6>
+            <i [class]="getIconoArchivo(remito.tipoArchivo)"></i>
+            <span [title]="remito.nombreArchivoOriginal">{{ remito.nombreArchivoOriginal }}</span>
           </h6>
           <div class="btn-group" role="group">
             <button 
@@ -884,35 +1023,78 @@
             </button>
           </div>
         </div>
-        <div class="item-details">
-          <div class="row">
-            <div class="col-md-4">
-              <div class="item-detail">
-                <span class="detail-label">Tipo de Archivo:</span>
-                <span class="detail-value">{{ remito.tipoArchivo }}</span>
-              </div>
-              <div class="item-detail">
-                <span class="detail-label">Tamaño:</span>
-                <span class="detail-value">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</span>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="item-detail">
-                <span class="detail-label">Fecha de Subida:</span>
-                <span class="detail-value">{{ formatearFecha(remito.fechaCreacion) }}</span>
-              </div>
-              <div class="item-detail" *ngIf="remito.fechaActualizacion !== remito.fechaCreacion">
-                <span class="detail-label">Última Modificación:</span>
-                <span class="detail-value">{{ formatearFecha(remito.fechaActualizacion) }}</span>
-              </div>
-            </div>
-            <div class="col-md-4" *ngIf="remito.descripcion">
-              <div class="item-detail">
-                <span class="detail-label">Descripción:</span>
-                <span class="detail-value">{{ remito.descripcion }}</span>
-              </div>
-            </div>
+        
+        <div class="remito-details">
+          <div class="remito-detail">
+            <span class="detail-label">Tamaño:</span>
+            <span class="detail-value">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</span>
           </div>
+          <div class="remito-detail">
+            <span class="detail-label">Tipo:</span>
+            <span class="detail-value">{{ remito.tipoArchivo }}</span>
+          </div>
+          <div class="remito-detail">
+            <span class="detail-label">Fecha:</span>
+            <span class="detail-value">{{ formatearFecha(remito.fechaCreacion) }}</span>
+          </div>
+          <div class="remito-detail" *ngIf="remito.descripcion">
+            <span class="detail-label">Descripción:</span>
+            <span class="detail-value" [title]="remito.descripcion">{{ remito.descripcion }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pliego de la Compra - Vista Detallada -->
+    <div class="details-section">
+      <h5 class="section-title">
+        <i class="fas fa-file-contract me-2"></i>Pliego de la Compra
+      </h5>
+      
+      <div *ngIf="!pliegoCompra" class="no-items">
+        <i class="fas fa-file-contract fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No hay pliego adjunto para esta compra.</p>
+      </div>
+      
+      <div *ngIf="pliegoCompra" class="pliego-card">
+        <div class="pliego-header">
+          <h6>
+            <i [class]="getIconoPliego(pliegoCompra.tipoArchivo)"></i>
+            <span [title]="pliegoCompra.nombreArchivoOriginal">{{ pliegoCompra.nombreArchivoOriginal }}</span>
+          </h6>
+          <div class="btn-group" role="group">
+            <button 
+              class="btn btn-outline-primary btn-sm" 
+              (click)="visualizarPliego(pliegoCompra)"
+              title="Ver archivo">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button 
+              class="btn btn-outline-success btn-sm" 
+              (click)="descargarPliego(pliegoCompra)"
+              title="Descargar">
+              <i class="fas fa-download"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="pliego-details">
+          <div class="pliego-detail">
+            <span class="detail-label">Tamaño:</span>
+            <span class="detail-value">{{ formatearTamanoPliego(pliegoCompra.tamanoArchivo || 0) }}</span>
+          </div>
+          <div class="pliego-detail">
+            <span class="detail-label">Tipo:</span>
+            <span class="detail-value">{{ pliegoCompra.tipoArchivo || '' }}</span>
+          </div>
+          <div class="pliego-detail">
+            <span class="detail-label">Fecha:</span>
+            <span class="detail-value">{{ formatearFecha(pliegoCompra.fechaCreacion || '') }}</span>
+          </div>
+                      <div class="pliego-detail" *ngIf="pliegoCompra.descripcion">
+              <span class="detail-label">Descripción:</span>
+              <span class="detail-value" [title]="pliegoCompra.descripcion">{{ pliegoCompra.descripcion }}</span>
+            </div>
         </div>
       </div>
     </div>
@@ -1032,6 +1214,60 @@
                   <button 
                     class="btn btn-outline-success btn-sm" 
                     (click)="descargarRemito(remito)"
+                    title="Descargar">
+                    <i class="fas fa-download"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sección de pliego -->
+    <div class="compact-section mb-3">
+      <h6 class="compact-section-title">
+        <i class="fas fa-file-contract me-2"></i>Pliego de la Compra
+      </h6>
+      
+      <!-- Pliego -->
+      <div *ngIf="!pliegoCompra" class="text-center py-3 text-muted">
+        <i class="fas fa-file-contract fa-2x mb-2 d-block"></i>
+        No hay pliego adjunto para esta compra.
+      </div>
+
+      <div class="table-responsive" *ngIf="pliegoCompra">
+        <table class="table table-sm table-bordered compact-table">
+          <thead class="table-light">
+            <tr>
+              <th>Archivo</th>
+              <th>Tamaño</th>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <i [class]="getIconoPliego(pliegoCompra.tipoArchivo)" class="me-2"></i>
+                {{ pliegoCompra.nombreArchivoOriginal }}
+              </td>
+              <td class="text-center">{{ formatearTamanoPliego(pliegoCompra.tamanoArchivo) }}</td>
+              <td>{{ formatearFecha(pliegoCompra.fechaCreacion) }}</td>
+              <td>{{ pliegoCompra.descripcion || '-' }}</td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <button 
+                    class="btn btn-outline-primary btn-sm" 
+                    (click)="visualizarPliego(pliegoCompra)"
+                    title="Ver archivo">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button 
+                    class="btn btn-outline-success btn-sm" 
+                    (click)="descargarPliego(pliegoCompra)"
                     title="Descargar">
                     <i class="fas fa-download"></i>
                   </button>

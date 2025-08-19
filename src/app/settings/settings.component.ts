@@ -32,6 +32,11 @@ export class SettingsComponent {
   duplicatesError: string | null = null;
   isDeleting: boolean = false;
   
+  // Propiedades para comparación de bases de datos
+  isComparingDatabases = false;
+  comparisonResult: any = null;
+  comparisonError: string | null = null;
+  
   private apiUrl: string;
 
   constructor(
@@ -76,13 +81,13 @@ export class SettingsComponent {
         this.syncMessage = response.message; // El mensaje general está en message
         
         // Mostrar notificación de éxito
-        this.notificationService.showSuccessMessage('Reseteo completo de base de datos completado exitosamente');
+        this.notificationService.showSuccessMessage('Reseteo de tablas OCS completado exitosamente');
       }
     } catch (err: any) {
       this.error = err.message || 'Error durante el reseteo completo';
       this.notificationService.showError(
         'Error de Reseteo',
-        'No se pudo completar el reseteo completo: ' + err.message
+        'No se pudo completar el reseteo de tablas OCS: ' + err.message
       );
     } finally {
       this.isSyncing = false;
@@ -155,7 +160,7 @@ export class SettingsComponent {
     
     try {
       console.log(`Eliminando duplicado ID: ${hardwareId}`);
-      const response = await this.http.delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/${hardwareId}`).toPromise();
+              const response = await this.http.delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/${hardwareId}`).toPromise();
       
       if (response && response.success) {
         console.log('Duplicado eliminado exitosamente:', response.message);
@@ -173,6 +178,45 @@ export class SettingsComponent {
       );
     } finally {
       this.isDeleting = false;
+    }
+  }
+
+  async compararBasesDatos() {
+    // ✅ VERIFICAR PERMISOS antes de proceder
+    if (!this.canAccessSettings()) {
+      this.notificationService.showError(
+        'Permisos Insuficientes',
+        'No tienes permisos para comparar las bases de datos. Solo los administradores pueden realizar esta acción.'
+      );
+      return;
+    }
+
+    this.isComparingDatabases = true;
+    this.comparisonError = null;
+    this.comparisonResult = null;
+
+    try {
+      console.log('Iniciando comparación de bases de datos...');
+      const response = await this.http.get<ApiResponse<any>>(`${this.configService.getApiUrl()}/compare-hardware`).toPromise();
+      
+      if (response && response.success) {
+        this.comparisonResult = response.data;
+        console.log('Resultados de comparación obtenidos:', this.comparisonResult);
+        
+        // Mostrar notificación de éxito
+        this.notificationService.showSuccessMessage(`Comparación completada. Se encontraron ${this.comparisonResult.soloEnOCS.length} equipos solo en OCS y ${this.comparisonResult.soloEnCerbero.length} solo en Cerbero. Los equipos sincronizados no se muestran.`);
+      } else {
+        throw new Error(response?.message || 'Error al comparar las bases de datos');
+      }
+    } catch (err: any) {
+      console.error('Error al comparar bases de datos:', err);
+      this.comparisonError = err.message || 'Error durante la comparación de bases de datos';
+      this.notificationService.showError(
+        'Error al Comparar Bases de Datos',
+        'No se pudo completar la comparación: ' + err.message
+      );
+    } finally {
+      this.isComparingDatabases = false;
     }
   }
 }

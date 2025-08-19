@@ -370,6 +370,82 @@
   cursor: not-allowed;
 }
 
+/* Estilos para la comparación de bases de datos */
+.comparison-summary {
+  margin-bottom: 2rem;
+}
+
+.comparison-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #dee2e6;
+  height: 100%;
+}
+
+.ocs-card {
+  border-left: 4px solid #007bff;
+}
+
+.cerbero-card {
+  border-left: 4px solid #28a745;
+}
+
+.comparison-card h5 {
+  color: #495057;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comparison-card h5 i {
+  font-size: 1rem;
+}
+
+.comparison-stats p {
+  margin: 0.5rem 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.comparison-stats strong {
+  color: #495057;
+}
+
+.comparison-section {
+  margin-bottom: 2rem;
+}
+
+.comparison-section h5 {
+  color: #495057;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid;
+}
+
+.comparison-section h5.text-warning {
+  border-bottom-color: #ffc107;
+}
+
+.comparison-section h5.text-info {
+  border-bottom-color: #17a2b8;
+}
+
+.comparison-section h5.text-success {
+  border-bottom-color: #28a745;
+}
+
+.comparison-section p {
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
 /* Estilos para el texto "Protegido" */
 .text-muted {
   font-size: 0.8rem;
