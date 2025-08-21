@@ -98,12 +98,33 @@ export class ActivosComponent implements OnInit {
   set creationMode(value: 'single' | 'range') {
     this._creationMode = value;
     this.updateValidationRules();
+    // Resetear la visualización de errores cuando cambie el modo
+    this.shouldShowValidationErrors = false;
   }
   rangeStart: string = '';
   rangeEnd: string = '';
 
   // Propiedad para las pestañas del modal
   activeTab: string = '1';
+
+  // Getters para los campos de rango
+  get rangeStartControl(): string {
+    return this.rangeStart;
+  }
+
+  set rangeStartControl(value: string) {
+    this.rangeStart = value;
+    this.resetValidationDisplay();
+  }
+
+  get rangeEndControl(): string {
+    return this.rangeEnd;
+  }
+
+  set rangeEndControl(value: string) {
+    this.rangeEnd = value;
+    this.resetValidationDisplay();
+  }
 
   activosRelacionados: ActivoDTO[] = [];
 
@@ -113,6 +134,9 @@ export class ActivosComponent implements OnInit {
   // Propiedades para el modal de detalles de compra
   lotesDetalles: LoteDTO[] = [];
   entregasDetalles: EntregaDTO[] = [];
+
+  // Propiedad para controlar cuándo mostrar errores de validación
+  shouldShowValidationErrors: boolean = false;
 
   constructor(
     private activosService: ActivosService,
@@ -179,6 +203,54 @@ export class ActivosComponent implements OnInit {
     // Suscribirse a cambios en el tipo de activo seleccionado
     this.activoForm.get('idTipoActivo')?.valueChanges.subscribe((idTipoActivo) => {
       this.onTipoActivoChange(idTipoActivo);
+      this.resetValidationDisplay();
+    });
+
+    // Suscribirse a cambios en otros campos para resetear la visualización de errores
+    this.activoForm.get('clasificacionDeINFO')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('criticidad')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('estado')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('idNumeroCompra')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('idItem')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('idEntrega')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('idUsuario')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('idSecundario')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('idServicioGarantia')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    this.activoForm.get('fechaFinGarantia')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
+    });
+
+    // Suscribirse a cambios en los campos de rango para resetear la visualización de errores
+    // Usar un observable personalizado para los campos de rango
+    this.activoForm.get('name')?.valueChanges.subscribe(() => {
+      this.resetValidationDisplay();
     });
 
     // Actualizar validaciones iniciales
@@ -401,10 +473,13 @@ export class ActivosComponent implements OnInit {
       this.errorMessage = null;
       this.successMessage = null;
       
+      // Resetear la propiedad para mostrar errores de validación
+      this.shouldShowValidationErrors = false;
+      
       // Inicializar modo de creación
       this.creationMode = 'single';
-      this.rangeStart = '';
-      this.rangeEnd = '';
+      this.rangeStartControl = '';
+      this.rangeEndControl = '';
 
       if (this.modoEdicion && activo) {
         console.log('Datos del activo a editar:', activo);
@@ -480,7 +555,17 @@ export class ActivosComponent implements OnInit {
         this.activoForm.get('idEntrega')?.disable();
       }
 
-      this.modalService.open(modal, { size: 'xl' });
+      this.modalService.open(modal, { 
+        size: 'xl',
+        backdrop: 'static',
+        keyboard: false
+      }).result.then(() => {
+        // Modal cerrado exitosamente
+        this.shouldShowValidationErrors = false;
+      }).catch(() => {
+        // Modal cerrado con escape o clic fuera
+        this.shouldShowValidationErrors = false;
+      });
     } catch (error) {
       console.error('Error al abrir el modal:', error);
       this.errorMessage = 'Error al cargar los datos necesarios. Por favor, intente nuevamente.';
@@ -550,16 +635,39 @@ export class ActivosComponent implements OnInit {
     // Marcar todos los campos como touched para mostrar errores de validación
     this.markAllFieldsAsTouched();
     
-    // Si el formulario no es válido, mostrar errores y no continuar
-    if (!this.activoForm.valid) {
-      console.log('Formulario no válido, mostrando errores...');
-      this.showValidationErrors();
-      return;
+    // Validar según el modo seleccionado
+    if (this.creationMode === 'single') {
+      // En modo individual, validar el formulario completo
+      if (!this.activoForm.valid) {
+        console.log('Formulario no válido, mostrando errores...');
+        this.shouldShowValidationErrors = true;
+        return;
+      }
+    } else if (this.creationMode === 'range') {
+      // En modo rango, validar solo los campos relevantes (excluyendo 'name')
+      const camposRequeridos = ['idTipoActivo', 'clasificacionDeINFO', 'criticidad', 'estado', 
+                                'idNumeroCompra', 'idItem', 'idEntrega', 'idUsuario', 
+                                'idSecundario', 'idServicioGarantia', 'fechaFinGarantia'];
+      
+      let formularioValido = true;
+      for (const campo of camposRequeridos) {
+        const control = this.activoForm.get(campo);
+        if (control && control.errors?.['required']) {
+          formularioValido = false;
+          break;
+        }
+      }
+      
+      if (!formularioValido) {
+        console.log('Formulario no válido en modo rango, mostrando errores...');
+        this.shouldShowValidationErrors = true;
+        return;
+      }
     }
-
+    
     // Validaciones adicionales para modo rango
     if (this.creationMode === 'range') {
-      if (!this.rangeStart || !this.rangeEnd) {
+      if (!this.rangeStartControl || !this.rangeEndControl) {
         this.errorMessage = 'Debe especificar el rango de nombres (inicio y fin)';
         setTimeout(() => this.errorMessage = null, 5000);
         return;
@@ -589,12 +697,30 @@ export class ActivosComponent implements OnInit {
   }
 
   markAllFieldsAsTouched() {
-    Object.keys(this.activoForm.controls).forEach(key => {
-      const control = this.activoForm.get(key);
-      if (control) {
-        control.markAsTouched();
-      }
-    });
+    if (this.creationMode === 'single') {
+      // En modo individual, marcar todos los campos como touched
+      Object.keys(this.activoForm.controls).forEach(key => {
+        const control = this.activoForm.get(key);
+        if (control) {
+          control.markAsTouched();
+        }
+      });
+    } else if (this.creationMode === 'range') {
+      // En modo rango, marcar solo los campos relevantes (excluyendo 'name')
+      const camposRequeridos = ['idTipoActivo', 'clasificacionDeINFO', 'criticidad', 'estado', 
+                                'idNumeroCompra', 'idItem', 'idEntrega', 'idUsuario', 
+                                'idSecundario', 'idServicioGarantia', 'fechaFinGarantia'];
+      
+      camposRequeridos.forEach(campo => {
+        const control = this.activoForm.get(campo);
+        if (control) {
+          control.markAsTouched();
+        }
+      });
+    }
+    
+    // Activar la visualización de errores de validación
+    this.shouldShowValidationErrors = true;
   }
 
   showValidationErrors() {
@@ -658,6 +784,7 @@ export class ActivosComponent implements OnInit {
         await this.actualizarRelaciones(this.activoSeleccionado.idActivo);
         
         this.modalService.dismissAll();
+        this.shouldShowValidationErrors = false; // Resetear visualización de errores
         this.cargarActivos();
         this.successMessage = 'Activo actualizado con éxito';
         setTimeout(() => this.successMessage = null, 3000);
@@ -670,6 +797,7 @@ export class ActivosComponent implements OnInit {
           await this.actualizarRelaciones(response.idActivo);
           
           this.modalService.dismissAll();
+          this.shouldShowValidationErrors = false; // Resetear visualización de errores
           this.cargarActivos();
           this.successMessage = 'Activo creado con éxito';
           setTimeout(() => this.successMessage = null, 3000);
@@ -784,6 +912,7 @@ export class ActivosComponent implements OnInit {
       }
 
       this.modalService.dismissAll();
+      this.shouldShowValidationErrors = false; // Resetear visualización de errores
       this.cargarActivos();
       
       if (createdActivos.length > 0) {
@@ -1149,13 +1278,13 @@ export class ActivosComponent implements OnInit {
    * Obtiene información del rango de activos a crear
    */
   getRangeInfo(): { start: string; end: string; count: number; isValid: boolean; isPcFormat: boolean } {
-    if (!this.rangeStart || !this.rangeEnd) {
+    if (!this.rangeStartControl || !this.rangeEndControl) {
       return { start: '', end: '', count: 0, isValid: false, isPcFormat: false };
     }
 
     // Detectar si es formato PC (PC + dígitos)
-    const startPcMatch = this.rangeStart.match(/^PC(\d+)$/);
-    const endPcMatch = this.rangeEnd.match(/^PC(\d+)$/);
+    const startPcMatch = this.rangeStartControl.match(/^PC(\d+)$/);
+    const endPcMatch = this.rangeEndControl.match(/^PC(\d+)$/);
     
     if (startPcMatch && endPcMatch) {
       // Formato PC
@@ -1168,16 +1297,16 @@ export class ActivosComponent implements OnInit {
       
       const count = endNum - startNum + 1;
       return {
-        start: this.rangeStart,
-        end: this.rangeEnd,
+        start: this.rangeStartControl,
+        end: this.rangeEndControl,
         count: count,
         isValid: true,
         isPcFormat: true
       };
     } else {
       // Formato numérico simple
-      const startNum = parseInt(this.rangeStart);
-      const endNum = parseInt(this.rangeEnd);
+      const startNum = parseInt(this.rangeStartControl);
+      const endNum = parseInt(this.rangeEndControl);
       
       if (isNaN(startNum) || isNaN(endNum)) {
         return { start: '', end: '', count: 0, isValid: false, isPcFormat: false };
@@ -1189,8 +1318,8 @@ export class ActivosComponent implements OnInit {
       
       const count = endNum - startNum + 1;
       return {
-        start: this.rangeStart,
-        end: this.rangeEnd,
+        start: this.rangeStartControl,
+        end: this.rangeEndControl,
         count: count,
         isValid: true,
         isPcFormat: false
@@ -1207,8 +1336,8 @@ export class ActivosComponent implements OnInit {
 
           if (rangeInfo.isPcFormat) {
         // Formato PC: generar PC + número
-        const startMatch = this.rangeStart.match(/^PC(\d+)$/);
-        const endMatch = this.rangeEnd.match(/^PC(\d+)$/);
+        const startMatch = this.rangeStartControl.match(/^PC(\d+)$/);
+        const endMatch = this.rangeEndControl.match(/^PC(\d+)$/);
       
       if (!startMatch || !endMatch) return [];
       
@@ -1222,8 +1351,8 @@ export class ActivosComponent implements OnInit {
       return names;
     } else {
       // Formato numérico simple
-      const startNum = parseInt(this.rangeStart);
-      const endNum = parseInt(this.rangeEnd);
+      const startNum = parseInt(this.rangeStartControl);
+      const endNum = parseInt(this.rangeEndControl);
       const names: string[] = [];
 
       for (let i = startNum; i <= endNum; i++) {
@@ -1261,14 +1390,14 @@ export class ActivosComponent implements OnInit {
    * Valida que ambos rangos tengan el mismo formato
    */
   validateRangeFormat(): { isValid: boolean; isPcFormat: boolean; errorMessage: string } {
-    if (!this.rangeStart || !this.rangeEnd) {
+    if (!this.rangeStartControl || !this.rangeEndControl) {
       return { isValid: false, isPcFormat: false, errorMessage: 'Debe especificar ambos rangos' };
     }
 
-    const startIsPc = this.rangeStart.match(/^PC\d+$/) !== null;
-    const endIsPc = this.rangeEnd.match(/^PC\d+$/) !== null;
-    const startIsNumeric = this.rangeStart.match(/^\d+$/) !== null;
-    const endIsNumeric = this.rangeEnd.match(/^\d+$/) !== null;
+    const startIsPc = this.rangeStartControl.match(/^PC\d+$/) !== null;
+    const endIsPc = this.rangeEndControl.match(/^PC\d+$/) !== null;
+    const startIsNumeric = this.rangeStartControl.match(/^\d+$/) !== null;
+    const endIsNumeric = this.rangeEndControl.match(/^\d+$/) !== null;
 
     // Ambos deben ser del mismo formato
     if (startIsPc && endIsPc) {
@@ -1309,6 +1438,7 @@ export class ActivosComponent implements OnInit {
         // En modo rango, el nombre no es requerido porque se genera automáticamente
         nameControl.clearValidators();
         nameControl.setValue(''); // Limpiar el valor
+        nameControl.markAsUntouched(); // Marcar como no touched para no mostrar errores
       } else {
         // En modo individual, el nombre es requerido
         nameControl.setValidators(Validators.required);
@@ -1316,6 +1446,29 @@ export class ActivosComponent implements OnInit {
       }
       nameControl.updateValueAndValidity();
     }
+  }
+
+  /**
+   * Resetea la visualización de errores cuando se cambian los campos del formulario
+   */
+  resetValidationDisplay() {
+    this.shouldShowValidationErrors = false;
+  }
+
+  /**
+   * Maneja el cambio de pestañas en el modal
+   */
+  onTabChange(tabId: string) {
+    this.activeTab = tabId;
+    this.resetValidationDisplay();
+  }
+
+  /**
+   * Cierra el modal y resetea la visualización de errores
+   */
+  cerrarModal(modal: any) {
+    this.shouldShowValidationErrors = false;
+    modal.dismiss();
   }
 
   /**

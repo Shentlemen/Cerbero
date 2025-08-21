@@ -224,54 +224,54 @@
 <ng-template #activoModal let-modal>
   <div class="modal-header">
     <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" (click)="cerrarModal(modal)"></button>
   </div>
   <div class="modal-body">
     <div *ngIf="errorMessage" class="alert alert-danger">
       <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
     </div>
     
-    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
+    <!-- Selector de modo de creación - Más compacto y arriba -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <label class="form-label mb-2">Modo de Creación</label>
+        <div class="btn-group mode-selector" role="group" style="float: right;">
+          <input type="radio" class="btn-check" name="creationMode" id="singleMode" 
+                 [(ngModel)]="creationMode" value="single" [ngModelOptions]="{standalone: true}">
+          <label class="btn btn-outline-primary btn-sm" for="singleMode">
+            <i class="fas fa-desktop me-1"></i>Individual
+          </label>
+          
+          <input type="radio" class="btn-check" name="creationMode" id="rangeMode" 
+                 [(ngModel)]="creationMode" value="range" [ngModelOptions]="{standalone: true}">
+          <label class="btn btn-outline-primary btn-sm" for="rangeMode">
+            <i class="fas fa-layer-group me-1"></i>Rango
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs" (activeIdChange)="onTabChange($event)">
       <li [ngbNavItem]="'1'">
         <a ngbNavLink>Datos del activo</a>
         <ng-template ngbNavContent>
           <form [formGroup]="activoForm">
-            <!-- Selector de modo de creación -->
-            <div class="row mb-3">
-              <div class="col-12">
-                <label class="form-label">Modo de Creación</label>
-                <div class="btn-group w-100" role="group">
-                  <input type="radio" class="btn-check" name="creationMode" id="singleMode" 
-                         [(ngModel)]="creationMode" value="single" [ngModelOptions]="{standalone: true}">
-                  <label class="btn btn-outline-primary" for="singleMode">
-                    <i class="fas fa-desktop me-2"></i>Activo Individual
-                  </label>
-                  
-                  <input type="radio" class="btn-check" name="creationMode" id="rangeMode" 
-                         [(ngModel)]="creationMode" value="range" [ngModelOptions]="{standalone: true}">
-                  <label class="btn btn-outline-primary" for="rangeMode">
-                    <i class="fas fa-layer-group me-2"></i>Rango de Activos
-                  </label>
-                </div>
-              </div>
-            </div>
-
             <!-- Modo Individual -->
-            <div class="row" *ngIf="creationMode === 'single'">
-              <div class="col-md-6 mb-3">
+            <div class="row mb-3" *ngIf="creationMode === 'single'">
+              <div class="col-md-6">
                 <label class="form-label">Número de Activo</label>
                 <input type="text" class="form-control" formControlName="name" placeholder="Ej: PC14000, PC1, 14000, 1">
-                <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors">
                   El número de activo es requerido.
                 </div>
               </div>
             </div>
 
             <!-- Modo Rango -->
-            <div class="row" *ngIf="creationMode === 'range'">
-              <div class="col-md-6 mb-3">
+            <div class="row mb-3" *ngIf="creationMode === 'range'">
+              <div class="col-md-6">
                 <label class="form-label">Número Inicial</label>
-                <input type="text" class="form-control" [(ngModel)]="rangeStart" 
+                <input type="text" class="form-control" [(ngModel)]="rangeStartControl" 
                        [ngModelOptions]="{standalone: true}" placeholder="Ej: PC14000, PC1, 14000, 1">
                 <small class="text-muted">
                   <i class="fas fa-info-circle me-1"></i>
@@ -279,9 +279,9 @@
                   Formato numérico: solo números (ej: 14000, 1, 123)
                 </small>
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Número Final</label>
-                <input type="text" class="form-control" [(ngModel)]="rangeEnd" 
+                <input type="text" class="form-control" [(ngModel)]="rangeEndControl" 
                        [ngModelOptions]="{standalone: true}" placeholder="Ej: PC15000, PC10, 15000, 10">
                 <small class="text-muted">
                   <i class="fas fa-info-circle me-1"></i>
@@ -291,7 +291,7 @@
             </div>
 
             <!-- Información del rango -->
-            <div class="row" *ngIf="creationMode === 'range' && getRangeInfo().count > 0">
+            <div class="row mb-3" *ngIf="creationMode === 'range' && getRangeInfo().count > 0">
               <div class="col-12">
                 <div class="alert" [ngClass]="getRangeInfo().count > 100 ? 'alert-warning' : 'alert-info'">
                   <i class="fas" [ngClass]="getRangeInfo().count > 100 ? 'fa-exclamation-triangle' : 'fa-info-circle'"></i>
@@ -309,8 +309,9 @@
               </div>
             </div>
 
-            <div class="row">
-              <div class="col-md-6 mb-3">
+            <!-- Primera fila: Tipo de Activo y Clasificación -->
+            <div class="row mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Tipo de Activo</label>
                 <select class="form-select" formControlName="idTipoActivo">
                   <option value="">Seleccione un tipo de activo</option>
@@ -318,17 +319,14 @@
                     {{tipo.descripcion}}
                   </option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched && shouldShowValidationErrors">
                   El tipo de activo es requerido.
                 </div>
                 <small class="text-muted">
                   Al seleccionar un tipo de activo, el usuario responsable se asignará automáticamente
                 </small>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Clasificación de INFO</label>
                 <select class="form-select" formControlName="clasificacionDeINFO">
                   <option value="">Seleccione una clasificación</option>
@@ -336,11 +334,15 @@
                   <option value="NO CONFIDENCIAL">No confidencial</option>
                   <option value="PUBLICA">Pública</option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched && shouldShowValidationErrors">
                   La clasificación es requerida.
                 </div>
               </div>
-              <div class="col-md-6 mb-3">
+            </div>
+
+            <!-- Segunda fila: Criticidad y Estado -->
+            <div class="row mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Criticidad</label>
                 <select class="form-select" formControlName="criticidad">
                   <option value="">Seleccione una criticidad</option>
@@ -348,14 +350,11 @@
                   <option value="MEDIA">Media</option>
                   <option value="BAJA">Baja</option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched && shouldShowValidationErrors">
                   La criticidad es requerida.
                 </div>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Estado</label>
                 <select class="form-select" formControlName="estado">
                   <option value="">Seleccione un estado</option>
@@ -363,11 +362,15 @@
                   <option value="INACTIVO">Inactivo</option>
                   <option value="MANTENIMIENTO">Mantenimiento</option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched && shouldShowValidationErrors">
                   El estado es requerido.
                 </div>
               </div>
-              <div class="col-md-6 mb-3">
+            </div>
+
+            <!-- Tercera fila: Número de Compra y Item -->
+            <div class="row mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Número de Compra</label>
                 <select class="form-select" formControlName="idNumeroCompra">
                   <option value="">Seleccione una compra</option>
@@ -375,17 +378,14 @@
                     {{compra.numeroCompra}} - {{compra.descripcion}}
                   </option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched && shouldShowValidationErrors">
                   El número de compra es requerido.
                 </div>
                 <small class="text-muted">
                   Al seleccionar una compra, se mostrarán solo los items disponibles para esa compra
                 </small>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Item</label>
                 <select class="form-select" formControlName="idItem" [class.disabled-field]="isItemDisabled()">
                   <option value="">Seleccione un item</option>
@@ -393,7 +393,7 @@
                     {{lote.nombreItem}}
                   </option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched && shouldShowValidationErrors">
                   El item es requerido.
                 </div>
                 <small class="text-muted" *ngIf="!activoForm.get('idNumeroCompra')?.value">
@@ -406,7 +406,11 @@
                   Al seleccionar un item, se mostrarán solo las entregas disponibles para ese item
                 </small>
               </div>
-              <div class="col-md-6 mb-3">
+            </div>
+
+            <!-- Cuarta fila: Entrega y Ubicación -->
+            <div class="row mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Entrega</label>
                 <select class="form-select" formControlName="idEntrega" [class.disabled-field]="isEntregaDisabled()">
                   <option value="">Seleccione una entrega</option>
@@ -414,7 +418,7 @@
                     Entrega #{{entrega.idEntrega}} - {{entrega.descripcion}}
                   </option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched && shouldShowValidationErrors">
                   La entrega es requerida.
                 </div>
                 <small class="text-muted" *ngIf="!activoForm.get('idItem')?.value">
@@ -424,10 +428,7 @@
                   No hay entregas disponibles para el item seleccionado
                 </small>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Ubicación</label>
                 <select class="form-select" formControlName="idUbicacion">
                   <option value="">Seleccione una ubicación</option>
@@ -439,7 +440,11 @@
                   La ubicación es opcional y puede ser definida posteriormente
                 </small>
               </div>
-              <div class="col-md-6 mb-3">
+            </div>
+
+            <!-- Quinta fila: Usuario y ID Secundario -->
+            <div class="row mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Usuario</label>
                 <select class="form-select" formControlName="idUsuario" [class.disabled-field]="isUsuarioDisabled()">
                   <option value="">Seleccione un usuario</option>
@@ -447,24 +452,25 @@
                     {{usuario.value.nombre}} {{usuario.value.apellido}}
                   </option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched && shouldShowValidationErrors">
                   El usuario es requerido.
                 </div>
                 <small class="text-muted" *ngIf="isUsuarioDisabled()">
                   El usuario se asigna automáticamente según el tipo de activo seleccionado
                 </small>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">ID Secundario</label>
                 <input type="text" class="form-control" formControlName="idSecundario">
-                <div class="invalid-feedback" *ngIf="activoForm.get('idSecundario')?.errors?.['required'] && activoForm.get('idSecundario')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idSecundario')?.errors?.['required'] && activoForm.get('idSecundario')?.touched && shouldShowValidationErrors">
                   El ID secundario es requerido.
                 </div>
               </div>
-              <div class="col-md-6 mb-3">
+            </div>
+
+            <!-- Sexta fila: Servicio de Garantía y Fecha Fin Garantía -->
+            <div class="row mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Servicio de Garantía</label>
                 <select class="form-select" formControlName="idServicioGarantia">
                   <option value="">Seleccione un servicio de garantía</option>
@@ -472,24 +478,22 @@
                     {{servicio.nombreComercial}}
                   </option>
                 </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched && shouldShowValidationErrors">
                   El servicio de garantía es requerido.
                 </div>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-6">
                 <label class="form-label">Fecha Fin Garantía</label>
                 <input type="date" class="form-control" formControlName="fechaFinGarantia">
-                <div class="invalid-feedback" *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required'] && activoForm.get('fechaFinGarantia')?.touched">
+                <div class="invalid-feedback" *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required'] && activoForm.get('fechaFinGarantia')?.touched && shouldShowValidationErrors">
                   La fecha de fin de garantía es requerida.
                 </div>
               </div>
             </div>
 
-            <div class="row">
-              <div class="col-md-12 mb-3">
+            <!-- Activos Relacionados -->
+            <div class="row mb-3">
+              <div class="col-md-12">
                 <label class="form-label">Activos Relacionados</label>
                 <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">
                   <div class="selected-asset-badge" *ngFor="let assetId of selectedRelatedAssets">
@@ -522,14 +526,15 @@
   </div>
   <div class="modal-footer">
     <!-- Información de validación -->
-    <div class="validation-info" *ngIf="!activoForm.valid">
+    <div class="validation-info" *ngIf="shouldShowValidationErrors && !activoForm.valid">
       <div class="validation-errors">
         <h6 class="text-danger mb-2">
           <i class="fas fa-exclamation-triangle me-1"></i>
           Errores de validación:
         </h6>
         <ul class="validation-error-list">
-          <li *ngIf="activoForm.get('name')?.errors?.['required'] && creationMode !== 'range'">
+          <!-- Solo validar nombre en modo individual -->
+          <li *ngIf="creationMode === 'single' && activoForm.get('name')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
             Nombre del PC es requerido
           </li>
@@ -578,15 +583,15 @@
             Fecha fin garantía es requerida
           </li>
           <!-- Errores específicos para modo rango -->
-          <li *ngIf="creationMode === 'range' && (!rangeStart || !rangeEnd)">
+          <li *ngIf="creationMode === 'range' && (!rangeStartControl || !rangeEndControl)">
             <i class="fas fa-times-circle text-danger me-1"></i>
             Debe especificar el rango de números (inicio y fin)
           </li>
-          <li *ngIf="creationMode === 'range' && rangeStart && rangeEnd && !validateRangeFormat().isValid">
+          <li *ngIf="creationMode === 'range' && rangeStartControl && rangeEndControl && !validateRangeFormat().isValid">
             <i class="fas fa-times-circle text-danger me-1"></i>
             {{ validateRangeFormat().errorMessage }}
           </li>
-          <li *ngIf="creationMode === 'range' && rangeStart && rangeEnd && validateRangeFormat().isValid && getRangeInfo().count <= 0">
+          <li *ngIf="creationMode === 'range' && rangeStartControl && rangeEndControl && validateRangeFormat().isValid && getRangeInfo().count <= 0">
             <i class="fas fa-times-circle text-danger me-1"></i>
             El número inicial debe ser menor al número final
           </li>
@@ -595,14 +600,14 @@
     </div>
     
     <div class="d-flex justify-content-between align-items-center w-100">
-      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cerrarModal(modal)">Cancelar</button>
       <button type="button" class="btn btn-sm" 
               [class.btn-success]="activoForm.valid" 
               [class.btn-warning]="!activoForm.valid"
               (click)="guardarActivo()">
         <i class="fas" [ngClass]="{'fa-save': activoForm.valid, 'fa-exclamation-triangle': !activoForm.valid}"></i>
         {{modoEdicion ? 'Actualizar' : 'Guardar'}}
-        <span *ngIf="!activoForm.valid" class="ms-1">(Revisar errores)</span>
+        <span *ngIf="!activoForm.valid && shouldShowValidationErrors" class="ms-1">(Revisar errores)</span>
       </button>
     </div>
   </div>
