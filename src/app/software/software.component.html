@@ -188,14 +188,21 @@
             <td>
               <div class="software-name">
                 <i class="fas fa-cube"></i>
-                <span [title]="software.nombre">{{ software.nombre }}</span>
+                <span [title]="software.nombre || 'Software sin nombre'" 
+                      [class.null-field]="!software.nombre">
+                  {{ software.nombre || 'Sin nombre' }}
+                </span>
               </div>
             </td>
             <td>
-              <span class="publisher">{{ software.publisher }}</span>
+              <span class="publisher" [class.null-field]="!software.publisher">
+                {{ software.publisher || 'Sin editor' }}
+              </span>
             </td>
             <td>
-              <span class="version-badge">{{ software.version }}</span>
+              <span class="version-badge" [class.null-field]="!software.version">
+                {{ software.version || 'Sin versión' }}
+              </span>
             </td>
             <td>
               <span class="count-badge" (click)="navigateToAssets(software)">
@@ -272,13 +279,16 @@
       Confirmar Eliminación
     </div>
     <div class="confirm-dialog-message">
-      ¿Está seguro que desea eliminar el software "{{ softwareToDelete?.nombre }}"? Esta acción no se puede deshacer.
+      ¿Está seguro que desea eliminar el software "{{ getSoftwareDisplayName(softwareToDelete!) }}"?
+      Esta acción no se puede deshacer.
     </div>
     <div class="confirm-dialog-buttons">
       <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
         Cancelar
       </button>
-      <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">
+      <button class="confirm-dialog-button confirm" 
+              (click)="confirmarEliminacion()"
+              [disabled]="!isSoftwareToDeleteValid">
         Eliminar
       </button>
     </div>

@@ -53,7 +53,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   private adquisicionesRoutes = [
     '/menu/procurement/compras',
     '/menu/procurement/proveedores',
-    '/menu/procurement/servicios-garantia'
+    // '/menu/procurement/servicios-garantia'
   ];
   private almacenRoutes = [
     '/menu/almacen/almacenes',

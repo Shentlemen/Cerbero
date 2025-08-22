@@ -156,8 +156,9 @@ html, body {
   font-family: 'Orbitron', sans-serif;
   font-weight: 400;
   letter-spacing: 1px;
-  margin: 2px 0;
+  margin: 0;
   gap: 10px;
+  box-sizing: border-box;
 }
 
 .sidenav a span, .menu-header span {
@@ -178,9 +179,10 @@ html, body {
 
 .sidenav a i, .menu-header i {
   font-size: 16px;
-  width: 16px;
+  width: 20px;
   text-align: center;
   color: #3498db;
+  flex-shrink: 0;
 }
 
 /* Ajuste correspondiente en el margen del contenido principal */
@@ -278,13 +280,13 @@ html, body {
 }
 
 .menu-header {
-  padding: 18px 25px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-left: 4px solid transparent;
+  border-left: 3px solid transparent;
   width: 100%;
   box-sizing: border-box;
 }
@@ -328,18 +330,20 @@ html, body {
 }
 
 .submenu-item {
-  padding: 8px 20px 8px 35px !important;
+  padding: 12px 20px !important;
   font-size: 11px !important;
   background-color: rgba(45, 45, 45, 0.3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .submenu-item i {
   font-size: 13px !important;
-  width: 14px;
+  width: 20px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .submenu-item.disabled {

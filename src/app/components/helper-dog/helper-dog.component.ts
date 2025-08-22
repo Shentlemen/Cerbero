@@ -179,19 +179,24 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     this.showMessage = this.isActive;
     this.showSuggestions = false;
     
-    // Registrar interacción con el helper
-    this.recordUserBehavior('helper_interaction', this.currentSection);
+    // Comentado: registrar interacción con el helper
+    // this.recordUserBehavior('helper_interaction', this.currentSection);
     
-    // Siempre mostrar el mensaje cuando se activa el helper
-    if (this.showMessage && this.currentTip) {
-      this.showSmartMessage();
-    }
+    // Solo mostrar la burbuja del woof
+    // console.log('Woof! 🐕'); // Comentado ya que ahora se muestra en la burbuja
+    
+    // Comentado: mostrar mensaje cuando se activa el helper
+    // if (this.showMessage && this.currentTip) {
+    //   this.showSmartMessage();
+    // }
   }
 
 
 
 
 
+  // Comentado: método para mostrar mensajes inteligentes
+  /*
   private showSmartMessage(): void {
     // Limpiar timeout anterior si existe
     if (this.messageTimeout) {
@@ -205,7 +210,7 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     // Ajustar tiempo basado en nivel de usuario
     if (this.userLevel === 'advanced') {
       readingTimeMs *= 0.7; // Los usuarios avanzados leen más rápido
-    } else if (this.userLevel === 'beginner') {
+    } else if (this.userLevel === 'advanced') {
       readingTimeMs *= 1.3; // Los principiantes necesitan más tiempo
     }
     
@@ -213,15 +218,17 @@ export class HelperDogComponent implements OnInit, OnDestroy {
       this.closeHelper();
     }, readingTimeMs);
   }
+  */
 
   closeHelper() {
     this.isActive = false;
     this.showMessage = false;
     this.showSuggestions = false;
     this.removeHighlight();
-    if (this.messageTimeout) {
-      clearTimeout(this.messageTimeout);
-    }
+    // Comentado: no cerrar automáticamente por timeout
+    // if (this.messageTimeout) {
+    //   clearTimeout(this.messageTimeout);
+    // }
   }
 
   // Métodos para registrar comportamiento del usuario

@@ -58,7 +58,9 @@ export class DevicesComponent implements OnInit {
     { name: 'Scanner', color: '#8e24aa', backgroundColor: '#f3e5f5', borderColor: '#e1bee7', icon: 'fa-camera' },
     { name: 'UPS', color: '#e65100', backgroundColor: '#fff3e0', borderColor: '#ffcc02', icon: 'fa-battery-full' },
     { name: 'Access Point', color: '#1565c0', backgroundColor: '#e3f2fd', borderColor: '#bbdefb', icon: 'fa-broadcast-tower' },
-    { name: 'Reloj Biométrico', color: '#4a148c', backgroundColor: '#f3e5f5', borderColor: '#ce93d8', icon: 'fa-fingerprint' }
+    { name: 'Reloj Biométrico', color: '#4a148c', backgroundColor: '#f3e5f5', borderColor: '#ce93d8', icon: 'fa-fingerprint' },
+    { name: 'Firewall', color: '#d81b60', backgroundColor: '#fce4ec', borderColor: '#f8bbd9', icon: 'fa-shield-alt' },
+    { name: 'PLCs/Scada', color: '#5d4037', backgroundColor: '#efebe9', borderColor: '#d7ccc8', icon: 'fa-microchip' }
   ];
 
   constructor(
@@ -261,6 +263,14 @@ export class DevicesComponent implements OnInit {
       case 'biometrico':
       case 'biométrico':
         return 'Reloj Biométrico';
+      case 'firewall':
+      case 'firewall':
+        return 'Firewall';
+      case 'plcs':
+      case 'scada':
+      case 'plcs/scada':
+      case 'plc':
+        return 'PLCs/Scada';
       default:
         return normalizedValue;
     }

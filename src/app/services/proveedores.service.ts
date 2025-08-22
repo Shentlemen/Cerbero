@@ -13,6 +13,7 @@ export interface ProveedorDTO {
     nombreComercial: string;   // Nombre comercial del proveedor
     direccion: string;         // Dirección del proveedor
     observaciones?: string;    // Observaciones adicionales (opcional)
+    rut: string;               // RUT del proveedor
 }
 
 @Injectable({

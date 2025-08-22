@@ -74,6 +74,45 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Burbuja específica para el woof */
+.woof-message {
+  width: auto;
+  min-width: 120px;
+  padding: 12px 20px;
+  background: #ffffff;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  animation: woofBounce 0.5s ease-out;
+}
+
+.woof-content {
+  text-align: center;
+}
+
+.woof-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-family: 'Orbitron', 'Courier New', monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Animación especial para el woof */
+@keyframes woofBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .speech-bubble::after {
   content: '';
   position: absolute;
@@ -84,6 +123,11 @@
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
   border-top: 10px solid #667eea;
+}
+
+/* Flecha específica para la burbuja del woof */
+.woof-message::after {
+  border-top-color: #e0e0e0;
 }
 
 @keyframes slideInRight {

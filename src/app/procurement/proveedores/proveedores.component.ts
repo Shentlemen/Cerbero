@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -47,7 +47,8 @@ export class ProveedoresComponent implements OnInit {
     fb: FormBuilder,
     private modalService: NgbModal,
     private contactosService: ContactosService,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private cdr: ChangeDetectorRef
   ) {
     this.fb = fb;
     this.filterForm = this.fb.group({
@@ -61,7 +62,8 @@ export class ProveedoresComponent implements OnInit {
       telefonoContacto: ['', [Validators.required, Validators.pattern(/^[\+]?[0-9\s\-\(\)]{7,20}$/)]],
       nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
       direccion: ['', [Validators.minLength(5)]],
-      observaciones: ['']
+      observaciones: [''],
+      rut: ['', [Validators.required]]
     });
     this.contactosFormArray = this.fb.array([]);
 
@@ -135,14 +137,79 @@ export class ProveedoresComponent implements OnInit {
       this.modoEdicion = true;
       this.proveedorSeleccionado = proveedor;
       
+      // Debug: verificar qué datos llegan del backend
+      console.log('=== DATOS DEL PROVEEDOR RECIBIDOS ===');
+      console.log('Proveedor completo:', proveedor);
+      console.log('RUT:', proveedor.rut);
+      console.log('Dirección:', proveedor.direccion);
+      console.log('Observaciones:', proveedor.observaciones);
+      console.log('Tipo de RUT:', typeof proveedor.rut);
+      console.log('Tipo de Dirección:', typeof proveedor.direccion);
+      console.log('Tipo de Observaciones:', typeof proveedor.observaciones);
+      console.log('¿RUT existe en el objeto?', 'rut' in proveedor);
+      console.log('¿Dirección existe en el objeto?', 'direccion' in proveedor);
+      console.log('¿Observaciones existe en el objeto?', 'observaciones' in proveedor);
+      
       // Preparar los datos del proveedor para el formulario
       const datosProveedor = {
-        ...proveedor,
-        direccion: proveedor.direccion === 'Sin especificar' ? '' : proveedor.direccion,
-        observaciones: proveedor.observaciones || ''
+        nombre: proveedor.nombre || '',
+        nombreComercial: proveedor.nombreComercial || '',
+        rut: proveedor.rut || '', // Si RUT es undefined, será cadena vacía
+        correoContacto: proveedor.correoContacto || '',
+        telefonoContacto: proveedor.telefonoContacto || '',
+        direccion: proveedor.direccion === 'Sin especificar' ? '' : (proveedor.direccion || ''),
+        observaciones: proveedor.observaciones || '' // Si observaciones es null, será cadena vacía
       };
       
+      console.log('=== DATOS PREPARADOS PARA EL FORMULARIO ===');
+      console.log('Datos a cargar:', datosProveedor);
+      console.log('RUT preparado:', datosProveedor.rut);
+      console.log('Dirección preparada:', datosProveedor.direccion);
+      console.log('Observaciones preparadas:', datosProveedor.observaciones);
+      
+      // Cargar todos los datos del proveedor en el formulario
       this.proveedorForm.patchValue(datosProveedor);
+      
+      // Verificar que el formulario se haya actualizado correctamente
+      console.log('=== ESTADO DEL FORMULARIO DESPUÉS DE PATCHVALUE ===');
+      console.log('Formulario completo:', this.proveedorForm.value);
+      console.log('RUT en el formulario:', this.proveedorForm.get('rut')?.value);
+      console.log('Dirección en el formulario:', this.proveedorForm.get('direccion')?.value);
+      console.log('Observaciones en el formulario:', this.proveedorForm.get('observaciones')?.value);
+      
+      // Forzar la detección de cambios inmediatamente después de patchValue
+      this.cdr.detectChanges();
+      
+      // Forzar la detección de cambios para asegurar que el formulario se actualice
+      this.proveedorForm.updateValueAndValidity();
+      
+      // Verificar una vez más después de updateValueAndValidity
+      setTimeout(() => {
+        console.log('=== VERIFICACIÓN FINAL DEL FORMULARIO ===');
+        console.log('RUT final:', this.proveedorForm.get('rut')?.value);
+        console.log('Dirección final:', this.proveedorForm.get('direccion')?.value);
+        console.log('Observaciones final:', this.proveedorForm.get('observaciones')?.value);
+        
+        // Forzar la detección de cambios de Angular
+        this.proveedorForm.markAllAsTouched();
+        
+        // Verificar que los controles individuales tengan los valores correctos
+        const rutControl = this.proveedorForm.get('rut');
+        const direccionControl = this.proveedorForm.get('direccion');
+        const observacionesControl = this.proveedorForm.get('observaciones');
+        
+        console.log('=== VERIFICACIÓN DE CONTROLES INDIVIDUALES ===');
+        console.log('Control RUT:', rutControl);
+        console.log('Valor del control RUT:', rutControl?.value);
+        console.log('Control Dirección:', direccionControl);
+        console.log('Valor del control Dirección:', direccionControl?.value);
+        console.log('Control Observaciones:', observacionesControl);
+        console.log('Valor del control Observaciones:', observacionesControl?.value);
+        
+        // Forzar la detección de cambios de Angular
+        this.cdr.detectChanges();
+      }, 100);
+      
       this.cargarContactosProveedor(proveedor.idProveedores);
     } else {
       this.modoEdicion = false;
@@ -219,6 +286,10 @@ export class ProveedoresComponent implements OnInit {
 
     if (controls['direccion']?.errors?.['minlength']) {
       errores.push('La dirección debe tener al menos 5 caracteres');
+    }
+
+    if (controls['rut']?.errors?.['required']) {
+      errores.push('El RUT es requerido');
     }
 
     return errores;
@@ -298,6 +369,12 @@ export class ProveedoresComponent implements OnInit {
     // Asegurar que la dirección no esté vacía
     if (!proveedorData.direccion || proveedorData.direccion.trim() === '') {
       proveedorData.direccion = 'Sin especificar';
+    }
+    
+    // Validar que el RUT no esté vacío
+    if (!proveedorData.rut || proveedorData.rut.trim() === '') {
+      this.formError = 'El RUT es requerido';
+      return;
     }
     
     // Validar formato de correo electrónico

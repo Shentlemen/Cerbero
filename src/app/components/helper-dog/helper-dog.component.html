@@ -12,7 +12,7 @@
   </div>
   
   <!-- Burbuja de mensaje principal -->
-  <div class="speech-bubble main-message" *ngIf="showMessage && currentTip">
+  <!-- <div class="speech-bubble main-message" *ngIf="showMessage && currentTip">
     <div class="message-header">
       <span class="message-type" [class]="currentTip.type || 'info'">
         {{ currentTip.type === 'warning' ? '⚠️' : 
@@ -21,7 +21,7 @@
       </span>
       <span class="message-priority" [class]="currentTip.priority || 'low'">
         {{ currentTip.priority === 'high' ? '🔥' : 
-           currentTip.priority === 'medium' ? '⚡' : '💤' }}
+           currentTip.type === 'medium' ? '⚡' : '💤' }}
       </span>
     </div>
     <div class="message-content">
@@ -30,10 +30,17 @@
     <div class="message-footer" *ngIf="currentTip.relatedSections && currentTip.relatedSections.length > 0">
       <small>🔗 Relacionado: {{ currentTip.relatedSections.join(', ') }}</small>
     </div>
+  </div> -->
+
+  <!-- Burbuja simple para el woof -->
+  <div class="speech-bubble woof-message" *ngIf="showMessage">
+    <div class="woof-content">
+      <span class="woof-text">Woof!</span>
+    </div>
   </div>
 
   <!-- Panel de sugerencias inteligentes -->
-  <div class="suggestions-panel" *ngIf="showSuggestions">
+  <!-- <div class="suggestions-panel" *ngIf="showSuggestions">
     <div class="suggestions-header">
       <span class="ai-icon">🤖</span>
       <span class="suggestions-title">Sugerencias IA</span>
@@ -63,7 +70,7 @@
         <span>🎯 No hay sugerencias específicas para esta sección.</span>
       </div>
     </div>
-  </div>
+  </div> -->
 
 
 

@@ -61,6 +61,16 @@
                   }"></i>
                 </div>
               </th>
+              <th (click)="sortData('rut')" [class.active]="sortColumn === 'rut'">
+                <div class="th-content">
+                  <span>RUT</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'rut' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'rut' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'rut'
+                  }"></i>
+                </div>
+              </th>
               <th (click)="sortData('direccion')" [class.active]="sortColumn === 'direccion'">
                 <div class="th-content">
                   <span>Dirección</span>
@@ -80,6 +90,7 @@
             <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
               <td>{{proveedor.nombre}}</td>
               <td>{{proveedor.nombreComercial}}</td>
+              <td>{{proveedor.rut}}</td>
               <td>
                 <span *ngIf="proveedor.direccion && proveedor.direccion !== 'Sin especificar'" class="direccion-text">
                   {{proveedor.direccion}}
@@ -118,6 +129,7 @@
       </div>
 
       <div *ngIf="!loading && !error && pagedProveedores.length === 0" class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
         No hay proveedores registrados.
       </div>
     </div>
@@ -180,6 +192,17 @@
                     <input type="text" class="form-control" formControlName="nombreComercial" placeholder="Nombre comercial">
                     <div class="invalid-feedback" *ngIf="proveedorForm.get('nombreComercial')?.errors?.['required'] && proveedorForm.get('nombreComercial')?.touched">
                       El nombre comercial es requerido.
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                      <i class="fas fa-id-card me-1"></i>RUT <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" formControlName="rut" placeholder="Ingrese el RUT">
+                    <div class="invalid-feedback" *ngIf="proveedorForm.get('rut')?.errors?.['required'] && proveedorForm.get('rut')?.touched">
+                      El RUT es requerido.
                     </div>
                   </div>
                 </div>
