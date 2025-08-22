@@ -464,3 +464,91 @@
 .table-danger {
   background-color: #f8d7da !important;
 }
+
+/* Estilos para la sección de análisis */
+.analysis-section {
+  margin-bottom: 2rem;
+}
+
+.analysis-section h5 {
+  color: #495057;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #007bff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analysis-section h5 i {
+  color: #007bff;
+}
+
+.analysis-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #dee2e6;
+  height: 100%;
+}
+
+.warning-card {
+  border-left: 4px solid #ffc107;
+}
+
+.info-card {
+  border-left: 4px solid #17a2b8;
+}
+
+.analysis-card h6 {
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analysis-card h6 i {
+  font-size: 0.9rem;
+}
+
+.analysis-stats p {
+  margin: 0.5rem 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.analysis-stats strong {
+  color: #495057;
+}
+
+/* Estilos para la sección de duplicados */
+.duplicates-section {
+  margin-bottom: 2rem;
+}
+
+.duplicates-section h5 {
+  color: #495057;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #ffc107;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.duplicates-section h5 i {
+  color: #ffc107;
+}
+
+.duplicates-section p {
+  color: #6c757d;
+  margin-bottom: 1rem;
+}

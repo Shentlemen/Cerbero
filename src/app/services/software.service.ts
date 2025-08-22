@@ -61,6 +61,19 @@ export class SoftwareService {
     );
   }
 
+  // Obtener todos los software con conteo y atributos (hidden, forbidden, driver, licenciado)
+  getAllSoftwareWithCountAndAttributes(): Observable<SoftwareDTO[]> {
+    return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/all`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
   // Obtener software visible (no oculto, no prohibido) con conteo
   getVisibleSoftwareWithCounts(): Observable<SoftwareDTO[]> {
     return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/visible`).pipe(

@@ -91,49 +91,35 @@ export class SoftwareComponent implements OnInit {
   }
 
   loadSoftware(): void {
-    this.loading = true;
-
-    // Cargar software visible por defecto
     this.loadSoftwareByFilter('total');
   }
 
   loadSoftwareByFilter(filter: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado'): void {
     this.loading = true;
 
-    let observable: Observable<SoftwareDTO[]>;
-
-    switch (filter) {
-      case 'total':
-        observable = this.softwareService.getVisibleSoftwareWithCounts();
-        break;
-      case 'hidden':
-        observable = this.softwareService.getHiddenSoftwareWithCounts();
-        break;
-      case 'forbidden':
-        observable = this.softwareService.getForbiddenSoftwareWithCounts();
-        break;
-      case 'driver':
-        observable = this.softwareService.getDriverSoftwareWithCounts();
-        break;
-      case 'licenciado':
-        observable = this.softwareService.getLicenciadoSoftwareWithCounts();
-        break;
-      default:
-        observable = this.softwareService.getVisibleSoftwareWithCounts();
-    }
-
-    observable.subscribe({
-      next: (data) => {
+    // Cargar todos los software con conteo y atributos para poder filtrar localmente por cualquier estado
+    this.softwareService.getAllSoftwareWithCountAndAttributes().subscribe({
+      next: (data: SoftwareDTO[]) => {
         this.softwareList = data;
         this.updateFilteredList();
         this.loading = false;
       },
-      error: (error) => {
-        this.notificationService.showError(
-          'Error al Cargar Software',
-          'No se pudo cargar la lista de software: ' + error.message
-        );
-        this.loading = false;
+      error: (error: any) => {
+        // Si no existe getAllSoftwareWithCountAndAttributes, usar getSoftwareWithCounts como fallback
+        this.softwareService.getSoftwareWithCounts().subscribe({
+          next: (fallbackData: SoftwareDTO[]) => {
+            this.softwareList = fallbackData;
+            this.updateFilteredList();
+            this.loading = false;
+          },
+          error: (fallbackError: any) => {
+            this.notificationService.showError(
+              'Error al Cargar Software',
+              'No se pudo cargar la lista de software: ' + fallbackError.message
+            );
+            this.loading = false;
+          }
+        });
       }
     });
   }
@@ -145,17 +131,42 @@ export class SoftwareComponent implements OnInit {
       return;
     }
 
-    // Ahora solo filtramos por búsqueda, ya que los datos vienen filtrados del servidor
+    // Aplicar filtros basados en el estado actual y la búsqueda
     this.filteredSoftwareList = this.softwareList.filter(software => {
       if (!software) return false;
 
+      // Aplicar filtro de búsqueda por texto
       const searchTermLower = (this.searchTerm || '').toLowerCase();
       const nombre = (software.nombre || '').toLowerCase();
       const publisher = (software.publisher || '').toLowerCase();
-
-      return !searchTermLower || 
+      const matchesSearch = !searchTermLower || 
         nombre.includes(searchTermLower) ||
         publisher.includes(searchTermLower);
+
+      if (!matchesSearch) return false;
+
+      // Aplicar filtros específicos según la pestaña activa
+      switch (this.activeTab) {
+        case 'hidden':
+          // Mostrar software marcado como hidden, sin importar otros atributos
+          return software.hidden === true;
+        case 'forbidden':
+          // Mostrar software marcado como forbidden, sin importar otros atributos
+          return software.forbidden === true;
+        case 'driver':
+          // Mostrar software marcado como driver, sin importar otros atributos
+          return software.driver === true;
+        case 'licenciado':
+          // Mostrar software marcado como licenciado, sin importar otros atributos
+          return software.licenciado === true;
+        case 'total':
+        default:
+          // Mostrar solo software que NO tenga NINGUNO de los 4 atributos marcados
+          return software.hidden === false && 
+                 software.forbidden === false && 
+                 software.driver === false && 
+                 software.licenciado === false;
+      }
     });
     
     this.collectionSize = this.filteredSoftwareList.length;
@@ -214,13 +225,16 @@ export class SoftwareComponent implements OnInit {
 
     this.softwareService.toggleSoftwareVisibility(software, !software.hidden).subscribe({
       next: () => {
+        // Actualizar el estado en la lista local
+        software.hidden = !software.hidden;
+        
+        // Actualizar la lista filtrada para reflejar el cambio
+        this.updateFilteredList();
+        
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
-          `Software ${software.hidden ? 'mostrado' : 'ocultado'} exitosamente`
+          `Software ${software.hidden ? 'ocultado' : 'mostrado'} exitosamente`
         );
-        
-        // Recargar los datos del filtro actual
-        this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
         // Mostrar mensaje de error más claro
@@ -245,13 +259,16 @@ export class SoftwareComponent implements OnInit {
 
     this.softwareService.toggleSoftwareForbidden(software).subscribe({
       next: () => {
+        // Actualizar el estado en la lista local
+        software.forbidden = !software.forbidden;
+        
+        // Actualizar la lista filtrada para reflejar el cambio
+        this.updateFilteredList();
+        
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
-          `Software ${software.forbidden ? 'desmarcado como prohibido' : 'marcado como prohibido'} exitosamente`
+          `Software ${software.forbidden ? 'marcado como prohibido' : 'desmarcado como prohibido'} exitosamente`
         );
-        
-        // Recargar los datos del filtro actual
-        this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
         // Mostrar mensaje de error más claro
@@ -276,13 +293,16 @@ export class SoftwareComponent implements OnInit {
 
     this.softwareService.toggleSoftwareDriver(software).subscribe({
       next: () => {
+        // Actualizar el estado en la lista local
+        software.driver = !software.driver;
+        
+        // Actualizar la lista filtrada para reflejar el cambio
+        this.updateFilteredList();
+        
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
-          `Software ${software.driver ? 'desmarcado como driver' : 'marcado como driver'} exitosamente`
+          `Software ${software.driver ? 'marcado como driver' : 'desmarcado como driver'} exitosamente`
         );
-        
-        // Recargar los datos del filtro actual
-        this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
         // Mostrar mensaje de error más claro
@@ -307,13 +327,16 @@ export class SoftwareComponent implements OnInit {
 
     this.softwareService.toggleSoftwareLicenciado(software).subscribe({
       next: () => {
+        // Actualizar el estado en la lista local
+        software.licenciado = !software.licenciado;
+        
+        // Actualizar la lista filtrada para reflejar el cambio
+        this.updateFilteredList();
+        
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
-          `Software ${software.licenciado ? 'desmarcado como licenciado' : 'marcado como licenciado'} exitosamente`
+          `Software ${software.licenciado ? 'marcado como licenciado' : 'desmarcado como licenciado'} exitosamente`
         );
-        
-        // Recargar los datos del filtro actual
-        this.loadSoftwareByFilter(this.activeTab);
       },
       error: (error) => {
         // Mostrar mensaje de error más claro
@@ -413,6 +436,27 @@ export class SoftwareComponent implements OnInit {
 
       await Promise.all(promises);
 
+      // Actualizar el estado en la lista local
+      softwareItems.forEach(software => {
+        switch (action) {
+          case 'visibility':
+            software.hidden = value;
+            break;
+          case 'forbidden':
+            software.forbidden = value;
+            break;
+          case 'driver':
+            software.driver = value;
+            break;
+          case 'licenciado':
+            software.licenciado = value;
+            break;
+        }
+      });
+
+      // Actualizar la lista filtrada para reflejar los cambios
+      this.updateFilteredList();
+
       // Mostrar notificación de éxito con información más detallada
       const actionText = this.getActionText(action, value);
       const actionDescription = this.getActionDescription(action, value);
@@ -420,9 +464,8 @@ export class SoftwareComponent implements OnInit {
         `${softwareIds.length} software ${actionText}. ${actionDescription}`
       );
 
-      // Limpiar selección y recargar datos
+      // Limpiar selección
       this.selectedSoftware.clear();
-      this.loadSoftwareByFilter(this.activeTab);
     } catch (error: any) {
       this.notificationService.showError(
         'Error al Actualizar Software',
@@ -507,13 +550,16 @@ export class SoftwareComponent implements OnInit {
     if (this.softwareToDelete) {
       this.softwareService.deleteSoftware(this.softwareToDelete).subscribe({
         next: () => {
+          // Remover software eliminado de la lista local
+          this.softwareList = this.softwareList.filter(s => s.idSoftware !== this.softwareToDelete!.idSoftware);
+          
+          // Actualizar la lista filtrada
+          this.updateFilteredList();
+          
           // Mostrar notificación de éxito
           this.notificationService.showSuccessMessage(
             `Software "${this.softwareToDelete!.nombre}" eliminado exitosamente`
           );
-          
-          // Recargar los datos del filtro actual
-          this.loadSoftwareByFilter(this.activeTab);
         },
         error: (error) => {
           this.notificationService.showError(
@@ -548,12 +594,17 @@ export class SoftwareComponent implements OnInit {
 
       await Promise.all(promises);
 
+      // Remover software eliminado de la lista local
+      this.softwareList = this.softwareList.filter(s => !softwareIds.includes(s.idSoftware));
+      
+      // Actualizar la lista filtrada
+      this.updateFilteredList();
+
       this.notificationService.showSuccessMessage(
         `${softwareIds.length} software eliminados exitosamente`
       );
 
       this.selectedSoftware.clear();
-      this.loadSoftwareByFilter(this.activeTab);
     } catch (error: any) {
       this.notificationService.showError(
         'Error al Eliminar Software',
