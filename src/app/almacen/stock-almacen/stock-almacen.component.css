@@ -129,6 +129,22 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.permission-info {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #ffeaa7;
+  margin-left: 0.5rem;
+}
+
+.permission-info i {
+  color: #856404;
 }
 
 .separator {
@@ -307,6 +323,43 @@
   background: #e9ecef;
 }
 
+/* Items clickeables (con permisos) */
+.item-card.clickable {
+  cursor: pointer;
+}
+
+.item-card.clickable:hover {
+  background: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.15);
+}
+
+.item-card.clickable:active {
+  transform: translateX(0);
+  background: #e9ecef;
+}
+
+/* Items de solo lectura (sin permisos) */
+.item-card.read-only {
+  cursor: default;
+  opacity: 0.8;
+  background: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.item-card.read-only:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #dee2e6;
+}
+
+.item-card.read-only .item-content {
+  opacity: 0.9;
+}
+
+.item-card.read-only .item-icon {
+  opacity: 0.7;
+}
+
 .item-content {
   padding: 0.75rem;
   display: flex;
@@ -361,6 +414,20 @@
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.readonly-badge {
+  background: #f8f9fa;
+  color: #6c757d;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #dee2e6;
+}
+
+.readonly-badge i {
+  font-size: 0.7rem;
 }
 
 /* Estado vacío del estante */

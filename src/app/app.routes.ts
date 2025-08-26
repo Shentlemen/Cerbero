@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AuthGuard } from './guards/auth.guard';
 import { HomeComponent } from './home/home.component';
 import { MenuComponent } from './menu/menu.component';
 import { SoftwareComponent } from './software/software.component';
@@ -26,11 +27,13 @@ export const routes: Routes = [
   },
   {
     path: 'user-profile',
-    loadComponent: () => import('./user-profile/user-profile.component').then(m => m.UserProfileComponent)
+    loadComponent: () => import('./user-profile/user-profile.component').then(m => m.UserProfileComponent),
+    canActivate: [AuthGuard]
   },
   {
     path: 'menu',
     component: MenuComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },

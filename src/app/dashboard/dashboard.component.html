@@ -58,7 +58,8 @@
           class="btn btn-check-changes" 
           (click)="checkHardwareChanges()" 
           [disabled]="isChecking"
-          title="Verificar cambios en el hardware">
+          title="Verificar cambios en el hardware"
+          *ngIf="canConfirmAlerts()">
           <i class="fas fa-sync-alt" [class.spinning]="isChecking"></i>
           {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
         </button>
@@ -75,7 +76,8 @@
           class="btn btn-cleanup-alerts" 
           (click)="cleanupOrphanedAlerts()" 
           [disabled]="isCleaning"
-          title="Verificar y limpiar todas las alertas obsoletas (hardware eliminado, software ya no prohibido, equipos 'nuevos' que ya existen, cambios que ya no son válidos)">
+          title="Verificar y limpiar todas las alertas obsoletas (hardware eliminado, software ya no prohibido, equipos 'nuevos' que ya existen, cambios que ya no son válidos)"
+          *ngIf="canConfirmAlerts()">
           <i class="fas fa-broom" [class.spinning]="isCleaning"></i>
           {{ isCleaning ? 'Limpiando...' : 'Limpiar alertas' }}
         </button>

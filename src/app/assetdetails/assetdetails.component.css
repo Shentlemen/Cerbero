@@ -219,3 +219,22 @@ app-video-details {
 .col-lg-6 {
   padding: 0.75rem;
 }
+
+/* Estilos para el indicador de permisos */
+.permission-info {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid #ffeaa7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.permission-info i {
+  color: #856404;
+  font-size: 0.9rem;
+}

@@ -143,6 +143,45 @@ button * {
   text-align: left;
 }
 
+/* Estilos para columnas ordenables */
+.sortable-header {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.sortable-header:hover {
+  background: #e9ecef !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sortable-header.active {
+  background: #dee2e6 !important;
+  color: #495057;
+}
+
+.sortable-header .th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sortable-header .th-content i {
+  font-size: 0.8rem;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.sortable-header:hover .th-content i {
+  color: #495057;
+}
+
+.sortable-header.active .th-content i {
+  color: #3498db;
+}
+
 .th-content {
   display: flex;
   align-items: center;

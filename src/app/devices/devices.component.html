@@ -63,14 +63,24 @@
       <table class="generic-table">
         <thead>
           <tr>
-            <th>
+            <th (click)="sortData('name')" [class.active]="sortColumn === 'name'" class="sortable-header">
               <div class="th-content">
                 <span>Nombre de red</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'name' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'name' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'name'
+                }"></i>
               </div>
             </th>
-            <th>
+            <th (click)="sortData('ip')" [class.active]="sortColumn === 'ip'" class="sortable-header">
               <div class="th-content">
                 <span>IP</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'ip' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'ip' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'ip'
+                }"></i>
               </div>
             </th>
             <th>
@@ -78,9 +88,14 @@
                 <span>Tipo</span>
               </div>
             </th>
-            <th>
+            <th (click)="sortData('description')" [class.active]="sortColumn === 'description'" class="sortable-header">
               <div class="th-content">
                 <span>Descripción</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'description' && sortDirection === 'desc',
+                  'fa-sort-down': sortColumn === 'description' && sortDirection === 'asc',
+                  'fa-sort': sortColumn !== 'description'
+                }"></i>
               </div>
             </th>
           </tr>

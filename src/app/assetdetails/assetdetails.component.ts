@@ -21,6 +21,7 @@ import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
 import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
+import { PermissionsService } from '../services/permissions.service';
 import { CpuDetailsComponent } from '../cpu-details/cpu-details.component';
 import { DriveDetailsComponent } from '../drive-details/drive-details.component';
 import { MemoryDetailsComponent } from '../memory-details/memory-details.component';
@@ -109,7 +110,8 @@ export class AssetdetailsComponent implements OnInit {
     private router: Router,
     private modalService: NgbModal,
     private softwareByHardwareService: SoftwareByHardwareService,
-    private ubicacionesService: UbicacionesService
+    private ubicacionesService: UbicacionesService,
+    public permissionsService: PermissionsService
   ) { }
 
   ngOnInit(): void {
@@ -730,5 +732,12 @@ export class AssetdetailsComponent implements OnInit {
     );
   }
 
+  /**
+   * Verifica si el usuario puede gestionar ubicaciones de assets
+   * Solo administradores y Game Masters pueden modificar ubicaciones
+   */
+  canManageAssetLocations(): boolean {
+    return this.permissionsService.canManageAssets();
+  }
 
 }

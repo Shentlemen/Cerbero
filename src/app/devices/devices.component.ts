@@ -44,6 +44,10 @@ export class DevicesComponent implements OnInit {
 
   // Filtro activo
   activeFilter: string = 'all';
+  
+  // Variables para ordenamiento
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Definición de tipos de dispositivos con colores e iconos
   deviceTypes: DeviceType[] = [
@@ -123,7 +127,93 @@ export class DevicesComponent implements OnInit {
       });
     }
     
+    // Aplicar ordenamiento si existe
+    if (this.sortColumn) {
+      this.applySorting();
+    }
+    
     this.collectionSize = this.filteredDevices.length;
+  }
+
+  // Método para ordenar los datos
+  sortData(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+
+    this.applySorting();
+  }
+
+  // Método auxiliar para aplicar el ordenamiento
+  private applySorting(): void {
+    if (!this.sortColumn) return;
+
+    this.filteredDevices.sort((a, b) => {
+      let valueA: any = a[this.sortColumn as keyof NetworkInfoDTO];
+      let valueB: any = b[this.sortColumn as keyof NetworkInfoDTO];
+
+      // Manejar valores nulos o undefined
+      if (valueA === null || valueA === undefined) valueA = '';
+      if (valueB === null || valueB === undefined) valueB = '';
+
+      // Ordenamiento especial para direcciones IP
+      if (this.sortColumn === 'ip') {
+        return this.compareIPs(valueA, valueB);
+      }
+
+      // Para otras columnas, usar comparación de strings
+      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+
+      // Comparar valores
+      if (valueA < valueB) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  // Método para comparar direcciones IP correctamente
+  private compareIPs(ipA: string, ipB: string): number {
+    // Convertir IPs a números para comparación
+    const numA = this.ipToNumber(ipA);
+    const numB = this.ipToNumber(ipB);
+    
+    // Debug: mostrar conversiones
+    console.log(`Comparando IPs: ${ipA} (${numA}) vs ${ipB} (${numB})`);
+    
+    if (this.sortDirection === 'asc') {
+      return numA - numB;
+    } else {
+      return numB - numA;
+    }
+  }
+
+  // Método para convertir IP a número
+  private ipToNumber(ip: string): number {
+    if (!ip || typeof ip !== 'string') return 0;
+    
+    // Dividir la IP en octetos
+    const octets = ip.split('.');
+    if (octets.length !== 4) return 0;
+    
+    let result = 0;
+    for (let i = 0; i < 4; i++) {
+      const octet = parseInt(octets[i], 10);
+      if (isNaN(octet) || octet < 0 || octet > 255) return 0;
+      result = (result << 8) + octet;
+    }
+    
+    // Debug: mostrar conversión
+    console.log(`IP ${ip} convertida a número: ${result}`);
+    
+    return result;
   }
 
   // Obtener configuración de color para un tipo de dispositivo
@@ -263,7 +353,6 @@ export class DevicesComponent implements OnInit {
       case 'biometrico':
       case 'biométrico':
         return 'Reloj Biométrico';
-      case 'firewall':
       case 'firewall':
         return 'Firewall';
       case 'plcs':
