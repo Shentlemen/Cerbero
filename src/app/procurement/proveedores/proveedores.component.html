@@ -83,14 +83,15 @@
               </th>
               <th>Correo de Contacto</th>
               <th>Teléfono de Contacto</th>
+              <th>Sitio Web</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
-              <td>{{proveedor.nombre}}</td>
-              <td>{{proveedor.nombreComercial}}</td>
-              <td>{{proveedor.rut}}</td>
+              <td>{{proveedor.nombre || 'No especificado'}}</td>
+              <td>{{proveedor.nombreComercial || 'No especificado'}}</td>
+              <td>{{proveedor.rut || 'No especificado'}}</td>
               <td>
                 <span *ngIf="proveedor.direccion && proveedor.direccion !== 'Sin especificar'" class="direccion-text">
                   {{proveedor.direccion}}
@@ -99,8 +100,28 @@
                   <i class="fas fa-map-marker-alt me-1"></i>Sin especificar
                 </span>
               </td>
-              <td>{{proveedor.correoContacto}}</td>
-              <td>{{proveedor.telefonoContacto}}</td>
+              <td>{{proveedor.correoContacto || 'No especificado'}}</td>
+              <td>{{proveedor.telefonoContacto || 'No especificado'}}</td>
+              <td>
+                <div class="websites-info">
+                  <div *ngIf="proveedor.webEmpresa" class="website-item">
+                    <i class="fas fa-globe text-primary me-1"></i>
+                    <a [href]="proveedor.webEmpresa" target="_blank" class="website-link">
+                      {{getDisplayUrl(proveedor.webEmpresa)}}
+                    </a>
+                  </div>
+                  <div *ngIf="proveedor.webVenta" class="website-item">
+                    <i class="fas fa-shopping-cart text-success me-1"></i>
+                    <a [href]="proveedor.webVenta" target="_blank" class="website-link">
+                      {{getDisplayUrl(proveedor.webVenta)}}
+                    </a>
+                  </div>
+                  <div *ngIf="!proveedor.webEmpresa && !proveedor.webVenta" class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Sin sitios web
+                  </div>
+                </div>
+              </td>
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-outline-secondary btn-sm me-2" (click)="verContactosProveedor(proveedor, contactosModal)">
@@ -178,12 +199,9 @@
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
-                      <i class="fas fa-building me-1"></i>Nombre <span class="text-danger">*</span>
+                      <i class="fas fa-building me-1"></i>Nombre
                     </label>
-                    <input type="text" class="form-control" formControlName="nombre" placeholder="Nombre de la empresa">
-                    <div class="invalid-feedback" *ngIf="proveedorForm.get('nombre')?.errors?.['required'] && proveedorForm.get('nombre')?.touched">
-                      El nombre es requerido.
-                    </div>
+                    <input type="text" class="form-control" formControlName="nombre" placeholder="Nombre de la empresa (opcional)">
                   </div>
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
@@ -198,35 +216,46 @@
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
-                      <i class="fas fa-id-card me-1"></i>RUT <span class="text-danger">*</span>
+                      <i class="fas fa-id-card me-1"></i>RUT
                     </label>
                     <input type="text" class="form-control" formControlName="rut" placeholder="Ingrese el RUT">
-                    <div class="invalid-feedback" *ngIf="proveedorForm.get('rut')?.errors?.['required'] && proveedorForm.get('rut')?.touched">
-                      El RUT es requerido.
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                      <i class="fas fa-globe me-1"></i>Sitio Web Empresa
+                    </label>
+                    <input type="url" class="form-control" formControlName="webEmpresa" placeholder="https://www.empresa.com">
+                    <div class="invalid-feedback" *ngIf="proveedorForm.get('webEmpresa')?.errors?.['pattern'] && proveedorForm.get('webEmpresa')?.touched">
+                      Ingrese una URL válida (debe comenzar con http:// o https://)
                     </div>
                   </div>
                 </div>
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
-                      <i class="fas fa-envelope me-1"></i>Correo de Contacto <span class="text-danger">*</span>
+                      <i class="fas fa-shopping-cart me-1"></i>Sitio Web de Ventas
+                    </label>
+                    <input type="url" class="form-control" formControlName="webVenta" placeholder="https://tienda.empresa.com">
+                    <div class="invalid-feedback" *ngIf="proveedorForm.get('webVenta')?.errors?.['pattern'] && proveedorForm.get('webVenta')?.touched">
+                      Ingrese una URL válida (debe comenzar con http:// o https://)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                      <i class="fas fa-envelope me-1"></i>Correo de Contacto
                     </label>
                     <input type="email" class="form-control" formControlName="correoContacto" placeholder="correo@empresa.com">
-                    <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['required'] && proveedorForm.get('correoContacto')?.touched">
-                      El correo es requerido.
-                    </div>
                     <div class="invalid-feedback" *ngIf="proveedorForm.get('correoContacto')?.errors?.['email'] && proveedorForm.get('correoContacto')?.touched">
                       Ingrese un correo válido.
                     </div>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
-                      <i class="fas fa-phone me-1"></i>Teléfono de Contacto <span class="text-danger">*</span>
+                      <i class="fas fa-phone me-1"></i>Teléfono de Contacto
                     </label>
                     <input type="tel" class="form-control" formControlName="telefonoContacto" placeholder="+1234567890, (123) 456-7890">
-                    <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['required'] && proveedorForm.get('telefonoContacto')?.touched">
-                      El teléfono es requerido.
-                    </div>
                     <div class="invalid-feedback" *ngIf="proveedorForm.get('telefonoContacto')?.errors?.['pattern'] && proveedorForm.get('telefonoContacto')?.touched">
                       Ingrese un formato de teléfono válido (ej: +1234567890, (123) 456-7890).
                     </div>
@@ -293,24 +322,18 @@
                     
                     <div class="col-md-6 mb-3">
                       <label class="form-label">
-                        <i class="fas fa-phone me-1"></i>Teléfono <span class="text-danger">*</span>
+                        <i class="fas fa-phone me-1"></i>Teléfono
                       </label>
-                      <input type="text" class="form-control" formControlName="telefono" placeholder="Teléfono del contacto" required>
-                      <div class="invalid-feedback" *ngIf="contacto.get('telefono')?.errors?.['required'] && contacto.get('telefono')?.touched">
-                        El teléfono es requerido.
-                      </div>
+                      <input type="text" class="form-control" formControlName="telefono" placeholder="Teléfono del contacto">
                     </div>
                   </div>
                   
                   <div class="row">
                     <div class="col-md-6 mb-3">
                       <label class="form-label">
-                        <i class="fas fa-envelope me-1"></i>Email <span class="text-danger">*</span>
+                        <i class="fas fa-envelope me-1"></i>Email
                       </label>
-                      <input type="email" class="form-control" formControlName="email" placeholder="Email del contacto" required>
-                      <div class="invalid-feedback" *ngIf="contacto.get('email')?.errors?.['required'] && contacto.get('email')?.touched">
-                        El email es requerido.
-                      </div>
+                      <input type="email" class="form-control" formControlName="email" placeholder="Email del contacto">
                       <div class="invalid-feedback" *ngIf="contacto.get('email')?.errors?.['email'] && contacto.get('email')?.touched">
                         Ingrese un email válido.
                       </div>
@@ -318,12 +341,9 @@
                     
                     <div class="col-md-6 mb-3">
                       <label class="form-label">
-                        <i class="fas fa-briefcase me-1"></i>Cargo <span class="text-danger">*</span>
+                        <i class="fas fa-briefcase me-1"></i>Cargo
                       </label>
-                      <input type="text" class="form-control" formControlName="cargo" placeholder="Cargo del contacto" required>
-                      <div class="invalid-feedback" *ngIf="contacto.get('cargo')?.errors?.['required'] && contacto.get('cargo')?.touched">
-                        El cargo es requerido.
-                      </div>
+                      <input type="text" class="form-control" formControlName="cargo" placeholder="Cargo del contacto">
                     </div>
                   </div>
                   
@@ -384,19 +404,29 @@
           </div>
           
           <div class="contacto-vista-body">
-            <div class="contacto-detalle">
+            <div class="contacto-detalle" *ngIf="contacto.telefono && contacto.telefono.trim() !== ''">
               <i class="fas fa-phone text-primary"></i>
               <span>{{contacto.telefono}}</span>
             </div>
             
-            <div class="contacto-detalle">
+            <div class="contacto-detalle" *ngIf="contacto.email && contacto.email.trim() !== ''">
               <i class="fas fa-envelope text-primary"></i>
               <span>{{contacto.email}}</span>
             </div>
             
-            <div *ngIf="contacto.observaciones" class="contacto-detalle">
+            <div class="contacto-detalle" *ngIf="contacto.cargo && contacto.cargo.trim() !== ''">
+              <i class="fas fa-briefcase text-primary"></i>
+              <span>{{contacto.cargo}}</span>
+            </div>
+            
+            <div class="contacto-detalle" *ngIf="contacto.observaciones && contacto.observaciones.trim() !== ''">
               <i class="fas fa-comment text-primary"></i>
               <span>{{contacto.observaciones}}</span>
+            </div>
+            
+            <div *ngIf="!contacto.telefono && !contacto.email && !contacto.cargo && !contacto.observaciones" class="contacto-detalle">
+              <i class="fas fa-info-circle text-muted"></i>
+              <span class="text-muted">Solo nombre especificado</span>
             </div>
           </div>
         </div>

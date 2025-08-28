@@ -12,20 +12,24 @@
             <span>{{totalSoftware}} Total</span>
           </div>
           <button class="visibility-toggle" [class.active-filter]="activeTab === 'hidden'" (click)="showOnlyHiddenSoftware()">
-            <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye' "></i>
+            <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye'"></i>
             {{ activeTab === 'hidden' ? 'Solo software escondido' : 'Mostrar solo escondidos' }}
+            <span class="count">({{hiddenSoftwareCount}})</span>
           </button>
           <button class="forbidden-toggle" [class.active-filter]="activeTab === 'forbidden'" (click)="showOnlyForbiddenSoftware()">
             <i class="fas fa-ban"></i>
             {{ activeTab === 'forbidden' ? 'Solo prohibidos' : 'Mostrar solo prohibidos' }}
+            <span class="count">({{forbiddenSoftwareCount}})</span>
           </button>
           <button class="driver-toggle" [class.active-filter]="activeTab === 'driver'" (click)="showOnlyDriverSoftware()">
             <i class="fas fa-cog"></i>
             {{ activeTab === 'driver' ? 'Solo drivers' : 'Mostrar solo drivers' }}
+            <span class="count">({{driverSoftwareCount}})</span>
           </button>
           <button class="licenciado-toggle" [class.active-filter]="activeTab === 'licenciado'" (click)="showOnlyLicenciadoSoftware()">
             <i class="fas fa-key"></i>
             {{ activeTab === 'licenciado' ? 'Solo licenciados' : 'Mostrar solo licenciados' }}
+            <span class="count">({{licenciadoSoftwareCount}})</span>
           </button>
         </div>
         

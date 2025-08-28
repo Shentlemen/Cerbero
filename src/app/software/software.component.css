@@ -312,6 +312,17 @@
   color: #059669;
 }
 
+/* Estilos para los contadores en los botones de filtrado */
+.visibility-toggle .count,
+.forbidden-toggle .count,
+.driver-toggle .count,
+.licenciado-toggle .count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-weight: 400;
+  margin-left: 0.25rem;
+}
+
 .active-filter {
   background: #e2e8f0 !important;
   border-color: #41A1AF !important;

@@ -6,8 +6,8 @@
     <div class="title-wrapper">
       <h1>
         <i class="fas fa-skull-crossbones"></i> 
-        Cementerio de Equipos
-        <span class="subtitle">Equipos dados de baja</span>
+        Cementerio de Equipos y Dispositivos
+        <span class="subtitle">Equipos y dispositivos dados de baja</span>
       </h1>
     </div>
   </div>
@@ -48,17 +48,17 @@
           <tr>
             <th>
               <div class="th-content">
-                <span>Equipo</span>
-              </div>
-            </th>
-            <th>
-              <div class="th-content">
                 <span>Tipo</span>
               </div>
             </th>
             <th>
               <div class="th-content">
-                <span>Sistema Operativo</span>
+                <span>Nombre</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Detalles</span>
               </div>
             </th>
             <th>
@@ -84,51 +84,67 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let equipo of pagedEquipos" class="equipo-row" (click)="verDetallesEquipo(equipo)" data-help="👁️ Haz clic para ver los detalles del equipo">
+          <tr *ngFor="let item of pagedEquipos" class="item-row" [ngClass]="{'equipo-row': item.tipo === 'EQUIPO', 'dispositivo-row': item.tipo === 'DISPOSITIVO'}" (click)="verDetallesItem(item)" data-help="👁️ Haz clic para ver los detalles">
             <td>
-              <div class="equipo-name">
-                <i class="fas equipment-icon" [ngClass]="getEquipoIcon(equipo.biosType)"></i>
-                <div class="equipo-info">
-                  <span class="name">{{ equipo.name }}</span>
-                  <small class="ip" *ngIf="equipo.ipAddr">{{ equipo.ipAddr }}</small>
+              <div class="tipo-badge" [ngClass]="item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo'">
+                <i class="fas" [ngClass]="item.tipo === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired'"></i>
+                {{ item.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo' }}
+              </div>
+            </td>
+            <td>
+              <div class="item-name">
+                <i class="fas equipment-icon" [ngClass]="getItemIcon(item)"></i>
+                <div class="item-info">
+                  <span class="name">{{ item.name || item.mac }}</span>
+                  <small class="ip" *ngIf="item.ipAddr || item.ip">{{ item.ipAddr || item.ip }}</small>
                 </div>
               </div>
             </td>
             <td>
-              <span class="type-badge" [ngClass]="getTypeBadgeClass(equipo.biosType)">
-                {{ equipo.biosType || 'Desconocido' }}
-              </span>
-            </td>
-            <td>
-              <div class="os-badge" [ngClass]="{'windows': equipo.osName?.includes('Windows'), 'linux': equipo.osName?.includes('Linux')}">
-                <i class="fab" [ngClass]="{'fa-windows': equipo.osName?.includes('Windows'), 'fa-linux': equipo.osName?.includes('Linux')}"></i>
-                {{ equipo.osName || 'Desconocido' }}
+              <div class="item-details">
+                <!-- Para equipos -->
+                <div *ngIf="item.tipo === 'EQUIPO'">
+                  <span class="type-badge" [ngClass]="getTypeBadgeClass(item.biosType)">
+                    {{ item.biosType || 'Desconocido' }}
+                  </span>
+                  <div class="os-badge" [ngClass]="{'windows': item.osName?.includes('Windows'), 'linux': item.osName?.includes('Linux')}">
+                    <i class="fab" [ngClass]="{'fa-windows': item.osName?.includes('Windows'), 'fa-linux': item.osName?.includes('Linux')}"></i>
+                    {{ item.osName || 'Desconocido' }}
+                  </div>
+                </div>
+                <!-- Para dispositivos -->
+                <div *ngIf="item.tipo === 'DISPOSITIVO'">
+                  <span class="type-badge dispositivo" [style.background-color]="getDeviceTypeConfig(item.type).backgroundColor" [style.color]="getDeviceTypeConfig(item.type).color">
+                    {{ item.type || 'Desconocido' }}
+                  </span>
+                  <small class="description">{{ item.description || 'Sin descripción' }}</small>
+                </div>
               </div>
             </td>
             <td>
               <div class="fecha-baja">
                 <i class="fas fa-calendar-times"></i>
-                <span>{{ formatFecha(equipo.fechaBaja) }}</span>
+                <span>{{ formatFecha(item.fechaBaja) }}</span>
               </div>
             </td>
             <td>
-              <span class="usuario-cambio">{{ equipo.usuarioCambio || 'No especificado' }}</span>
+              <span class="usuario-cambio">{{ item.usuarioCambio || 'No especificado' }}</span>
             </td>
             <td>
-              <div class="observaciones" [title]="equipo.observaciones">
-                {{ equipo.observaciones || 'Sin observaciones' }}
+              <div class="observaciones" [title]="item.observaciones">
+                {{ item.observaciones || 'Sin observaciones' }}
               </div>
             </td>
             <td *ngIf="canManageAssets()">
               <div class="action-buttons">
                 <button 
                   class="btn btn-success btn-sm reactivar-btn" 
-                  (click)="reactivarEquipo(equipo); $event.stopPropagation()"
-                  [disabled]="reactivatingEquipoId === equipo.id"
-                  title="Reactivar este equipo"
-                  data-help="🔄 Reactivar equipo y devolverlo a la lista activa">
-                  <i class="fas" [ngClass]="reactivatingEquipoId === equipo.id ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
-                  {{ reactivatingEquipoId === equipo.id ? 'Reactivando...' : 'Reactivar' }}
+                  (click)="reactivarItem(item); $event.stopPropagation()"
+                  [disabled]="reactivatingItemId === (item.id || item.mac)"
+                  [title]="'Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')"
+                  [attr.data-help]="'🔄 Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo') + ' y devolverlo a la lista activa'">
+                  <i class="fas" [ngClass]="reactivatingItemId === (item.id || item.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+                  {{ reactivatingItemId === (item.id || item.mac) ? 'Reactivando...' : 'Reactivar' }}
                 </button>
               </div>
             </td>
@@ -158,11 +174,11 @@
   <div class="confirm-dialog reactivar-dialog">
     <div class="confirm-dialog-title">
       <i class="fas fa-undo"></i>
-      Reactivar Equipo
+      Reactivar {{ itemToReactivar?.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo' }}
     </div>
     <div class="confirm-dialog-message">
-      <p>¿Está seguro que desea reactivar el equipo <strong>{{ equipoToReactivar?.name }}</strong>?</p>
-      <p class="text-muted">El equipo volverá a aparecer en la lista de activos y se eliminará del cementerio.</p>
+      <p>¿Está seguro que desea reactivar el {{ itemToReactivar?.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo' }} <strong>{{ itemToReactivar?.name || itemToReactivar?.mac }}</strong>?</p>
+      <p class="text-muted">El {{ itemToReactivar?.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo' }} volverá a aparecer en la lista de activos y se eliminará del cementerio.</p>
     </div>
     <div class="confirm-dialog-buttons">
       <button class="confirm-dialog-button cancel" (click)="cancelarReactivacion()">
@@ -171,9 +187,9 @@
       <button 
         class="confirm-dialog-button confirm reactivar" 
         (click)="confirmarReactivacion()"
-        [disabled]="reactivatingEquipoId === equipoToReactivar?.id">
-        <i class="fas" [ngClass]="reactivatingEquipoId === equipoToReactivar?.id ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
-        {{ reactivatingEquipoId === equipoToReactivar?.id ? 'Reactivando...' : 'Reactivar' }}
+        [disabled]="reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac)">
+        <i class="fas" [ngClass]="reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+        {{ reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac) ? 'Reactivando...' : 'Reactivar' }}
       </button>
     </div>
   </div>

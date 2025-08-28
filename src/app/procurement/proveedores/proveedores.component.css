@@ -752,4 +752,44 @@
 
 .text-muted i {
   opacity: 0.6;
+}
+
+/* Estilos para los sitios web */
+.websites-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.website-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.website-item:hover {
+  background: #e9ecef;
+  transform: translateX(2px);
+}
+
+.website-link {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.website-link:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.website-item i {
+  font-size: 0.9rem;
+  flex-shrink: 0;
 } 

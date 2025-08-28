@@ -170,15 +170,15 @@
           <tbody>
             <tr *ngFor="let compra of pagedCompras" class="compra-row">
               <td>{{getNombreCompraFormateado(compra)}}</td>
-              <td>{{compra.descripcion}}</td>
-              <td>{{formatearFecha(compra.fechaInicio)}}</td>
-              <td>{{formatearFecha(compra.fechaFinal)}}</td>
+              <td>{{compra.descripcion || 'Sin descripción'}}</td>
+              <td>{{compra.fechaInicio ? formatearFecha(compra.fechaInicio) : 'No definida'}}</td>
+              <td>{{compra.fechaFinal ? formatearFecha(compra.fechaFinal) : 'No definida'}}</td>
               <td>
-                <span class="moneda-badge" [ngClass]="compra.moneda.toLowerCase()">
-                  {{compra.moneda}}
+                <span class="moneda-badge" [ngClass]="compra.moneda ? compra.moneda.toLowerCase() : 'default'">
+                  {{compra.moneda || 'No definida'}}
                 </span>
               </td>
-              <td>{{formatearMoneda(compra.monto, compra.moneda)}}</td>
+              <td>{{compra.monto ? formatearMoneda(compra.monto, compra.moneda || 'USD') : 'No definido'}}</td>
               <td>
                 <div class="action-buttons" *ngIf="canManagePurchases()">
                   <button class="btn btn-info btn-sm me-2" (click)="verDetallesCompra(compra)" title="Ver detalles completos">
@@ -279,7 +279,7 @@
               <div class="row">
                 <div class="col-md-4 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-money-bill-wave me-2"></i>Moneda <span class="text-danger">*</span>
+                    <i class="fas fa-money-bill-wave me-2"></i>Moneda
                   </label>
                   <select class="form-select" formControlName="moneda">
                     <option value="USD">USD</option>
@@ -289,16 +289,16 @@
                 </div>
                 <div class="col-md-4 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-dollar-sign me-2"></i>Monto <span class="text-danger">*</span>
+                    <i class="fas fa-dollar-sign me-2"></i>Monto
                   </label>
                   <input 
                     type="text" 
                     class="form-control text-end" 
                     formControlName="monto" 
-                    placeholder="0,00"
-                    (input)="formatearMontoInput($event)"
-                    (keydown)="verificarBorradoCompleto($event)"
-                    (blur)="formatearMontoOnBlur($event)">
+                    placeholder="Ingrese el monto"
+                    appCurrencyMask
+                    inputmode="numeric"
+                    autocomplete="off">
                 </div>
                 <div class="col-md-4 mb-3">
                   <!-- Campo vacío para mantener el layout -->
@@ -307,7 +307,7 @@
               <div class="row">
                 <div class="col-md-12 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-tag me-2"></i>Nombre de Compra <span class="text-danger">*</span>
+                    <i class="fas fa-tag me-2"></i>Nombre de Compra
                   </label>
                   <input type="text" class="form-control" formControlName="descripcion" placeholder="Ingrese el nombre de la compra">
                 </div>
@@ -315,13 +315,13 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-calendar-plus me-2"></i>Fecha Apertura <span class="text-danger">*</span>
+                    <i class="fas fa-calendar-plus me-2"></i>Fecha Apertura
                   </label>
                   <input type="date" class="form-control" formControlName="fechaInicio">
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-calendar-check me-2"></i>Fecha Adjudicación <span class="text-danger">*</span>
+                    <i class="fas fa-calendar-check me-2"></i>Fecha Adjudicación
                   </label>
                   <input type="date" class="form-control" formControlName="fechaFinal">
                 </div>
@@ -361,7 +361,7 @@
                   <i class="fas fa-tag me-2"></i>Nombre del ítem <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control" formControlName="nombreItem" 
-                       placeholder="Ingrese el nombre del ítem" required>
+                       placeholder="Ingrese el nombre del ítem">
               </div>
               
               <div class="col-md-4 mb-3">
@@ -369,22 +369,22 @@
                   <i class="fas fa-sort-numeric-up me-2"></i>Cantidad <span class="text-danger">*</span>
                 </label>
                 <input type="number" class="form-control" formControlName="cantidad" 
-                       min="1" placeholder="1" required>
+                       min="1" placeholder="1">
               </div>
             </div>
             
             <div class="row">
               <div class="col-md-4 mb-3">
                 <label class="form-label">
-                  <i class="fas fa-calendar-check me-2"></i>Meses de Garantía <span class="text-danger">*</span>
+                  <i class="fas fa-calendar-check me-2"></i>Meses de Garantía
                 </label>
                 <input type="number" class="form-control" formControlName="mesesGarantia" 
-                       min="0" placeholder="0" required>
+                       min="0" placeholder="0">
               </div>
               
               <div class="col-md-4 mb-3">
                 <label class="form-label">
-                  <i class="fas fa-truck me-2"></i>Proveedor <span class="text-danger">*</span>
+                  <i class="fas fa-truck me-2"></i>Proveedor
                 </label>
                 <div class="dropdown-search-container">
                   <input 
@@ -411,25 +411,25 @@
               
               <div class="col-md-4 mb-3">
                 <label class="form-label">
-                  <i class="fas fa-shield-alt me-2"></i>Servicio de Garantía <span class="text-danger">*</span>
+                  <i class="fas fa-shield-alt me-2"></i>Servicio de Garantía
                 </label>
                 <div class="dropdown-search-container">
                   <input 
                     type="text" 
                     class="form-control dropdown-input" 
-                    placeholder="Buscar y seleccionar servicio..."
-                    (input)="filtrarServiciosGarantia($event, i)"
-                    (focus)="mostrarDropdownServiciosGarantia(i)"
-                    (blur)="ocultarDropdownServiciosGarantia(i)"
-                    [value]="getServicioGarantiaDisplayValue(i)">
-                  <div class="dropdown-options" *ngIf="isDropdownServiciosGarantiaVisible(i)">
+                    placeholder="Buscar y seleccionar proveedor de garantía..."
+                    (input)="filtrarProveedoresGarantia($event, i)"
+                    (focus)="mostrarDropdownProveedoresGarantia(i)"
+                    (blur)="ocultarDropdownProveedoresGarantia(i)"
+                    [value]="getProveedorGarantiaDisplayValue(i)">
+                  <div class="dropdown-options" *ngIf="isDropdownProveedoresGarantiaVisible(i)">
                     <div 
-                      *ngFor="let servicio of getServiciosGarantiaFiltrados(i)" 
+                      *ngFor="let proveedor of getProveedoresGarantiaFiltrados(i)" 
                       class="dropdown-option"
-                      (click)="seleccionarServicioGarantia(servicio, i)">
-                      {{servicio.nombreComercial}}
+                      (click)="seleccionarProveedorGarantia(proveedor, i)">
+                      {{proveedor.nombreComercial}}
                     </div>
-                    <div *ngIf="getServiciosGarantiaFiltrados(i).length === 0" class="dropdown-no-results">
+                    <div *ngIf="getProveedoresGarantiaFiltrados(i).length === 0" class="dropdown-no-results">
                       No se encontraron resultados
                     </div>
                   </div>
@@ -533,22 +533,35 @@
           </div>
         </ng-template>
       </li>
-      <li *ngIf="modoEdicion" [ngbNavItem]="'4'">
-        <a ngbNavLink>Remitos</a>
+      <li [ngbNavItem]="'4'">
+        <a ngbNavLink>Documentos</a>
         <ng-template ngbNavContent>
           <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="mb-0 text-secondary">Remitos de Entrega</h5>
+            <h5 class="mb-0 text-secondary">Documentos de la Compra</h5>
+            <div class="btn-group" role="group">
+                      <button class="btn btn-success" (click)="agregarDocumento('documento')">
+          <i class="fas fa-file-alt me-2"></i>Agregar Documento
+        </button>
+              <button class="btn btn-primary" (click)="agregarDocumento('pliego')">
+                <i class="fas fa-file-contract me-2"></i>Agregar Pliego
+              </button>
+            </div>
           </div>
           
-          <!-- Formulario para subir remito -->
-          <div class="remito-upload-card mb-4" *ngIf="canManagePurchases()">
+          <!-- Formulario para subir documentos -->
+          <div class="documento-upload-card mb-4" *ngIf="canManagePurchases() && tipoDocumentoSeleccionado">
             <div class="card-header-custom mb-3">
               <h6 class="mb-0 text-secondary">
-                <i class="fas fa-upload me-2"></i>Subir Nuevo Remito
+                <i class="fas fa-upload me-2"></i>
+                {{ tipoDocumentoSeleccionado === 'documento' ? 'Subir Documento' : 'Subir Pliego' }}
               </h6>
+              <small class="text-muted" *ngIf="tipoDocumentoSeleccionado === 'pliego' && pliegoCompra">
+                <i class="fas fa-info-circle me-1"></i>
+                Al subir un nuevo pliego se reemplazará el actual
+              </small>
             </div>
             
-            <div class="row align-items-end">
+            <div class="row align-items-start">
               <div class="col-md-4 mb-3">
                 <label class="form-label">
                   <i class="fas fa-file me-2"></i>Seleccionar Archivo <span class="text-danger">*</span>
@@ -556,223 +569,174 @@
                 <input 
                   type="file" 
                   class="form-control" 
-                  (change)="onArchivoSeleccionado($event)"
-                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff">
-                <small class="text-muted">Máximo 10MB - Formatos: PDF, JPG, PNG, GIF, BMP, TIFF</small>
+                  (change)="onDocumentoSeleccionado($event)"
+                  [accept]="tipoDocumentoSeleccionado === 'documento' ? '.pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff' : '.pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.doc,.docx'">
+                <small class="text-muted">
+                  {{ tipoDocumentoSeleccionado === 'documento' ? 'Máximo 10MB - Formatos: PDF, JPG, PNG, DOC' : 'Máximo 15MB - Formatos: PDF, imágenes, documentos Word' }}
+                </small>
               </div>
               <div class="col-md-5 mb-3">
                 <label class="form-label">
-                  <i class="fas fa-comment me-2"></i>Descripción (opcional)
+                  <i class="fas fa-comment me-2"></i>Descripción <span class="text-danger">*</span>
                 </label>
                 <input 
                   type="text" 
                   class="form-control" 
-                  [(ngModel)]="descripcionRemito"
-                  placeholder="Descripción del remito de entrega...">
+                  [(ngModel)]="descripcionDocumento"
+                  [placeholder]="'Descripción del ' + (tipoDocumentoSeleccionado === 'documento' ? 'documento' : 'pliego') + '...'"
+                  required
+                  [class.is-invalid]="error && (!descripcionDocumento || descripcionDocumento.trim().length === 0)">
+                <div class="invalid-feedback" *ngIf="error && (!descripcionDocumento || descripcionDocumento.trim().length === 0)">
+                  La descripción es obligatoria para subir el documento
+                </div>
+                <small class="form-text text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Agregue una descripción clara del documento para facilitar su identificación
+                </small>
               </div>
               <div class="col-md-3 mb-3">
-                <button 
-                  type="button"
-                  class="btn btn-success w-100" 
-                  (click)="subirRemito()"
-                  [disabled]="!archivoSeleccionado || subiendoArchivo">
+                                  <button 
+                    type="button"
+                    [class]="'btn w-100 ' + (tipoDocumentoSeleccionado === 'documento' ? 'btn-success' : 'btn-primary')" 
+                    (click)="subirDocumento()"
+                    [disabled]="!documentoSeleccionado || !descripcionDocumento || descripcionDocumento.trim().length === 0 || subiendoDocumento">
                   <i class="fas fa-upload me-2"></i>
-                  <span *ngIf="!subiendoArchivo">Subir Remito</span>
-                  <span *ngIf="subiendoArchivo">
+                  <span *ngIf="!subiendoDocumento">{{ tipoDocumentoSeleccionado === 'documento' ? 'Subir Documento' : 'Subir Pliego' }}</span>
+                  <span *ngIf="subiendoDocumento">
                     <span class="spinner-border spinner-border-sm me-2"></span>Subiendo...
                   </span>
                 </button>
               </div>
             </div>
             
-            <div *ngIf="archivoSeleccionado" class="alert alert-info mt-2">
+            <div *ngIf="documentoSeleccionado" class="alert alert-info mt-2">
               <i class="fas fa-info-circle me-2"></i>
-              Archivo seleccionado: <strong>{{ archivoSeleccionado.name }}</strong> 
-              ({{ formatearTamanoArchivo(archivoSeleccionado.size) }})
+              Archivo seleccionado: <strong>{{ documentoSeleccionado.name }}</strong> 
+              ({{ formatearTamanoArchivo(documentoSeleccionado.size) }})
             </div>
           </div>
 
-          <!-- Lista de remitos existentes -->
-          <div *ngIf="remitosCompra.length === 0" class="text-center py-5">
-            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-            <p class="text-muted">No hay remitos subidos para esta compra.</p>
-            <p class="text-muted" *ngIf="canManagePurchases()">
-              <small>Use el formulario de arriba para subir el primer remito de entrega.</small>
-            </p>
-          </div>
-          
-          <div class="row" *ngIf="remitosCompra.length > 0">
-            <div class="col-md-12" *ngFor="let remito of remitosCompra; let i = index">
-              <div class="remito-card">
-                <div class="remito-header">
+          <!-- Lista de documentos -->
+          <div class="documentos-section">
+            <!-- Documentos -->
+            <div class="documentos-categoria mb-4">
+              <h6 class="categoria-title">
+                <i class="fas fa-file-alt me-2"></i>Documentos ({{ documentosCompra.length }})
+              </h6>
+              
+              <div *ngIf="documentosCompra.length === 0" class="no-documentos">
+                <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                <p class="text-muted">No hay documentos adjuntos para esta compra.</p>
+              </div>
+              
+              <div *ngFor="let documento of documentosCompra" class="documento-card">
+                <div class="documento-header">
                   <h6>
-                    <i [class]="getIconoArchivo(remito.tipoArchivo)"></i>
-                    <span [title]="remito.nombreArchivoOriginal">{{ remito.nombreArchivoOriginal }}</span>
+                    <i [class]="getIconoArchivo(documento.tipoArchivo)"></i>
+                    <span [title]="documento.nombreArchivoOriginal">{{ documento.nombreArchivoOriginal }}</span>
                   </h6>
                   <div class="btn-group" role="group">
                     <button 
                       class="btn btn-outline-primary btn-sm" 
-                      (click)="visualizarRemito(remito)"
+                      (click)="visualizarDocumento(documento, 'documento')"
                       title="Ver archivo">
                       <i class="fas fa-eye"></i>
                     </button>
                     <button 
                       class="btn btn-outline-success btn-sm" 
-                      (click)="descargarRemito(remito)"
+                      (click)="descargarDocumento(documento, 'documento')"
                       title="Descargar">
                       <i class="fas fa-download"></i>
                     </button>
                     <button 
                       *ngIf="canManagePurchases()"
                       class="btn btn-outline-danger btn-sm" 
-                      (click)="eliminarRemito(remito)"
+                      (click)="eliminarDocumento(documento, 'documento')"
                       title="Eliminar">
                       <i class="fas fa-trash"></i>
                     </button>
                   </div>
                 </div>
                 
-                <div class="remito-details">
-                  <div class="remito-detail">
+                <div class="documento-details">
+                  <div class="documento-detail">
                     <span class="detail-label">Tamaño:</span>
-                    <span class="detail-value">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</span>
+                    <span class="detail-value">{{ formatearTamanoArchivo(documento.tamanoArchivo) }}</span>
                   </div>
-                  <div class="remito-detail">
+                  <div class="documento-detail">
                     <span class="detail-label">Tipo:</span>
-                    <span class="detail-value">{{ remito.tipoArchivo }}</span>
+                    <span class="detail-value">{{ documento.tipoArchivo }}</span>
                   </div>
-                  <div class="remito-detail">
+                  <div class="documento-detail">
                     <span class="detail-label">Fecha:</span>
-                    <span class="detail-value">{{ formatearFecha(remito.fechaCreacion) }}</span>
+                    <span class="detail-value">{{ formatearFecha(documento.fechaCreacion) }}</span>
                   </div>
-                  <div class="remito-detail" *ngIf="remito.descripcion">
+                  <div class="documento-detail" *ngIf="documento.descripcion">
                     <span class="detail-label">Descripción:</span>
-                    <span class="detail-value" [title]="remito.descripcion">{{ remito.descripcion }}</span>
+                    <span class="detail-value" [title]="documento.descripcion">{{ documento.descripcion }}</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </ng-template>
-      </li>
-      <li [ngbNavItem]="'5'">
-        <a ngbNavLink>Pliego</a>
-        <ng-template ngbNavContent>
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="mb-0 text-secondary">Pliego de la Compra</h5>
-          </div>
-          
-          <!-- Formulario para subir pliego (solo si no existe o se quiere reemplazar) -->
-          <div class="pliego-upload-card mb-4" *ngIf="canManagePurchases()">
-            <div class="card-header-custom mb-3">
-              <h6 class="mb-0 text-secondary">
-                <i class="fas fa-upload me-2"></i>
-                {{ pliegoCompra ? 'Reemplazar Pliego' : 'Subir Pliego' }}
-              </h6>
-              <small class="text-muted" *ngIf="pliegoCompra">
-                <i class="fas fa-info-circle me-1"></i>
-                Al subir un nuevo pliego se reemplazará el actual
-              </small>
-            </div>
-            
-            <div class="row align-items-end">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">
-                  <i class="fas fa-file me-2"></i>Seleccionar Archivo <span class="text-danger">*</span>
-                </label>
-                <input 
-                  type="file" 
-                  class="form-control" 
-                  (change)="onPliegoSeleccionado($event)"
-                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.doc,.docx">
-                <small class="text-muted">Máximo 15MB - Formatos: PDF, imágenes, documentos Word</small>
-              </div>
-              <div class="col-md-5 mb-3">
-                <label class="form-label">
-                  <i class="fas fa-comment me-2"></i>Descripción (opcional)
-                </label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  [(ngModel)]="descripcionPliego"
-                  placeholder="Descripción del pliego...">
-              </div>
-              <div class="col-md-3 mb-3">
-                <button 
-                  type="button"
-                  class="btn btn-primary w-100" 
-                  (click)="subirPliego()"
-                  [disabled]="!pliegoSeleccionado || subiendoPliego">
-                  <i class="fas fa-upload me-2"></i>
-                  <span *ngIf="!subiendoPliego">{{ pliegoCompra ? 'Reemplazar' : 'Subir Pliego' }}</span>
-                  <span *ngIf="subiendoPliego">
-                    <span class="spinner-border spinner-border-sm me-2"></span>Subiendo...
-                  </span>
-                </button>
-              </div>
-            </div>
-            
-            <div *ngIf="pliegoSeleccionado" class="alert alert-info mt-2">
-              <i class="fas fa-info-circle me-2"></i>
-              Archivo seleccionado: <strong>{{ pliegoSeleccionado.name }}</strong> 
-              ({{ formatearTamanoPliego(pliegoSeleccionado.size) }})
-            </div>
-          </div>
 
-          <!-- Pliego existente -->
-          <div *ngIf="!pliegoCompra" class="text-center py-5">
-            <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
-            <p class="text-muted">No hay pliego adjunto para esta compra.</p>
-            <p class="text-muted" *ngIf="canManagePurchases()">
-              <small>Use el formulario de arriba para subir el pliego de la compra.</small>
-            </p>
-          </div>
-          
-          <div class="pliego-card" *ngIf="pliegoCompra">
-            <div class="pliego-header">
-              <h6>
-                <i [class]="getIconoPliego(pliegoCompra.tipoArchivo)"></i>
-                <span [title]="pliegoCompra.nombreArchivoOriginal">{{ pliegoCompra.nombreArchivoOriginal }}</span>
+            <!-- Pliego -->
+            <div class="documentos-categoria">
+              <h6 class="categoria-title">
+                <i class="fas fa-file-contract me-2"></i>Pliego de la Compra
               </h6>
-              <div class="btn-group" role="group">
-                <button 
-                  class="btn btn-outline-primary btn-sm" 
-                  (click)="visualizarPliego(pliegoCompra)"
-                  title="Ver archivo">
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button 
-                  class="btn btn-outline-success btn-sm" 
-                  (click)="descargarPliego(pliegoCompra)"
-                  title="Descargar">
-                  <i class="fas fa-download"></i>
-                </button>
-                <button 
-                  *ngIf="canManagePurchases()"
-                  class="btn btn-outline-danger btn-sm" 
-                  (click)="eliminarPliego(pliegoCompra)"
-                  title="Eliminar">
-                  <i class="fas fa-trash"></i>
-                </button>
+              
+              <div *ngIf="!pliegoCompra" class="no-documentos">
+                <i class="fas fa-file-contract fa-2x text-muted mb-2"></i>
+                <p class="text-muted">No hay pliego adjunto para esta compra.</p>
               </div>
-            </div>
-            
-            <div class="pliego-details">
-              <div class="pliego-detail">
-                <span class="detail-label">Tamaño:</span>
-                <span class="detail-value">{{ formatearTamanoPliego(pliegoCompra.tamanoArchivo) }}</span>
-              </div>
-              <div class="pliego-detail">
-                <span class="detail-label">Tipo:</span>
-                <span class="detail-value">{{ pliegoCompra.tipoArchivo }}</span>
-              </div>
-              <div class="pliego-detail">
-                <span class="detail-label">Fecha:</span>
-                <span class="detail-value">{{ formatearFecha(pliegoCompra.fechaCreacion) }}</span>
-              </div>
-              <div class="pliego-detail" *ngIf="pliegoCompra.descripcion">
-                <span class="detail-label">Descripción:</span>
-                <span class="detail-value" [title]="pliegoCompra.descripcion">{{ pliegoCompra.descripcion }}</span>
+              
+              <div *ngIf="pliegoCompra" class="documento-card">
+                <div class="documento-header">
+                  <h6>
+                    <i [class]="getIconoPliego(pliegoCompra.tipoArchivo)"></i>
+                    <span [title]="pliegoCompra.nombreArchivoOriginal">{{ pliegoCompra.nombreArchivoOriginal }}</span>
+                  </h6>
+                  <div class="btn-group" role="group">
+                    <button 
+                      class="btn btn-outline-primary btn-sm" 
+                      (click)="visualizarDocumento(pliegoCompra, 'pliego')"
+                      title="Ver archivo">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button 
+                      class="btn btn-outline-success btn-sm" 
+                      (click)="descargarDocumento(pliegoCompra, 'pliego')"
+                      title="Descargar">
+                      <i class="fas fa-download"></i>
+                    </button>
+                    <button 
+                      *ngIf="canManagePurchases()"
+                      class="btn btn-outline-danger btn-sm" 
+                      (click)="eliminarDocumento(pliegoCompra, 'pliego')"
+                      title="Eliminar">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="documento-details">
+                  <div class="documento-detail">
+                    <span class="detail-label">Tamaño:</span>
+                    <span class="detail-value">{{ formatearTamanoPliego(pliegoCompra.tamanoArchivo) }}</span>
+                  </div>
+                  <div class="documento-detail">
+                    <span class="detail-label">Tipo:</span>
+                    <span class="detail-value">{{ pliegoCompra.tipoArchivo }}</span>
+                  </div>
+                  <div class="documento-detail">
+                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-value">{{ formatearFecha(pliegoCompra.fechaCreacion) }}</span>
+                  </div>
+                  <div class="documento-detail" *ngIf="pliegoCompra.descripcion">
+                    <span class="detail-label">Descripción:</span>
+                    <span class="detail-value" [title]="pliegoCompra.descripcion">{{ pliegoCompra.descripcion }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -783,7 +747,7 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-success btn-sm" (click)="guardarCompra()" [disabled]="!compraForm.valid">
+    <button type="button" class="btn btn-success btn-sm" (click)="guardarCompra()" [disabled]="!compraForm.get('idTipoCompra')?.valid || !compraForm.get('numeroCompra')?.valid || !compraForm.get('ano')?.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>
@@ -825,17 +789,17 @@
             {{ compraSeleccionada ? getNombreCompraFormateado(compraSeleccionada) : 'Cargando...' }}
           </h3>
           <p class="compra-description text-muted mb-0">
-            {{ compraSeleccionada?.descripcion }}
+            {{ compraSeleccionada?.descripcion || 'Sin descripción' }}
           </p>
         </div>
         <div class="col-md-4 text-end">
           <div class="compra-status">
-            <span class="moneda-badge" [ngClass]="compraSeleccionada?.moneda?.toLowerCase()">
-              {{ compraSeleccionada?.moneda }}
+            <span class="moneda-badge" [ngClass]="compraSeleccionada?.moneda ? compraSeleccionada!.moneda.toLowerCase() : 'default'">
+              {{ compraSeleccionada?.moneda || 'No definida' }}
             </span>
             <div class="compra-amount mt-2">
               <span class="amount-label">Monto Total:</span>
-              <span class="amount-value">{{ formatearMoneda(compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
+              <span class="amount-value">{{ (compraSeleccionada?.monto && compraSeleccionada?.moneda) ? formatearMoneda(compraSeleccionada!.monto, compraSeleccionada!.moneda) : 'No definido' }}</span>
             </div>
           </div>
         </div>
@@ -870,13 +834,13 @@
           <span class="detail-label">
             <i class="fas fa-calendar-plus me-2"></i>Fecha Apertura:
           </span>
-          <span class="detail-value">{{ formatearFecha(compraSeleccionada?.fechaInicio || '') }}</span>
+          <span class="detail-value">{{ compraSeleccionada?.fechaInicio ? formatearFecha(compraSeleccionada!.fechaInicio) : 'No definida' }}</span>
         </div>
         <div class="detail-item">
           <span class="detail-label">
             <i class="fas fa-calendar-check me-2"></i>Fecha Adjudicación:
           </span>
-          <span class="detail-value">{{ formatearFecha(compraSeleccionada?.fechaFinal || '') }}</span>
+          <span class="detail-value">{{ compraSeleccionada?.fechaFinal ? formatearFecha(compraSeleccionada!.fechaFinal) : 'No definida' }}</span>
         </div>
       </div>
     </div>
@@ -921,8 +885,8 @@
             </div>
             <div class="col-md-4">
               <div class="item-detail">
-                <span class="detail-label">Servicio:</span>
-                <span class="detail-value" data-field="servicio">{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</span>
+                <span class="detail-label">Servicio de Garantía:</span>
+                <span class="detail-value" data-field="servicio">{{ getProveedorNombre(lote.idServicioGarantia) }}</span>
               </div>
             </div>
             <div class="col-md-4" *ngIf="lote.descripcion">
@@ -990,56 +954,56 @@
       </div>
     </div>
 
-    <!-- Remitos de Entrega - Vista Detallada -->
+    <!-- Documentos - Vista Detallada -->
     <div class="details-section">
       <h5 class="section-title">
-        <i class="fas fa-file-alt me-2"></i>Remitos de Entrega
-        <span class="items-count">({{ remitosCompra.length }} archivos)</span>
+        <i class="fas fa-file-alt me-2"></i>Documentos
+        <span class="items-count">({{ documentosCompra.length }} archivos)</span>
       </h5>
       
-      <div *ngIf="remitosCompra.length === 0" class="no-items">
+      <div *ngIf="documentosCompra.length === 0" class="no-items">
         <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
-        <p class="text-muted">No hay remitos adjuntos para esta compra.</p>
+        <p class="text-muted">No hay documentos adjuntos para esta compra.</p>
       </div>
       
-      <div *ngFor="let remito of remitosCompra; let i = index" class="remito-card">
-        <div class="remito-header">
+      <div *ngFor="let documento of documentosCompra; let i = index" class="documento-card">
+        <div class="documento-header">
           <h6>
-            <i [class]="getIconoArchivo(remito.tipoArchivo)"></i>
-            <span [title]="remito.nombreArchivoOriginal">{{ remito.nombreArchivoOriginal }}</span>
+            <i [class]="getIconoArchivo(documento.tipoArchivo)"></i>
+            <span [title]="documento.nombreArchivoOriginal">{{ documento.nombreArchivoOriginal }}</span>
           </h6>
           <div class="btn-group" role="group">
             <button 
               class="btn btn-outline-primary btn-sm" 
-              (click)="visualizarRemito(remito)"
+              (click)="visualizarDocumento(documento, 'documento')"
               title="Ver archivo">
               <i class="fas fa-eye"></i>
             </button>
             <button 
               class="btn btn-outline-success btn-sm" 
-              (click)="descargarRemito(remito)"
+              (click)="descargarDocumento(documento, 'documento')"
               title="Descargar">
               <i class="fas fa-download"></i>
             </button>
           </div>
         </div>
         
-        <div class="remito-details">
-          <div class="remito-detail">
+        <div class="documento-details">
+          <div class="documento-detail">
             <span class="detail-label">Tamaño:</span>
-            <span class="detail-value">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</span>
+            <span class="detail-value">{{ formatearTamanoArchivo(documento.tamanoArchivo) }}</span>
           </div>
-          <div class="remito-detail">
+          <div class="documento-detail">
             <span class="detail-label">Tipo:</span>
-            <span class="detail-value">{{ remito.tipoArchivo }}</span>
+            <span class="detail-value">{{ documento.tipoArchivo }}</span>
           </div>
-          <div class="remito-detail">
+          <div class="documento-detail">
             <span class="detail-label">Fecha:</span>
-            <span class="detail-value">{{ formatearFecha(remito.fechaCreacion) }}</span>
+            <span class="detail-value">{{ formatearFecha(documento.fechaCreacion) }}</span>
           </div>
-          <div class="remito-detail" *ngIf="remito.descripcion">
+          <div class="documento-detail" *ngIf="documento.descripcion">
             <span class="detail-label">Descripción:</span>
-            <span class="detail-value" [title]="remito.descripcion">{{ remito.descripcion }}</span>
+            <span class="detail-value" [title]="documento.descripcion">{{ documento.descripcion }}</span>
           </div>
         </div>
       </div>
@@ -1124,7 +1088,7 @@
               <th>Cantidad</th>
               <th>Garantía</th>
               <th>Proveedor</th>
-              <th>Servicio</th>
+              <th>Servicio de Garantía</th>
               <th>Obs.</th>
             </tr>
           </thead>
@@ -1134,7 +1098,7 @@
               <td class="text-center">{{ lote.cantidad }}</td>
               <td class="text-center">{{ lote.mesesGarantia }} meses</td>
               <td>{{ getProveedorNombre(lote.idProveedor) }}</td>
-              <td>{{ getServicioGarantiaNombre(lote.idServicioGarantia) }}</td>
+              <td>{{ getProveedorNombre(lote.idServicioGarantia) }}</td>
               <td>{{ lote.descripcion || '-' }}</td>
             </tr>
           </tbody>
@@ -1171,19 +1135,19 @@
       </div>
     </div>
 
-    <!-- Sección de remitos -->
+    <!-- Sección de documentos -->
     <div class="compact-section mb-3">
       <h6 class="compact-section-title">
-        <i class="fas fa-file-alt me-2"></i>Remitos de Entrega ({{ remitosCompra.length }})
+        <i class="fas fa-file-alt me-2"></i>Documentos ({{ documentosCompra.length }})
       </h6>
       
-      <!-- Lista de remitos -->
-      <div *ngIf="remitosCompra.length === 0" class="text-center py-3 text-muted">
+      <!-- Lista de documentos -->
+      <div *ngIf="documentosCompra.length === 0" class="text-center py-3 text-muted">
         <i class="fas fa-file-alt fa-2x mb-2 d-block"></i>
-        No hay remitos adjuntos para esta compra.
+        No hay documentos adjuntos para esta compra.
       </div>
 
-      <div class="table-responsive" *ngIf="remitosCompra.length > 0">
+      <div class="table-responsive" *ngIf="documentosCompra.length > 0">
         <table class="table table-sm table-bordered compact-table">
           <thead class="table-light">
             <tr>
@@ -1195,25 +1159,25 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let remito of remitosCompra">
+            <tr *ngFor="let documento of documentosCompra">
               <td>
-                <i [class]="getIconoArchivo(remito.tipoArchivo)" class="me-2"></i>
-                {{ remito.nombreArchivoOriginal }}
+                <i [class]="getIconoArchivo(documento.tipoArchivo)" class="me-2"></i>
+                {{ documento.nombreArchivoOriginal }}
               </td>
-              <td class="text-center">{{ formatearTamanoArchivo(remito.tamanoArchivo) }}</td>
-              <td>{{ formatearFecha(remito.fechaCreacion) }}</td>
-              <td>{{ remito.descripcion || '-' }}</td>
+              <td class="text-center">{{ formatearTamanoArchivo(documento.tamanoArchivo) }}</td>
+              <td>{{ formatearFecha(documento.fechaCreacion) }}</td>
+              <td>{{ documento.descripcion || '-' }}</td>
               <td class="text-center">
                 <div class="btn-group" role="group">
                   <button 
                     class="btn btn-outline-primary btn-sm" 
-                    (click)="visualizarRemito(remito)"
+                    (click)="visualizarDocumento(documento, 'documento')"
                     title="Ver archivo">
                     <i class="fas fa-eye"></i>
                   </button>
                   <button 
                     class="btn btn-outline-success btn-sm" 
-                    (click)="descargarRemito(remito)"
+                    (click)="descargarDocumento(documento, 'documento')"
                     title="Descargar">
                     <i class="fas fa-download"></i>
                   </button>

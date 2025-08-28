@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -9,6 +10,9 @@ import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { PermissionsService } from '../services/permissions.service';
+import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { forkJoin } from 'rxjs';
+import { FormControl } from '@angular/forms';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -27,7 +31,7 @@ interface DeviceType {
 @Component({
   selector: 'app-devices',
   standalone: true,
-  imports: [CommonModule, NgbPaginationModule, NotificationContainerComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbPaginationModule, NotificationContainerComponent],
   templateUrl: './devices.component.html',
   styleUrls: ['./devices.component.css']
 })
@@ -67,6 +71,22 @@ export class DevicesComponent implements OnInit {
     { name: 'PLCs/Scada', color: '#5d4037', backgroundColor: '#efebe9', borderColor: '#d7ccc8', icon: 'fa-microchip' }
   ];
 
+  // Agregar propiedades
+  deletingDeviceMac: string | null = null;
+  changingStateDeviceMac: string | null = null;
+  showConfirmDialog: boolean = false;
+  deviceToDelete: any = null;
+  showEstadoDialog: boolean = false;
+  estadoAction: 'baja' | 'almacen' | null = null;
+  deviceToChangeState: any = null;
+  estadoObservaciones: string = '';
+
+  // Control para el filtro de nombre
+  nombreEquipoControl = new FormControl('');
+
+  // Control para el filtro de búsqueda por MAC
+  macSearchControl = new FormControl('');
+
   constructor(
     private networkInfoService: NetworkInfoService,
     private router: Router,
@@ -74,8 +94,19 @@ export class DevicesComponent implements OnInit {
     private configService: ConfigService,
     private http: HttpClient,
     private notificationService: NotificationService,
-    private permissionsService: PermissionsService
-  ) {}
+    private permissionsService: PermissionsService,
+    private estadoDispositivoService: EstadoDispositivoService
+  ) {
+    // Suscribirse a cambios en el filtro de nombre
+    this.nombreEquipoControl.valueChanges.subscribe(value => {
+      this.aplicarFiltroNombre(value || '');
+    });
+
+    // Suscribirse a cambios en el filtro de MAC
+    this.macSearchControl.valueChanges.subscribe(value => {
+      this.aplicarFiltroMac(value || '');
+    });
+  }
 
   ngOnInit(): void {
     this.cargarDispositivos();
@@ -85,16 +116,25 @@ export class DevicesComponent implements OnInit {
     this.loading = true;
     this.errorMessage = null;
     
-    this.networkInfoService.getNetworkInfo().subscribe({
-      next: (response: ApiResponse<NetworkInfoDTO[]>) => {
-        if (response.success) {
-          this.devices = response.data;
+    forkJoin({
+      dispositivos: this.networkInfoService.getNetworkInfo(),
+      estados: this.estadoDispositivoService.getDispositivosEnBaja()
+    }).subscribe({
+      next: (response) => {
+        if (response.dispositivos.success) {
+          // Obtener dispositivos en baja para filtrarlos
+          const dispositivosEnBaja = response.estados.success ? response.estados.data : [];
+          const macsEnBaja = dispositivosEnBaja.map((d: any) => d.mac);
+          
+          // Filtrar dispositivos que NO están en baja
+          this.devices = response.dispositivos.data.filter((device: NetworkInfoDTO) => 
+            !macsEnBaja.includes(device.mac)
+          );
+          
           this.applyFilter();
-          // console.log('Dispositivos cargados:', this.devices);
-          // Verificar parámetros de consulta después de cargar los datos
           this.checkQueryParams();
         } else {
-          this.errorMessage = response.message || 'Error al cargar los dispositivos';
+          this.errorMessage = response.dispositivos.message || 'Error al cargar los dispositivos';
           this.devices = [];
           this.filteredDevices = [];
           this.collectionSize = 0;
@@ -117,15 +157,22 @@ export class DevicesComponent implements OnInit {
     this.activeFilter = filter;
     this.page = 1; // Resetear a la primera página al cambiar filtro
     
+    let dispositivosFiltrados: NetworkInfoDTO[] = [];
+    
     if (filter === 'all') {
-      this.filteredDevices = [...this.devices];
+      dispositivosFiltrados = [...this.devices];
     } else {
-      this.filteredDevices = this.devices.filter(device => {
+      dispositivosFiltrados = this.devices.filter(device => {
         if (!device.type) return false;
         return device.type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
                filter.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       });
     }
+    
+    // Aplicar filtros de búsqueda si existen
+    dispositivosFiltrados = this.aplicarFiltrosDeBusqueda(dispositivosFiltrados);
+    
+    this.filteredDevices = dispositivosFiltrados;
     
     // Aplicar ordenamiento si existe
     if (this.sortColumn) {
@@ -363,5 +410,219 @@ export class DevicesComponent implements OnInit {
       default:
         return normalizedValue;
     }
+  }
+
+  darDeBaja(device: any): void {
+    this.estadoAction = 'baja';
+    this.deviceToChangeState = device;
+    this.estadoObservaciones = '';
+    this.showEstadoDialog = true;
+  }
+
+  enviarAAlmacen(device: any): void {
+    this.estadoAction = 'almacen';
+    this.deviceToChangeState = device;
+    this.estadoObservaciones = '';
+    this.showEstadoDialog = true;
+  }
+
+  eliminarDevice(device: any): void {
+    this.deviceToDelete = device;
+    this.showConfirmDialog = true;
+  }
+
+  confirmarCambioEstado(): void {
+    if (!this.deviceToChangeState || !this.estadoAction) {
+      return;
+    }
+
+    this.changingStateDeviceMac = this.deviceToChangeState.mac;
+
+    const request: CambioEstadoDispositivoRequest = {
+      observaciones: this.estadoObservaciones.trim(),
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    const observable = this.estadoAction === 'baja' 
+      ? this.estadoDispositivoService.darDeBaja(this.deviceToChangeState.mac, request)
+      : this.estadoDispositivoService.enviarAAlmacen(this.deviceToChangeState.mac, request);
+
+    observable.subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Recargar dispositivos para actualizar la lista
+          this.cargarDispositivos();
+          
+          const accionTexto = this.estadoAction === 'baja' ? 'dado de baja' : 'enviado a almacén';
+          this.notificationService.showSuccessMessage(
+            `Dispositivo "${this.deviceToChangeState.name}" ${accionTexto} exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al cambiar el estado del dispositivo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al cambiar estado:', error);
+        const accionTexto = this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
+        
+        if (error.status === 403) {
+          this.notificationService.showError(
+            'Sin permisos suficientes',
+            `Para ${accionTexto} dispositivos necesitas rol de GM o Administrador.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Error al cambiar estado',
+            `No se pudo ${accionTexto} el dispositivo "${this.deviceToChangeState.name}": ${error.message || 'Error desconocido'}`
+          );
+        }
+      },
+      complete: () => {
+        this.changingStateDeviceMac = null;
+        this.showEstadoDialog = false;
+        this.deviceToChangeState = null;
+        this.estadoAction = null;
+        this.estadoObservaciones = '';
+      }
+    });
+  }
+
+  confirmarEliminacion(): void {
+    if (this.deviceToDelete) {
+      this.procesarEliminacion(this.deviceToDelete);
+      this.showConfirmDialog = false;
+      this.deviceToDelete = null;
+    }
+  }
+
+  private procesarEliminacion(device: any): void {
+    this.deletingDeviceMac = device.mac;
+
+    this.estadoDispositivoService.eliminarDispositivo(device.mac).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Recargar dispositivos
+          this.cargarDispositivos();
+          
+          this.notificationService.showSuccessMessage(
+            `Dispositivo "${device.name}" eliminado exitosamente de la base de datos OCS.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al eliminar el dispositivo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al eliminar dispositivo:', error);
+        this.notificationService.showError(
+          'Error al eliminar dispositivo',
+          `No se pudo eliminar el dispositivo "${device.name}": ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.deletingDeviceMac = null;
+      }
+    });
+  }
+
+  // Métodos de permisos
+  canManageDevices(): boolean {
+    return this.permissionsService.canManageAssets(); // Usar el mismo permiso por ahora
+  }
+
+  canManageDeviceStates(): boolean {
+    return this.permissionsService.isGM() || this.permissionsService.isAdmin();
+  }
+
+  // Métodos para los modales
+  cancelarEliminacion(): void {
+    this.showConfirmDialog = false;
+    this.deviceToDelete = null;
+  }
+
+  cancelarCambioEstado(): void {
+    this.showEstadoDialog = false;
+    this.deviceToChangeState = null;
+    this.estadoAction = null;
+    this.estadoObservaciones = '';
+  }
+
+  getEstadoActionText(): string {
+    return this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
+  }
+
+  // Métodos de filtrado
+  private aplicarFiltroNombre(nombre: string): void {
+    if (!nombre.trim()) {
+      // Si no hay filtro de nombre, aplicar solo el filtro de tipo
+      this.applyFilter();
+    } else {
+      // Aplicar filtro de nombre sobre los dispositivos filtrados por tipo
+      const dispositivosPorTipo = this.obtenerDispositivosPorTipoActual();
+      this.filteredDevices = dispositivosPorTipo.filter(device => 
+        device.name?.toLowerCase().includes(nombre.toLowerCase())
+      );
+      this.actualizarPaginacion();
+    }
+  }
+
+  private aplicarFiltroMac(mac: string): void {
+    if (!mac.trim()) {
+      // Si no hay filtro de MAC, aplicar solo el filtro de tipo
+      this.applyFilter();
+    } else {
+      // Aplicar filtro de MAC sobre los dispositivos filtrados por tipo
+      const dispositivosPorTipo = this.obtenerDispositivosPorTipoActual();
+      this.filteredDevices = dispositivosPorTipo.filter(device => 
+        device.mac?.toLowerCase().includes(mac.toLowerCase())
+      );
+      this.actualizarPaginacion();
+    }
+  }
+
+  private obtenerDispositivosPorTipoActual(): any[] {
+    if (this.activeFilter === 'all') {
+      return [...this.devices];
+    } else {
+      return this.devices.filter(device => {
+        if (!device.type) return false;
+        return device.type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
+               this.activeFilter.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      });
+    }
+  }
+
+  private actualizarPaginacion(): void {
+    this.collectionSize = this.filteredDevices.length;
+    this.page = 1;
+  }
+
+  // Método para limpiar todos los filtros de búsqueda
+  limpiarFiltros(): void {
+    this.nombreEquipoControl.setValue('');
+    this.macSearchControl.setValue('');
+    this.applyFilter();
+  }
+
+  // Método para aplicar filtros de búsqueda por nombre y MAC
+  private aplicarFiltrosDeBusqueda(dispositivos: NetworkInfoDTO[]): NetworkInfoDTO[] {
+    let dispositivosFiltrados = [...dispositivos];
+    
+    // Aplicar filtro de nombre si existe
+    const nombreFiltro = this.nombreEquipoControl.value;
+    if (nombreFiltro && nombreFiltro.trim()) {
+      dispositivosFiltrados = dispositivosFiltrados.filter(device => 
+        device.name?.toLowerCase().includes(nombreFiltro.toLowerCase())
+      );
+    }
+    
+    // Aplicar filtro de MAC si existe
+    const macFiltro = this.macSearchControl.value;
+    if (macFiltro && macFiltro.trim()) {
+      dispositivosFiltrados = dispositivosFiltrados.filter(device => 
+        device.mac?.toLowerCase().includes(macFiltro.toLowerCase())
+      );
+    }
+    
+    return dispositivosFiltrados;
   }
 } 

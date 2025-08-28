@@ -57,13 +57,15 @@ export class ProveedoresComponent implements OnInit {
     });
 
     this.proveedorForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(3)]],
-      correoContacto: ['', [Validators.required, Validators.email]],
-      telefonoContacto: ['', [Validators.required, Validators.pattern(/^[\+]?[0-9\s\-\(\)]{7,20}$/)]],
+      nombre: [''], // Solo nombre comercial es obligatorio
+      correoContacto: ['', [Validators.email]],
+      telefonoContacto: ['', [Validators.pattern(/^[\+]?[0-9\s\-\(\)]{7,20}$/)]],
       nombreComercial: ['', [Validators.required, Validators.minLength(3)]],
-      direccion: ['', [Validators.minLength(5)]],
+      direccion: [''],
       observaciones: [''],
-      rut: ['', [Validators.required]]
+      rut: [''],
+      webEmpresa: ['', [Validators.pattern(/^https?:\/\/.+/)]],
+      webVenta: ['', [Validators.pattern(/^https?:\/\/.+/)]]
     });
     this.contactosFormArray = this.fb.array([]);
 
@@ -137,18 +139,7 @@ export class ProveedoresComponent implements OnInit {
       this.modoEdicion = true;
       this.proveedorSeleccionado = proveedor;
       
-      // Debug: verificar qué datos llegan del backend
-      console.log('=== DATOS DEL PROVEEDOR RECIBIDOS ===');
-      console.log('Proveedor completo:', proveedor);
-      console.log('RUT:', proveedor.rut);
-      console.log('Dirección:', proveedor.direccion);
-      console.log('Observaciones:', proveedor.observaciones);
-      console.log('Tipo de RUT:', typeof proveedor.rut);
-      console.log('Tipo de Dirección:', typeof proveedor.direccion);
-      console.log('Tipo de Observaciones:', typeof proveedor.observaciones);
-      console.log('¿RUT existe en el objeto?', 'rut' in proveedor);
-      console.log('¿Dirección existe en el objeto?', 'direccion' in proveedor);
-      console.log('¿Observaciones existe en el objeto?', 'observaciones' in proveedor);
+      // Preparar los datos del proveedor para el formulario
       
       // Preparar los datos del proveedor para el formulario
       const datosProveedor = {
@@ -158,57 +149,16 @@ export class ProveedoresComponent implements OnInit {
         correoContacto: proveedor.correoContacto || '',
         telefonoContacto: proveedor.telefonoContacto || '',
         direccion: proveedor.direccion === 'Sin especificar' ? '' : (proveedor.direccion || ''),
-        observaciones: proveedor.observaciones || '' // Si observaciones es null, será cadena vacía
+        observaciones: proveedor.observaciones || '', // Si observaciones es null, será cadena vacía
+        webEmpresa: proveedor.webEmpresa || '',
+        webVenta: proveedor.webVenta || ''
       };
-      
-      console.log('=== DATOS PREPARADOS PARA EL FORMULARIO ===');
-      console.log('Datos a cargar:', datosProveedor);
-      console.log('RUT preparado:', datosProveedor.rut);
-      console.log('Dirección preparada:', datosProveedor.direccion);
-      console.log('Observaciones preparadas:', datosProveedor.observaciones);
       
       // Cargar todos los datos del proveedor en el formulario
       this.proveedorForm.patchValue(datosProveedor);
       
-      // Verificar que el formulario se haya actualizado correctamente
-      console.log('=== ESTADO DEL FORMULARIO DESPUÉS DE PATCHVALUE ===');
-      console.log('Formulario completo:', this.proveedorForm.value);
-      console.log('RUT en el formulario:', this.proveedorForm.get('rut')?.value);
-      console.log('Dirección en el formulario:', this.proveedorForm.get('direccion')?.value);
-      console.log('Observaciones en el formulario:', this.proveedorForm.get('observaciones')?.value);
-      
-      // Forzar la detección de cambios inmediatamente después de patchValue
+      // Forzar la detección de cambios
       this.cdr.detectChanges();
-      
-      // Forzar la detección de cambios para asegurar que el formulario se actualice
-      this.proveedorForm.updateValueAndValidity();
-      
-      // Verificar una vez más después de updateValueAndValidity
-      setTimeout(() => {
-        console.log('=== VERIFICACIÓN FINAL DEL FORMULARIO ===');
-        console.log('RUT final:', this.proveedorForm.get('rut')?.value);
-        console.log('Dirección final:', this.proveedorForm.get('direccion')?.value);
-        console.log('Observaciones final:', this.proveedorForm.get('observaciones')?.value);
-        
-        // Forzar la detección de cambios de Angular
-        this.proveedorForm.markAllAsTouched();
-        
-        // Verificar que los controles individuales tengan los valores correctos
-        const rutControl = this.proveedorForm.get('rut');
-        const direccionControl = this.proveedorForm.get('direccion');
-        const observacionesControl = this.proveedorForm.get('observaciones');
-        
-        console.log('=== VERIFICACIÓN DE CONTROLES INDIVIDUALES ===');
-        console.log('Control RUT:', rutControl);
-        console.log('Valor del control RUT:', rutControl?.value);
-        console.log('Control Dirección:', direccionControl);
-        console.log('Valor del control Dirección:', direccionControl?.value);
-        console.log('Control Observaciones:', observacionesControl);
-        console.log('Valor del control Observaciones:', observacionesControl?.value);
-        
-        // Forzar la detección de cambios de Angular
-        this.cdr.detectChanges();
-      }, 100);
       
       this.cargarContactosProveedor(proveedor.idProveedores);
     } else {
@@ -233,10 +183,10 @@ export class ProveedoresComponent implements OnInit {
           this.contactosFormArray.push(this.fb.group({
             idContacto: [contacto.idContacto],
             nombre: [contacto.nombre, Validators.required],
-            telefono: [contacto.telefono, Validators.required],
-            email: [contacto.email, [Validators.required, Validators.email]],
-            cargo: [contacto.cargo, Validators.required],
-            observaciones: [contacto.observaciones],
+            telefono: [contacto.telefono || ''],
+            email: [contacto.email || ''],
+            cargo: [contacto.cargo || ''],
+            observaciones: [contacto.observaciones || ''],
             idProveedores: [contacto.idProveedores]
           }));
         });
@@ -256,13 +206,7 @@ export class ProveedoresComponent implements OnInit {
     const errores: string[] = [];
     const controls = this.proveedorForm.controls;
 
-    if (controls['nombre']?.errors?.['required']) {
-      errores.push('El nombre es requerido');
-    }
-    if (controls['nombre']?.errors?.['minlength']) {
-      errores.push('El nombre debe tener al menos 3 caracteres');
-    }
-
+    // Solo validar nombreComercial como obligatorio
     if (controls['nombreComercial']?.errors?.['required']) {
       errores.push('El nombre comercial es requerido');
     }
@@ -270,26 +214,20 @@ export class ProveedoresComponent implements OnInit {
       errores.push('El nombre comercial debe tener al menos 3 caracteres');
     }
 
-    if (controls['correoContacto']?.errors?.['required']) {
-      errores.push('El correo de contacto es requerido');
-    }
     if (controls['correoContacto']?.errors?.['email']) {
       errores.push('El correo de contacto debe tener un formato válido');
     }
 
-    if (controls['telefonoContacto']?.errors?.['required']) {
-      errores.push('El teléfono de contacto es requerido');
-    }
     if (controls['telefonoContacto']?.errors?.['pattern']) {
       errores.push('El formato del teléfono no es válido');
     }
 
-    if (controls['direccion']?.errors?.['minlength']) {
-      errores.push('La dirección debe tener al menos 5 caracteres');
+    if (controls['webEmpresa']?.errors?.['pattern']) {
+      errores.push('El sitio web de la empresa debe tener un formato válido (debe comenzar con http:// o https://)');
     }
 
-    if (controls['rut']?.errors?.['required']) {
-      errores.push('El RUT es requerido');
+    if (controls['webVenta']?.errors?.['pattern']) {
+      errores.push('El sitio web de ventas debe tener un formato válido (debe comenzar con http:// o https://)');
     }
 
     return errores;
@@ -299,9 +237,9 @@ export class ProveedoresComponent implements OnInit {
     this.contactosFormArray.push(this.fb.group({
       idContacto: [null],
       nombre: ['', Validators.required],
-      telefono: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      cargo: ['', Validators.required],
+      telefono: [''],
+      email: ['', [Validators.email]],
+      cargo: [''],
       observaciones: [''],
       idProveedores: [this.proveedorSeleccionado?.idProveedores || null]
     }));
@@ -338,29 +276,30 @@ export class ProveedoresComponent implements OnInit {
       return;
     }
 
-    // Validar que todos los contactos tengan datos válidos
-    const contactosConDatos = this.contactosFormArray.controls.filter(control => {
+    // Validar que todos los contactos tengan al menos el nombre
+    const contactosConNombre = this.contactosFormArray.controls.filter(control => {
       const contacto = control.value;
-      return contacto.nombre && contacto.telefono && contacto.email && contacto.cargo;
+      return contacto.nombre && contacto.nombre.trim() !== '';
     });
 
-    if (contactosConDatos.length === 0) {
-      this.formError = 'Debe completar al menos un contacto con todos los campos requeridos (nombre, teléfono, email y cargo)';
+    if (contactosConNombre.length === 0) {
+      this.formError = 'Debe completar al menos un contacto con el nombre';
       return;
     }
 
     // Validar que todos los contactos con datos sean válidos
     const contactosInvalidos = this.contactosFormArray.controls.some(control => {
       const contacto = control.value;
-      // Solo validar contactos que tengan al menos un campo lleno
-      if (contacto.nombre || contacto.telefono || contacto.email || contacto.cargo) {
-        return !control.valid;
+      // Solo validar contactos que tengan al menos el nombre (campo obligatorio)
+      if (contacto.nombre && contacto.nombre.trim() !== '') {
+        // Solo el nombre es obligatorio, los demás campos son opcionales
+        return !contacto.nombre || contacto.nombre.trim() === '';
       }
       return false; // No validar contactos completamente vacíos
     });
 
     if (contactosInvalidos) {
-      this.formError = 'Los contactos con datos deben tener todos los campos requeridos completos';
+      this.formError = 'Los contactos deben tener al menos el nombre completado';
       return;
     }
 
@@ -371,17 +310,13 @@ export class ProveedoresComponent implements OnInit {
       proveedorData.direccion = 'Sin especificar';
     }
     
-    // Validar que el RUT no esté vacío
-    if (!proveedorData.rut || proveedorData.rut.trim() === '') {
-      this.formError = 'El RUT es requerido';
-      return;
-    }
-    
-    // Validar formato de correo electrónico
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(proveedorData.correoContacto)) {
-      this.formError = 'El correo electrónico no tiene un formato válido';
-      return;
+    // Validar formato de correo electrónico solo si se proporciona
+    if (proveedorData.correoContacto && proveedorData.correoContacto.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(proveedorData.correoContacto)) {
+        this.formError = 'El correo electrónico no tiene un formato válido';
+        return;
+      }
     }
 
     if (this.modoEdicion && this.proveedorSeleccionado) {
@@ -519,5 +454,10 @@ export class ProveedoresComponent implements OnInit {
 
   canManageProviders(): boolean {
     return this.permissionsService.canManageProviders();
+  }
+
+  getDisplayUrl(url: string): string {
+    if (!url) return '';
+    return url.replace(/^https?:\/\//, '');
   }
 } 

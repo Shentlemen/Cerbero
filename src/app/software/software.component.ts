@@ -90,6 +90,23 @@ export class SoftwareComponent implements OnInit {
     return this.softwareList.length;
   }
 
+  // Getters para los contadores de cada tipo
+  get hiddenSoftwareCount(): number {
+    return this.softwareList.filter(software => software.hidden === true).length;
+  }
+
+  get forbiddenSoftwareCount(): number {
+    return this.softwareList.filter(software => software.forbidden === true).length;
+  }
+
+  get driverSoftwareCount(): number {
+    return this.softwareList.filter(software => software.driver === true).length;
+  }
+
+  get licenciadoSoftwareCount(): number {
+    return this.softwareList.filter(software => software.licenciado === true).length;
+  }
+
   loadSoftware(): void {
     this.loadSoftwareByFilter('total');
   }
@@ -377,13 +394,17 @@ export class SoftwareComponent implements OnInit {
       version: software.version
     });
     
-    // Validar que el software tenga al menos un identificador válido
-    if (!software.nombre && !software.publisher && !software.version) {
-      console.warn('Software sin identificadores válidos, pero permitiendo eliminación por ID');
+    // Permitir eliminación si tenemos ID (que es lo mínimo necesario)
+    // Los campos null no deberían impedir la eliminación
+    if (software.idSoftware) {
+      this.softwareToDelete = software;
+      this.showConfirmDialog = true;
+    } else {
+      this.notificationService.showError(
+        'Error al Eliminar Software',
+        'Software sin ID válido'
+      );
     }
-    
-    this.softwareToDelete = software;
-    this.showConfirmDialog = true;
   }
 
   navigateToAssets(software: SoftwareDTO): void {
@@ -453,6 +474,7 @@ export class SoftwareComponent implements OnInit {
       return `Software (${parts.join(' - ')})`;
     }
     
+    // Si solo tenemos ID, usar eso
     return `Software ID: ${software.idSoftware}`;
   }
 
@@ -620,33 +642,14 @@ export class SoftwareComponent implements OnInit {
     // Guardar una referencia local para evitar problemas de concurrencia
     const softwareToDelete = this.softwareToDelete;
     
-    // Crear un objeto de software limpio para la eliminación
-    const softwareToDeleteClean = {
-      ...softwareToDelete,
-      nombre: softwareToDelete.nombre || 'Software sin nombre',
-      publisher: softwareToDelete.publisher || 'Editor desconocido',
-      version: softwareToDelete.version || 'Versión desconocida'
-    };
-    
-    this.softwareService.deleteSoftware(softwareToDeleteClean).subscribe({
+    // Usar el método que solo envía el ID al backend
+    console.log('Intentando eliminar software con ID:', softwareToDelete.idSoftware);
+    this.softwareService.eliminarSoftware(softwareToDelete.idSoftware).subscribe({
       next: () => {
-        // Remover software eliminado de la lista local
-        this.softwareList = this.softwareList.filter(s => s.idSoftware !== softwareToDelete.idSoftware);
-        
-        // Actualizar la lista filtrada
-        this.updateFilteredList();
-        
-        // Mostrar notificación de éxito con manejo de campos null
-        const softwareName = this.getSoftwareDisplayName(softwareToDelete);
-        this.notificationService.showSuccessMessage(
-          `Software "${softwareName}" eliminado exitosamente`
-        );
+        this.handleSoftwareDeletionSuccess(softwareToDelete);
       },
       error: (error) => {
-        this.notificationService.showError(
-          'Error al Eliminar Software',
-          'No se pudo eliminar el software: ' + error.message
-        );
+        this.handleSoftwareDeletionError(error);
       }
     });
     
@@ -668,8 +671,19 @@ export class SoftwareComponent implements OnInit {
     this.showConfirmDialogMultiple = false;
 
     try {
-      const promises = softwareItems.map(software => 
-        this.softwareService.deleteSoftware(software).toPromise()
+      // Filtrar solo software con ID válido
+      const validSoftwareItems = softwareItems.filter(s => s.idSoftware);
+      
+      if (validSoftwareItems.length === 0) {
+        this.notificationService.showError(
+          'Error al Eliminar Software',
+          'No hay software válido para eliminar'
+        );
+        return;
+      }
+
+      const promises = validSoftwareItems.map(software => 
+        this.softwareService.eliminarSoftware(software.idSoftware).toPromise()
       );
 
       await Promise.all(promises);
@@ -681,7 +695,7 @@ export class SoftwareComponent implements OnInit {
       this.updateFilteredList();
 
       this.notificationService.showSuccessMessage(
-        `${softwareIds.length} software eliminados exitosamente`
+        `${validSoftwareItems.length} software eliminados exitosamente`
       );
 
       this.selectedSoftware.clear();
@@ -693,5 +707,39 @@ export class SoftwareComponent implements OnInit {
     } finally {
       this.isUpdatingMultiple = false;
     }
+  }
+
+  // Métodos helper para manejar la eliminación de software
+  private handleSoftwareDeletionSuccess(software: SoftwareDTO): void {
+    // Remover software eliminado de la lista local
+    this.softwareList = this.softwareList.filter(s => s.idSoftware !== software.idSoftware);
+    
+    // Actualizar la lista filtrada
+    this.updateFilteredList();
+    
+    // Mostrar notificación de éxito con manejo de campos null
+    const softwareName = this.getSoftwareDisplayName(software);
+    this.notificationService.showSuccessMessage(
+      `Software "${softwareName}" eliminado exitosamente`
+    );
+  }
+
+  private handleSoftwareDeletionError(error: any): void {
+    console.error('Error completo de eliminación:', error);
+    
+    let errorMessage = 'No se pudo eliminar el software';
+    
+    if (error.error && error.error.message) {
+      errorMessage += ': ' + error.error.message;
+    } else if (error.message) {
+      errorMessage += ': ' + error.message;
+    } else if (error.status) {
+      errorMessage += ` (HTTP ${error.status})`;
+    }
+    
+    this.notificationService.showError(
+      'Error al Eliminar Software',
+      errorMessage
+    );
   }
 }

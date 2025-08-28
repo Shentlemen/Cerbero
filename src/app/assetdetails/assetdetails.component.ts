@@ -224,155 +224,193 @@ export class AssetdetailsComponent implements OnInit {
   }
 
   exportarAPdf(): void {
-    if (!this.componentData[this.activeTab] && this.activeTab !== 'general') {
-      console.log('Los datos aún no están cargados. Por favor, espere...');
+    // Verificar que todos los datos estén cargados
+    if (!this.asset) {
+      console.log('No hay datos del asset disponibles');
       return;
     }
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    let currentY = 20;
     
     // Configuración del encabezado
     doc.setFillColor(65, 161, 175);
-    doc.rect(0, 0, pageWidth, 25, 'F');
+    doc.rect(0, 0, pageWidth, 30, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text(`${this.asset?.name || 'Asset'} - ${this.activeTab.toUpperCase()}`, pageWidth/2, 15, { align: 'center' });
+    doc.setFontSize(18);
+    doc.text(`REPORTE COMPLETO - ${this.asset.name}`, pageWidth/2, 18, { align: 'center' });
     
     // Resetear color de texto para el contenido
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(12);
-
+    doc.setFontSize(10);
+    
     // Agregar fecha de generación
     const fecha = new Date().toLocaleString();
-    doc.setFontSize(10);
     doc.text(`Generado el: ${fecha}`, 14, 35);
+    
+    // Función para agregar nueva página si es necesario
+    const addNewPageIfNeeded = (requiredSpace: number) => {
+      if (currentY + requiredSpace > pageHeight - 30) {
+        doc.addPage();
+        currentY = 20;
+        return true;
+      }
+      return false;
+    };
 
-    let tableData: any[][] = [];
-    let title = '';
+    // Función para agregar sección con título
+    const addSection = (title: string, data: any[][]) => {
+      // Verificar si necesitamos nueva página
+      const requiredSpace = 20 + (data.length * 8);
+      addNewPageIfNeeded(requiredSpace);
+      
+      // Título de sección
+      doc.setFontSize(14);
+      doc.setTextColor(65, 161, 175);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 14, currentY);
+      currentY += 8;
+      
+      // Línea divisoria
+      doc.setDrawColor(65, 161, 175);
+      doc.line(14, currentY, pageWidth - 14, currentY);
+      currentY += 5;
+      
+      // Generar tabla
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Característica', 'Valor']],
+        body: data,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [65, 161, 175],
+          textColor: 255,
+          fontSize: 10,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        bodyStyles: {
+          fontSize: 9,
+          textColor: 50,
+          lineWidth: 0.1
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        margin: { top: currentY, right: 14, bottom: 20, left: 14 },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 'auto' },
+          1: { cellWidth: 'auto' }
+        },
+        didDrawPage: function(data) {
+          // Agregar pie de página en cada página
+          const pageCount = doc.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.setTextColor(100);
+          doc.text(
+            `Página ${data.pageNumber} de ${pageCount}`,
+            pageWidth - 20,
+            pageHeight - 10,
+            { align: 'right' }
+          );
+          
+          // Agregar línea divisoria en el pie de página
+          doc.setDrawColor(200);
+          doc.line(
+            14,
+            pageHeight - 20,
+            pageWidth - 14,
+            pageHeight - 20
+          );
+        }
+      });
+      
+      // Actualizar posición Y después de la tabla
+      const tableHeight = (doc as any).lastAutoTable.finalY;
+      currentY = tableHeight + 15;
+    };
 
-    switch (this.activeTab) {
-      case 'general':
-        title = 'Información General';
-        tableData = this.prepareGeneralData();
-        break;
-      case 'bios':
-        title = 'Información de BIOS';
-        tableData = this.prepareBiosData();
-        break;
-      case 'cpu':
-        title = 'Información de CPU';
-        tableData = this.prepareCpuData();
-        break;
-      case 'drive':
-        title = 'Información de Unidades';
-        tableData = this.prepareDriveData();
-        break;
-      case 'memory':
-        title = 'Información de Memoria';
-        tableData = this.prepareMemoryData();
-        break;
-      case 'monitor':
-        title = 'Información de Monitores';
-        tableData = this.prepareMonitorData();
-        break;
-      case 'storage':
-        title = 'Información de Almacenamiento';
-        tableData = this.prepareStorageData();
-        break;
-      case 'video':
-        title = 'Información de Video';
-        tableData = this.prepareVideoData();
-        break;
-      case 'software':
-        title = 'Software Instalado';
-        tableData = this.prepareSoftwareData();
-        break;
-      case 'ubicacion':
-        title = 'Información de Ubicación';
-        tableData = this.prepareUbicacionData();
-        break;
+    // 1. INFORMACIÓN GENERAL
+    addSection('INFORMACIÓN GENERAL', this.prepareGeneralData());
+    
+    // 2. INFORMACIÓN DE BIOS
+    if (this.componentData.bios) {
+      addSection('INFORMACIÓN DE BIOS', this.prepareBiosData());
+    }
+    
+    // 3. INFORMACIÓN DE CPU
+    if (this.componentData.cpu) {
+      addSection('INFORMACIÓN DE CPU', this.prepareCpuData());
+    }
+    
+    // 4. INFORMACIÓN DE UNIDADES
+    if (this.componentData.drive && this.componentData.drive.length > 0) {
+      addSection('INFORMACIÓN DE UNIDADES', this.prepareDriveData());
+    }
+    
+    // 5. INFORMACIÓN DE MEMORIA
+    if (this.componentData.memory && this.componentData.memory.length > 0) {
+      addSection('INFORMACIÓN DE MEMORIA', this.prepareMemoryData());
+    }
+    
+    // 6. INFORMACIÓN DE MONITORES
+    if (this.componentData.monitor && this.componentData.monitor.length > 0) {
+      addSection('INFORMACIÓN DE MONITORES', this.prepareMonitorData());
+    }
+    
+    // 7. INFORMACIÓN DE ALMACENAMIENTO
+    if (this.componentData.storage && this.componentData.storage.length > 0) {
+      addSection('INFORMACIÓN DE ALMACENAMIENTO', this.prepareStorageData());
+    }
+    
+    // 8. INFORMACIÓN DE VIDEO
+    if (this.componentData.video && this.componentData.video.length > 0) {
+      addSection('INFORMACIÓN DE VIDEO', this.prepareVideoData());
+    }
+    
+    // 9. INFORMACIÓN DE UBICACIÓN
+    if (this.ubicacionActual) {
+      addSection('INFORMACIÓN DE UBICACIÓN', this.prepareUbicacionData());
+    }
+    
+    // 10. SOFTWARE INSTALADO
+    if (this.componentData.software && this.componentData.software.length > 0) {
+      addSection('SOFTWARE INSTALADO', this.prepareSoftwareData());
     }
 
-    // Generar la tabla con estilo mejorado
-    autoTable(doc, {
-      startY: 45,
-      head: [['Característica', 'Valor']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [65, 161, 175],
-        textColor: 255,
-        fontSize: 12,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      bodyStyles: {
-        fontSize: 11,
-        textColor: 50,
-        lineWidth: 0.1
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { top: 45, right: 14, bottom: 20, left: 14 },
-      columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 'auto' },
-        1: { cellWidth: 'auto' }
-      },
-      didDrawPage: function(data) {
-        // Agregar pie de página en cada página
-        const pageCount = doc.getNumberOfPages();
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(
-          `Página ${data.pageNumber} de ${pageCount}`,
-          pageWidth - 20,
-          doc.internal.pageSize.height - 10,
-          { align: 'right' }
-        );
-        
-        // Agregar línea divisoria en el pie de página
-        doc.setDrawColor(200);
-        doc.line(
-          14,
-          doc.internal.pageSize.height - 20,
-          pageWidth - 14,
-          doc.internal.pageSize.height - 20
-        );
-      }
-    });
-
     // Guardar el PDF con nombre descriptivo
-    const fileName = `${this.asset?.name || 'Asset'}_${this.activeTab}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const fileName = `${this.asset.name}_REPORTE_COMPLETO_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
   }
 
   prepareGeneralData(): any[][] {
     return [
-      ['ID', this.asset?.id?.toString() ?? ''],
-      ['Device ID', this.asset?.deviceId ?? ''],
-      ['Nombre', this.asset?.name ?? ''],
-      ['Grupo de trabajo', this.asset?.workgroup ?? ''],
-      ['Sistema Operativo', this.asset?.osName ?? ''],
-      ['Versión SO', this.asset?.osVersion ?? ''],
-      ['Procesadores', this.asset?.processors.toString() ?? ''],
-      ['Tipo de Procesador', this.asset?.processorType ?? ''],
-      ['Núcleos', this.asset?.processorN.toString() ?? ''],
-      ['Memoria', `${this.asset?.memory} MB`],
-      ['Swap', `${this.asset?.swap} MB`],
-      ['Dirección IP', this.asset?.ipAddr ?? ''],
-      ['IP Source', this.asset?.ipSrc ?? ''],
-      ['DNS', this.asset?.dns ?? ''],
-      ['Gateway por defecto', this.asset?.defaultGateway ?? ''],
-      ['Tipo', this.asset?.type.toString() ?? ''],
-      ['Descripción', this.asset?.description ?? ''],
-      ['Compañía Windows', this.asset?.winCompany ?? ''],
-      ['Propietario Windows', this.asset?.winOwner ?? ''],
-      ['ID de Producto Windows', this.asset?.winProdId ?? ''],
-      ['Clave de Producto Windows', this.asset?.winProdKey ?? ''],
-      ['Último escaneo', new Date(this.asset?.lastDate ?? 0).toLocaleString()],
-      ['Primer inventariado', new Date(this.asset?.lastCome ?? 0).toLocaleString()],
+      ['ID', this.asset?.id?.toString() ?? 'N/A'],
+      ['Device ID', this.asset?.deviceId ?? 'N/A'],
+      ['Nombre', this.asset?.name ?? 'N/A'],
+      ['Grupo de trabajo', this.asset?.workgroup ?? 'N/A'],
+      ['Sistema Operativo', this.asset?.osName ?? 'N/A'],
+      ['Versión SO', this.asset?.osVersion ?? 'N/A'],
+      ['Comentarios SO', this.asset?.osComments ?? 'N/A'],
+      ['Procesadores', this.asset?.processors?.toString() ?? 'N/A'],
+      ['Tipo de Procesador', this.asset?.processorType ?? 'N/A'],
+      ['Núcleos', this.asset?.processorN?.toString() ?? 'N/A'],
+      ['Memoria', this.asset?.memory ? `${this.asset.memory} MB` : 'N/A'],
+      ['Swap', this.asset?.swap ? `${this.asset.swap} MB` : 'N/A'],
+      ['Dirección IP', this.asset?.ipAddr ?? 'N/A'],
+      ['IP Source', this.asset?.ipSrc ?? 'N/A'],
+      ['DNS', this.asset?.dns ?? 'N/A'],
+      ['Gateway por defecto', this.asset?.defaultGateway ?? 'N/A'],
+      ['Tipo', this.asset?.type?.toString() ?? 'N/A'],
+      ['Descripción', this.asset?.description ?? 'N/A'],
+      ['Compañía Windows', this.asset?.winCompany ?? 'N/A'],
+      ['Propietario Windows', this.asset?.winOwner ?? 'N/A'],
+      ['ID de Producto Windows', this.asset?.winProdId ?? 'N/A'],
+      ['Clave de Producto Windows', this.asset?.winProdKey ?? 'N/A'],
+      ['Último escaneo', this.asset?.lastDate ? new Date(this.asset.lastDate).toLocaleString() : 'N/A'],
+      ['Primer inventariado', this.asset?.lastCome ? new Date(this.asset.lastCome).toLocaleString() : 'N/A'],
     ];
   }
 

@@ -42,21 +42,14 @@ export class LotesService {
   }
 
   private enrichLoteWithCompraInfo(lote: LoteDTO): Observable<LoteDTO> {
+    // Solo enriquecer con información de compra (siempre existe)
     return this.comprasService.getCompraById(lote.idCompra).pipe(
-      switchMap(compra => 
-        this.proveedoresService.getProveedor(lote.idProveedor).pipe(
-          switchMap(proveedor =>
-            this.serviciosGarantiaService.getServicioGarantia(lote.idServicioGarantia).pipe(
-              map(servicioGarantia => ({
-                ...lote,
-                compraDescripcion: compra.descripcion,
-                proveedorNombreComercial: proveedor.nombreComercial,
-                servicioGarantiaNombreComercial: servicioGarantia.nombreComercial
-              }))
-            )
-          )
-        )
-      )
+      map(compra => ({
+        ...lote,
+        compraDescripcion: compra.descripcion,
+        proveedorNombreComercial: lote.idProveedor && lote.idProveedor > 0 ? 'Cargando...' : 'Sin especificar',
+        servicioGarantiaNombreComercial: lote.idServicioGarantia && lote.idServicioGarantia > 0 ? 'Cargando...' : 'Sin especificar'
+      }))
     );
   }
 
@@ -97,14 +90,16 @@ export class LotesService {
     }
 
     return this.http.get<ApiResponse<LoteDTO[]>>(`${this.apiUrl}/by-compra/${idCompra}`).pipe(
-      switchMap(response => {
+      map(response => {
         if (response.success) {
-          const enrichedLotes = response.data.map(lote => 
-            this.enrichLoteWithCompraInfo(lote)
-          );
-          return forkJoin(enrichedLotes);
+          // Agregar campos de enriquecimiento básicos
+          return response.data.map(lote => ({
+            ...lote,
+            proveedorNombreComercial: lote.idProveedor && lote.idProveedor > 0 ? 'Cargando...' : 'Sin especificar',
+            servicioGarantiaNombreComercial: lote.idServicioGarantia && lote.idServicioGarantia > 0 ? 'Cargando...' : 'Sin especificar'
+          }));
         } else {
-          return throwError(() => new Error(response.message));
+          throw new Error(response.message);
         }
       })
     );

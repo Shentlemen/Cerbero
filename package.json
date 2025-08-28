@@ -6,7 +6,13 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "version:major": "node scripts/version-updater.js major",
+    "version:minor": "node scripts/version-updater.js minor",
+    "version:patch": "node scripts/version-updater.js patch",
+    "version:dev": "node scripts/version-updater.js dev",
+    "version:build": "node scripts/version-updater.js build",
+    "version:info": "node scripts/version-updater.js"
   },
   "private": true,
   "dependencies": {

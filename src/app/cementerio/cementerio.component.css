@@ -353,3 +353,111 @@
     font-size: 0.85rem;
   }
 } 
+
+/* Estilos para diferenciar entre equipos y dispositivos */
+.item-row {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.equipo-row {
+  border-left: 4px solid #3498db;
+}
+
+.dispositivo-row {
+  border-left: 4px solid #e74c3c;
+}
+
+.item-row:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.item-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.item-info .name {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.item-info .ip {
+  color: #7f8c8d;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.tipo-badge.equipo {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-color: #bbdefb;
+}
+
+.tipo-badge.dispositivo {
+  background: #ffebee;
+  color: #d32f2f;
+  border-color: #ffcdd2;
+}
+
+.type-badge.dispositivo {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.description {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Responsive para la nueva estructura */
+@media (max-width: 768px) {
+  .item-name {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  
+  .item-details {
+    gap: 0.3rem;
+  }
+  
+  .tipo-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+  }
+} 

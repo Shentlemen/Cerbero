@@ -243,7 +243,6 @@
                     <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-times-circle'"></i>
                     Baja
                   </button>
-                  <!-- Botón de almacén temporalmente comentado
                   <button 
                     class="btn btn-info btn-sm estado-btn almacen-btn" 
                     (click)="enviarAAlmacen(asset); $event.stopPropagation()"
@@ -253,7 +252,6 @@
                     <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
                     Almacén
                   </button>
-                  -->
                 </ng-container>
                 
                 <!-- Mensaje informativo si no hay permisos para cambio de estado -->

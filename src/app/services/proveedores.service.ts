@@ -14,6 +14,8 @@ export interface ProveedorDTO {
     direccion: string;         // Dirección del proveedor
     observaciones?: string;    // Observaciones adicionales (opcional)
     rut: string;               // RUT del proveedor
+    webEmpresa?: string;       // Sitio web de la empresa (opcional)
+    webVenta?: string;         // Sitio web de ventas/e-commerce (opcional)
 }
 
 @Injectable({
@@ -78,6 +80,26 @@ export class ProveedoresService {
         throw new Error(response.message);
       }),
       catchError(this.handleError)
+    );
+  }
+
+  // El problema está probablemente en un método como este:
+  getProveedorById(id: number | null): Observable<ProveedorDTO> {
+    // Solo verificar si es null o 0 (que es falsy)
+    if (!id) {
+      return new Observable(observer => {
+        observer.error(new Error('ID de proveedor no válido'));
+      });
+    }
+    
+    return this.http.get<ApiResponse<ProveedorDTO>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message || 'Error al obtener proveedor');
+        }
+      })
     );
   }
 
