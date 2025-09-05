@@ -16,6 +16,8 @@ export interface LoteDTO {
   mesesGarantia: number;   // Duración de la garantía en meses
   idProveedor: number;     // ID del proveedor
   idServicioGarantia: number; // ID del servicio de garantía
+  precioUnitario?: number; // Precio unitario del ítem
+  monedaPrecio?: string;   // Moneda del precio unitario (USD/UYU)
   compraDescripcion?: string; // Descripción de la compra asociada
   proveedorNombreComercial?: string; // Nombre comercial del proveedor
   servicioGarantiaNombreComercial?: string; // Nombre comercial del servicio de garantía

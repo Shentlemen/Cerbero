@@ -65,10 +65,7 @@ button,
   color: #0369a1;
 }
 
-.moneda-badge.eur {
-  background: #fef3c7;
-  color: #92400e;
-}
+/* Estilo EUR eliminado */
 
 .moneda-badge.uyu {
   background: #e0f7fa;
@@ -867,6 +864,17 @@ button,
   cursor: help;
 }
 
+/* Estilo especial para observaciones en vista detallada - ancho completo */
+.details-body .item-detail .detail-value[data-field="observacion"]:not(.compact-view .detail-value) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
+  width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
 /* Layout compacto de una sola fila para entregas */
 .details-body .entrega-details .row {
   display: flex;
@@ -976,123 +984,7 @@ button,
   margin-bottom: 1rem;
 }
 
-/* Estilos para pliegos */
-.pliego-upload-card {
-  background: #f0f8ff;
-  border: 1px solid #d0e7ff;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  margin-bottom: 1rem;
-}
-
-/* Cards compactas para remitos y pliegos */
-.remito-card,
-.pliego-card {
-  background: #ffffff;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  padding: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-  margin-bottom: 0.5rem;
-}
-
-.remito-card:hover,
-.pliego-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  border-color: #41A1AF;
-}
-
-/* Headers compactos */
-.remito-header,
-.pliego-header {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.remito-header h6,
-.pliego-header h6 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #2c3e50;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.remito-header h6 i,
-.pliego-header h6 i {
-  color: #41A1AF;
-  flex-shrink: 0;
-}
-
-/* Nombre del archivo truncado */
-.remito-header h6 span,
-.pliego-header h6 span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Botones de acción compactos */
-.remito-header .btn-group,
-.pliego-header .btn-group {
-  display: flex;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.remito-header .btn,
-.pliego-header .btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  border-radius: 4px;
-}
-
-/* Detalles compactos en una sola fila */
-.remito-details,
-.pliego-details {
-  padding-top: 0.25rem;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-.remito-detail,
-.pliego-detail {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
-}
-
-.remito-detail .detail-label,
-.pliego-detail .detail-label {
-  font-weight: 500;
-  color: #6c757d;
-  font-size: 0.75rem;
-}
-
-.remito-detail .detail-value,
-.pliego-detail .detail-value {
-  color: #2c3e50;
-  font-weight: 500;
-  font-size: 0.75rem;
-}
-
-/* Estilos para la nueva pestaña de documentos */
+/* Estilos para documentos */
 .documento-upload-card {
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -1285,6 +1177,17 @@ button,
   font-size: 0.75rem;
 }
 
+/* Estilo para observaciones que ocupan todo el ancho */
+.detail-value-full-width {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  max-width: none !important;
+  width: 100% !important;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
 /* Media queries consolidados */
 @media (max-width: 768px) {
   .filters-container {
@@ -1407,24 +1310,18 @@ button,
     margin-right: 0;
   }
   
-  .remito-details,
-  .pliego-details,
   .documento-details {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
   
-  .remito-header,
-  .pliego-header,
   .documento-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
   
-  .remito-header .btn-group,
-  .pliego-header .btn-group,
   .documento-header .btn-group {
     align-self: flex-end;
   }

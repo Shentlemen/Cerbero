@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { SoftwareService, SoftwareDTO } from '../services/software.service';
+import { SoftwareService, SoftwareDTO, PaginatedSoftwareResponse, SoftwarePaginationParams, SoftwareCounters } from '../services/software.service';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
-import { Subject, Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
@@ -26,17 +26,22 @@ import { NotificationContainerComponent } from '../components/notification-conta
 })
 export class SoftwareComponent implements OnInit {
   softwareList: SoftwareDTO[] = [];
-  filteredSoftwareList: SoftwareDTO[] = [];
   loading: boolean = true;
-  showHidden: boolean = false;
-  showOnlyHidden: boolean = false;
-  showOnlyForbidden: boolean = false;
   searchTerm: string = '';
-  private searchSubject = new Subject<string>();
   activeTab: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado' = 'total';
   page: number = 1;
-  pageSize: number = 20;
+  pageSize: number = 50; // Aumentar tamaño de página para mejor rendimiento
   collectionSize: number = 0;
+  totalPages: number = 0;
+
+  // Contadores de software
+  softwareCounters: SoftwareCounters = {
+    total: 0,
+    hidden: 0,
+    forbidden: 0,
+    driver: 0,
+    licenciado: 0
+  };
 
   // Propiedades para selección múltiple
   multiSelectMode: boolean = false;
@@ -54,24 +59,16 @@ export class SoftwareComponent implements OnInit {
     private permissionsService: PermissionsService,
     private notificationService: NotificationService
   ) {
-    // Configurar el filtrado reactivo
-    this.searchSubject.pipe(
-      debounceTime(300), // Espera 300ms después de que el usuario deje de escribir
-      distinctUntilChanged() // Solo emite si el valor cambió
-    ).subscribe(term => {
-      this.searchTerm = term;
-      this.updateFilteredList();
-    });
+    // Ya no necesitamos búsqueda reactiva, se maneja directamente en filterSoftware
   }
 
   ngOnInit(): void {
-    this.loadSoftware();
+    this.loadSoftwarePaginated();
   }
 
   get pagedSoftwareList(): SoftwareDTO[] {
-    const start = (this.page - 1) * this.pageSize;
-    const end = this.page * this.pageSize;
-    return this.filteredSoftwareList.slice(start, end);
+    // Ya no necesitamos paginación local, los datos vienen paginados del backend
+    return this.softwareList;
   }
 
   // Getter para la página que cierra la selección múltiple al cambiar
@@ -83,158 +80,124 @@ export class SoftwareComponent implements OnInit {
     if (this.page !== value) {
       this.page = value;
       this.closeMultiSelectMode();
+      this.loadSoftwarePaginated(); // Recargar datos cuando cambie la página
     }
   }
 
   get totalSoftware(): number {
-    return this.softwareList.length;
+    return this.collectionSize; // Usar el total del backend
   }
 
-  // Getters para los contadores de cada tipo
+  // Getters para los contadores de cada tipo - ahora usando datos reales
   get hiddenSoftwareCount(): number {
-    return this.softwareList.filter(software => software.hidden === true).length;
+    return this.softwareCounters.hidden;
   }
 
   get forbiddenSoftwareCount(): number {
-    return this.softwareList.filter(software => software.forbidden === true).length;
+    return this.softwareCounters.forbidden;
   }
 
   get driverSoftwareCount(): number {
-    return this.softwareList.filter(software => software.driver === true).length;
+    return this.softwareCounters.driver;
   }
 
   get licenciadoSoftwareCount(): number {
-    return this.softwareList.filter(software => software.licenciado === true).length;
+    return this.softwareCounters.licenciado;
   }
 
   loadSoftware(): void {
-    this.loadSoftwareByFilter('total');
+    this.loadSoftwarePaginated();
   }
 
-  loadSoftwareByFilter(filter: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado'): void {
+  loadSoftwarePaginated(): void {
     this.loading = true;
 
-    // Cargar todos los software con conteo y atributos para poder filtrar localmente por cualquier estado
-    this.softwareService.getAllSoftwareWithCountAndAttributes().subscribe({
-      next: (data: SoftwareDTO[]) => {
-        this.softwareList = data;
-        this.updateFilteredList();
+    const params: SoftwarePaginationParams = {
+      page: this.page - 1, // El backend usa 0-based indexing
+      size: this.pageSize,
+      sort: 'nombre',
+      direction: 'asc',
+      filter: this.activeTab,
+      search: this.searchTerm || undefined
+    };
+
+    // Cargar datos paginados y contadores en paralelo
+    forkJoin({
+      paginatedData: this.softwareService.getSoftwarePaginated(params),
+      counters: this.softwareService.getSoftwareCounters()
+    }).subscribe({
+      next: (data) => {
+        this.softwareList = data.paginatedData.content;
+        this.collectionSize = data.paginatedData.totalElements;
+        this.totalPages = data.paginatedData.totalPages;
+        this.softwareCounters = data.counters;
         this.loading = false;
       },
       error: (error: any) => {
-        // Si no existe getAllSoftwareWithCountAndAttributes, usar getSoftwareWithCounts como fallback
-        this.softwareService.getSoftwareWithCounts().subscribe({
-          next: (fallbackData: SoftwareDTO[]) => {
-            this.softwareList = fallbackData;
-            this.updateFilteredList();
-            this.loading = false;
-          },
-          error: (fallbackError: any) => {
-            this.notificationService.showError(
-              'Error al Cargar Software',
-              'No se pudo cargar la lista de software: ' + fallbackError.message
-            );
-            this.loading = false;
-          }
-        });
+        console.error('Error al cargar software paginado:', error);
+        this.notificationService.showError(
+          'Error al Cargar Software',
+          'No se pudo cargar la lista de software: ' + (error.message || 'Error desconocido')
+        );
+        this.loading = false;
       }
     });
   }
 
+  // Método obsoleto - mantener por compatibilidad temporal
+  loadSoftwareByFilter(filter: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado'): void {
+    this.activeTab = filter;
+    this.page = 1; // Resetear a la primera página
+    this.loadSoftwarePaginated();
+  }
+
+  // Ya no necesitamos filtrar localmente, el backend se encarga
   updateFilteredList(): void {
-    if (!this.softwareList) {
-      this.filteredSoftwareList = [];
-      this.collectionSize = 0;
-      return;
-    }
-
-    // Aplicar filtros basados en el estado actual y la búsqueda
-    this.filteredSoftwareList = this.softwareList.filter(software => {
-      if (!software) return false;
-
-      // Aplicar filtro de búsqueda por texto
-      const searchTermLower = (this.searchTerm || '').toLowerCase();
-      const nombre = (software.nombre || '').toLowerCase();
-      const publisher = (software.publisher || '').toLowerCase();
-      const matchesSearch = !searchTermLower || 
-        nombre.includes(searchTermLower) ||
-        publisher.includes(searchTermLower);
-
-      if (!matchesSearch) return false;
-
-      // Aplicar filtros específicos según la pestaña activa
-      switch (this.activeTab) {
-        case 'hidden':
-          // Mostrar software marcado como hidden, sin importar otros atributos
-          return software.hidden === true;
-        case 'forbidden':
-          // Mostrar software marcado como forbidden, sin importar otros atributos
-          return software.forbidden === true;
-        case 'driver':
-          // Mostrar software marcado como driver, sin importar otros atributos
-          return software.driver === true;
-        case 'licenciado':
-          // Mostrar software marcado como licenciado, sin importar otros atributos
-          return software.licenciado === true;
-        case 'total':
-        default:
-          // Mostrar solo software que NO tenga NINGUNO de los 4 atributos marcados
-          return software.hidden === false && 
-                 software.forbidden === false && 
-                 software.driver === false && 
-                 software.licenciado === false;
-      }
-    });
-    
-    this.collectionSize = this.filteredSoftwareList.length;
-    
-    // Mantener la página actual si es válida, sino ir a la página 1
-    const maxPage = Math.ceil(this.collectionSize / this.pageSize);
-    if (this.page > maxPage && maxPage > 0) {
-      this.page = maxPage;
-    }
+    // Este método ya no es necesario con paginación del backend
+    // Los filtros se aplican en el backend
   }
 
   filterSoftware(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.page = 1; // Resetear página cuando se busca
+    this.searchTerm = input.value;
+    this.page = 1; // Resetear a la primera página cuando se busca
     this.closeMultiSelectMode(); // Cerrar selección múltiple al buscar
-    this.searchSubject.next(input.value);
+    this.loadSoftwarePaginated(); // Recargar con el nuevo término de búsqueda
   }
 
   showTotalSoftware(): void {
     this.activeTab = 'total';
     this.page = 1;
     this.closeMultiSelectMode();
-    this.loadSoftwareByFilter('total');
+    this.loadSoftwarePaginated();
   }
 
   showOnlyHiddenSoftware(): void {
     this.activeTab = 'hidden';
     this.page = 1;
     this.closeMultiSelectMode();
-    this.loadSoftwareByFilter('hidden');
+    this.loadSoftwarePaginated();
   }
 
   showOnlyForbiddenSoftware(): void {
     this.activeTab = 'forbidden';
     this.page = 1;
     this.closeMultiSelectMode();
-    this.loadSoftwareByFilter('forbidden');
+    this.loadSoftwarePaginated();
   }
 
   showOnlyDriverSoftware(): void {
     this.activeTab = 'driver';
     this.page = 1;
     this.closeMultiSelectMode();
-    this.loadSoftwareByFilter('driver');
+    this.loadSoftwarePaginated();
   }
 
   showOnlyLicenciadoSoftware(): void {
     this.activeTab = 'licenciado';
     this.page = 1;
     this.closeMultiSelectMode();
-    this.loadSoftwareByFilter('licenciado');
+    this.loadSoftwarePaginated();
   }
 
   toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
@@ -242,11 +205,8 @@ export class SoftwareComponent implements OnInit {
 
     this.softwareService.toggleSoftwareVisibility(software, !software.hidden).subscribe({
       next: () => {
-        // Actualizar el estado en la lista local
-        software.hidden = !software.hidden;
-        
-        // Actualizar la lista filtrada para reflejar el cambio
-        this.updateFilteredList();
+        // Recargar datos y contadores para reflejar el cambio
+        this.loadSoftwarePaginated();
         
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
@@ -280,7 +240,7 @@ export class SoftwareComponent implements OnInit {
         software.forbidden = !software.forbidden;
         
         // Actualizar la lista filtrada para reflejar el cambio
-        this.updateFilteredList();
+        this.loadSoftware(); // Reload to update counts
         
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
@@ -314,7 +274,7 @@ export class SoftwareComponent implements OnInit {
         software.driver = !software.driver;
         
         // Actualizar la lista filtrada para reflejar el cambio
-        this.updateFilteredList();
+        this.loadSoftware(); // Reload to update counts
         
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
@@ -348,7 +308,7 @@ export class SoftwareComponent implements OnInit {
         software.licenciado = !software.licenciado;
         
         // Actualizar la lista filtrada para reflejar el cambio
-        this.updateFilteredList();
+        this.loadSoftware(); // Reload to update counts
         
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage(
@@ -504,26 +464,8 @@ export class SoftwareComponent implements OnInit {
 
       await Promise.all(promises);
 
-      // Actualizar el estado en la lista local
-      softwareItems.forEach(software => {
-        switch (action) {
-          case 'visibility':
-            software.hidden = value;
-            break;
-          case 'forbidden':
-            software.forbidden = value;
-            break;
-          case 'driver':
-            software.driver = value;
-            break;
-          case 'licenciado':
-            software.licenciado = value;
-            break;
-        }
-      });
-
-      // Actualizar la lista filtrada para reflejar los cambios
-      this.updateFilteredList();
+      // Recargar datos para reflejar los cambios
+      this.loadSoftwarePaginated();
 
       // Mostrar notificación de éxito con información más detallada
       const actionText = this.getActionText(action, value);
@@ -661,6 +603,38 @@ export class SoftwareComponent implements OnInit {
     this.showConfirmDialogMultiple = false;
   }
 
+  // Métodos helper para manejar la eliminación de software
+  private handleSoftwareDeletionSuccess(software: SoftwareDTO): void {
+    // Recargar datos para reflejar el cambio
+    this.loadSoftwarePaginated();
+    
+    // Mostrar notificación de éxito con manejo de campos null
+    const softwareName = this.getSoftwareDisplayName(software);
+    this.notificationService.showSuccessMessage(
+      `Software "${softwareName}" eliminado exitosamente`
+    );
+  }
+
+  private handleSoftwareDeletionError(error: any): void {
+    console.error('Error completo de eliminación:', error);
+    
+    let errorMessage = 'No se pudo eliminar el software';
+    
+    if (error.error && error.error.message) {
+      errorMessage += ': ' + error.error.message;
+    } else if (error.message) {
+      errorMessage += ': ' + error.message;
+    } else if (error.status) {
+      errorMessage += ` (HTTP ${error.status})`;
+    }
+    
+    this.notificationService.showError(
+      'Error al Eliminar Software',
+      errorMessage
+    );
+  }
+
+  // Actualizar método de eliminación múltiple
   async confirmarEliminacionMultiple(): Promise<void> {
     if (this.selectedSoftware.size === 0) return;
 
@@ -688,11 +662,8 @@ export class SoftwareComponent implements OnInit {
 
       await Promise.all(promises);
 
-      // Remover software eliminado de la lista local
-      this.softwareList = this.softwareList.filter(s => !softwareIds.includes(s.idSoftware));
-      
-      // Actualizar la lista filtrada
-      this.updateFilteredList();
+      // Recargar datos para reflejar los cambios
+      this.loadSoftwarePaginated();
 
       this.notificationService.showSuccessMessage(
         `${validSoftwareItems.length} software eliminados exitosamente`
@@ -707,39 +678,5 @@ export class SoftwareComponent implements OnInit {
     } finally {
       this.isUpdatingMultiple = false;
     }
-  }
-
-  // Métodos helper para manejar la eliminación de software
-  private handleSoftwareDeletionSuccess(software: SoftwareDTO): void {
-    // Remover software eliminado de la lista local
-    this.softwareList = this.softwareList.filter(s => s.idSoftware !== software.idSoftware);
-    
-    // Actualizar la lista filtrada
-    this.updateFilteredList();
-    
-    // Mostrar notificación de éxito con manejo de campos null
-    const softwareName = this.getSoftwareDisplayName(software);
-    this.notificationService.showSuccessMessage(
-      `Software "${softwareName}" eliminado exitosamente`
-    );
-  }
-
-  private handleSoftwareDeletionError(error: any): void {
-    console.error('Error completo de eliminación:', error);
-    
-    let errorMessage = 'No se pudo eliminar el software';
-    
-    if (error.error && error.error.message) {
-      errorMessage += ': ' + error.error.message;
-    } else if (error.message) {
-      errorMessage += ': ' + error.message;
-    } else if (error.status) {
-      errorMessage += ` (HTTP ${error.status})`;
-    }
-    
-    this.notificationService.showError(
-      'Error al Eliminar Software',
-      errorMessage
-    );
   }
 }

@@ -13,7 +13,7 @@ import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { RemitosService, RemitoDTO } from '../../services/remitos.service';
-import { PliegosService, PliegoDTO } from '../../services/pliegos.service';
+// import { PliegosService, PliegoDTO } from '../../services/pliegos.service';
 import { CurrencyMaskDirective } from '../../shared/directives/currency-mask.directive';
 
 // Importaciones para PDF
@@ -28,7 +28,7 @@ interface CompraConTipo extends CompraDTO {
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule, CurrencyMaskDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, NgbPaginationModule, NgbNavModule],
   templateUrl: './compras.component.html',
   styleUrls: ['./compras.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -73,16 +73,16 @@ export class ComprasComponent implements OnInit {
   documentosCompra: RemitoDTO[] = [];
   
   // Propiedades para pliego (un pliego por compra)
-  pliegoCompra: PliegoDTO | null = null;
-  descripcionPliego: string = '';
-
+  // pliegoCompra: PliegoDTO | null = null;
+  // descripcionPliego: string = '';
+  
   // Propiedades para dropdowns de servicio de garantía (también proveedores)
   proveedoresGarantiaFiltrados: { [key: number]: ProveedorDTO[] } = {};
   proveedorGarantiaSearchValues: { [key: number]: string } = {};
   dropdownProveedoresGarantiaVisible: { [key: number]: boolean } = {};
 
   // Propiedades para documentos (unificadas)
-  tipoDocumentoSeleccionado: 'documento' | 'pliego' | null = null;
+  tipoDocumentoSeleccionado: 'documento' | null = null; // Solo documento
   documentoSeleccionado: File | null = null;
   descripcionDocumento: string = '';
   subiendoDocumento: boolean = false;
@@ -100,8 +100,8 @@ export class ComprasComponent implements OnInit {
     private entregasService: EntregasService,
     private cdr: ChangeDetectorRef,
     private permissionsService: PermissionsService,
-    private remitosService: RemitosService,
-    private pliegosService: PliegosService
+    private remitosService: RemitosService
+    // private pliegosService: PliegosService // Eliminar
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -119,7 +119,8 @@ export class ComprasComponent implements OnInit {
       descripcion: [''],
       fechaInicio: [''],
       fechaFinal: [''],
-      monto: [''],
+      monto: [''], // Solo para modo edición
+      valorDolar: ['', Validators.required], // Nuevo campo requerido
       ano: [new Date().getFullYear(), Validators.required]
     });
 
@@ -292,6 +293,7 @@ export class ComprasComponent implements OnInit {
         fechaInicio: compra.fechaInicio,
         fechaFinal: compra.fechaFinal,
         monto: compra.monto,
+        valorDolar: compra.valorDolar, // Nuevo campo
         ano: compra.ano && compra.ano > 0 ? compra.ano : null
       });
       
@@ -310,7 +312,9 @@ export class ComprasComponent implements OnInit {
               mesesGarantia: [lote.mesesGarantia, [Validators.required, Validators.min(0)]],
               idProveedor: [lote.idProveedor, Validators.required],
               idServicioGarantia: [lote.idServicioGarantia, Validators.required],
-              idItem: [lote.idItem]
+              idItem: [lote.idItem],
+              precioUnitario: [lote.precioUnitario, [Validators.required, Validators.min(0.01)]], // Nuevo campo
+              monedaPrecio: [lote.monedaPrecio || 'USD', Validators.required] // Nuevo campo
             }));
           });
           // Cargar entregas asociadas a los lotes de la compra
@@ -347,17 +351,22 @@ export class ComprasComponent implements OnInit {
   this.cargarDocumentosCompra(compra.idCompra);
       
       // Cargar pliego de la compra para el modo edición
-      this.cargarPliegoCompra(compra.idCompra);
+      // this.cargarPliegoCompra(compra.idCompra);
     } else {
       this.modoEdicion = false;
       this.compraForm.reset();
+      // En modo creación, no mostrar el campo monto
+      this.compraForm.patchValue({
+        ano: new Date().getFullYear(),
+        valorDolar: null // Limpiar valor dólar
+      });
       this.itemsFormArray.clear();
       this.entregasFormArray.clear();
       this.lotesDeLaCompra = [];
       this.documentosCompra = [];
       this.descripcionDocumento = '';
-      this.pliegoCompra = null;
-      this.descripcionPliego = '';
+      // this.pliegoCompra = null;
+      // this.descripcionPliego = '';
     }
     this.cdr.detectChanges();
     this.modalService.open(modal, { size: 'xl' });
@@ -378,7 +387,9 @@ export class ComprasComponent implements OnInit {
       cantidad: [1, [Validators.required, Validators.min(1)]],
       mesesGarantia: [0, [Validators.min(0)]],
       idProveedor: [null],
-      idServicioGarantia: [null]
+      idServicioGarantia: [null],
+      precioUnitario: [null], // Sin validación requerida
+      monedaPrecio: ['USD'] // Sin validación requerida
     }));
     this.cdr.detectChanges();
   }
@@ -472,8 +483,35 @@ export class ComprasComponent implements OnInit {
 
   guardarCompra(): void {
     if (this.compraForm.valid) {
-      const compraData = this.compraForm.value;
+      // Validar que el valor del dólar esté presente
+      const valorDolar = this.compraForm.get('valorDolar')?.value;
+      if (!valorDolar || valorDolar <= 0) {
+        this.error = 'El valor del dólar es requerido y debe ser mayor a 0';
+        return;
+      }
+      
+      // Solo validar ítems si existen
       const itemsData = this.itemsFormArray.value;
+      if (itemsData.length > 0) {
+        // Validar que todos los ítems tengan precio unitario
+        for (let i = 0; i < itemsData.length; i++) {
+          const item = itemsData[i];
+          if (!item.precioUnitario || item.precioUnitario <= 0) {
+            this.error = `El ítem "${item.nombreItem}" debe tener un precio unitario válido`;
+            return;
+          }
+          if (!item.monedaPrecio) {
+            this.error = `El ítem "${item.nombreItem}" debe tener una moneda de precio especificada`;
+            return;
+          }
+        }
+      }
+      
+      // Calcular el monto total antes de guardar (será 0 si no hay ítems)
+      const montoTotal = this.calcularMontoTotal();
+      this.compraForm.patchValue({ monto: montoTotal });
+      
+      const compraData = this.compraForm.value;
       const entregasData = this.entregasFormArray.value;
       this.error = null;
 
@@ -504,6 +542,8 @@ export class ComprasComponent implements OnInit {
           }
         });
       }
+    } else {
+      this.error = 'Por favor, complete todos los campos requeridos';
     }
   }
 
@@ -891,8 +931,6 @@ export class ComprasComponent implements OnInit {
     // Cargar documentos de la compra
     this.cargarDocumentosCompra(compra.idCompra);
     
-    // Cargar pliego de la compra
-    this.cargarPliegoCompra(compra.idCompra);
     
     // Abrir el modal de detalles
     this.modalService.open(this.detallesModal, { 
@@ -1095,11 +1133,6 @@ export class ComprasComponent implements OnInit {
       return;
     }
 
-    if (!this.tipoDocumentoSeleccionado) {
-      this.error = 'Debe seleccionar el tipo de documento';
-      return;
-    }
-
     if (!this.descripcionDocumento || this.descripcionDocumento.trim().length === 0) {
       this.error = 'Debe agregar una descripción para el documento';
       return;
@@ -1108,69 +1141,36 @@ export class ComprasComponent implements OnInit {
     this.subiendoDocumento = true;
     this.error = null;
 
-    if (this.tipoDocumentoSeleccionado === 'documento') {
-      // Subir como documento (remito)
-      this.remitosService.subirRemito(
-        idCompra, 
-        this.documentoSeleccionado, 
-        this.descripcionDocumento || undefined
-      ).subscribe({
-        next: (response) => {
-          if (response.success) {
-            // Limpiar formulario
-            this.documentoSeleccionado = null;
-            this.descripcionDocumento = '';
-            this.tipoDocumentoSeleccionado = null;
-            const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
-            
-            // Recargar documentos
-            this.cargarDocumentosCompra(idCompra);
-            
-            this.subiendoDocumento = false;
-          } else {
-            this.error = response.message || 'Error al subir documento';
-            this.subiendoDocumento = false;
-          }
-        },
-        error: (error) => {
-          console.error('Error al subir documento:', error);
-          this.error = 'Error al subir documento';
+    // Solo subir como documento
+    this.remitosService.subirRemito(
+      idCompra, 
+      this.documentoSeleccionado, 
+      this.descripcionDocumento || undefined
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Limpiar formulario
+          this.documentoSeleccionado = null;
+          this.descripcionDocumento = '';
+          this.tipoDocumentoSeleccionado = null;
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) fileInput.value = '';
+          
+          // Recargar documentos
+          this.cargarDocumentosCompra(idCompra);
+          
+          this.subiendoDocumento = false;
+        } else {
+          this.error = response.message || 'Error al subir documento';
           this.subiendoDocumento = false;
         }
-      });
-    } else if (this.tipoDocumentoSeleccionado === 'pliego') {
-      // Subir como pliego
-      this.pliegosService.subirPliego(
-        idCompra, 
-        this.documentoSeleccionado, 
-        this.descripcionDocumento || undefined
-      ).subscribe({
-        next: (response) => {
-          if (response.success) {
-            // Limpiar formulario
-            this.documentoSeleccionado = null;
-            this.descripcionDocumento = '';
-            this.tipoDocumentoSeleccionado = null;
-            const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
-            
-            // Recargar pliego
-            this.cargarPliegoCompra(idCompra);
-            
-            this.subiendoDocumento = false;
-          } else {
-            this.error = response.message || 'Error al subir pliego';
-            this.subiendoDocumento = false;
-          }
-        },
-        error: (error) => {
-          console.error('Error al subir pliego:', error);
-          this.error = 'Error al subir pliego';
-          this.subiendoDocumento = false;
-        }
-      });
-    }
+      },
+      error: (error) => {
+        console.error('Error al subir documento:', error);
+        this.error = 'Error al subir documento';
+        this.subiendoDocumento = false;
+      }
+    });
   }
 
 
@@ -1187,68 +1187,9 @@ export class ComprasComponent implements OnInit {
     return this.remitosService.esTipoImagen(tipoArchivo);
   }
 
-  // Métodos para pliegos
-  cargarPliegoCompra(idCompra: number): void {
-    this.pliegosService.getPliegoByCompra(idCompra).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.pliegoCompra = response.data;
-        } else {
-          this.pliegoCompra = null;
-        }
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error al cargar pliego:', error);
-        this.pliegoCompra = null;
-      }
-    });
-  }
 
-  // Método onPliegoSeleccionado reemplazado por onDocumentoSeleccionado
 
-  // Método subirPliego reemplazado por subirDocumento unificado
-
-  descargarPliego(pliego: PliegoDTO): void {
-    this.pliegosService.descargarPliego(pliego.idPliego);
-  }
-
-  visualizarPliego(pliego: PliegoDTO): void {
-    this.pliegosService.visualizarPliego(pliego.idPliego);
-  }
-
-  eliminarPliego(pliego: PliegoDTO): void {
-    if (confirm('¿Está seguro que desea eliminar este pliego?')) {
-      this.pliegosService.eliminarPliego(pliego.idPliego).subscribe({
-        next: (response) => {
-          if (response.success) {
-            const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
-            if (idCompra) {
-              this.cargarPliegoCompra(idCompra);
-            }
-          } else {
-            this.error = response.message || 'Error al eliminar pliego';
-          }
-        },
-        error: (error) => {
-          console.error('Error al eliminar pliego:', error);
-          this.error = 'Error al eliminar pliego';
-        }
-      });
-    }
-  }
-
-  formatearTamanoPliego(bytes: number): string {
-    return this.pliegosService.formatearTamano(bytes);
-  }
-
-  getIconoPliego(tipoArchivo: string): string {
-    return this.pliegosService.getIconoArchivo(tipoArchivo);
-  }
-
-  esTipoImagenPliego(tipoArchivo: string): boolean {
-    return this.pliegosService.esTipoImagen(tipoArchivo);
-  }
+  
 
   // Método para exportar a PDF
   async exportarAPDF(): Promise<void> {
@@ -1468,38 +1409,6 @@ export class ComprasComponent implements OnInit {
       `;
     }
 
-    // Agregar pliego si existe
-    if (this.pliegoCompra) {
-      html += `
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
-            <i class="fas fa-file-contract"></i> Pliego de la Compra
-          </h2>
-          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead style="background: #f8f9fa;">
-                <tr>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Archivo</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Tamaño</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Tipo</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fecha</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Descripción</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style="background: #ffffff;">
-                  <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.pliegoCompra.nombreArchivoOriginal}</td>
-                  <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearTamanoPliego(this.pliegoCompra.tamanoArchivo)}</td>
-                  <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.pliegoCompra.tipoArchivo}</td>
-                  <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearFecha(this.pliegoCompra.fechaCreacion)}</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.pliegoCompra.descripcion || '-'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
 
     // Cerrar el HTML
     html += `
@@ -1616,45 +1525,32 @@ export class ComprasComponent implements OnInit {
   }
 
   // Métodos para documentos unificados
-  agregarDocumento(tipo: 'documento' | 'pliego'): void {
-    this.tipoDocumentoSeleccionado = tipo;
+  agregarDocumento(): void {
+    this.tipoDocumentoSeleccionado = 'documento';
     this.documentoSeleccionado = null;
     this.descripcionDocumento = '';
     
-    // Limpiar input de archivo
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
     
-    // Limpiar mensaje de error si existe
     this.error = null;
   }
 
   onDocumentoSeleccionado(event: any): void {
     const archivo = event.target.files[0];
-    console.log('Documento seleccionado:', archivo);
     
     if (archivo) {
-      let validacion;
-      
-      if (this.tipoDocumentoSeleccionado === 'documento') {
-        validacion = this.remitosService.validarArchivo(archivo);
-      } else {
-        validacion = this.pliegosService.validarArchivo(archivo);
-      }
-      
-      console.log('Validación documento:', validacion);
+      const validacion = this.remitosService.validarArchivo(archivo);
       
       if (validacion.valido) {
         this.documentoSeleccionado = archivo;
         this.error = null;
-        console.log('Documento guardado correctamente:', this.documentoSeleccionado);
       } else {
         this.error = validacion.mensaje;
         this.documentoSeleccionado = null;
         event.target.value = '';
       }
     } else {
-      console.log('No se seleccionó documento');
       this.documentoSeleccionado = null;
     }
   }
@@ -1671,57 +1567,123 @@ export class ComprasComponent implements OnInit {
     if (fileInput) fileInput.value = '';
   }
 
-  visualizarDocumento(documento: any, tipo: 'documento' | 'pliego'): void {
-    if (tipo === 'documento') {
-      this.remitosService.visualizarRemito(documento.idRemito);
-    } else {
-      this.pliegosService.visualizarPliego(documento.idPliego);
-    }
+  visualizarDocumento(documento: any): void {
+    this.remitosService.visualizarRemito(documento.idRemito);
   }
 
-  descargarDocumento(documento: any, tipo: 'documento' | 'pliego'): void {
-    if (tipo === 'documento') {
-      this.remitosService.descargarRemito(documento.idRemito);
-    } else {
-      this.pliegosService.descargarPliego(documento.idPliego);
-    }
+  descargarDocumento(documento: any): void {
+    this.remitosService.descargarRemito(documento.idRemito);
   }
 
-  eliminarDocumento(documento: any, tipo: 'documento' | 'pliego'): void {
-    const mensaje = tipo === 'documento' ? 'documento' : 'pliego';
-    
-    if (confirm(`¿Está seguro que desea eliminar este ${mensaje}?`)) {
+  eliminarDocumento(documento: any): void {
+    if (confirm('¿Está seguro que desea eliminar este documento?')) {
       const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
       
-      if (tipo === 'documento') {
-        this.remitosService.eliminarRemito(documento.idRemito).subscribe({
-          next: (response) => {
-            if (response.success && idCompra) {
-              this.cargarDocumentosCompra(idCompra);
-            } else {
-              this.error = response.message || 'Error al eliminar documento';
-            }
-          },
-          error: (error) => {
-            console.error('Error al eliminar documento:', error);
-            this.error = 'Error al eliminar documento';
+      this.remitosService.eliminarRemito(documento.idRemito).subscribe({
+        next: (response) => {
+          if (response.success && idCompra) {
+            this.cargarDocumentosCompra(idCompra);
+          } else {
+            this.error = response.message || 'Error al eliminar documento';
           }
-        });
-      } else {
-        this.pliegosService.eliminarPliego(documento.idPliego).subscribe({
-          next: (response) => {
-            if (response.success && idCompra) {
-              this.cargarPliegoCompra(idCompra);
-            } else {
-              this.error = response.message || 'Error al eliminar pliego';
-            }
-          },
-          error: (error) => {
-            console.error('Error al eliminar pliego:', error);
-            this.error = 'Error al eliminar pliego';
-          }
-        });
-      }
+        },
+        error: (error) => {
+          console.error('Error al eliminar documento:', error);
+          this.error = 'Error al eliminar documento';
+        }
+      });
     }
+  }
+
+  // Nuevo método para calcular el monto total
+  calcularMontoTotal(): number {
+    let montoTotal = 0;
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    
+    if (!valorDolar || valorDolar <= 0) {
+      return 0;
+    }
+    
+    this.itemsFormArray.controls.forEach(control => {
+      const precioUnitario = control.get('precioUnitario')?.value;
+      const cantidad = control.get('cantidad')?.value;
+      const monedaPrecio = control.get('monedaPrecio')?.value;
+      
+      // Solo calcular si tiene todos los datos necesarios
+      if (precioUnitario && cantidad && monedaPrecio && precioUnitario > 0) {
+        let precioEnDolares = precioUnitario;
+        
+        // Si el precio está en pesos, convertir a dólares
+        if (monedaPrecio === 'UYU') {
+          precioEnDolares = precioUnitario / valorDolar;
+        }
+        
+        montoTotal += precioEnDolares * cantidad;
+      }
+    });
+    
+    return montoTotal;
+  }
+
+  // Método para actualizar el monto total cuando cambian los ítems
+  actualizarMontoTotal(): void {
+    const montoTotal = this.calcularMontoTotal();
+    this.compraForm.patchValue({ monto: montoTotal });
+  }
+
+  // Método para calcular el subtotal de un ítem específico
+  getItemSubtotal(index: number): number {
+    const control = this.itemsFormArray.at(index);
+    const precioUnitario = control.get('precioUnitario')?.value;
+    const cantidad = control.get('cantidad')?.value;
+    const monedaPrecio = control.get('monedaPrecio')?.value;
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    
+    if (!precioUnitario || !cantidad || !monedaPrecio || !valorDolar) {
+      return 0;
+    }
+    
+    let precioEnDolares = precioUnitario;
+    
+    // Si el precio está en pesos, convertir a dólares
+    if (monedaPrecio === 'UYU') {
+      precioEnDolares = precioUnitario / valorDolar;
+    }
+    
+    return precioEnDolares * cantidad;
+  }
+
+  // Método para formatear moneda con símbolo
+  formatearMonedaConSimbolo(monto: number, moneda: string): string {
+    if (monto === null || monto === undefined || monto === 0) {
+      return 'No definido';
+    }
+    
+    const simbolo = moneda === 'USD' ? '$' : '$U';
+    return `${simbolo} ${new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(monto)}`;
+  }
+
+  // Agregar un método para obtener el subtotal en pesos
+  getItemSubtotalEnPesos(index: number): number {
+    const control = this.itemsFormArray.at(index);
+    const precioUnitario = control.get('precioUnitario')?.value;
+    const cantidad = control.get('cantidad')?.value;
+    const monedaPrecio = control.get('monedaPrecio')?.value;
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    
+    if (!precioUnitario || !cantidad || !monedaPrecio || !valorDolar) {
+      return 0;
+    }
+    
+    // Si el precio está en pesos, el subtotal en pesos es precio * cantidad
+    if (monedaPrecio === 'UYU') {
+      return precioUnitario * cantidad;
+    }
+    
+    // Si el precio está en dólares, convertir a pesos
+    return precioUnitario * cantidad * valorDolar;
   }
 } 

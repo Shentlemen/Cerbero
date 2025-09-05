@@ -22,6 +22,37 @@ export interface SoftwareWithCountDTO extends SoftwareDTO {
   count: number;
 }
 
+// Interfaz para respuesta paginada - actualizada para coincidir con el backend
+export interface PaginatedSoftwareResponse {
+  content: SoftwareDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+}
+
+// Parámetros para paginación
+export interface SoftwarePaginationParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  direction?: 'asc' | 'desc';
+  filter?: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado';
+  search?: string;
+}
+
+// Interfaz para contadores de software
+export interface SoftwareCounters {
+  total: number;
+  hidden: number;
+  forbidden: number;
+  driver: number;
+  licenciado: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -77,6 +108,46 @@ export class SoftwareService {
   // Obtener software visible (no oculto, no prohibido) con conteo
   getVisibleSoftwareWithCounts(): Observable<SoftwareDTO[]> {
     return this.http.get<ApiResponse<SoftwareDTO[]>>(`${this.apiUrl}/stats/visible`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  // Obtener software paginado con filtros - VERSIÓN REAL
+  getSoftwarePaginated(params: SoftwarePaginationParams = {}): Observable<PaginatedSoftwareResponse> {
+    const queryParams = new URLSearchParams();
+    
+    // Parámetros de paginación
+    queryParams.set('page', (params.page || 0).toString());
+    queryParams.set('size', (params.size || 20).toString());
+    
+    // Parámetros de ordenamiento
+    if (params.sort) {
+      queryParams.set('sort', params.sort);
+      queryParams.set('direction', params.direction || 'asc');
+    }
+    
+    // Parámetros de filtro
+    if (params.filter && params.filter !== 'total') {
+      queryParams.set('filter', params.filter);
+    }
+    
+    // Parámetro de búsqueda
+    if (params.search) {
+      queryParams.set('search', params.search);
+    }
+
+    return this.http.get<PaginatedSoftwareResponse>(`${this.apiUrl}/paginated?${queryParams.toString()}`);
+  }
+
+  // Obtener contadores de software
+  getSoftwareCounters(): Observable<SoftwareCounters> {
+    return this.http.get<ApiResponse<SoftwareCounters>>(`${this.apiUrl}/counters`).pipe(
       map(response => {
         if (response.success) {
           return response.data;

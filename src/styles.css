@@ -262,22 +262,163 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   box-shadow: none;
 }
 
-/* Estilos para botón de eliminar */
+/* Estilos específicos para botones de acción (Ver, Editar, Eliminar) */
+.btn-info,
+.action-buttons .btn-info,
+.btn.btn-info,
+button.btn-info,
+button.btn.btn-info {
+  background: transparent !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Eliminar outline de iconos dentro de botones de acción */
+.btn-info i,
+.action-buttons .btn-info i,
+.btn.btn-info i,
+button.btn-info i,
+button.btn.btn-info i,
+.btn-warning i,
+.action-buttons .btn-warning i,
+.btn.btn-warning i,
+button.btn-warning i,
+button.btn.btn-warning i,
+.btn-danger i,
+.action-buttons .btn-danger i,
+.btn.btn-danger i,
+button.btn-danger i,
+button.btn.btn-danger i {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn-info i:focus,
+.action-buttons .btn-info i:focus,
+.btn.btn-info i:focus,
+button.btn-info i:focus,
+button.btn.btn-info i:focus,
+.btn-warning i:focus,
+.action-buttons .btn-warning i:focus,
+.btn.btn-warning i:focus,
+button.btn-warning i:focus,
+button.btn.btn-warning i:focus,
+.btn-danger i:focus,
+.action-buttons .btn-danger i:focus,
+.btn.btn-danger i:focus,
+button.btn-danger i:focus,
+button.btn.btn-danger i:focus,
+.btn-info i:focus-visible,
+.action-buttons .btn-info i:focus-visible,
+.btn.btn-info i:focus-visible,
+button.btn-info i:focus-visible,
+button.btn.btn-info i:focus-visible,
+.btn-warning i:focus-visible,
+.action-buttons .btn-warning i:focus-visible,
+.btn.btn-warning i:focus-visible,
+button.btn-warning i:focus-visible,
+button.btn.btn-warning i:focus-visible,
+.btn-danger i:focus-visible,
+.action-buttons .btn-danger i:focus-visible,
+.btn.btn-danger i:focus-visible,
+button.btn-danger i:focus-visible,
+button.btn.btn-danger i:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn-info:hover,
+.action-buttons .btn-info:hover,
+.btn.btn-info:hover {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.btn-warning,
+.action-buttons .btn-warning,
+.btn.btn-warning,
+button.btn-warning,
+button.btn.btn-warning {
+  background: transparent !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.btn-warning:focus,
+.action-buttons .btn-warning:focus,
+.btn.btn-warning:focus,
+button.btn-warning:focus,
+button.btn.btn-warning:focus,
+.btn-warning:focus-visible,
+.action-buttons .btn-warning:focus-visible,
+.btn.btn-warning:focus-visible,
+button.btn-warning:focus-visible,
+button.btn.btn-warning:focus-visible,
+.btn-warning:active,
+.action-buttons .btn-warning:active,
+.btn.btn-warning:active,
+button.btn-warning:active,
+button.btn.btn-warning:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn-warning:hover,
+.action-buttons .btn-warning:hover,
+.btn.btn-warning:hover {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
 .btn-danger,
 .action-buttons .btn-danger,
-.btn.btn-danger {
-  background: #343a40 !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: 0 2px 4px rgba(52, 58, 64, 0.2) !important;
+.btn.btn-danger,
+button.btn-danger,
+button.btn.btn-danger {
+  background: transparent !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.btn-danger:focus,
+.action-buttons .btn-danger:focus,
+.btn.btn-danger:focus,
+button.btn-danger:focus,
+button.btn.btn-danger:focus,
+.btn-danger:focus-visible,
+.action-buttons .btn-danger:focus-visible,
+.btn.btn-danger:focus-visible,
+button.btn-danger:focus-visible,
+button.btn.btn-danger:focus-visible,
+.btn-danger:active,
+.action-buttons .btn-danger:active,
+.btn.btn-danger:active,
+button.btn-danger:active,
+button.btn.btn-danger:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .btn-danger:hover,
 .action-buttons .btn-danger:hover,
 .btn.btn-danger:hover {
-  background: #23272b !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(52, 58, 64, 0.3) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Estilos para botones pequeños */
@@ -680,17 +821,36 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
 
 /* Estilos comunes para listas */
 .list-group-item {
-  background-color: #f9f9f9;
-  border: 1px solid #dddddd;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  padding: 0.5rem;
+  background-color: white;
+  border: 1px solid #e9ecef;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
   word-break: break-word;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid transparent;
+}
+
+.list-group-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left-color: #3498db;
+  background-color: #f8f9fa;
 }
 
 .list-group-item strong {
-  color: #5a9bd5;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.list-group-item:last-child {
+  margin-bottom: 0;
 }
 
 /* Mejoras en el contenedor genérico */
@@ -1516,4 +1676,79 @@ ngb-pagination.custom-pagination {
   .filter-btn {
     justify-content: center;
   }
+}
+
+/* Eliminar outline de botones de filtro */
+.filter-btn,
+.tipo-compra-filter-btn,
+.btn-outline-primary,
+.btn-outline-secondary {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.filter-btn:focus,
+.tipo-compra-filter-btn:focus,
+.btn-outline-primary:focus,
+.btn-outline-secondary:focus,
+.filter-btn:focus-visible,
+.tipo-compra-filter-btn:focus-visible,
+.btn-outline-primary:focus-visible,
+.btn-outline-secondary:focus-visible,
+.filter-btn:active,
+.tipo-compra-filter-btn:active,
+.btn-outline-primary:active,
+.btn-outline-secondary:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Eliminar outline de iconos dentro de botones de filtro */
+.filter-btn i,
+.tipo-compra-filter-btn i,
+.btn-outline-primary i,
+.btn-outline-secondary i {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.filter-btn i:focus,
+.tipo-compra-filter-btn i:focus,
+.btn-outline-primary i:focus,
+.btn-outline-secondary i:focus,
+.filter-btn i:focus-visible,
+.tipo-compra-filter-btn i:focus-visible,
+.btn-outline-primary i:focus-visible,
+.btn-outline-secondary i:focus-visible,
+.filter-btn i:active,
+.tipo-compra-filter-btn i:active,
+.btn-outline-primary i:active,
+.btn-outline-secondary i:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Eliminar outline de texto dentro de botones de filtro */
+.filter-btn span,
+.tipo-compra-filter-btn span,
+.btn-outline-primary span,
+.btn-outline-secondary span {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.filter-btn span:focus,
+.tipo-compra-filter-btn span:focus,
+.btn-outline-primary span:focus,
+.btn-outline-secondary span:focus,
+.filter-btn span:focus-visible,
+.tipo-compra-filter-btn span:focus-visible,
+.btn-outline-primary span:focus-visible,
+.btn-outline-secondary span:focus-visible,
+.filter-btn span:active,
+.tipo-compra-filter-btn span:active,
+.btn-outline-primary span:active,
+.btn-outline-secondary span:active {
+  outline: none !important;
+  box-shadow: none !important;
 }

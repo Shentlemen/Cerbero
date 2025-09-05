@@ -15,6 +15,7 @@ export interface CompraDTO {
   monto: number;
   moneda: string;
   ano?: number;
+  valorDolar?: number;
 }
 
 @Injectable({
