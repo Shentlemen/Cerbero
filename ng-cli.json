@@ -1,0 +1,12 @@
+{
+  "warnings": {
+    "typescript": {
+      "compilerOptions": {
+        "suppressImplicitAnyIndexErrors": true
+      }
+    },
+    "styles": {
+      "suppressCssWarnings": true
+    }
+  }
+}

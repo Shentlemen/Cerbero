@@ -2,7 +2,6 @@
 
 /* Estilos globales para el componente */
 :host {
-  /* Eliminar outline y prevenir selección de texto en todo el componente */
   *:focus,
   *:focus-visible {
     outline: none !important;
@@ -16,7 +15,6 @@
     user-select: none;
   }
   
-  /* Permitir selección solo en inputs y textareas */
   input, textarea {
     -webkit-user-select: text;
     -moz-user-select: text;
@@ -64,8 +62,6 @@ button,
   background: #e0f2fe;
   color: #0369a1;
 }
-
-/* Estilo EUR eliminado */
 
 .moneda-badge.uyu {
   background: #e0f7fa;
@@ -420,7 +416,6 @@ button,
   width: 80px !important;
   min-width: 80px !important;
   max-width: 80px !important;
-  text-align: center !important;
 }
 
 .modal-body .table th:nth-child(3),
@@ -1167,26 +1162,6 @@ button,
   appearance: textfield;
 }
 
-/* Responsive para móviles */
-@media (max-width: 768px) {
-  .calculation-grid {
-    grid-template-columns: 1fr;
-    gap: 0.2rem;
-  }
-  
-  .calc-item {
-    padding: 0.3rem;
-  }
-  
-  .calc-label {
-    font-size: 0.7rem;
-  }
-  
-  .calc-value {
-    font-size: 0.8rem;
-  }
-}
-
 /* Estilos para documentos */
 .documento-upload-card {
   background: #f8f9fa;
@@ -1528,4 +1503,21 @@ button,
   .documento-header .btn-group {
     align-self: flex-end;
   }
-} 
+  
+  .calculation-grid {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  
+  .calc-item {
+    padding: 0.3rem;
+  }
+  
+  .calc-label {
+    font-size: 0.7rem;
+  }
+  
+  .calc-value {
+    font-size: 0.8rem;
+  }
+}

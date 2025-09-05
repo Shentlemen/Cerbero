@@ -27,16 +27,6 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
-              },
-              {
-                "glob": "**/*",
-                "input": "node_modules/leaflet/dist/images",
-                "output": "assets/leaflet/images"
-              },
-              {
-                "glob": "**/*",
-                "input": "node_modules/leaflet.markercluster/dist",
-                "output": "assets/leaflet.markercluster"
               }
             ],
             "styles": [
@@ -60,11 +50,8 @@
               "raf",
               "rgbcolor",
               "jspdf-autotable",
-              "@canvasjs/charts",
-              "html2canvas",
-              "dompurify",
-              "leaflet",
-              "leaflet.markercluster"
+              "jspdf",
+              "html2canvas"
             ]
           },
           "configurations": {
@@ -94,31 +81,18 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ]
-            },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true
             }
-          },
-          "defaultConfiguration": "production"
+          }
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "Cerbero:build:production"
-            },
-            "development": {
-              "buildTarget": "Cerbero:build:development"
             }
-          },
-          "defaultConfiguration": "development"
+          }
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }
