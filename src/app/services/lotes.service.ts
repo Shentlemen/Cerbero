@@ -21,6 +21,12 @@ export interface LoteDTO {
   compraDescripcion?: string; // Descripción de la compra asociada
   proveedorNombreComercial?: string; // Nombre comercial del proveedor
   servicioGarantiaNombreComercial?: string; // Nombre comercial del servicio de garantía
+  
+  // Campos de IVA
+  porcentajeIva?: number;  // Porcentaje de IVA aplicado (ej: 22.00 para 22%)
+  montoIva?: number;       // Monto del IVA calculado
+  subtotal?: number;       // Subtotal del ítem (precio * cantidad)
+  totalItem?: number;      // Total del ítem incluyendo IVA
 }
 
 @Injectable({

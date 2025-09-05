@@ -168,7 +168,15 @@
                   {{compra.moneda || 'No definida'}}
                 </span>
               </td>
-              <td>{{compra.monto ? formatearMoneda(compra.monto, compra.moneda || 'USD') : 'No definido'}}</td>
+              <td>
+                <div class="monto-total">
+                  <div class="fw-bold">{{compra.montoTotalConIva ? formatearMoneda(compra.montoTotalConIva, compra.moneda || 'USD') : (compra.monto ? formatearMoneda(compra.monto, compra.moneda || 'USD') : 'No definido')}}</div>
+                  <small class="text-muted" *ngIf="compra.subtotalCompra && compra.totalIva">
+                    Subtotal: {{formatearMoneda(compra.subtotalCompra, compra.moneda || 'USD')}} | 
+                    IVA: {{formatearMoneda(compra.totalIva, compra.moneda || 'USD')}}
+                  </small>
+                </div>
+              </td>
               <td>
                 <div class="action-buttons" *ngIf="canManagePurchases()">
                   <button class="btn btn-info btn-sm me-2" (click)="verDetallesCompra(compra)" title="Ver detalles completos">
@@ -268,7 +276,7 @@
               </div>
               <!-- Formulario de compra más compacto -->
 <div class="row">
-  <div class="col-md-3">
+  <div class="col-md-2">
     <label for="valorDolar" class="form-label">
       <i class="fas fa-dollar-sign"></i> Valor Dólar
     </label>
@@ -279,40 +287,59 @@
       formControlName="valorDolar"
       step="0.01"
       min="0.01"
-      placeholder="42.50">
+      placeholder="42.50"
+      (input)="actualizarMontoTotal()">
   </div>
   
-  <div class="col-md-3">
+  <div class="col-md-2">
     <label for="moneda" class="form-label">
       <i class="fas fa-coins"></i> Moneda
     </label>
-    <select class="form-select" id="moneda" formControlName="moneda">
+    <select class="form-select" id="moneda" formControlName="moneda" (change)="actualizarMontoTotal()">
       <option value="USD">USD</option>
       <option value="UYU">UYU</option>
     </select>
   </div>
   
   <!-- Mostrar monto solo en modo edición -->
-  <div class="col-md-3" *ngIf="modoEdicion">
+  <div class="col-md-4" *ngIf="modoEdicion">
     <label for="monto" class="form-label">
       <i class="fas fa-calculator"></i> Monto Total
     </label>
-    <input 
-      type="text" 
-      class="form-control" 
-      id="monto"
-      formControlName="monto"
-      readonly
-      [value]="formatearMoneda(compraForm.get('monto')?.value, 'USD')">
+    <div class="form-control">
+      <div class="monto-total-container" *ngIf="compraForm.get('monto')?.value && compraForm.get('monto')?.value > 0">
+        <div class="monto-principal">{{ formatearMoneda(compraForm.get('monto')?.value, compraForm.get('moneda')?.value || 'USD') }}</div>
+        <div class="monto-desglose">
+          <small class="text-muted">
+            Subtotal: {{ formatearMoneda(calcularSubtotalDesdeMontoTotal(), compraForm.get('moneda')?.value || 'USD') }} | 
+            IVA: {{ formatearMoneda(calcularIvaDesdeMontoTotal(), compraForm.get('moneda')?.value || 'USD') }}
+          </small>
+        </div>
+      </div>
+      <div class="text-center text-muted" *ngIf="!compraForm.get('monto')?.value || compraForm.get('monto')?.value === 0">
+        No definido
+      </div>
+    </div>
   </div>
   
   <!-- Mostrar monto calculado en modo creación -->
-  <div class="col-md-3" *ngIf="!modoEdicion">
+  <div class="col-md-4" *ngIf="!modoEdicion">
     <label class="form-label">
       <i class="fas fa-calculator"></i> Monto Total
     </label>
-    <div class="form-control-plaintext bg-light p-2 rounded">
-      <strong>{{ formatearMoneda(calcularMontoTotal(), 'USD') }}</strong>
+    <div class="form-control">
+      <div class="monto-total-container" *ngIf="calcularMontoTotalConIva() > 0">
+        <div class="monto-principal">{{ formatearMoneda(getMontoTotalConvertido(), compraForm.get('moneda')?.value || 'USD') }}</div>
+        <div class="monto-desglose">
+          <small class="text-muted">
+            Subtotal: {{ formatearMoneda(getSubtotalConvertido(), compraForm.get('moneda')?.value || 'USD') }} | 
+            IVA: {{ formatearMoneda(getIvaConvertido(), compraForm.get('moneda')?.value || 'USD') }}
+          </small>
+        </div>
+      </div>
+      <div class="text-center text-muted" *ngIf="calcularMontoTotalConIva() === 0">
+        No definido
+      </div>
     </div>
   </div>
 </div>
@@ -443,9 +470,9 @@
               </div>
             </div>
             
-            <!-- Fila 3: Garantía (meses), Precio Unitario y Moneda -->
+            <!-- Fila 3: Garantía (meses), Precio Unitario, Moneda y IVA -->
             <div class="row">
-              <div class="col-md-4 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">
                   <i class="fas fa-shield-alt"></i> Garantía (meses)
                 </label>
@@ -457,21 +484,22 @@
                   placeholder="0">
               </div>
               
-              <div class="col-md-4 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">
                   <i class="fas fa-dollar-sign"></i> Precio Unit.
                 </label>
                 <input 
-                  type="number" 
-                  class="form-control" 
+                  type="text" 
+                  class="form-control precio-unitario-input" 
                   formControlName="precioUnitario"
-                  (input)="actualizarMontoTotal()"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0.00">
+                  appCurrencyMask
+                  inputmode="numeric"
+                  autocomplete="off"
+                  (blur)="actualizarMontoTotal()"
+                  placeholder="0,00">
               </div>
               
-              <div class="col-md-4 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">
                   <i class="fas fa-coins"></i> Moneda
                 </label>
@@ -482,6 +510,21 @@
                   <option value="USD">USD</option>
                   <option value="UYU">UYU</option>
                 </select>
+              </div>
+              
+              <div class="col-md-3 mb-3">
+                <label class="form-label">
+                  <i class="fas fa-percentage"></i> IVA (%)
+                </label>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  formControlName="porcentajeIva"
+                  (input)="actualizarMontoTotal()"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="22.00">
               </div>
             </div>
             
@@ -496,16 +539,56 @@
               </div>
             </div>
 
-            <!-- Subtotal -->
-            <div class="row mt-2" *ngIf="getItemSubtotal(i) > 0">
+            <!-- Subtotal y IVA -->
+            <div class="row mt-3" *ngIf="getItemSubtotal(i) > 0">
               <div class="col-12">
-                <div class="alert alert-info py-2">
-                  <i class="fas fa-calculator"></i> 
-                  <strong>Subtotal:</strong> 
-                  <span class="text-dark fw-bold">{{ formatearMoneda(getItemSubtotal(i), 'USD') }} USD</span>
-                  <small class="text-muted ms-2">
-                    ({{ formatearMoneda(getItemSubtotalEnPesos(i), 'UYU') }} UYU)
-                  </small>
+                <div class="item-calculation-card">
+                  <div class="calculation-header">
+                    <i class="fas fa-calculator me-2"></i>
+                    <strong>Cálculo del Ítem</strong>
+                  </div>
+                  
+                  <!-- Valores en USD -->
+                  <div class="calculation-section">
+                    <div class="currency-label">
+                      <i class="fas fa-dollar-sign me-1"></i>Valores en USD
+                    </div>
+                    <div class="calculation-grid">
+                      <div class="calc-item">
+                        <span class="calc-label">Subtotal:</span>
+                        <span class="calc-value">{{ formatearMoneda(getItemSubtotal(i), 'USD') }}</span>
+                      </div>
+                      <div class="calc-item">
+                        <span class="calc-label">IVA ({{ getItemPorcentajeIva(i) }}%):</span>
+                        <span class="calc-value iva-value">{{ formatearMoneda(getItemMontoIva(i), 'USD') }}</span>
+                      </div>
+                      <div class="calc-item total-item">
+                        <span class="calc-label">Total:</span>
+                        <span class="calc-value total-value">{{ formatearMoneda(getItemTotal(i), 'USD') }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Valores en UYU -->
+                  <div class="calculation-section">
+                    <div class="currency-label">
+                      <i class="fas fa-peso-sign me-1"></i>Valores en UYU
+                    </div>
+                    <div class="calculation-grid">
+                      <div class="calc-item">
+                        <span class="calc-label">Subtotal:</span>
+                        <span class="calc-value">{{ formatearMoneda(getItemSubtotalEnPesos(i), 'UYU') }}</span>
+                      </div>
+                      <div class="calc-item">
+                        <span class="calc-label">IVA ({{ getItemPorcentajeIva(i) }}%):</span>
+                        <span class="calc-value iva-value">{{ formatearMoneda(getItemMontoIvaEnPesos(i), 'UYU') }}</span>
+                      </div>
+                      <div class="calc-item total-item">
+                        <span class="calc-label">Total:</span>
+                        <span class="calc-value total-value">{{ formatearMoneda(getItemTotalEnPesos(i), 'UYU') }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -759,7 +842,13 @@
             </span>
             <div class="compra-amount mt-2">
               <span class="amount-label">Monto Total:</span>
-              <span class="amount-value">{{ (compraSeleccionada?.monto && compraSeleccionada?.moneda) ? formatearMoneda(compraSeleccionada!.monto, compraSeleccionada!.moneda) : 'No definido' }}</span>
+              <span class="amount-value">{{ (compraSeleccionada?.montoTotalConIva && compraSeleccionada?.moneda) ? formatearMoneda(compraSeleccionada!.montoTotalConIva, compraSeleccionada!.moneda) : ((compraSeleccionada?.monto && compraSeleccionada?.moneda) ? formatearMoneda(compraSeleccionada!.monto, compraSeleccionada!.moneda) : 'No definido') }}</span>
+              <div class="amount-breakdown" *ngIf="compraSeleccionada?.subtotalCompra && compraSeleccionada?.totalIva">
+                <small class="text-muted">
+                  Subtotal: {{formatearMoneda(compraSeleccionada?.subtotalCompra, compraSeleccionada?.moneda)}} | 
+                  IVA: {{formatearMoneda(compraSeleccionada?.totalIva, compraSeleccionada?.moneda)}}
+                </small>
+              </div>
             </div>
           </div>
         </div>
@@ -993,7 +1082,13 @@
       <h5 class="compact-title">{{ compraSeleccionada ? getNombreCompraFormateado(compraSeleccionada) : 'Cargando...' }}</h5>
       <div class="compact-meta">
         <span class="badge bg-secondary me-2">{{ compraSeleccionada?.moneda }}</span>
-        <span class="text-muted">{{ formatearMoneda(compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
+        <span class="text-muted">{{ formatearMoneda(compraSeleccionada?.montoTotalConIva || compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
+        <div class="compact-breakdown" *ngIf="compraSeleccionada?.subtotalCompra && compraSeleccionada?.totalIva">
+          <small class="text-muted">
+            Subtotal: {{formatearMoneda(compraSeleccionada?.subtotalCompra, compraSeleccionada?.moneda)}} | 
+            IVA: {{formatearMoneda(compraSeleccionada?.totalIva, compraSeleccionada?.moneda)}}
+          </small>
+        </div>
       </div>
     </div>
 

@@ -16,6 +16,11 @@ export interface CompraDTO {
   moneda: string;
   ano?: number;
   valorDolar?: number;
+  
+  // Campos de totales con IVA
+  subtotalCompra?: number;
+  totalIva?: number;
+  montoTotalConIva?: number;
 }
 
 @Injectable({

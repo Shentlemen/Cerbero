@@ -28,7 +28,7 @@ interface CompraConTipo extends CompraDTO {
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, NgbPaginationModule, NgbNavModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, NgbPaginationModule, NgbNavModule, CurrencyMaskDirective],
   templateUrl: './compras.component.html',
   styleUrls: ['./compras.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -115,7 +115,7 @@ export class ComprasComponent implements OnInit {
       idCompra: [null],
       numeroCompra: ['', Validators.required],
       idTipoCompra: ['', Validators.required],
-      moneda: [''],
+      moneda: ['USD'], // Valor por defecto USD
       descripcion: [''],
       fechaInicio: [''],
       fechaFinal: [''],
@@ -313,8 +313,9 @@ export class ComprasComponent implements OnInit {
               idProveedor: [lote.idProveedor, Validators.required],
               idServicioGarantia: [lote.idServicioGarantia, Validators.required],
               idItem: [lote.idItem],
-              precioUnitario: [lote.precioUnitario, [Validators.required, Validators.min(0.01)]], // Nuevo campo
-              monedaPrecio: [lote.monedaPrecio || 'USD', Validators.required] // Nuevo campo
+              precioUnitario: [lote.precioUnitario, [Validators.required, Validators.min(0.01)]],
+              monedaPrecio: [lote.monedaPrecio || 'USD', Validators.required],
+              porcentajeIva: [lote.porcentajeIva || 22.00, [Validators.required, Validators.min(0), Validators.max(100)]]
             }));
           });
           // Cargar entregas asociadas a los lotes de la compra
@@ -358,6 +359,7 @@ export class ComprasComponent implements OnInit {
       // En modo creación, no mostrar el campo monto
       this.compraForm.patchValue({
         ano: new Date().getFullYear(),
+        moneda: 'USD', // Establecer USD como valor por defecto
         valorDolar: null // Limpiar valor dólar
       });
       this.itemsFormArray.clear();
@@ -389,7 +391,8 @@ export class ComprasComponent implements OnInit {
       idProveedor: [null],
       idServicioGarantia: [null],
       precioUnitario: [null], // Sin validación requerida
-      monedaPrecio: ['USD'] // Sin validación requerida
+      monedaPrecio: ['USD'], // Sin validación requerida
+      porcentajeIva: [22.00, [Validators.required, Validators.min(0), Validators.max(100)]]
     }));
     this.cdr.detectChanges();
   }
@@ -507,9 +510,9 @@ export class ComprasComponent implements OnInit {
         }
       }
       
-      // Calcular el monto total antes de guardar (será 0 si no hay ítems)
-      const montoTotal = this.calcularMontoTotal();
-      this.compraForm.patchValue({ monto: montoTotal });
+      // Calcular el monto total con IVA antes de guardar (será 0 si no hay ítems)
+      const montoTotalConIva = this.calcularMontoTotalConIva();
+      this.compraForm.patchValue({ monto: montoTotalConIva });
       
       const compraData = this.compraForm.value;
       const entregasData = this.entregasFormArray.value;
@@ -767,6 +770,7 @@ export class ComprasComponent implements OnInit {
     const monto = parseFloat(value) / 100;
     this.compraForm.patchValue({ monto: monto });
   }
+
 
   // Método de verificación de borrado reemplazado por la directive appCurrencyMask
 
@@ -1627,8 +1631,68 @@ export class ComprasComponent implements OnInit {
 
   // Método para actualizar el monto total cuando cambian los ítems
   actualizarMontoTotal(): void {
-    const montoTotal = this.calcularMontoTotal();
-    this.compraForm.patchValue({ monto: montoTotal });
+    // Forzar la detección de cambios para recalcular todos los valores
+    this.cdr.detectChanges();
+    
+    const montoTotalConIva = this.calcularMontoTotalConIva();
+    this.compraForm.patchValue({ monto: montoTotalConIva });
+  }
+
+  // Método para obtener el monto total convertido según la moneda seleccionada
+  getMontoTotalConvertido(): number {
+    const montoTotalConIva = this.calcularMontoTotalConIva();
+    const moneda = this.compraForm.get('moneda')?.value;
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    
+    if (!moneda || !valorDolar) {
+      return montoTotalConIva;
+    }
+    
+    // Si la moneda es UYU, convertir de dólares a pesos
+    if (moneda === 'UYU') {
+      return montoTotalConIva * valorDolar;
+    }
+    
+    // Si la moneda es USD, devolver en dólares
+    return montoTotalConIva;
+  }
+
+  // Método para obtener el subtotal convertido según la moneda seleccionada
+  getSubtotalConvertido(): number {
+    const subtotalTotal = this.calcularSubtotalTotal();
+    const moneda = this.compraForm.get('moneda')?.value;
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    
+    if (!moneda || !valorDolar) {
+      return subtotalTotal;
+    }
+    
+    // Si la moneda es UYU, convertir de dólares a pesos
+    if (moneda === 'UYU') {
+      return subtotalTotal * valorDolar;
+    }
+    
+    // Si la moneda es USD, devolver en dólares
+    return subtotalTotal;
+  }
+
+  // Método para obtener el IVA convertido según la moneda seleccionada
+  getIvaConvertido(): number {
+    const ivaTotal = this.calcularIvaTotal();
+    const moneda = this.compraForm.get('moneda')?.value;
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    
+    if (!moneda || !valorDolar) {
+      return ivaTotal;
+    }
+    
+    // Si la moneda es UYU, convertir de dólares a pesos
+    if (moneda === 'UYU') {
+      return ivaTotal * valorDolar;
+    }
+    
+    // Si la moneda es USD, devolver en dólares
+    return ivaTotal;
   }
 
   // Método para calcular el subtotal de un ítem específico
@@ -1685,5 +1749,75 @@ export class ComprasComponent implements OnInit {
     
     // Si el precio está en dólares, convertir a pesos
     return precioUnitario * cantidad * valorDolar;
+  }
+
+  // Métodos para cálculos de IVA
+  getItemPorcentajeIva(index: number): number {
+    const control = this.itemsFormArray.at(index);
+    return control.get('porcentajeIva')?.value || 22.00;
+  }
+
+  getItemMontoIva(index: number): number {
+    const subtotal = this.getItemSubtotal(index);
+    const porcentajeIva = this.getItemPorcentajeIva(index);
+    return subtotal * (porcentajeIva / 100);
+  }
+
+  getItemTotal(index: number): number {
+    const subtotal = this.getItemSubtotal(index);
+    const montoIva = this.getItemMontoIva(index);
+    return subtotal + montoIva;
+  }
+
+  getItemMontoIvaEnPesos(index: number): number {
+    const subtotalEnPesos = this.getItemSubtotalEnPesos(index);
+    const porcentajeIva = this.getItemPorcentajeIva(index);
+    return subtotalEnPesos * (porcentajeIva / 100);
+  }
+
+  getItemTotalEnPesos(index: number): number {
+    const subtotalEnPesos = this.getItemSubtotalEnPesos(index);
+    const montoIvaEnPesos = this.getItemMontoIvaEnPesos(index);
+    return subtotalEnPesos + montoIvaEnPesos;
+  }
+
+  // Métodos para totales de la compra
+  calcularSubtotalTotal(): number {
+    let total = 0;
+    for (let i = 0; i < this.itemsFormArray.length; i++) {
+      total += this.getItemSubtotal(i);
+    }
+    return total;
+  }
+
+  calcularIvaTotal(): number {
+    let total = 0;
+    for (let i = 0; i < this.itemsFormArray.length; i++) {
+      total += this.getItemMontoIva(i);
+    }
+    return total;
+  }
+
+  calcularMontoTotalConIva(): number {
+    return this.calcularSubtotalTotal() + this.calcularIvaTotal();
+  }
+
+  // Métodos para modo edición - calcular subtotal e IVA a partir del monto total
+  calcularSubtotalDesdeMontoTotal(): number {
+    const montoTotal = this.compraForm.get('monto')?.value;
+    if (!montoTotal || montoTotal <= 0) {
+      return 0;
+    }
+    // Asumiendo IVA del 22%: montoTotal = subtotal * 1.22
+    return montoTotal / 1.22;
+  }
+
+  calcularIvaDesdeMontoTotal(): number {
+    const montoTotal = this.compraForm.get('monto')?.value;
+    if (!montoTotal || montoTotal <= 0) {
+      return 0;
+    }
+    const subtotal = this.calcularSubtotalDesdeMontoTotal();
+    return montoTotal - subtotal;
   }
 } 
