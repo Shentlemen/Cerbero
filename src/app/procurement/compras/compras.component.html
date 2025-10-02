@@ -170,10 +170,10 @@
               </td>
               <td>
                 <div class="monto-total">
-                  <div class="fw-bold">{{compra.montoTotalConIva ? formatearMoneda(compra.montoTotalConIva, compra.moneda || 'USD') : (compra.monto ? formatearMoneda(compra.monto, compra.moneda || 'USD') : 'No definido')}}</div>
-                  <small class="text-muted" *ngIf="compra.subtotalCompra && compra.totalIva">
-                    Subtotal: {{formatearMoneda(compra.subtotalCompra, compra.moneda || 'USD')}} | 
-                    IVA: {{formatearMoneda(compra.totalIva, compra.moneda || 'USD')}}
+                  <div class="fw-bold">{{ getMontoTotalCompra(compra, lotesPorCompra[compra.idCompra] || []) ? formatearMoneda(getMontoTotalCompra(compra, lotesPorCompra[compra.idCompra] || []), compra.moneda || 'USD') : 'No definido' }}</div>
+                  <small class="text-muted" *ngIf="(lotesPorCompra[compra.idCompra] || []).length > 0">
+                    Subtotal: {{formatearMoneda(getSubtotalCompra(compra, lotesPorCompra[compra.idCompra] || []), compra.moneda || 'USD')}} | 
+                    IVA: {{formatearMoneda(getIvaCompra(compra, lotesPorCompra[compra.idCompra] || []), compra.moneda || 'USD')}}
                   </small>
                 </div>
               </td>
@@ -842,11 +842,11 @@
             </span>
             <div class="compra-amount mt-2">
               <span class="amount-label">Monto Total:</span>
-              <span class="amount-value">{{ (compraSeleccionada?.montoTotalConIva && compraSeleccionada?.moneda) ? formatearMoneda(compraSeleccionada!.montoTotalConIva, compraSeleccionada!.moneda) : ((compraSeleccionada?.monto && compraSeleccionada?.moneda) ? formatearMoneda(compraSeleccionada!.monto, compraSeleccionada!.moneda) : 'No definido') }}</span>
-              <div class="amount-breakdown" *ngIf="compraSeleccionada?.subtotalCompra && compraSeleccionada?.totalIva">
+              <span class="amount-value">{{ getMontoTotalCompra(compraSeleccionada!, lotesDetalles) ? formatearMoneda(getMontoTotalCompra(compraSeleccionada!, lotesDetalles), compraSeleccionada?.moneda || 'USD') : 'No definido' }}</span>
+              <div class="amount-breakdown" *ngIf="lotesDetalles.length > 0">
                 <small class="text-muted">
-                  Subtotal: {{formatearMoneda(compraSeleccionada?.subtotalCompra, compraSeleccionada?.moneda)}} | 
-                  IVA: {{formatearMoneda(compraSeleccionada?.totalIva, compraSeleccionada?.moneda)}}
+                  Subtotal: {{formatearMoneda(getSubtotalCompra(compraSeleccionada!, lotesDetalles), compraSeleccionada?.moneda || 'USD')}} | 
+                  IVA: {{formatearMoneda(getIvaCompra(compraSeleccionada!, lotesDetalles), compraSeleccionada?.moneda || 'USD')}}
                 </small>
               </div>
             </div>
@@ -1082,11 +1082,11 @@
       <h5 class="compact-title">{{ compraSeleccionada ? getNombreCompraFormateado(compraSeleccionada) : 'Cargando...' }}</h5>
       <div class="compact-meta">
         <span class="badge bg-secondary me-2">{{ compraSeleccionada?.moneda }}</span>
-        <span class="text-muted">{{ formatearMoneda(compraSeleccionada?.montoTotalConIva || compraSeleccionada?.monto || 0, compraSeleccionada?.moneda || 'USD') }}</span>
-        <div class="compact-breakdown" *ngIf="compraSeleccionada?.subtotalCompra && compraSeleccionada?.totalIva">
+        <span class="text-muted">{{ formatearMoneda(getMontoTotalCompra(compraSeleccionada!, lotesDetalles), compraSeleccionada?.moneda || 'USD') }}</span>
+        <div class="compact-breakdown" *ngIf="lotesDetalles.length > 0">
           <small class="text-muted">
-            Subtotal: {{formatearMoneda(compraSeleccionada?.subtotalCompra, compraSeleccionada?.moneda)}} | 
-            IVA: {{formatearMoneda(compraSeleccionada?.totalIva, compraSeleccionada?.moneda)}}
+            Subtotal: {{formatearMoneda(getSubtotalCompra(compraSeleccionada!, lotesDetalles), compraSeleccionada?.moneda || 'USD')}} | 
+            IVA: {{formatearMoneda(getIvaCompra(compraSeleccionada!, lotesDetalles), compraSeleccionada?.moneda || 'USD')}}
           </small>
         </div>
       </div>
@@ -1102,13 +1102,12 @@
           <thead class="table-light">
             <tr>
               <th>Ítem</th>
-              <th>Cantidad</th>
+              <th>Cant.</th>
               <th>Precio Unit.</th>
               <th>Moneda</th>
               <th>Garantía</th>
               <th>Proveedor</th>
-              <th>Servicio de Garantía</th>
-              <th>Obs.</th>
+              <th>Serv. Garantía</th>
             </tr>
           </thead>
           <tbody>
@@ -1120,7 +1119,6 @@
               <td class="text-center">{{ lote.mesesGarantia }} meses</td>
               <td>{{ getProveedorNombre(lote.idProveedor) }}</td>
               <td>{{ getProveedorNombre(lote.idServicioGarantia) }}</td>
-              <td>{{ lote.descripcion || '-' }}</td>
             </tr>
           </tbody>
         </table>
@@ -1137,10 +1135,9 @@
           <thead class="table-light">
             <tr>
               <th>Ítem</th>
-              <th>Cantidad</th>
+              <th>Cant.</th>
               <th>Fecha Entrega</th>
               <th>Fin Garantía</th>
-              <th>Obs.</th>
             </tr>
           </thead>
           <tbody>
@@ -1149,7 +1146,6 @@
               <td class="text-center">{{ entrega.cantidad }}</td>
               <td>{{ formatearFecha(entrega.fechaPedido) }}</td>
               <td>{{ formatearFecha(entrega.fechaFinGarantia) }}</td>
-              <td>{{ entrega.descripcion || '-' }}</td>
             </tr>
           </tbody>
         </table>

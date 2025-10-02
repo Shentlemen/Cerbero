@@ -572,6 +572,84 @@ button,
   align-items: center;
 }
 
+/* Modal XL más ancho */
+.modal-xl .modal-dialog {
+  max-width: 95vw;
+  width: 95vw;
+}
+
+.modal-xl .modal-content {
+  max-height: 90vh;
+}
+
+.modal-xl .modal-body {
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* Tablas en modal XL */
+.modal-xl .compact-table {
+  font-size: 0.9rem;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.modal-xl .compact-table th,
+.modal-xl .compact-table td {
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-xl .table-responsive {
+  overflow-x: visible;
+}
+
+/* Ajustar columnas para mejor distribución en modal XL */
+.modal-xl .compact-table th:nth-child(1),
+.modal-xl .compact-table td:nth-child(1) {
+  width: 25%;
+  min-width: 200px;
+}
+
+.modal-xl .compact-table th:nth-child(2),
+.modal-xl .compact-table td:nth-child(2) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.modal-xl .compact-table th:nth-child(3),
+.modal-xl .compact-table td:nth-child(3) {
+  width: 12%;
+  min-width: 120px;
+}
+
+.modal-xl .compact-table th:nth-child(4),
+.modal-xl .compact-table td:nth-child(4) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.modal-xl .compact-table th:nth-child(5),
+.modal-xl .compact-table td:nth-child(5) {
+  width: 10%;
+  min-width: 100px;
+}
+
+.modal-xl .compact-table th:nth-child(6),
+.modal-xl .compact-table td:nth-child(6) {
+  width: 20%;
+  min-width: 150px;
+}
+
+.modal-xl .compact-table th:nth-child(7),
+.modal-xl .compact-table td:nth-child(7) {
+  width: 17%;
+  min-width: 150px;
+}
+
 .details-header .modal-title {
   font-weight: 600;
   font-size: 1.3rem;

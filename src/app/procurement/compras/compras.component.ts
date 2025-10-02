@@ -36,6 +36,7 @@ interface CompraConTipo extends CompraDTO {
 export class ComprasComponent implements OnInit {
   comprasList: CompraConTipo[] = [];
   comprasFiltradas: CompraConTipo[] = [];
+  lotesPorCompra: { [key: number]: LoteDTO[] } = {};
   tiposCompraList: TipoDeCompraDTO[] = [];
   filterForm: FormGroup;
   compraForm: FormGroup;
@@ -159,6 +160,10 @@ export class ComprasComponent implements OnInit {
         
         this.comprasFiltradas = [...this.comprasList];
         this.collectionSize = this.comprasFiltradas.length;
+        
+        // Cargar lotes para recalcular totales
+        this.cargarLotesParaCompras();
+        
         this.loading = false;
           resolve();
       },
@@ -168,8 +173,8 @@ export class ComprasComponent implements OnInit {
         this.loading = false;
           reject(error);
       }
-      });
     });
+  });
   }
 
   loadTiposCompra(): void {
@@ -197,6 +202,10 @@ export class ComprasComponent implements OnInit {
         }));
         this.comprasFiltradas = [...this.comprasList];
         this.collectionSize = this.comprasFiltradas.length;
+        
+        // Cargar lotes para cada compra
+        this.cargarLotesParaCompras();
+        
         this.loading = false;
       },
       error: (error) => {
@@ -204,6 +213,23 @@ export class ComprasComponent implements OnInit {
         this.error = 'Error al cargar las compras. Por favor, intente nuevamente.';
         this.loading = false;
       }
+    });
+  }
+
+  cargarLotesParaCompras(): void {
+    this.lotesPorCompra = {};
+    
+    this.comprasList.forEach(compra => {
+      this.lotesService.getLotesByCompra(compra.idCompra).subscribe({
+        next: (lotes) => {
+          this.lotesPorCompra[compra.idCompra] = lotes;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error(`Error al cargar lotes para compra ${compra.idCompra}:`, error);
+          this.lotesPorCompra[compra.idCompra] = [];
+        }
+      });
     });
   }
 
@@ -512,7 +538,28 @@ export class ComprasComponent implements OnInit {
       
       // Calcular el monto total con IVA antes de guardar (será 0 si no hay ítems)
       const montoTotalConIva = this.calcularMontoTotalConIva();
-      this.compraForm.patchValue({ monto: montoTotalConIva });
+      const subtotalTotal = this.calcularSubtotalTotal();
+      const ivaTotal = this.calcularIvaTotal();
+      
+      // Convertir los montos según la moneda de la compra
+      const moneda = this.compraForm.get('moneda')?.value;
+      
+      let montoConvertido = montoTotalConIva;
+      let subtotalConvertido = subtotalTotal;
+      let ivaConvertido = ivaTotal;
+      
+      if (moneda === 'UYU' && valorDolar && valorDolar > 0) {
+        montoConvertido = montoTotalConIva * valorDolar;
+        subtotalConvertido = subtotalTotal * valorDolar;
+        ivaConvertido = ivaTotal * valorDolar;
+      }
+      
+      this.compraForm.patchValue({ 
+        monto: montoConvertido,
+        montoTotalConIva: montoConvertido,
+        subtotalCompra: subtotalConvertido,
+        totalIva: ivaConvertido
+      });
       
       const compraData = this.compraForm.value;
       const entregasData = this.entregasFormArray.value;
@@ -1800,6 +1847,62 @@ export class ComprasComponent implements OnInit {
 
   calcularMontoTotalConIva(): number {
     return this.calcularSubtotalTotal() + this.calcularIvaTotal();
+  }
+
+  // Método para calcular totales de una compra específica usando sus lotes
+  calcularTotalesCompra(compra: CompraConTipo, lotes: LoteDTO[]): { subtotal: number, iva: number, total: number } {
+    let subtotal = 0;
+    let iva = 0;
+    const valorDolar = compra.valorDolar || 1;
+    
+    lotes.forEach(lote => {
+      if (lote.precioUnitario && lote.cantidad) {
+        let precioEnDolares = lote.precioUnitario;
+        
+        // Si el precio está en pesos, convertir a dólares
+        if (lote.monedaPrecio === 'UYU') {
+          precioEnDolares = lote.precioUnitario / valorDolar;
+        }
+        
+        const subtotalItem = precioEnDolares * lote.cantidad;
+        const porcentajeIva = lote.porcentajeIva || 22.00;
+        const ivaItem = subtotalItem * (porcentajeIva / 100);
+        
+        subtotal += subtotalItem;
+        iva += ivaItem;
+      }
+    });
+    
+    const total = subtotal + iva;
+    
+    // Convertir según la moneda de la compra
+    if (compra.moneda === 'UYU') {
+      return {
+        subtotal: subtotal * valorDolar,
+        iva: iva * valorDolar,
+        total: total * valorDolar
+      };
+    }
+    
+    return { subtotal, iva, total };
+  }
+
+  // Método para obtener el monto total de una compra (para lista y detalles)
+  getMontoTotalCompra(compra: CompraConTipo, lotes: LoteDTO[]): number {
+    const totales = this.calcularTotalesCompra(compra, lotes);
+    return totales.total;
+  }
+
+  // Método para obtener el subtotal de una compra (para lista y detalles)
+  getSubtotalCompra(compra: CompraConTipo, lotes: LoteDTO[]): number {
+    const totales = this.calcularTotalesCompra(compra, lotes);
+    return totales.subtotal;
+  }
+
+  // Método para obtener el IVA de una compra (para lista y detalles)
+  getIvaCompra(compra: CompraConTipo, lotes: LoteDTO[]): number {
+    const totales = this.calcularTotalesCompra(compra, lotes);
+    return totales.iva;
   }
 
   // Métodos para modo edición - calcular subtotal e IVA a partir del monto total

@@ -271,27 +271,69 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           ...commonOptions,
           title: { 
             ...commonOptions.title,
-            text: "Sistema Operativo" 
+            text: "Sistema Operativo",
+            subtitle: {
+              text: "Barras pequeñas ampliadas para mejor visibilidad",
+              fontSize: this.getResponsiveFontSize(12),
+              fontColor: "#666"
+            }
           },
           axisY: { 
             title: "Cantidad", 
-            labelFontSize: this.getResponsiveFontSize(13), // Aumentado de 11 a 13
-            titleFontSize: this.getResponsiveFontSize(14) // Aumentado de 12 a 14
+            labelFontSize: this.getResponsiveFontSize(13),
+            titleFontSize: this.getResponsiveFontSize(14),
+            minimum: 0,
+            margin: 20,
+            interval: "auto",
+            labelFormatter: (e: any) => {
+              const value = e.value;
+              if (value === 50) {
+                const dataPoint = osData.find(d => d.y < 50);
+                if (dataPoint) {
+                  return `< ${dataPoint.y}`;
+                }
+              }
+              return value;
+            }
           },
           axisX: {
-            labelFontSize: this.getResponsiveFontSize(12), // Agregado tamaño de fuente para eje X
-            labelMaxWidth: 100, // Limitar ancho de etiquetas
-            labelWrap: true
+            labelFontSize: this.getResponsiveFontSize(12),
+            labelMaxWidth: 100,
+            labelWrap: true,
+            labelAutoFit: true,
+            labelAutoFitFontSizeMin: 8,
+            labelAutoFitFontSizeMax: 14
           },
           data: [{
             ...commonOptions.data[0],
             type: "bar",
-            dataPoints: osData.map(d => ({
-              ...d,
-              indexLabelFontSize: this.getResponsiveFontSize(13) // Tamaño de fuente específico
-            })),
-            click: this.onChartPointClick.bind(this, 'osName'),
-            indexLabelFontSize: this.getResponsiveFontSize(15) // Aumentado de 13 a 15
+            dataPoints: osData.map(d => {
+              const realY = d.y;
+              // Calcular altura mínima: si el valor real es menor a 50, usar 50 como altura visual
+              const visualY = realY < 50 ? 50 : realY;
+              const abbreviatedLabel = this.abbreviateOSName(d.label);
+              const tooltipText = `${d.label}: ${realY} dispositivos`;
+              
+              return {
+                ...d,
+                label: abbreviatedLabel, // Usar etiqueta abreviada para mostrar en eje X
+                originalLabel: d.label, // Guardar nombre original para tooltip y filtrado
+                y: visualY,
+                toolTipContent: tooltipText,
+                indexLabel: String(realY), // Mostrar cantidad a la derecha de la barra
+                indexLabelFontSize: this.getResponsiveFontSize(12),
+                indexLabelPlacement: "outside",
+                indexLabelOrientation: "horizontal",
+                indexLabelMaxWidth: 60,
+                indexLabelWrap: true,
+                indexLabelBackgroundColor: "rgba(255,255,255,0.9)",
+                indexLabelBorderColor: "#ddd",
+                indexLabelBorderThickness: 1,
+                // Agregar color personalizado para barras pequeñas
+                color: realY < 50 ? "#e74c3c" : undefined
+              };
+            }),
+            click: this.onChartPointClick.bind(this, 'osName')
           }]
         };
 
@@ -576,6 +618,67 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     return name;
   }
 
+  private abbreviateOSName(name: string): string {
+    if (!name || name === 'Desconocido') return name;
+    
+    const nameUpper = name.toUpperCase().trim();
+    
+    // Mapeo de abreviaciones comunes para sistemas operativos
+    const abbreviations: { [key: string]: string } = {
+      'MICROSOFT WINDOWS 10 PRO': 'Windows 10 Pro',
+      'MICROSOFT WINDOWS 10 HOME': 'Windows 10 Home',
+      'MICROSOFT WINDOWS 10': 'Windows 10',
+      'MICROSOFT WINDOWS 11 PRO': 'Windows 11 Pro',
+      'MICROSOFT WINDOWS 11 HOME': 'Windows 11 Home',
+      'MICROSOFT WINDOWS 11': 'Windows 11',
+      'MICROSOFT WINDOWS 7 PROFESSIONAL': 'Windows 7 Pro',
+      'MICROSOFT WINDOWS 7 HOME': 'Windows 7 Home',
+      'MICROSOFT WINDOWS 7': 'Windows 7',
+      'MICROSOFT WINDOWS 8.1': 'Windows 8.1',
+      'MICROSOFT WINDOWS 8': 'Windows 8',
+      'MICROSOFT WINDOWS SERVER 2019': 'Windows Server 2019',
+      'MICROSOFT WINDOWS SERVER 2016': 'Windows Server 2016',
+      'MICROSOFT WINDOWS SERVER 2022': 'Windows Server 2022',
+      'UBUNTU 20.04 LTS': 'Ubuntu 20.04',
+      'UBUNTU 22.04 LTS': 'Ubuntu 22.04',
+      'UBUNTU 18.04 LTS': 'Ubuntu 18.04',
+      'UBUNTU': 'Ubuntu',
+      'DEBIAN': 'Debian',
+      'CENTOS': 'CentOS',
+      'RED HAT ENTERPRISE LINUX': 'RHEL',
+      'FEDORA': 'Fedora',
+      'MACOS MONTEREY': 'macOS Monterey',
+      'MACOS BIG SUR': 'macOS Big Sur',
+      'MACOS VENTURA': 'macOS Ventura',
+      'MACOS': 'macOS',
+      'MAC OS X': 'macOS'
+    };
+    
+    // Buscar coincidencia exacta
+    if (abbreviations[nameUpper]) {
+      return abbreviations[nameUpper];
+    }
+    
+    // Si no hay coincidencia exacta, intentar abreviar nombres largos
+    if (name.length > 15) {
+      // Para nombres muy largos, tomar las primeras palabras importantes
+      const words = name.split(/\s+/);
+      if (words.length > 2) {
+        // Tomar las primeras 2-3 palabras más importantes
+        const importantWords = words.slice(0, 2);
+        const abbreviation = importantWords.join(' ');
+        if (abbreviation.length <= 15) {
+          return abbreviation;
+        }
+      }
+      
+      // Si no se puede abreviar por palabras, truncar
+      return name.substring(0, 12) + '...';
+    }
+    
+    return name;
+  }
+
   private countByProperty(array: any[], prop: string): { [key: string]: number } {
     return array.reduce((acc, curr) => {
       const key = curr[prop] || 'Desconocido';
@@ -588,7 +691,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   onChartPointClick(filterType: string, e: any) {
-    const filterValue = e.dataPoint.label;
+    // Usar el nombre original si está disponible, sino usar el label
+    const filterValue = e.dataPoint.originalLabel || e.dataPoint.label;
     
     // Cerrar el modal si está abierto
     if (this.activeModalRef) {
