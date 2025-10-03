@@ -138,7 +138,15 @@
     <small class="text-muted">Esta operación puede tomar varios segundos</small>
   </div>
 
-  <div class="content-section" *ngIf="!loading">
+  <!-- Indicador de carga para filtros -->
+  <div *ngIf="isFiltering" class="text-center my-4">
+    <div class="spinner-border text-info" role="status">
+      <span class="visually-hidden">Filtrando...</span>
+    </div>
+    <p class="mt-2">Aplicando filtros...</p>
+  </div>
+
+  <div class="content-section" *ngIf="!loading && !isFiltering">
     <div class="table-container">
       <table class="software-table" [class.multi-select]="multiSelectMode">
         <thead>
@@ -259,18 +267,6 @@
           </tr>
         </tbody>
       </table>
-    </div>
-    <div class="pagination-container">
-      <ngb-pagination
-        [(page)]="currentPage"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
     </div>
   </div>
 </div>
