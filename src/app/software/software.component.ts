@@ -30,9 +30,12 @@ export class SoftwareComponent implements OnInit {
   searchTerm: string = '';
   activeTab: 'total' | 'hidden' | 'forbidden' | 'driver' | 'licenciado' = 'total';
   page: number = 1;
-  pageSize: number = 50; // Aumentar tamaño de página para mejor rendimiento
+  pageSize: number = 50; // Paginación de 50 elementos por página
   collectionSize: number = 0;
   totalPages: number = 0;
+  
+  // Hacer Math disponible en el template
+  Math = Math;
 
   // Contadores de software
   softwareCounters: SoftwareCounters = {
@@ -88,6 +91,12 @@ export class SoftwareComponent implements OnInit {
     // Recalcular y cachear
     let filtered = [...this.softwareList];
 
+    // Filtrar software sin nombre o sin editor
+    filtered = filtered.filter(software => 
+      software.nombre && software.nombre.trim() !== '' && 
+      software.publisher && software.publisher.trim() !== ''
+    );
+
     // Aplicar filtro de búsqueda
     if (currentSearchTerm && currentSearchTerm.trim()) {
       const searchLower = currentSearchTerm.toLowerCase().trim();
@@ -127,6 +136,14 @@ export class SoftwareComponent implements OnInit {
     this._lastActiveTab = currentActiveTab;
 
     return filtered;
+  }
+
+  // Getter para la lista paginada
+  get paginatedSoftwareList(): SoftwareDTO[] {
+    const filteredList = this.pagedSoftwareList;
+    const startIndex = (this.page - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return filteredList.slice(startIndex, endIndex);
   }
 
   // Getter para la página que cierra la selección múltiple al cambiar
@@ -199,17 +216,24 @@ export class SoftwareComponent implements OnInit {
 
   // Filtrar localmente para mejor rendimiento
   updateFilteredList(): void {
-    // Actualizar contadores
+    // Filtrar primero software sin nombre o editor
+    const validSoftware = this.softwareList.filter(software => 
+      software.nombre && software.nombre.trim() !== '' && 
+      software.publisher && software.publisher.trim() !== ''
+    );
+
+    // Actualizar contadores basados en software válido
     this.softwareCounters = {
-      total: this.softwareList.filter(s => !s.hidden && !s.forbidden && !s.driver && !s.licenciado).length,
-      hidden: this.softwareList.filter(s => s.hidden).length,
-      forbidden: this.softwareList.filter(s => s.forbidden).length,
-      driver: this.softwareList.filter(s => s.driver).length,
-      licenciado: this.softwareList.filter(s => s.licenciado).length
+      total: validSoftware.filter(s => !s.hidden && !s.forbidden && !s.driver && !s.licenciado).length,
+      hidden: validSoftware.filter(s => s.hidden).length,
+      forbidden: validSoftware.filter(s => s.forbidden).length,
+      driver: validSoftware.filter(s => s.driver).length,
+      licenciado: validSoftware.filter(s => s.licenciado).length
     };
 
-    // Actualizar tamaño de colección (sin paginación)
-    this.collectionSize = this.softwareList.length;
+    // Actualizar tamaño de colección basado en la lista filtrada actual
+    this.collectionSize = this.pagedSoftwareList.length;
+    this.totalPages = Math.ceil(this.collectionSize / this.pageSize);
   }
 
   // Limpiar cache de filtros
@@ -222,6 +246,7 @@ export class SoftwareComponent implements OnInit {
   filterSoftware(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.searchTerm = input.value;
+    this.page = 1; // Resetear a la primera página al buscar
     this.closeMultiSelectMode(); // Cerrar selección múltiple al buscar
     
     // Mostrar loading solo si hay texto para filtrar
@@ -239,6 +264,7 @@ export class SoftwareComponent implements OnInit {
   showTotalSoftware(): void {
     this.isFiltering = true;
     this.activeTab = 'total';
+    this.page = 1; // Resetear a la primera página
     this.closeMultiSelectMode();
     this.updateFilteredList();
     // Simular un pequeño delay para mostrar el loading
@@ -250,6 +276,7 @@ export class SoftwareComponent implements OnInit {
   showOnlyHiddenSoftware(): void {
     this.isFiltering = true;
     this.activeTab = 'hidden';
+    this.page = 1; // Resetear a la primera página
     this.closeMultiSelectMode();
     this.updateFilteredList();
     // Simular un pequeño delay para mostrar el loading
@@ -261,6 +288,7 @@ export class SoftwareComponent implements OnInit {
   showOnlyForbiddenSoftware(): void {
     this.isFiltering = true;
     this.activeTab = 'forbidden';
+    this.page = 1; // Resetear a la primera página
     this.closeMultiSelectMode();
     this.updateFilteredList();
     // Simular un pequeño delay para mostrar el loading
@@ -272,6 +300,7 @@ export class SoftwareComponent implements OnInit {
   showOnlyDriverSoftware(): void {
     this.isFiltering = true;
     this.activeTab = 'driver';
+    this.page = 1; // Resetear a la primera página
     this.closeMultiSelectMode();
     this.updateFilteredList();
     // Simular un pequeño delay para mostrar el loading
@@ -283,6 +312,7 @@ export class SoftwareComponent implements OnInit {
   showOnlyLicenciadoSoftware(): void {
     this.isFiltering = true;
     this.activeTab = 'licenciado';
+    this.page = 1; // Resetear a la primera página
     this.closeMultiSelectMode();
     this.updateFilteredList();
     // Simular un pequeño delay para mostrar el loading
@@ -498,10 +528,10 @@ export class SoftwareComponent implements OnInit {
   }
 
   toggleSelectAll(): void {
-    if (this.selectedCount === this.pagedSoftwareList.length && this.pagedSoftwareList.length > 0) {
+    if (this.selectedCount === this.paginatedSoftwareList.length && this.paginatedSoftwareList.length > 0) {
       this.selectedSoftware.clear();
     } else {
-      this.pagedSoftwareList.forEach(software => {
+      this.paginatedSoftwareList.forEach((software: SoftwareDTO) => {
         this.selectedSoftware.add(software.idSoftware);
       });
     }

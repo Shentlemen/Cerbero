@@ -154,9 +154,9 @@
             <th *ngIf="multiSelectMode" class="checkbox-header">
               <div class="th-content">
                               <input type="checkbox" 
-                     [checked]="selectedCount === pagedSoftwareList.length && pagedSoftwareList.length > 0"
+                     [checked]="selectedCount === paginatedSoftwareList.length && paginatedSoftwareList.length > 0"
                      (change)="toggleSelectAll()"
-                     [class.partial-selection]="selectedCount > 0 && selectedCount < pagedSoftwareList.length">
+                     [class.partial-selection]="selectedCount > 0 && selectedCount < paginatedSoftwareList.length">
               </div>
             </th>
             <th>
@@ -187,7 +187,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let software of pagedSoftwareList" 
+          <tr *ngFor="let software of paginatedSoftwareList" 
               class="software-row"
               [class.hidden]="software.hidden"
               [class.forbidden]="software.forbidden">
@@ -267,6 +267,20 @@
           </tr>
         </tbody>
       </table>
+    </div>
+    
+    <!-- Controles de paginación -->
+    <div class="pagination-container" *ngIf="collectionSize > pageSize">
+      <ngb-pagination
+        [(page)]="currentPage"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
     </div>
   </div>
 </div>
