@@ -1,6 +1,6 @@
 .helper-dog {
   position: fixed;
-  bottom: 20px;
+  bottom: 80px; /* Un poquito más abajo */
   left: 20px;
   z-index: 1000;
   transition: all 0.3s ease;
@@ -12,8 +12,8 @@
 }
 
 .helper-dog-image {
-  width: 80px;
-  height: 80px;
+  width: 100px; /* Aumentado de 80px a 100px */
+  height: 100px; /* Aumentado de 80px a 100px */
   cursor: pointer;
   border-radius: 50%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -60,7 +60,7 @@
 /* Burbuja de mensaje principal */
 .speech-bubble {
   position: absolute;
-  bottom: 100px;
+  bottom: 100px; /* Mantener la misma distancia del perro */
   left: 0;
   width: 300px;
   max-width: 350px;
@@ -188,7 +188,7 @@
 /* Panel de sugerencias inteligentes */
 .suggestions-panel {
   position: absolute;
-  bottom: 100px;
+  bottom: 100px; /* Mantener la misma distancia del perro */
   left: 0;
   width: 350px;
   max-height: 400px;
@@ -354,8 +354,8 @@
   }
   
   .helper-dog-image {
-    width: 60px;
-    height: 60px;
+    width: 80px; /* Aumentado de 60px a 80px para móviles */
+    height: 80px; /* Aumentado de 60px a 80px para móviles */
   }
   
 
@@ -383,7 +383,7 @@
 /* Panel de ayuda contextual */
 .contextual-help-panel {
   position: absolute;
-  bottom: 100px;
+  bottom: 100px; /* Mantener la misma distancia del perro */
   left: 0;
   width: 350px;
   max-height: 400px;

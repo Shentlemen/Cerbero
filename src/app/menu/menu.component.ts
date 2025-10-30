@@ -10,6 +10,7 @@ import { AppHeaderComponent } from '../components/app-header/app-header.componen
 import { AuthService } from '../services/auth.service';
 import { User } from '../interfaces/auth.interface';
 import { PermissionsService } from '../services/permissions.service';
+import { getVersionInfo } from '../version';
 
 @Component({
   selector: 'app-menu',
@@ -35,6 +36,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   showHelperMessage = false;
   currentHelperTip?: HelpTip;
   currentUser: User | null = null;
+  versionInfo = getVersionInfo();
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección

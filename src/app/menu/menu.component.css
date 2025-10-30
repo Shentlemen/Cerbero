@@ -15,6 +15,7 @@ html, body {
   height: calc(100% - 60px); /* Altura total menos el header */
   background-color: #1a1a1a;
   padding-top: 15px;
+  padding-bottom: 80px; /* Espacio para la información de versión */
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   overflow-y: auto; /* Permite scroll vertical */
@@ -222,6 +223,47 @@ html, body {
 /* Estilo para la imagen del logo */
 .logo {
   width: 150px;
+}
+
+/* Estilos para la información de versión en el menú */
+.version-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1a1a1a; /* Mismo color que el menú principal */
+  border-top: 1px solid #333333; /* Borde más sutil */
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+.version-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.app-name {
+  color: #f39c12; /* Mantener el naranja para destacar */
+  font-weight: 600;
+  font-style: italic;
+  font-size: 0.8rem;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.build-info {
+  color: #bdc3c7; /* Mantener el gris claro */
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05); /* Fondo más sutil */
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde más sutil */
+}
+
+.logo {
   max-width: 100%;
   height: auto;
   border-radius: 10px; /* Bordes redondeados para la imagen */

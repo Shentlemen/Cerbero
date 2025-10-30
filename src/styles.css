@@ -1752,3 +1752,36 @@ ngb-pagination.custom-pagination {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Configuración global de zoom - Reducir tamaño del 20% */
+body {
+  zoom: 0.8;
+}
+
+/* Layout principal para footer fijo */
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #ffffff; /* Fondo blanco sólido */
+  overflow-x: hidden; /* Evitar scroll horizontal */
+}
+
+/* Asegurar que los contenedores principales usen todo el espacio disponible */
+.generic-container,
+.software-container,
+.assets-container,
+.dashboard-container {
+  min-height: calc(100vh / 0.8); /* Compensar el zoom del 80% */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Asegurar que el contenido principal se expanda */
+.content-section,
+.software-content,
+.assets-content {
+  flex: 1;
+}

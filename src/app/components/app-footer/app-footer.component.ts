@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { getVersionInfo } from '../../version';
 
@@ -7,19 +7,10 @@ import { getVersionInfo } from '../../version';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <footer class="app-footer">
+    <footer class="app-footer" [class.visible]="isVisible">
       <div class="footer-content">
-        <div class="version-info">
-          <span class="version-badge">{{ versionInfo.displayVersion }}</span>
-          <span class="build-info">{{ versionInfo.buildInfo }}</span>
-        </div>
-        <div class="footer-details">
-          <span class="codename">{{ versionInfo.codename }}</span>
-          <span class="separator">•</span>
-          <span class="company">{{ versionInfo.company }}</span>
-          <span class="separator">•</span>
-          <span class="copyright">{{ versionInfo.copyright }}</span>
-        </div>
+        <span class="app-name">{{ versionInfo.codename }}</span>
+        <span class="build-info">{{ versionInfo.buildInfo }}</span>
       </div>
     </footer>
   `,
@@ -27,14 +18,32 @@ import { getVersionInfo } from '../../version';
     .app-footer {
       background: linear-gradient(135deg, #2c3e50, #34495e);
       color: #ecf0f1;
-      padding: 1rem 0;
-      margin-top: auto;
+      padding: 0.5rem 0;
       border-top: 1px solid #34495e;
-      font-size: 0.85rem;
-      /* Estilo temporal para debug */
-      border: 2px solid #e74c3c;
-      position: relative;
+      font-size: 0.75rem;
+      position: fixed;
+      bottom: -50px; /* Oculto por defecto */
+      left: 220px; /* Empieza después del menú lateral */
+      right: 0;
+      width: calc(100% - 220px); /* Ancho menos el menú */
       z-index: 1000;
+      margin-top: auto;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .app-footer.visible {
+      bottom: 0;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes slideInFooter {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .footer-content {
@@ -42,24 +51,17 @@ import { getVersionInfo } from '../../version';
       margin: 0 auto;
       padding: 0 1rem;
       text-align: center;
-    }
-
-    .version-info {
-      margin-bottom: 0.5rem;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 1rem;
     }
 
-    .version-badge {
-      background: linear-gradient(135deg, #3498db, #2980b9);
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 15px;
+    .app-name {
+      color: #f39c12;
       font-weight: 600;
+      font-style: italic;
       font-size: 0.9rem;
-      box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
     }
 
     .build-info {
@@ -72,63 +74,74 @@ import { getVersionInfo } from '../../version';
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .footer-details {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .codename {
-      color: #f39c12;
-      font-weight: 600;
-      font-style: italic;
-    }
-
-    .separator {
-      color: #7f8c8d;
-      font-weight: 300;
-    }
-
-    .company {
-      color: #ecf0f1;
-      font-weight: 500;
-    }
-
-    .copyright {
-      color: #95a5a6;
-      font-size: 0.8rem;
-    }
-
     @media (max-width: 768px) {
+      .app-footer {
+        left: 0;
+        width: 100%;
+      }
+      
       .footer-content {
         padding: 0 0.5rem;
-      }
-      
-      .version-info {
         flex-direction: column;
         gap: 0.5rem;
-      }
-      
-      .footer-details {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      
-      .separator {
-        display: none;
       }
     }
   `]
 })
-export class AppFooterComponent {
+export class AppFooterComponent implements OnInit, OnDestroy {
   versionInfo = getVersionInfo();
+  isVisible = false;
+  private lastScrollY = 0;
+  private scrollThreshold = 100; // Píxeles de scroll para activar el comportamiento inteligente
 
   constructor() {
     console.log('🔍 Footer Component - Versión cargada:', this.versionInfo);
     console.log('📋 Versión actual:', this.versionInfo.displayVersion);
     console.log('🏗️ Build:', this.versionInfo.buildInfo);
     console.log('🎯 Codename:', this.versionInfo.codename);
+  }
+
+  ngOnInit() {
+    // Mostrar el footer después de un pequeño delay para que la página cargue
+    setTimeout(() => {
+      this.checkScrollPosition();
+    }, 1000);
+  }
+
+  ngOnDestroy() {
+    // Cleanup si es necesario
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onWindowScroll() {
+    this.checkScrollPosition();
+  }
+
+  private checkScrollPosition() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    const documentHeight = document.documentElement.scrollHeight;
+    const windowHeight = window.innerHeight;
+    
+    // Determinar dirección del scroll
+    const isScrollingDown = scrollY > this.lastScrollY;
+    const isScrollingUp = scrollY < this.lastScrollY;
+    
+    // Guardar posición actual para la próxima comparación
+    this.lastScrollY = scrollY;
+    
+    // Lógica del footer inteligente:
+    // 1. Si está cerca del final de la página, siempre mostrar
+    const isNearBottom = scrollY + windowHeight >= documentHeight - 50;
+    
+    // 2. Si está en la parte superior, ocultar
+    const isAtTop = scrollY < this.scrollThreshold;
+    
+    // 3. Si está scrolleando hacia arriba, mostrar
+    // 4. Si está scrolleando hacia abajo, ocultar
+    if (isNearBottom || isAtTop) {
+      this.isVisible = isNearBottom; // Mostrar solo si está cerca del final
+    } else {
+      this.isVisible = isScrollingUp; // Mostrar solo si está scrolleando hacia arriba
+    }
   }
 } 

@@ -1,28 +1,35 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { AppFooterComponent } from './components/app-footer/app-footer.component';
 import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, AppFooterComponent],
+  imports: [CommonModule, RouterOutlet],
   template: `
-    <router-outlet></router-outlet>
-    <app-footer *ngIf="showFooter"></app-footer>
-  `
+    <div class="app-container">
+      <main class="main-content">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  `,
+  styles: [`
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  `]
 })
 export class AppComponent {
-  showFooter = false;
-
-  constructor(private router: Router) {
-    // Suscribirse a cambios de ruta
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: NavigationEnd) => {
-      // Ocultar footer en la ruta del login y en la ruta raíz
-      this.showFooter = event.url !== '/login' && event.url !== '/';
-    });
+  constructor() {
+    // Componente simplificado - footer eliminado
   }
 }
