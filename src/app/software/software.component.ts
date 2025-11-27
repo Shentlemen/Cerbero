@@ -97,6 +97,11 @@ export class SoftwareComponent implements OnInit {
       software.publisher && software.publisher.trim() !== ''
     );
 
+    // Filtrar software que solo está instalado en equipos en cementerio o almacén (count = 0)
+    filtered = filtered.filter(software => 
+      software.count !== undefined && software.count !== null && software.count > 0
+    );
+
     // Aplicar filtro de búsqueda
     if (currentSearchTerm && currentSearchTerm.trim()) {
       const searchLower = currentSearchTerm.toLowerCase().trim();
@@ -217,9 +222,14 @@ export class SoftwareComponent implements OnInit {
   // Filtrar localmente para mejor rendimiento
   updateFilteredList(): void {
     // Filtrar primero software sin nombre o editor
-    const validSoftware = this.softwareList.filter(software => 
+    let validSoftware = this.softwareList.filter(software => 
       software.nombre && software.nombre.trim() !== '' && 
       software.publisher && software.publisher.trim() !== ''
+    );
+
+    // Filtrar software que solo está instalado en equipos en cementerio o almacén (count = 0)
+    validSoftware = validSoftware.filter(software => 
+      software.count !== undefined && software.count !== null && software.count > 0
     );
 
     // Actualizar contadores basados en software válido

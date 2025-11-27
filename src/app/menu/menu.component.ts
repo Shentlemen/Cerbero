@@ -40,7 +40,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección
-  private assetsRoutes = ['/menu/assets', '/menu/devices', '/menu/cementerio'];
+  private assetsRoutes = ['/menu/assets', '/menu/devices', '/menu/cementerio', '/menu/almacen-laboratorio'];
   private configRoutes = [
     '/menu/locations',
     '/menu/subnets',

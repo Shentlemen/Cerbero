@@ -38,6 +38,7 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },
       { path: 'cementerio', loadComponent: () => import('./cementerio/cementerio.component').then(m => m.CementerioComponent) },
+      { path: 'almacen-laboratorio', loadComponent: () => import('./almacen-laboratorio/almacen-laboratorio.component').then(m => m.AlmacenLaboratorioComponent) },
       { path: 'asset-details/:id', loadComponent: () => import('./assetdetails/assetdetails.component').then(m => m.AssetdetailsComponent) },
       { path: 'software', component: SoftwareComponent },
       { path: 'settings', loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },

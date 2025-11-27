@@ -92,7 +92,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.loadAlertas();
     forkJoin({
-      hardware: this.hardwareService.getHardware(),
+      hardware: this.hardwareService.getActiveHardware(),
       bios: this.biosService.getAllBios(),
       network: this.networkInfoService.getNetworkInfo()
     }).subscribe(

@@ -37,6 +37,11 @@ export class EstadoDispositivoService {
     return this.http.get(`${this.apiUrl}/estado-dispositivos/baja`);
   }
 
+  // Obtener dispositivos en almacén
+  getDispositivosEnAlmacen(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/estado-dispositivos/almacen`);
+  }
+
   // Dar de baja un dispositivo
   darDeBaja(mac: string, request: CambioEstadoDispositivoRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/estado-dispositivos/baja/${mac}`, request);

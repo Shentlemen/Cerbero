@@ -1,0 +1,197 @@
+<div class="almacen-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-archive"></i> 
+        Almacén Laboratorio
+        <span class="subtitle">Equipos y dispositivos en almacén</span>
+      </h1>
+    </div>
+  </div>
+
+  <div class="almacen-content">
+    <!-- Filtro de búsqueda -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Buscar por nombre de equipo..." 
+          [formControl]="nombreEquipoControl" 
+          style="max-width: 320px;"
+          data-help="🔍 Busca equipos específicos en el almacén">
+      </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div *ngIf="loading" class="text-center my-4">
+      <div class="spinner-border text-info" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando equipos del almacén...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay equipos -->
+    <div *ngIf="!loading && equiposFiltrados.length === 0" class="empty-state">
+      <i class="fas fa-smile"></i>
+      <h3>¡No hay equipos en el almacén!</h3>
+      <p>Todos los equipos están activos o en el cementerio.</p>
+    </div>
+
+    <!-- Tabla de equipos en almacén -->
+    <div class="table-container" *ngIf="!loading && equiposFiltrados.length > 0">
+      <table class="almacen-table">
+        <thead>
+          <tr>
+            <th>
+              <div class="th-content">
+                <span>Tipo</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Nombre</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Detalles</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Fecha de Almacén</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Usuario</span>
+              </div>
+            </th>
+            <th>
+              <div class="th-content">
+                <span>Observaciones</span>
+              </div>
+            </th>
+            <th *ngIf="canManageAssets()">
+              <div class="th-content">
+                <span>Acciones</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pagedEquipos" class="item-row" [ngClass]="{'equipo-row': item.tipo === 'EQUIPO', 'dispositivo-row': item.tipo === 'DISPOSITIVO'}" (click)="verDetallesItem(item)" data-help="👁️ Haz clic para ver los detalles">
+            <td>
+              <div class="tipo-badge" [ngClass]="item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo'">
+                <i class="fas" [ngClass]="item.tipo === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired'"></i>
+                {{ item.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo' }}
+              </div>
+            </td>
+            <td>
+              <div class="item-name">
+                <i class="fas equipment-icon" [ngClass]="getItemIcon(item)"></i>
+                <div class="item-info">
+                  <span class="name">{{ item.name || item.mac }}</span>
+                  <small class="ip" *ngIf="item.ipAddr || item.ip">{{ item.ipAddr || item.ip }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="item-details">
+                <!-- Para equipos -->
+                <div *ngIf="item.tipo === 'EQUIPO'">
+                  <span class="type-badge" [ngClass]="getTypeBadgeClass(item.biosType)">
+                    {{ item.biosType || 'Desconocido' }}
+                  </span>
+                  <div class="os-badge" [ngClass]="{'windows': item.osName?.includes('Windows'), 'linux': item.osName?.includes('Linux')}">
+                    <i class="fab" [ngClass]="{'fa-windows': item.osName?.includes('Windows'), 'fa-linux': item.osName?.includes('Linux')}"></i>
+                    {{ item.osName || 'Desconocido' }}
+                  </div>
+                </div>
+                <!-- Para dispositivos -->
+                <div *ngIf="item.tipo === 'DISPOSITIVO'">
+                  <span class="type-badge dispositivo" [style.background-color]="getDeviceTypeConfig(item.type).backgroundColor" [style.color]="getDeviceTypeConfig(item.type).color">
+                    {{ item.type || 'Desconocido' }}
+                  </span>
+                  <small class="description">{{ item.description || 'Sin descripción' }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="fecha-almacen">
+                <i class="fas fa-calendar-check"></i>
+                <span>{{ formatFecha(item.fechaAlmacen) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="usuario-cambio">{{ item.usuarioCambio || 'No especificado' }}</span>
+            </td>
+            <td>
+              <div class="observaciones" [title]="item.observaciones">
+                {{ item.observaciones || 'Sin observaciones' }}
+              </div>
+            </td>
+            <td *ngIf="canManageAssets()">
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-success btn-sm reactivar-btn" 
+                  (click)="reactivarItem(item); $event.stopPropagation()"
+                  [disabled]="reactivatingItemId === (item.id || item.mac)"
+                  [title]="'Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')"
+                  [attr.data-help]="'🔄 Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo') + ' y devolverlo a la lista activa'">
+                  <i class="fas" [ngClass]="reactivatingItemId === (item.id || item.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+                  {{ reactivatingItemId === (item.id || item.mac) ? 'Reactivando...' : 'Reactivar' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination-container" *ngIf="!loading && equiposFiltrados.length > 0">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="collectionSize"
+        [boundaryLinks]="true"
+        [maxSize]="5"
+        [rotate]="true"
+        [ellipses]="false"
+        class="custom-pagination">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de reactivación -->
+<div *ngIf="showReactivarDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog reactivar-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-undo"></i>
+      Reactivar {{ itemToReactivar?.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo' }}
+    </div>
+    <div class="confirm-dialog-message">
+      <p>¿Está seguro que desea reactivar el {{ itemToReactivar?.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo' }} <strong>{{ itemToReactivar?.name || itemToReactivar?.mac }}</strong>?</p>
+      <p class="text-muted">El {{ itemToReactivar?.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo' }} volverá a aparecer en la lista de activos y se eliminará del almacén.</p>
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarReactivacion()">
+        Cancelar
+      </button>
+      <button 
+        class="confirm-dialog-button confirm reactivar" 
+        (click)="confirmarReactivacion()"
+        [disabled]="reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac)">
+        <i class="fas" [ngClass]="reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+        {{ reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac) ? 'Reactivando...' : 'Reactivar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
