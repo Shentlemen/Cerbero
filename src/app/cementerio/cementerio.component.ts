@@ -4,20 +4,24 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
-import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbPaginationModule, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { EstadoEquipoService, CambioEstadoRequest, EstadoEquipo } from '../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { NetworkInfoService } from '../services/network-info.service';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { forkJoin } from 'rxjs';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-cementerio',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NotificationContainerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './cementerio.component.html',
   styleUrls: ['./cementerio.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -44,15 +48,23 @@ export class CementerioComponent implements OnInit {
   reactivatingEquipoId: number | null = null;
   reactivatingItemId: string | number | null = null;
   itemToReactivar: any = null;
+  transferiendoItemId: string | number | null = null;
+
+  // Edición de observaciones
+  editingObservacionesId: string | number | null = null;
+  editingObservacionesValue: string = '';
+  updatingObservaciones: boolean = false;
 
   constructor(
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
+    private networkInfoService: NetworkInfoService,
     private router: Router,
     private permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private modalService: NgbModal
   ) {
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
@@ -71,7 +83,8 @@ export class CementerioComponent implements OnInit {
       equipos: this.estadoEquipoService.getEquiposEnBaja(),
       dispositivos: this.estadoDispositivoService.getDispositivosEnBaja(),
       hardware: this.hardwareService.getHardware(),
-      bios: this.biosService.getAllBios()
+      bios: this.biosService.getAllBios(),
+      networkInfo: this.networkInfoService.getNetworkInfo()
     }).subscribe({
       next: (response) => {
         // Procesar equipos en baja
@@ -97,14 +110,24 @@ export class CementerioComponent implements OnInit {
         }
 
         // Procesar dispositivos en baja
-        if (response.dispositivos.success) {
-          this.dispositivosEnBaja = response.dispositivos.data.map((dispositivo: any) => ({
-            ...dispositivo,
-            tipo: 'DISPOSITIVO',
-            fechaBaja: dispositivo.fechaCambio,
-            observaciones: dispositivo.observaciones,
-            usuarioCambio: dispositivo.usuarioCambio
-          }));
+        if (response.dispositivos.success && response.networkInfo.success) {
+          const estadosEnBaja = response.dispositivos.data;
+          const networkInfoMap = new Map(
+            response.networkInfo.data.map((device: any) => [device.mac, device])
+          );
+          
+          this.dispositivosEnBaja = estadosEnBaja.map((estado: any) => {
+            const networkInfo = networkInfoMap.get(estado.mac);
+            
+            return {
+              ...networkInfo, // Incluir name, type, ip, description
+              mac: estado.mac,
+              tipo: 'DISPOSITIVO',
+              fechaBaja: estado.fechaCambio,
+              observaciones: estado.observaciones,
+              usuarioCambio: estado.usuarioCambio
+            };
+          }).filter((dispositivo: any) => dispositivo.mac); // Solo incluir si tiene MAC
         }
         
         // Combinar todos los items para el filtro
@@ -403,5 +426,237 @@ export class CementerioComponent implements OnInit {
         this.itemToReactivar = null;
       }
     });
+  }
+
+  // Métodos para editar observaciones
+  iniciarEdicionObservaciones(item: any, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!this.canManageAssets()) {
+      return;
+    }
+    const itemId = item.tipo === 'EQUIPO' ? item.id : item.mac;
+    this.editingObservacionesId = itemId;
+    this.editingObservacionesValue = item.observaciones || '';
+  }
+
+  cancelarEdicionObservaciones(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.editingObservacionesId = null;
+    this.editingObservacionesValue = '';
+  }
+
+  guardarObservaciones(item: any, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!this.editingObservacionesId || this.updatingObservaciones) {
+      return;
+    }
+
+    this.updatingObservaciones = true;
+    const observaciones = this.editingObservacionesValue.trim();
+
+    if (item.tipo === 'EQUIPO') {
+      this.estadoEquipoService.actualizarObservaciones(item.id, observaciones).subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Actualizar el item en la lista local
+            const equipoIndex = this.equiposEnBaja.findIndex(e => e.id === item.id);
+            if (equipoIndex !== -1) {
+              this.equiposEnBaja[equipoIndex].observaciones = observaciones;
+            }
+            const filtradoIndex = this.equiposFiltrados.findIndex(e => e.id === item.id);
+            if (filtradoIndex !== -1) {
+              this.equiposFiltrados[filtradoIndex].observaciones = observaciones;
+            }
+            this.notificationService.showSuccessMessage('Observaciones actualizadas exitosamente');
+          } else {
+            throw new Error(response.message || 'Error al actualizar observaciones');
+          }
+        },
+        error: (error) => {
+          console.error('Error al actualizar observaciones:', error);
+          this.notificationService.showError(
+            'Error al actualizar observaciones',
+            `No se pudieron actualizar las observaciones: ${error.message || 'Error desconocido'}`
+          );
+        },
+        complete: () => {
+          this.updatingObservaciones = false;
+          this.editingObservacionesId = null;
+          this.editingObservacionesValue = '';
+        }
+      });
+    } else if (item.tipo === 'DISPOSITIVO') {
+      this.estadoDispositivoService.actualizarObservaciones(item.mac, observaciones).subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Actualizar el item en la lista local
+            const dispositivoIndex = this.dispositivosEnBaja.findIndex(d => d.mac === item.mac);
+            if (dispositivoIndex !== -1) {
+              this.dispositivosEnBaja[dispositivoIndex].observaciones = observaciones;
+            }
+            const filtradoIndex = this.equiposFiltrados.findIndex(d => d.mac === item.mac);
+            if (filtradoIndex !== -1) {
+              this.equiposFiltrados[filtradoIndex].observaciones = observaciones;
+            }
+            this.notificationService.showSuccessMessage('Observaciones actualizadas exitosamente');
+          } else {
+            throw new Error(response.message || 'Error al actualizar observaciones');
+          }
+        },
+        error: (error) => {
+          console.error('Error al actualizar observaciones:', error);
+          this.notificationService.showError(
+            'Error al actualizar observaciones',
+            `No se pudieron actualizar las observaciones: ${error.message || 'Error desconocido'}`
+          );
+        },
+        complete: () => {
+          this.updatingObservaciones = false;
+          this.editingObservacionesId = null;
+          this.editingObservacionesValue = '';
+        }
+      });
+    }
+  }
+
+  estaEditandoObservaciones(item: any): boolean {
+    const itemId = item.tipo === 'EQUIPO' ? item.id : item.mac;
+    return this.editingObservacionesId === itemId;
+  }
+
+  // Método para transferir equipo
+  transferirEquipo(item: any): void {
+    // Solo permitir transferir equipos (no dispositivos)
+    if (item.tipo !== 'EQUIPO') {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'Solo se pueden transferir equipos, no dispositivos.'
+      );
+      return;
+    }
+
+    const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+    modalRef.componentInstance.item = {
+      ...item,
+      tipo: 'EQUIPO',
+      name: item.name
+    };
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData) {
+        this.procesarTransferencia(item, transferData);
+      }
+    }).catch(() => {
+      // Usuario canceló el modal
+    });
+  }
+
+  private procesarTransferencia(item: any, transferData: any): void {
+    this.transferiendoItemId = item.id;
+
+    // Preparar datos para el backend
+    const requestData: any = {
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    if (transferData.tipoAlmacen === 'regular') {
+      requestData.estanteria = transferData.estanteria;
+      requestData.estante = transferData.estante;
+    }
+
+    this.estadoEquipoService.transferirEquipo(item.id, requestData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadItemsEnBaja();
+          this.notificationService.showSuccessMessage(
+            `Equipo "${item.name}" transferido exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al transferir el equipo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al transferir equipo:', error);
+        this.notificationService.showError(
+          'Error al transferir equipo',
+          `No se pudo transferir el equipo "${item.name}": ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.transferiendoItemId = null;
+      }
+    });
+  }
+
+  // Método para exportar la lista filtrada a PDF
+  exportarPDF(): void {
+    if (this.equiposFiltrados.length === 0) {
+      this.notificationService.showError(
+        'No hay datos para exportar',
+        'No hay items filtrados para exportar a PDF.'
+      );
+      return;
+    }
+
+    const doc = new jsPDF('landscape'); // Orientación horizontal para más espacio
+    
+    // Título del documento
+    doc.setFontSize(18);
+    doc.text('Cementerio de Equipos y Dispositivos', 14, 20);
+    
+    // Información del filtro aplicado
+    doc.setFontSize(10);
+    let filtroTexto = 'Todos los items';
+    if (this.nombreEquipoControl.value) {
+      filtroTexto = `Búsqueda: ${this.nombreEquipoControl.value}`;
+    }
+    doc.text(filtroTexto, 14, 28);
+    
+    // Fecha de generación
+    const fecha = new Date().toLocaleString('es-ES');
+    doc.text(`Generado el: ${fecha}`, 14, 34);
+    doc.text(`Total de items: ${this.equiposFiltrados.length}`, 14, 40);
+    
+    // Preparar datos para la tabla
+    const tableData = this.equiposFiltrados.map(item => [
+      item.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo',
+      item.name || item.mac || 'N/A',
+      item.tipo === 'EQUIPO' 
+        ? `${item.biosType || 'N/A'} | ${item.osName || 'N/A'}`
+        : `${item.type || 'N/A'} | ${item.description || 'Sin descripción'}`,
+      item.tipo === 'EQUIPO' ? (item.ipAddr || 'N/A') : (item.ip || 'N/A'),
+      this.formatFecha(item.fechaBaja),
+      item.usuarioCambio || 'No especificado',
+      item.observaciones || 'Sin observaciones'
+    ]);
+    
+    // Crear la tabla
+    autoTable(doc, {
+      head: [['Tipo', 'Nombre', 'Detalles', 'IP', 'Fecha', 'Usuario', 'Observaciones']],
+      body: tableData,
+      startY: 46,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [220, 53, 69], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 46, left: 14, right: 14 },
+      tableWidth: 'auto'
+    });
+    
+    // Guardar el PDF
+    const nombreArchivo = `cementerio_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nombreArchivo);
+    
+    this.notificationService.showSuccessMessage(
+      `PDF exportado exitosamente: ${nombreArchivo}`
+    );
   }
 } 

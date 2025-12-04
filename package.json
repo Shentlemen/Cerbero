@@ -39,7 +39,7 @@
     "chart.js": "^4.4.4",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
-    "jspdf-autotable": "^3.8.3",
+    "jspdf-autotable": "^3.8.4",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "ng2-charts": "^6.0.1",

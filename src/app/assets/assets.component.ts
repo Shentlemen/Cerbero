@@ -5,7 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { HttpClientModule } from '@angular/common/http';
-import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbPaginationModule, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BiosService } from '../services/bios.service';
 import { forkJoin, from, mergeMap } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
@@ -14,12 +14,15 @@ import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../services/estado-equipo.service';
+import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { catchError, of } from 'rxjs';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NotificationContainerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -58,6 +61,7 @@ export class AssetsComponent implements OnInit {
   assetToChangeState: any = null;
   estadoObservaciones: string = '';
   changingStateAssetId: number | null = null;
+  transferiendoAssetId: number | null = null;
 
   // Control para el filtro de nombre
   nombreEquipoControl = new FormControl('');
@@ -72,7 +76,8 @@ export class AssetsComponent implements OnInit {
     public route: ActivatedRoute,
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
-    private estadoEquipoService: EstadoEquipoService
+    private estadoEquipoService: EstadoEquipoService,
+    private modalService: NgbModal
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -714,5 +719,125 @@ export class AssetsComponent implements OnInit {
 
   getEstadoActionText(): string {
     return this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
+  }
+
+  // Método para transferir equipo
+  transferirEquipo(asset: any): void {
+    const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+    modalRef.componentInstance.item = {
+      ...asset,
+      tipo: 'EQUIPO',
+      name: asset.name
+    };
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData) {
+        this.procesarTransferencia(asset, transferData);
+      }
+    }).catch(() => {
+      // Usuario canceló el modal
+    });
+  }
+
+  private procesarTransferencia(asset: any, transferData: any): void {
+    this.transferiendoAssetId = asset.id;
+
+    // Preparar datos para el backend
+    const requestData: any = {
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    if (transferData.tipoAlmacen === 'regular') {
+      requestData.estanteria = transferData.estanteria;
+      requestData.estante = transferData.estante;
+    }
+
+    this.estadoEquipoService.transferirEquipo(asset.id, requestData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadAssets();
+          this.notificationService.showSuccessMessage(
+            `Equipo "${asset.name}" transferido exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al transferir el equipo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al transferir equipo:', error);
+        this.notificationService.showError(
+          'Error al transferir equipo',
+          `No se pudo transferir el equipo "${asset.name}": ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.transferiendoAssetId = null;
+      }
+    });
+  }
+
+  // Método para exportar la lista filtrada a PDF
+  exportarPDF(): void {
+    if (this.assetsFiltrados.length === 0) {
+      this.notificationService.showError(
+        'No hay datos para exportar',
+        'No hay terminales filtradas para exportar a PDF.'
+      );
+      return;
+    }
+
+    const doc = new jsPDF('landscape'); // Orientación horizontal para más espacio
+    
+    // Título del documento
+    doc.setFontSize(18);
+    doc.text('Inventario de Terminales', 14, 20);
+    
+    // Información del filtro aplicado
+    doc.setFontSize(10);
+    let filtroTexto = 'Todos los terminales';
+    if (this.currentFilter) {
+      filtroTexto = `Filtro: ${this.currentFilter}`;
+    }
+    if (this.nombreEquipoControl.value) {
+      filtroTexto += ' | Búsqueda por nombre activa';
+    }
+    doc.text(filtroTexto, 14, 28);
+    
+    // Fecha de generación
+    const fecha = new Date().toLocaleString('es-ES');
+    doc.text(`Generado el: ${fecha}`, 14, 34);
+    doc.text(`Total de terminales: ${this.assetsFiltrados.length}`, 14, 40);
+    
+    // Preparar datos para la tabla
+    const tableData = this.assetsFiltrados.map(asset => [
+      asset.name || 'N/A',
+      asset.osName || 'Desconocido',
+      asset.ipAddr || 'No asignada',
+      asset.biosType || 'Desconocido',
+      this.getNumeroCompra(asset.name)
+    ]);
+    
+    // Crear la tabla
+    autoTable(doc, {
+      head: [['Equipo', 'Sistema Operativo', 'IP', 'Tipo', 'Nro. Compra']],
+      body: tableData,
+      startY: 46,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 46, left: 14, right: 14 },
+      tableWidth: 'auto'
+    });
+    
+    // Guardar el PDF
+    const nombreArchivo = `terminales_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nombreArchivo);
+    
+    this.notificationService.showSuccessMessage(
+      `PDF exportado exitosamente: ${nombreArchivo}`
+    );
   }
 }

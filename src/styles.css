@@ -1754,6 +1754,7 @@ ngb-pagination.custom-pagination {
 }
 
 /* Configuración global de zoom - Reducir tamaño del 20% */
+/* Usamos zoom pero ajustamos las gráficas para que funcionen correctamente */
 body {
   zoom: 0.8;
 }
@@ -1776,6 +1777,12 @@ html, body {
   min-height: calc(100vh / 0.8); /* Compensar el zoom del 80% */
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Ajustar contenedores de gráficas - solución CSS no funciona bien con canvas */
+/* Usamos JavaScript para ajustar coordenadas del mouse */
+.chart-card {
   position: relative;
 }
 

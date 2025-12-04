@@ -4,13 +4,25 @@
   
   <div class="header-section">
     <div class="title-wrapper">
-      <h1>
-        <i class="fas fa-laptop-code"></i> 
-        Inventario de Terminales
-        <span *ngIf="route.snapshot.queryParams['softwareName']" class="filter-indicator">
-          - Filtrado por software: {{ route.snapshot.queryParams['softwareName'] }}
-        </span>
-      </h1>
+      <div class="title-row">
+        <h1>
+          <i class="fas fa-laptop-code"></i> 
+          Inventario de Terminales
+          <span *ngIf="route.snapshot.queryParams['softwareName']" class="filter-indicator">
+            - Filtrado por software: {{ route.snapshot.queryParams['softwareName'] }}
+          </span>
+        </h1>
+        
+        <!-- Botón de imprimir/exportar PDF -->
+        <button 
+          class="btn btn-primary btn-sm print-btn" 
+          (click)="exportarPDF()"
+          title="Exportar lista filtrada a PDF"
+          [disabled]="loading || assetsFiltrados.length === 0">
+          <i class="fas fa-file-pdf"></i>
+          Imprimir
+        </button>
+      </div>
       
       <!-- Filtros por tipo de activo -->
       <div class="filters-container">
@@ -251,6 +263,15 @@
                     data-help="📦 Marca este equipo como almacenado">
                     <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
                     Almacén
+                  </button>
+                  <button 
+                    class="btn btn-info btn-sm estado-btn transferir-btn" 
+                    (click)="transferirEquipo(asset); $event.stopPropagation()"
+                    [disabled]="transferiendoAssetId === asset.id"
+                    title="Transferir este equipo a otro almacén"
+                    data-help="🔄 Permite transferir el equipo a cualquier almacén (cementerio, laboratorio o almacén regular)">
+                    <i class="fas" [ngClass]="transferiendoAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+                    Transferir
                   </button>
                 </ng-container>
                 

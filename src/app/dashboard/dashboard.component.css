@@ -410,6 +410,37 @@
   font-size: 0.9rem;
 }
 
+.alert-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.alert-actions .btn {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.alert-actions .btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.alert-actions .btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.alert-actions .btn-danger:disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  opacity: 0.65;
+}
+
 .alert-tag {
   padding: 4px 8px;
   border-radius: 4px;
@@ -777,6 +808,7 @@ canvasjs-chart {
   display: block;
   min-height: 320px !important;
   flex: 1;
+  position: relative;
 }
 
 /* Responsive mejorado para diferentes tamaños de pantalla */

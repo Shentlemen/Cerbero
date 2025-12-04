@@ -248,13 +248,23 @@
             <span class="alert-date">{{alert.fecha | date:'dd/MM/yyyy HH:mm'}}</span>
           </div>
         </div>
-        <button 
-          class="btn btn-sm btn-primary" 
-          (click)="confirmarAlerta(alert)"
-          [disabled]="alert.confirmada"
-          *ngIf="!alert.softwareForbidden && canConfirmAlerts()">
-          {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
-        </button>
+        <div class="alert-actions">
+          <button 
+            class="btn btn-sm btn-primary" 
+            (click)="confirmarAlerta(alert)"
+            [disabled]="alert.confirmada"
+            *ngIf="!alert.softwareForbidden && canConfirmAlerts()">
+            {{alert.confirmada ? 'Confirmada' : 'Confirmar'}}
+          </button>
+          <button 
+            class="btn btn-sm btn-danger" 
+            (click)="eliminarAlerta(alert)"
+            *ngIf="canConfirmAlerts()"
+            title="Eliminar esta alerta">
+            <i class="fas fa-trash-alt"></i>
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
     <div class="pagination-container">

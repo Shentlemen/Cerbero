@@ -95,6 +95,15 @@ export class AlertService {
       })
     );
   }
+
+  eliminarAlerta(alertaId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${alertaId}`).pipe(
+      catchError(error => {
+        console.error('Error al eliminar alerta:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }
 
 export interface Alerta {

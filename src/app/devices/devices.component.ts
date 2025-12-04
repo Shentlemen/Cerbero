@@ -4,15 +4,18 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { Router, ActivatedRoute } from '@angular/router';
-import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbPaginationModule, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ConfigService } from '../services/config.service';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { PermissionsService } from '../services/permissions.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { forkJoin } from 'rxjs';
 import { FormControl } from '@angular/forms';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -31,7 +34,7 @@ interface DeviceType {
 @Component({
   selector: 'app-devices',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbPaginationModule, NotificationContainerComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './devices.component.html',
   styleUrls: ['./devices.component.css']
 })
@@ -74,6 +77,7 @@ export class DevicesComponent implements OnInit {
   // Agregar propiedades
   deletingDeviceMac: string | null = null;
   changingStateDeviceMac: string | null = null;
+  transferiendoDeviceMac: string | null = null;
   showConfirmDialog: boolean = false;
   deviceToDelete: any = null;
   showEstadoDialog: boolean = false;
@@ -95,7 +99,8 @@ export class DevicesComponent implements OnInit {
     private http: HttpClient,
     private notificationService: NotificationService,
     private permissionsService: PermissionsService,
-    private estadoDispositivoService: EstadoDispositivoService
+    private estadoDispositivoService: EstadoDispositivoService,
+    private modalService: NgbModal
   ) {
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
@@ -118,17 +123,20 @@ export class DevicesComponent implements OnInit {
     
     forkJoin({
       dispositivos: this.networkInfoService.getNetworkInfo(),
-      estados: this.estadoDispositivoService.getDispositivosEnBaja()
+      estadosBaja: this.estadoDispositivoService.getDispositivosEnBaja(),
+      estadosAlmacen: this.estadoDispositivoService.getDispositivosEnAlmacen()
     }).subscribe({
       next: (response) => {
         if (response.dispositivos.success) {
-          // Obtener dispositivos en baja para filtrarlos
-          const dispositivosEnBaja = response.estados.success ? response.estados.data : [];
+          // Obtener dispositivos en baja y en almacén para filtrarlos
+          const dispositivosEnBaja = response.estadosBaja.success ? response.estadosBaja.data : [];
+          const dispositivosEnAlmacen = response.estadosAlmacen.success ? response.estadosAlmacen.data : [];
           const macsEnBaja = dispositivosEnBaja.map((d: any) => d.mac);
+          const macsEnAlmacen = dispositivosEnAlmacen.map((d: any) => d.mac);
           
-          // Filtrar dispositivos que NO están en baja
+          // Filtrar dispositivos que NO están en baja NI en almacén
           this.devices = response.dispositivos.data.filter((device: NetworkInfoDTO) => 
-            !macsEnBaja.includes(device.mac)
+            !macsEnBaja.includes(device.mac) && !macsEnAlmacen.includes(device.mac)
           );
           
           this.applyFilter();
@@ -495,6 +503,67 @@ export class DevicesComponent implements OnInit {
     }
   }
 
+  transferirDispositivo(device: any, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+    modalRef.componentInstance.item = {
+      ...device,
+      tipo: 'DISPOSITIVO',
+      name: device.name || device.mac
+    };
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData) {
+        this.procesarTransferencia(device, transferData);
+      }
+    }).catch(() => {
+      // Usuario canceló el modal
+    });
+  }
+
+  private procesarTransferencia(device: any, transferData: any): void {
+    this.transferiendoDeviceMac = device.mac;
+
+    // Preparar datos para el backend
+    const requestData: any = {
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    if (transferData.tipoAlmacen === 'regular') {
+      requestData.estanteria = transferData.estanteria;
+      requestData.estante = transferData.estante;
+    }
+
+    this.estadoDispositivoService.transferirDispositivo(device.mac, requestData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.cargarDispositivos();
+          this.notificationService.showSuccessMessage(
+            `Dispositivo transferido exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al transferir el dispositivo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al transferir dispositivo:', error);
+        this.notificationService.showError(
+          'Error al transferir dispositivo',
+          `No se pudo transferir el dispositivo: ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.transferiendoDeviceMac = null;
+      }
+    });
+  }
+
   private procesarEliminacion(device: any): void {
     this.deletingDeviceMac = device.mac;
 
@@ -624,5 +693,66 @@ export class DevicesComponent implements OnInit {
     }
     
     return dispositivosFiltrados;
+  }
+
+  // Método para exportar la lista filtrada a PDF
+  exportarPDF(): void {
+    if (this.filteredDevices.length === 0) {
+      this.notificationService.showError(
+        'No hay datos para exportar',
+        'No hay dispositivos filtrados para exportar a PDF.'
+      );
+      return;
+    }
+
+    const doc = new jsPDF('landscape'); // Orientación horizontal para más espacio
+    
+    // Título del documento
+    doc.setFontSize(18);
+    doc.text('Lista de Dispositivos de Red', 14, 20);
+    
+    // Información del filtro aplicado
+    doc.setFontSize(10);
+    let filtroTexto = 'Todos los dispositivos';
+    if (this.activeFilter !== 'all') {
+      filtroTexto = `Filtro: ${this.activeFilter}`;
+    }
+    if (this.nombreEquipoControl.value || this.macSearchControl.value) {
+      filtroTexto += ' | Búsqueda activa';
+    }
+    doc.text(filtroTexto, 14, 28);
+    
+    // Fecha de generación
+    const fecha = new Date().toLocaleString('es-ES');
+    doc.text(`Generado el: ${fecha}`, 14, 34);
+    doc.text(`Total de dispositivos: ${this.filteredDevices.length}`, 14, 40);
+    
+    // Preparar datos para la tabla
+    const tableData = this.filteredDevices.map(device => [
+      device.name || 'N/A',
+      device.ip || 'N/A',
+      device.type || 'N/A',
+      device.description || 'N/A'
+    ]);
+    
+    // Crear la tabla
+    autoTable(doc, {
+      head: [['Nombre de Red', 'IP', 'Tipo', 'Descripción']],
+      body: tableData,
+      startY: 46,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 46, left: 14, right: 14 },
+      tableWidth: 'auto'
+    });
+    
+    // Guardar el PDF
+    const nombreArchivo = `dispositivos_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nombreArchivo);
+    
+    this.notificationService.showSuccessMessage(
+      `PDF exportado exitosamente: ${nombreArchivo}`
+    );
   }
 } 

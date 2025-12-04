@@ -32,6 +32,41 @@
   font-size: 2rem;
 }
 
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.print-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+.print-btn:hover:not(:disabled) {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  color: white !important;
+}
+
+.print-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.print-btn i {
+  font-size: 1rem;
+}
+
 .assets-content {
   background: white;
   border-radius: 15px;
@@ -288,6 +323,7 @@
   box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
 }
 
+
 .delete-btn {
   background: #dc3545;
   border: 1px solid #dc3545;
@@ -301,7 +337,7 @@
   box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
 }
 
-.estado-btn:disabled, .delete-btn:disabled {
+.estado-btn:disabled, .transferir-btn:disabled, .delete-btn:disabled {
   background: #6c757d;
   border-color: #6c757d;
   cursor: not-allowed;
@@ -310,7 +346,7 @@
   color: white;
 }
 
-.estado-btn i, .delete-btn i {
+.estado-btn i, .transferir-btn i, .delete-btn i {
   margin-right: 0.25rem;
 }
 

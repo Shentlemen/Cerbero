@@ -12,6 +12,7 @@ export interface EstadoDispositivo {
   fechaCambio: string;
   usuarioCambio?: string;
   observaciones?: string;
+  almacenId?: number;
 }
 
 export interface CambioEstadoDispositivoRequest {
@@ -64,5 +65,20 @@ export class EstadoDispositivoService {
   // Eliminar dispositivo de OCS
   eliminarDispositivo(mac: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/estado-dispositivos/${mac}`);
+  }
+
+  // Actualizar observaciones
+  actualizarObservaciones(mac: string, observaciones: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/estado-dispositivos/${mac}/observaciones`, { observaciones });
+  }
+
+  // Transferir dispositivo
+  transferirDispositivo(mac: string, transferData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/estado-dispositivos/${mac}/transferir`, transferData);
+  }
+
+  // Obtener dispositivos por almacen_id
+  getDispositivosPorAlmacenId(almacenId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/estado-dispositivos/por-almacen/${almacenId}`);
   }
 } 

@@ -7,6 +7,16 @@
       <div class="title-row">
         <h1><i class="fas fa-network-wired"></i> Dispositivos de Red</h1>
         
+        <!-- Botón de imprimir/exportar PDF -->
+        <button 
+          class="btn btn-primary btn-sm print-btn" 
+          (click)="exportarPDF()"
+          title="Exportar lista filtrada a PDF"
+          [disabled]="loading || filteredDevices.length === 0">
+          <i class="fas fa-file-pdf"></i>
+          Imprimir
+        </button>
+        
         <!-- Mensaje informativo para usuarios sin permisos -->
         <div *ngIf="!canUpdateDevices()" class="permission-info">
           <i class="fas fa-info-circle" style="color: #6c757d;"></i>
@@ -171,6 +181,15 @@
                     data-help="📦 Marca este dispositivo como almacenado">
                     <i class="fas" [ngClass]="changingStateDeviceMac === device.mac ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
                     Almacén
+                  </button>
+                  <button 
+                    class="btn btn-info btn-sm estado-btn transferir-btn" 
+                    (click)="transferirDispositivo(device, $event)"
+                    [disabled]="transferiendoDeviceMac === device.mac"
+                    title="Transferir este dispositivo a otro almacén"
+                    data-help="🚚 Mueve este dispositivo a otro almacén (cementerio, laboratorio o regular)">
+                    <i class="fas" [ngClass]="transferiendoDeviceMac === device.mac ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+                    Transferir
                   </button>
                 </ng-container>
                 

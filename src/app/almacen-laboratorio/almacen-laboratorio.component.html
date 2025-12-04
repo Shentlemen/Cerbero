@@ -4,11 +4,23 @@
   
   <div class="header-section">
     <div class="title-wrapper">
-      <h1>
-        <i class="fas fa-archive"></i> 
-        Almacén Laboratorio
-        <span class="subtitle">Equipos y dispositivos en almacén</span>
-      </h1>
+      <div class="title-row">
+        <h1>
+          <i class="fas fa-archive"></i> 
+          Almacén Laboratorio
+          <span class="subtitle">Equipos y dispositivos en almacén</span>
+        </h1>
+        
+        <!-- Botón de imprimir/exportar PDF -->
+        <button 
+          class="btn btn-primary btn-sm print-btn" 
+          (click)="exportarPDF()"
+          title="Exportar lista filtrada a PDF"
+          [disabled]="loading || equiposFiltrados.length === 0">
+          <i class="fas fa-file-pdf"></i>
+          Imprimir
+        </button>
+      </div>
     </div>
   </div>
 
@@ -131,12 +143,47 @@
               <span class="usuario-cambio">{{ item.usuarioCambio || 'No especificado' }}</span>
             </td>
             <td>
-              <div class="observaciones" [title]="item.observaciones">
-                {{ item.observaciones || 'Sin observaciones' }}
+              <div class="observaciones-cell" *ngIf="!estaEditandoObservaciones(item)" 
+                   (click)="iniciarEdicionObservaciones(item, $event)"
+                   [class.editable]="canManageAssets()"
+                   [title]="canManageAssets() ? 'Haz clic para editar' : item.observaciones">
+                <span class="observaciones-text">{{ item.observaciones || 'Sin observaciones' }}</span>
+                <i class="fas fa-edit edit-icon" *ngIf="canManageAssets()"></i>
+              </div>
+              <div class="observaciones-edit" *ngIf="estaEditandoObservaciones(item)" 
+                   (click)="$event.stopPropagation()">
+                <textarea 
+                  [(ngModel)]="editingObservacionesValue"
+                  class="form-control observaciones-textarea"
+                  rows="2"
+                  maxlength="500"
+                  placeholder="Ingrese observaciones..."></textarea>
+                <div class="observaciones-actions">
+                  <button class="btn btn-sm btn-success" 
+                          (click)="guardarObservaciones(item, $event)"
+                          [disabled]="updatingObservaciones">
+                    <i class="fas" [ngClass]="updatingObservaciones ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                  </button>
+                  <button class="btn btn-sm btn-secondary" 
+                          (click)="cancelarEdicionObservaciones($event)"
+                          [disabled]="updatingObservaciones">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
               </div>
             </td>
             <td *ngIf="canManageAssets()">
               <div class="action-buttons">
+                <button 
+                  *ngIf="item.tipo === 'EQUIPO'"
+                  class="btn btn-primary btn-sm transferir-btn" 
+                  (click)="transferirEquipo(item); $event.stopPropagation()"
+                  [disabled]="transferiendoItemId === item.id"
+                  title="Transferir este equipo a otro almacén"
+                  data-help="🔄 Permite transferir el equipo a cualquier almacén (cementerio o almacén regular)">
+                  <i class="fas" [ngClass]="transferiendoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+                  {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
+                </button>
                 <button 
                   class="btn btn-success btn-sm reactivar-btn" 
                   (click)="reactivarItem(item); $event.stopPropagation()"

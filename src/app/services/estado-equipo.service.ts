@@ -11,6 +11,7 @@ export interface EstadoEquipo {
   fechaCambio?: string;
   observaciones?: string;
   usuarioCambio?: string;
+  almacenId?: number;
 }
 
 export interface CambioEstadoRequest {
@@ -96,5 +97,20 @@ export class EstadoEquipoService {
   // Eliminar estado (solo admins)
   eliminarEstado(hardwareId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${hardwareId}`);
+  }
+
+  // Actualizar observaciones
+  actualizarObservaciones(hardwareId: number, observaciones: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${hardwareId}/observaciones`, { observaciones });
+  }
+
+  // Transferir equipo
+  transferirEquipo(hardwareId: number, transferData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${hardwareId}/transferir`, transferData);
+  }
+
+  // Obtener equipos por almacen_id
+  getEquiposPorAlmacenId(almacenId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/por-almacen/${almacenId}`);
   }
 } 

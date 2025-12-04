@@ -40,7 +40,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección
-  private assetsRoutes = ['/menu/assets', '/menu/devices', '/menu/cementerio', '/menu/almacen-laboratorio'];
+  private assetsRoutes = ['/menu/assets', '/menu/devices'];
   private configRoutes = [
     '/menu/locations',
     '/menu/subnets',
@@ -59,7 +59,9 @@ export class MenuComponent implements OnInit, OnDestroy {
   ];
   private almacenRoutes = [
     '/menu/almacen/almacenes',
-            '/menu/almacen/stock'
+    '/menu/almacen/stock',
+    '/menu/cementerio',
+    '/menu/almacen-laboratorio'
   ];
 
   constructor(
