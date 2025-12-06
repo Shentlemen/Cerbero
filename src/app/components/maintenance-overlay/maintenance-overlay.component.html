@@ -1,0 +1,41 @@
+<div class="maintenance-overlay" *ngIf="isMaintenanceMode">
+  <div class="maintenance-content">
+    <div class="maintenance-header">
+      <div class="maintenance-icon">
+        <i class="fas fa-sync-alt fa-spin"></i>
+      </div>
+      <h2>Verificación de Cambios en Progreso</h2>
+      <p class="maintenance-reason">{{ maintenanceReason }}</p>
+    </div>
+
+    <div class="logs-section" *ngIf="logs.length > 0">
+      <div class="logs-header">
+        <i class="fas fa-terminal"></i>
+        <span>Progreso de la operación</span>
+      </div>
+      <div class="logs-container" #logsContainer>
+        <div *ngFor="let log of logs" class="log-entry" [ngClass]="getLogClass(log.type)">
+          <span class="log-time">{{ log.timestamp }}</span>
+          <span class="log-message">{{ log.message }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-animation" *ngIf="logs.length === 0">
+      <div class="spinner"></div>
+      <p class="waiting-text">Esperando inicio de la operación...</p>
+    </div>
+
+    <div class="footer-info">
+      <p class="maintenance-info">
+        <i class="fas fa-info-circle"></i>
+        La página se actualizará automáticamente cuando finalice.
+      </p>
+      <div class="timeout-info" *ngIf="remainingMinutes > 0">
+        <i class="fas fa-clock"></i>
+        Timeout automático en {{ remainingMinutes }} minutos
+      </div>
+    </div>
+  </div>
+</div>
+

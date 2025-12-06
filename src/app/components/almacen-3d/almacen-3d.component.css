@@ -1,0 +1,140 @@
+.almacen-3d-container {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.header-3d {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 2px solid #4fc3f7;
+}
+
+.header-3d h3 {
+  margin: 0;
+  color: #4fc3f7;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-3d h3 i {
+  font-size: 1.4rem;
+}
+
+.controles {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-control {
+  background: rgba(79, 195, 247, 0.2);
+  border: 1px solid #4fc3f7;
+  color: #4fc3f7;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-control:hover {
+  background: #4fc3f7;
+  color: #1a1a2e;
+}
+
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+}
+
+.render-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+.instrucciones {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px 15px;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+.instrucciones p {
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instrucciones i {
+  color: #4fc3f7;
+  width: 20px;
+  text-align: center;
+}
+
+.leyenda {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.color-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.color-box.vacia {
+  background: linear-gradient(135deg, #8b6914 0%, #6b4f10 100%);
+}
+
+.color-box.llena {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .canvas-container {
+    height: 350px;
+  }
+  
+  .instrucciones {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+  
+  .header-3d h3 {
+    font-size: 1rem;
+  }
+  
+  .leyenda {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+}
+

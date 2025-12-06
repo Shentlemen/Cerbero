@@ -1,0 +1,239 @@
+<div class="modal-container">
+  <div class="modal-header-custom">
+    <h4 class="modal-title">
+      <i class="fas fa-file-alt"></i>
+      Formulario de Baja de Bienes - F-890
+    </h4>
+    <button type="button" class="close-btn" (click)="cerrar()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <div class="modal-body-custom">
+    <!-- Formulario imprimible -->
+    <div id="formulario-baja-print" class="formulario-container">
+      
+      <!-- HEADER -->
+      <div class="header">
+        <div class="logo-container">
+          <img src="assets/images/logo-ose.png" alt="Logo OSE" class="logo-img">
+        </div>
+        <div class="header-content">
+          <div class="titulo-principal">BAJA DE BIENES DE<br>PROPIEDAD, PLANTA Y EQUIPO</div>
+          <div class="subtitulo">
+            <strong>GERENCIA FINANCIERO Y CONTABLE</strong><br>
+            CONTABILIDAD DEL ACTIVO FIJO Y COSTOS
+          </div>
+        </div>
+        <div class="fecha-contable-container">
+          <div class="fecha-contable-label">FECHA CONTABLE</div>
+          <div class="fecha-boxes">
+            <input type="text" class="fecha-box" [(ngModel)]="fechaContable.dia" maxlength="2" placeholder="DD">
+            <input type="text" class="fecha-box" [(ngModel)]="fechaContable.mes" maxlength="2" placeholder="MM">
+            <input type="text" class="fecha-box fecha-box-year" [(ngModel)]="fechaContable.anio" maxlength="4" placeholder="AAAA">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN SERVICIO -->
+      <div class="seccion">
+        <div class="row-campos">
+          <div class="campo campo-flex-1">
+            <label class="campo-label">SERVICIO</label>
+            <input type="text" class="campo-input" [(ngModel)]="servicio" placeholder="Ej: B0101">
+          </div>
+          <div class="campo campo-flex-3">
+            <label class="campo-label">NOMBRE DEL SERVICIO</label>
+            <input type="text" class="campo-input" [(ngModel)]="nombreServicio" placeholder="Ej: Administración Tecnológica GT">
+          </div>
+          <div class="campo campo-flex-1">
+            <label class="campo-label">CENTRO DE COSTOS</label>
+            <input type="text" class="campo-input" [(ngModel)]="centroCostos" placeholder="Ej: B0100">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN ACTIVO FIJO -->
+      <div class="seccion">
+        <div class="seccion-titulo">ACTIVO FIJO A DAR DE BAJA</div>
+        <table class="tabla-activos">
+          <thead>
+            <tr>
+              <th style="width: 150px;">Nº DE ACTIVO FIJO</th>
+              <th>DESCRIPCIÓN DEL BIEN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input type="text" class="campo-input-table" [(ngModel)]="numeroActivoFijo">
+              </td>
+              <td>
+                <input type="text" class="campo-input-table" [(ngModel)]="descripcionBien">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SECCIÓN MOTIVOS -->
+      <div class="seccion">
+        <div class="seccion-titulo">TILDAR EL MOTIVO DE LA BAJA, Y SI SE ADJUNTA JUSTIFICACIÓN</div>
+        <div class="motivos-container">
+          <!-- Columna izquierda - Motivos -->
+          <div class="motivos-columna">
+            <div class="motivo-item">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="motivoChatarra">
+                <span class="checkbox-visual" [class.checked]="motivoChatarra"></span>
+              </label>
+              <span class="motivo-label">CHATARRA</span>
+            </div>
+            <div class="motivo-item">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="motivoDonacion">
+                <span class="checkbox-visual" [class.checked]="motivoDonacion"></span>
+              </label>
+              <span class="motivo-label">DONACIÓN</span>
+            </div>
+            <div class="motivo-item">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="motivoRobo">
+                <span class="checkbox-visual" [class.checked]="motivoRobo"></span>
+              </label>
+              <span class="motivo-label">ROBO</span>
+            </div>
+            <div class="motivo-item">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="motivoPerdida">
+                <span class="checkbox-visual" [class.checked]="motivoPerdida"></span>
+              </label>
+              <span class="motivo-label">PÉRDIDA</span>
+            </div>
+          </div>
+
+          <!-- Columna derecha - Justificaciones con línea de firma -->
+          <div class="motivos-columna justificaciones-columna">
+            <div class="motivo-item-con-linea">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="justInformeTecnico">
+                <span class="checkbox-visual" [class.checked]="justInformeTecnico"></span>
+              </label>
+              <span class="motivo-label">INFORME TÉCNICO</span>
+              <div class="linea-justificacion"></div>
+            </div>
+            <div class="motivo-item-con-linea">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="justResolucionDirectorio">
+                <span class="checkbox-visual" [class.checked]="justResolucionDirectorio"></span>
+              </label>
+              <span class="motivo-label">RESOLUCIÓN DE DIRECTORIO</span>
+              <div class="linea-justificacion"></div>
+            </div>
+            <div class="motivo-item-con-linea">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="justDenunciaPolicial">
+                <span class="checkbox-visual" [class.checked]="justDenunciaPolicial"></span>
+              </label>
+              <span class="motivo-label">DENUNCIA POLICIAL</span>
+              <div class="linea-justificacion"></div>
+            </div>
+            <div class="motivo-item-con-linea">
+              <label class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="justNotaExplicacion">
+                <span class="checkbox-visual" [class.checked]="justNotaExplicacion"></span>
+              </label>
+              <span class="motivo-label">NOTA CON EXPLICACIÓN</span>
+              <div class="linea-justificacion"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN FIRMA RESPONSABLE -->
+      <div class="seccion">
+        <div class="firma-container">
+          <div class="firma-label">FIRMA RESPONSABLE</div>
+          <div class="fecha-firma-row">
+            <span class="fecha-label">FECHA</span>
+            <input type="text" class="fecha-box" [(ngModel)]="fechaFirma.dia" maxlength="2" placeholder="DD">
+            <input type="text" class="fecha-box" [(ngModel)]="fechaFirma.mes" maxlength="2" placeholder="MM">
+            <input type="text" class="fecha-box fecha-box-year" [(ngModel)]="fechaFirma.anio" maxlength="4" placeholder="AAAA">
+          </div>
+          <div class="firma-linea"></div>
+        </div>
+        
+        <div class="firma-container">
+          <div class="firma-label">CONTRAFIRMA</div>
+          <div class="firma-linea"></div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN CONTABILIDAD -->
+      <div class="seccion-contabilidad">
+        <div class="seccion-titulo">CONTABILIDAD DEL ACTIVO FIJO Y COSTOS</div>
+        
+        <div class="recibido-row">
+          <div class="recibido-izquierda">
+            <span class="recibido-label">RECIBIDO</span>
+            <div class="cuadrados-boxes">
+              <div class="cuadrado-box"></div>
+              <div class="cuadrado-box"></div>
+              <div class="cuadrado-box"></div>
+            </div>
+          </div>
+          <div class="recibido-firma-container">
+            <div class="firma-label-small">FIRMA RESPONSABLE</div>
+            <div class="recibido-firma"></div>
+          </div>
+        </div>
+
+        <div class="recibido-row">
+          <div class="recibido-izquierda">
+            <span class="recibido-label">PROCESADO SISTEMA</span>
+            <div class="cuadrados-boxes">
+              <div class="cuadrado-box"></div>
+              <div class="cuadrado-box"></div>
+              <div class="cuadrado-box"></div>
+            </div>
+          </div>
+          <div class="recibido-firma-container">
+            <div class="firma-label-small">FIRMA RESPONSABLE</div>
+            <div class="recibido-firma"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CÓDIGO DEL FORMULARIO -->
+      <div class="footer-codigo">F-890 Y G.D.</div>
+    </div>
+
+    <!-- OBSERVACIONES (no se imprimen, solo se guardan en el sistema) -->
+    <div class="observaciones-sistema">
+      <label class="observaciones-label">
+        <i class="fas fa-comment-alt"></i>
+        Observaciones para el sistema (opcional)
+      </label>
+      <p class="observaciones-hint">Estas observaciones se guardarán en el cementerio pero no aparecen en el formulario impreso.</p>
+      <textarea 
+        class="observaciones-textarea"
+        [(ngModel)]="observaciones"
+        placeholder="Escriba aquí cualquier observación adicional..."
+        rows="3">
+      </textarea>
+    </div>
+  </div>
+
+  <div class="modal-footer-custom">
+    <button type="button" class="btn btn-secondary" (click)="cerrar()">
+      <i class="fas fa-times"></i> Cancelar
+    </button>
+    <button type="button" class="btn btn-primary" (click)="imprimir()">
+      <i class="fas fa-print"></i> Imprimir
+    </button>
+    <button type="button" class="btn btn-danger" (click)="confirmarYCerrar()">
+      <i class="fas fa-check"></i> Confirmar Baja
+    </button>
+  </div>
+</div>
+

@@ -15,7 +15,7 @@
       </h1>
       <button
         *ngIf="getAlmacenes().length > 0"
-        class="btn btn-primary print-btn"
+        class="btn btn-danger print-btn"
         (click)="exportarPDFAlmacenCompleto()"
         [disabled]="loading || isExporting"
         title="Exportar almacén completo a PDF"
@@ -112,7 +112,7 @@
                   </p>
                 </div>
                 <button
-                  class="btn btn-sm btn-outline-primary print-estanteria-btn"
+                  class="btn btn-sm btn-danger print-estanteria-btn"
                   (click)="exportarPDFEstanteria(almacenKey, estanteriaKey); $event.stopPropagation()"
                   [disabled]="loading || isExportingEstanteriaKey(almacenKey, estanteriaKey) || getTotalStockPorEstanteria(almacenKey, estanteriaKey) === 0"
                   title="Exportar estantería a PDF"

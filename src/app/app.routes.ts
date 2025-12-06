@@ -62,7 +62,9 @@ export const routes: Routes = [
       // Rutas de almacén dentro del menu para mantener el layout completo
       { path: 'almacen/almacenes', component: AlmacenesComponent },
       { path: 'almacen/stock/:id', component: StockAlmacenComponent },
-      { path: 'almacen/stock', component: UbicacionesComponent }
+      { path: 'almacen/stock', component: UbicacionesComponent },
+      // Vista 3D del almacén (demo)
+      { path: 'almacen/3d-demo', loadComponent: () => import('./almacen-3d-demo/almacen-3d-demo.component').then(m => m.Almacen3DDemoComponent) }
     ]
   },
   {

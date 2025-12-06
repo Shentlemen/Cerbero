@@ -35,8 +35,13 @@
   font-size: 2rem;
 }
 
-/* Botón de imprimir almacén */
-.print-btn {
+/* Botón de imprimir almacén - Forzar color rojo */
+.print-btn,
+.btn.print-btn,
+.btn.btn-danger.print-btn,
+button.print-btn,
+button.btn.print-btn,
+button.btn.btn-danger.print-btn {
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -44,21 +49,32 @@
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
   white-space: nowrap;
+  background: #dc3545 !important;
   background-color: #dc3545 !important;
+  border: 1px solid #dc3545 !important;
   border-color: #dc3545 !important;
-  color: white !important;
+  color: #fff !important;
   transition: all 0.3s ease;
 }
 
-.print-btn:hover:not(:disabled) {
+.print-btn:hover:not(:disabled),
+.btn.print-btn:hover:not(:disabled),
+button.print-btn:hover:not(:disabled) {
+  background: #c82333 !important;
   background-color: #c82333 !important;
   border-color: #bd2130 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-  color: white !important;
+  color: #fff !important;
 }
 
-.print-btn:disabled {
+.print-btn:disabled,
+.btn.print-btn:disabled,
+button.print-btn:disabled {
+  background: #dc3545 !important;
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #fff !important;
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -67,39 +83,46 @@
   font-size: 1rem;
 }
 
-/* Botón de imprimir estantería */
+/* Botón de imprimir estantería - Forzar color rojo */
 .print-estanteria-btn,
 .btn.print-estanteria-btn,
-.btn.btn-outline-primary.print-estanteria-btn,
-button.print-estanteria-btn {
+.btn.btn-danger.print-estanteria-btn,
+.btn.btn-sm.print-estanteria-btn,
+button.print-estanteria-btn,
+button.btn.print-estanteria-btn,
+button.btn.btn-danger.print-estanteria-btn {
+  background: #dc3545 !important;
   background-color: #dc3545 !important;
+  border: 1px solid #dc3545 !important;
   border-color: #dc3545 !important;
-  color: white !important;
+  color: #fff !important;
   transition: all 0.3s ease;
 }
 
 .print-estanteria-btn:hover:not(:disabled),
 .btn.print-estanteria-btn:hover:not(:disabled),
-.btn.btn-outline-primary.print-estanteria-btn:hover:not(:disabled),
 button.print-estanteria-btn:hover:not(:disabled) {
+  background: #c82333 !important;
   background-color: #c82333 !important;
   border-color: #bd2130 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-  color: white !important;
+  color: #fff !important;
 }
 
 .print-estanteria-btn:disabled,
 .btn.print-estanteria-btn:disabled,
-.btn.btn-outline-primary.print-estanteria-btn:disabled,
 button.print-estanteria-btn:disabled {
+  background: #dc3545 !important;
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #fff !important;
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 .print-estanteria-btn i,
 .btn.print-estanteria-btn i,
-.btn.btn-outline-primary.print-estanteria-btn i,
 button.print-estanteria-btn i {
   font-size: 0.9rem;
 }

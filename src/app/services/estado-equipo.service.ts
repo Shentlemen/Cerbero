@@ -94,6 +94,11 @@ export class EstadoEquipoService {
     return this.http.get(`${this.apiUrl}/hardware-ids/en-almacen`);
   }
 
+  // Obtener todos los IDs de hardware inactivos (cementerio + almacén) - para filtrar gráficas
+  getHardwareIdsInactivos(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/hardware-ids/inactivos`);
+  }
+
   // Eliminar estado (solo admins)
   eliminarEstado(hardwareId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${hardwareId}`);

@@ -15,6 +15,7 @@ import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../services/estado-equipo.service';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { FormularioBajaModalComponent, DatosBaja } from '../components/formulario-baja-modal/formulario-baja-modal.component';
 import { catchError, of } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -639,10 +640,71 @@ export class AssetsComponent implements OnInit {
 
   // Métodos para cambio de estado
   darDeBaja(asset: any): void {
-    this.estadoAction = 'baja';
-    this.assetToChangeState = asset;
-    this.estadoObservaciones = '';
-    this.showEstadoDialog = true;
+    // Abrir el formulario de baja en un modal
+    const modalRef = this.modalService.open(FormularioBajaModalComponent, { 
+      size: 'xl',
+      backdrop: 'static',
+      centered: true
+    });
+    
+    // Pasar los datos del equipo al formulario
+    const datosBaja: DatosBaja = {
+      hardwareId: asset.id,
+      nombreEquipo: asset.name,
+      descripcion: asset.type || asset.deviceType
+    };
+    modalRef.componentInstance.datos = datosBaja;
+    
+    // Manejar el resultado del modal
+    modalRef.result.then((datosFormulario: any) => {
+      if (datosFormulario) {
+        // El usuario confirmó la baja, proceder con el proceso
+        this.procesarBajaConFormulario(asset, datosFormulario);
+      }
+    }).catch(() => {
+      // Usuario canceló el modal - no hacer nada
+    });
+  }
+
+  // Procesar la baja después de completar el formulario
+  private procesarBajaConFormulario(asset: any, datosFormulario: any): void {
+    this.changingStateAssetId = asset.id;
+    
+    // Usar solo las observaciones escritas por el usuario
+    const request: CambioEstadoRequest = {
+      observaciones: datosFormulario.observaciones || '',
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+    
+    this.estadoEquipoService.darDeBaja(asset.id, request).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadAssets();
+          this.notificationService.showSuccessMessage(
+            `Equipo "${asset.name}" dado de baja exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al dar de baja el equipo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al dar de baja:', error);
+        if (error.status === 403) {
+          this.notificationService.showError(
+            'Sin permisos suficientes',
+            'Para dar de baja equipos necesitas rol de GM o Administrador.'
+          );
+        } else {
+          this.notificationService.showError(
+            'Error al dar de baja',
+            `No se pudo dar de baja el equipo "${asset.name}": ${error.message || 'Error desconocido'}`
+          );
+        }
+      },
+      complete: () => {
+        this.changingStateAssetId = null;
+      }
+    });
   }
 
   enviarAAlmacen(asset: any): void {
@@ -653,7 +715,9 @@ export class AssetsComponent implements OnInit {
   }
 
   confirmarCambioEstado(): void {
-    if (!this.assetToChangeState || !this.estadoAction) {
+    // Este método ahora solo maneja "enviar a almacén"
+    // "Dar de baja" se maneja en procesarBajaConFormulario
+    if (!this.assetToChangeState || this.estadoAction !== 'almacen') {
       return;
     }
 
@@ -664,39 +728,28 @@ export class AssetsComponent implements OnInit {
       usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
     };
 
-    const observable = this.estadoAction === 'baja' 
-      ? this.estadoEquipoService.darDeBaja(this.assetToChangeState.id, request)
-      : this.estadoEquipoService.enviarAAlmacen(this.assetToChangeState.id, request);
-
-    observable.subscribe({
+    this.estadoEquipoService.enviarAAlmacen(this.assetToChangeState.id, request).subscribe({
       next: (response) => {
         if (response.success) {
-          // En lugar de eliminar manualmente, recargar la lista completa
-          // para asegurar consistencia con el backend
           this.loadAssets();
-          
-          const accionTexto = this.estadoAction === 'baja' ? 'dado de baja' : 'enviado a almacén';
           this.notificationService.showSuccessMessage(
-            `Equipo "${this.assetToChangeState.name}" ${accionTexto} exitosamente.`
+            `Equipo "${this.assetToChangeState.name}" enviado a almacén exitosamente.`
           );
         } else {
-          throw new Error(response.message || 'Error al cambiar el estado del equipo');
+          throw new Error(response.message || 'Error al enviar a almacén');
         }
       },
       error: (error) => {
-        console.error('Error al cambiar estado:', error);
-        const accionTexto = this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
-        
-        // Manejo específico para errores de permisos
+        console.error('Error al enviar a almacén:', error);
         if (error.status === 403) {
           this.notificationService.showError(
             'Sin permisos suficientes',
-            `Para ${accionTexto} equipos necesitas rol de GM o Administrador. Contacta al administrador del sistema.`
+            'Para enviar a almacén necesitas rol de GM o Administrador.'
           );
         } else {
           this.notificationService.showError(
-            'Error al cambiar estado',
-            `No se pudo ${accionTexto} el equipo "${this.assetToChangeState.name}": ${error.message || 'Error desconocido'}`
+            'Error al enviar a almacén',
+            `No se pudo enviar a almacén el equipo "${this.assetToChangeState.name}": ${error.message || 'Error desconocido'}`
           );
         }
       },

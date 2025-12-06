@@ -46,26 +46,44 @@
   margin-left: 0.5rem;
 }
 
-.print-btn {
+/* Botón de imprimir - Forzar color rojo */
+.print-btn,
+.btn.print-btn,
+.btn.btn-danger.print-btn,
+.btn.btn-sm.print-btn,
+button.print-btn,
+button.btn.print-btn,
+button.btn.btn-danger.print-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
+  background: #dc3545 !important;
   background-color: #dc3545 !important;
+  border: 1px solid #dc3545 !important;
   border-color: #dc3545 !important;
-  color: white !important;
+  color: #fff !important;
   transition: all 0.3s ease;
 }
 
-.print-btn:hover:not(:disabled) {
+.print-btn:hover:not(:disabled),
+.btn.print-btn:hover:not(:disabled),
+button.print-btn:hover:not(:disabled) {
+  background: #c82333 !important;
   background-color: #c82333 !important;
   border-color: #bd2130 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-  color: white !important;
+  color: #fff !important;
 }
 
-.print-btn:disabled {
+.print-btn:disabled,
+.btn.print-btn:disabled,
+button.print-btn:disabled {
+  background: #dc3545 !important;
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #fff !important;
   opacity: 0.6;
   cursor: not-allowed;
 }
