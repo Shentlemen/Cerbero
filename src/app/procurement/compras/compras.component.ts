@@ -397,7 +397,10 @@ export class ComprasComponent implements OnInit {
       // this.descripcionPliego = '';
     }
     this.cdr.detectChanges();
-    this.modalService.open(modal, { size: 'xl' });
+    this.modalService.open(modal, { 
+      size: 'xl',
+      backdrop: true
+    });
   }
 
   get itemsControls() {
@@ -987,7 +990,7 @@ export class ComprasComponent implements OnInit {
     // Abrir el modal de detalles
     this.modalService.open(this.detallesModal, { 
       size: 'xl', 
-      backdrop: 'static',
+      backdrop: false,  // Deshabilitar el backdrop
       keyboard: false,
       centered: true
     });

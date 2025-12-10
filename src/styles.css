@@ -1759,6 +1759,30 @@ body {
   zoom: 0.8;
 }
 
+/* Estilos globales para el backdrop del modal - funciona con zoom */
+/* Nota: El JavaScript ajustará las dimensiones en píxeles para evitar problemas con zoom */
+.modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  overflow: hidden !important;
+  z-index: 1040 !important;
+}
+
+/* Asegurar que el backdrop cubra toda la pantalla incluso con zoom */
+.modal-backdrop.show {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
 /* Layout principal para footer fijo */
 html, body {
   height: 100%;
@@ -1770,13 +1794,18 @@ html, body {
 }
 
 /* Asegurar que los contenedores principales usen todo el espacio disponible */
+/* Solo aplicamos flex a los contenedores que realmente lo necesitan */
 .generic-container,
-.software-container,
-.assets-container,
-.dashboard-container {
-  min-height: calc(100vh / 0.8); /* Compensar el zoom del 80% */
+.software-container {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Dashboard y Assets mantienen su layout original */
+.dashboard-container,
+.assets-container {
   position: relative;
 }
 

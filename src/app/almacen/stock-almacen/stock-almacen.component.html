@@ -138,6 +138,14 @@
 
                   <!-- Items en este estante -->
                   <div class="items-container">
+                    <!-- Mensaje cuando el estante está vacío -->
+                    <div *ngIf="estaEstanteVacio(almacenKey, estanteriaKey, estanteKey)" 
+                         class="estante-vacio">
+                      <i class="fas fa-inbox"></i>
+                      <span>Estante vacío</span>
+                    </div>
+                    
+                    <!-- Items del estante -->
                     <div *ngFor="let item of getItemsPorEstante(almacenKey, estanteriaKey, estanteKey)" 
                          class="item-card"
                          [ngClass]="{
@@ -156,7 +164,7 @@
                           <i class="fas" [ngClass]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired') : 'fa-box'"></i>
                         </div>
                         <div class="item-details">
-                          <h6 class="item-name">{{ item.item.nombreItem }}</h6>
+                          <h6 *ngIf="!esEquipoEspecial(item)" class="item-name">{{ item.item.nombreItem }}</h6>
                           <div class="item-metadata">
                             <span *ngIf="!esEquipoEspecial(item)" class="cantidad-badge">{{ item.cantidad }} unidades</span>
                             <span *ngIf="esEquipoEspecial(item)" class="badge badge-icono-almacen" 
@@ -176,33 +184,43 @@
                           <small *ngIf="esEquipoEspecial(item) && getDescripcionEquipo(item)" class="text-muted d-block mt-1" style="font-size: 0.75rem;">
                             {{ getDescripcionEquipo(item) }}
                           </small>
-                          <div *ngIf="esEquipoEspecial(item) && (getTipoEquipo(item) === 'EQUIPO' || getTipoEquipo(item) === 'DISPOSITIVO') && canManageStock()" class="mt-2">
+                          <div *ngIf="esEquipoEspecial(item) && (getTipoEquipo(item) === 'EQUIPO' || getTipoEquipo(item) === 'DISPOSITIVO') && canManageStock()" class="mt-2 position-relative">
                             <button 
-                              class="btn btn-primary btn-sm transferir-btn" 
-                              (click)="transferirEquipo(item, $event)"
-                              [disabled]="transferiendoItemId === item.id"
-                              [title]="'Transferir este ' + (getTipoEquipo(item) === 'EQUIPO' ? 'equipo' : 'dispositivo') + ' a otro almacén'"
+                              type="button"
+                              class="btn btn-primary btn-sm" 
+                              [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
+                              (click)="toggleDropdown(item, $event)"
                               style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
-                              <i class="fas" [ngClass]="transferiendoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
-                              {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
+                              <i class="fas" [ngClass]="(transferiendoItemId === item.id || reactivandoItemId === item.id) ? 'fa-spinner fa-spin' : 'fa-cog'"></i>
+                              <span *ngIf="transferiendoItemId === item.id">Transferiendo...</span>
+                              <span *ngIf="reactivandoItemId === item.id">Reactivando...</span>
+                              <span *ngIf="transferiendoItemId !== item.id && reactivandoItemId !== item.id">Acciones</span>
+                              <i class="fas fa-chevron-down ms-1" style="font-size: 0.6rem;"></i>
                             </button>
+                            <div *ngIf="dropdownAbiertoId === item.id" 
+                                 class="dropdown-menu show" 
+                                 style="position: absolute; top: 100%; left: 0; z-index: 1000; min-width: 150px; margin-top: 2px;">
+                              <button 
+                                type="button"
+                                class="dropdown-item" 
+                                (click)="transferirEquipo(item, $event)"
+                                [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
+                                <i class="fas fa-exchange-alt me-2"></i>
+                                Transferir
+                              </button>
+                              <button 
+                                type="button"
+                                class="dropdown-item" 
+                                (click)="reactivarEquipo(item, $event)"
+                                [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
+                                <i class="fas fa-undo me-2"></i>
+                                Reactivar
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <!-- Estado vacío -->
-                    <div *ngIf="getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length === 0" 
-                         class="estante-empty">
-                      <i class="fas fa-box-open"></i>
-                      <span>Sin items</span>
-                    </div>
-                  </div>
-
-                  <!-- Estado vacío del estante -->
-                  <div *ngIf="getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length === 0" class="estante-empty">
-                    <i class="fas fa-box-open"></i>
-                    <span>Estante vacío</span>
                   </div>
                 </div>
               </div>

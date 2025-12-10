@@ -555,11 +555,13 @@ export class ActivosComponent implements OnInit {
         this.activoForm.get('idEntrega')?.disable();
       }
 
-      this.modalService.open(modal, { 
+      const modalRef = this.modalService.open(modal, { 
         size: 'xl',
-        backdrop: 'static',
+        backdrop: true,
         keyboard: false
-      }).result.then(() => {
+      });
+      
+      modalRef.result.then(() => {
         // Modal cerrado exitosamente
         this.shouldShowValidationErrors = false;
       }).catch(() => {
@@ -571,6 +573,7 @@ export class ActivosComponent implements OnInit {
       this.errorMessage = 'Error al cargar los datos necesarios. Por favor, intente nuevamente.';
     }
   }
+
 
   private normalizarClasificacion(clasificacion: string): string {
     if (!clasificacion) return '';

@@ -111,6 +111,16 @@ export class EstadoEquipoService {
 
   // Transferir equipo
   transferirEquipo(hardwareId: number, transferData: any): Observable<any> {
+    // Log para debugging - ver qué se está enviando
+    console.log('🔍 EstadoEquipoService - Enviando request:', {
+      url: `${this.apiUrl}/${hardwareId}/transferir`,
+      transferData,
+      transferDataKeys: Object.keys(transferData),
+      seccion: transferData.seccion,
+      seccionType: typeof transferData.seccion,
+      tieneSeccion: 'seccion' in transferData,
+      transferDataStringified: JSON.stringify(transferData)
+    });
     return this.http.post(`${this.apiUrl}/${hardwareId}/transferir`, transferData);
   }
 

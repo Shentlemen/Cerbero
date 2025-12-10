@@ -16,11 +16,19 @@ export function AuthInterceptor(request: HttpRequest<unknown>, next: HttpHandler
   // Obtener token directamente de localStorage para evitar dependencia circular
   const token = localStorage.getItem('token');
   
-  // Verificar si el token está expirado antes de enviarlo
-  if (token && authService.isTokenExpired()) {
+  // Lista de URLs públicas que no requieren autenticación
+  const publicUrls = ['/auth/login', '/auth/refresh', '/api/public'];
+  const isPublicUrl = publicUrls.some(url => request.url.includes(url));
+  
+  // Verificar si el token está expirado antes de enviarlo (solo para URLs que requieren auth)
+  if (token && authService.isTokenExpired() && !isPublicUrl) {
     console.log('🔄 Token expirado detectado en interceptor - limpiando sesión');
     authService.clearSession();
-    router.navigate(['/login']);
+    // Solo redirigir si no estamos en una ruta pública
+    const currentUrl = router.url;
+    if (!currentUrl.includes('/login') && !currentUrl.includes('-demo')) {
+      router.navigate(['/login']);
+    }
     return throwError(() => new Error('Token expirado'));
   }
   

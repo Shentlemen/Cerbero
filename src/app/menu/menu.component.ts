@@ -46,7 +46,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/subnets',
     '/menu/procurement/tipos-activo',
     '/menu/procurement/tipos-compra',
-    '/menu/procurement/usuarios'
+    '/menu/procurement/usuarios',
+    '/menu/almacen/config'
   ];
   private adminRoutes = [
     '/menu/settings',

@@ -124,7 +124,10 @@ export class UsuariosComponent implements OnInit {
       this.usuarioSeleccionado = null;
       this.usuarioForm.reset();
     }
-    this.modalService.open(modal, { size: 'lg' });
+    this.modalService.open(modal, { 
+      size: 'lg',
+      backdrop: true
+    });
   }
 
   guardarUsuario(): void {

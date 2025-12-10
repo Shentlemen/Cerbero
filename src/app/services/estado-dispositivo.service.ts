@@ -81,4 +81,9 @@ export class EstadoDispositivoService {
   getDispositivosPorAlmacenId(almacenId: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/estado-dispositivos/por-almacen/${almacenId}`);
   }
+
+  // Obtener MACs inactivas (en baja O en almacén - para filtrar gráficas)
+  getMacsInactivas(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/estado-dispositivos/macs/inactivas`);
+  }
 } 

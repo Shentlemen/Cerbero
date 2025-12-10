@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -9,8 +9,9 @@ import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../../components/transferir-equipo-modal/transferir-equipo-modal.component';
-import { EstadoEquipoService } from '../../services/estado-equipo.service';
-import { EstadoDispositivoService } from '../../services/estado-dispositivo.service';
+import { Almacen3DComponent, StockItem } from '../../components/almacen-3d/almacen-3d.component';
+import { EstadoEquipoService, CambioEstadoRequest } from '../../services/estado-equipo.service';
+import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../../services/estado-dispositivo.service';
 import { HardwareService } from '../../services/hardware.service';
 import { BiosService } from '../../services/bios.service';
 import { NetworkInfoService } from '../../services/network-info.service';
@@ -26,12 +27,13 @@ import autoTable from 'jspdf-autotable';
     FormsModule,
     ReactiveFormsModule,
     NgbModule,
-    NotificationContainerComponent
+    NotificationContainerComponent,
+    Almacen3DComponent
   ],
   templateUrl: './stock-almacen.component.html',
   styleUrls: ['./stock-almacen.component.css']
 })
-export class StockAlmacenComponent implements OnInit {
+export class StockAlmacenComponent implements OnInit, OnDestroy {
   stock: StockAlmacen[] = [];
   almacenes: Almacen[] = [];
   almacenSeleccionado: Almacen | null = null;
@@ -57,6 +59,15 @@ export class StockAlmacenComponent implements OnInit {
 
   // Estado de transferencia
   transferiendoItemId: string | number | null = null;
+  
+  // Estado de reactivación
+  reactivandoItemId: string | number | null = null;
+  
+  // Estado del dropdown de acciones
+  dropdownAbiertoId: string | number | null = null;
+
+  // Datos de stock para el componente 3D (solo para ALM03)
+  stockData3D: StockItem[] = [];
 
   constructor(
     private stockAlmacenService: StockAlmacenService,
@@ -84,6 +95,20 @@ export class StockAlmacenComponent implements OnInit {
       this.almacenId = id ? parseInt(id, 10) : null;
       this.cargarDatos();
     });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    // Cerrar dropdown si se hace clic fuera
+    const target = event.target as HTMLElement;
+    if (!target.closest('.position-relative')) {
+      this.cerrarDropdown();
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar estado
+    this.cerrarDropdown();
   }
 
   cargarDatos(): void {
@@ -425,8 +450,8 @@ export class StockAlmacenComponent implements OnInit {
         return;
       }
 
-      // Parsear estantería y estante de las observaciones
-      const { estanteria, estante } = this.parsearEstanteriaYEstante(estado.observaciones);
+      // Parsear estantería, estante y sección de las observaciones
+      const { estanteria, estante, seccion } = this.parsearEstanteriaYEstante(estado.observaciones);
       
       const biosData = biosMap.get(estado.hardwareId);
       
@@ -437,6 +462,7 @@ export class StockAlmacenComponent implements OnInit {
         almacen: almacen,
         estanteria: estanteria || 'Equipos',
         estante: estante || 'Sin especificar',
+        seccion: seccion || null,
         cantidad: 1,
         numero: hw.name || `EQ-${estado.hardwareId}`,
         descripcion: `${hw.name || 'Equipo'} - ${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`,
@@ -455,16 +481,17 @@ export class StockAlmacenComponent implements OnInit {
   }
 
   /**
-   * Parsea estantería y estante de las observaciones
-   * Formato esperado: "Estantería: X, Estante: Y" o "Estantería: X | Estante: Y"
+   * Parsea estantería, estante y sección de las observaciones
+   * Formato esperado: "Estantería: X, Estante: Y, Sección: Z" o "Estantería: X | Estante: Y | Sección: Z"
    */
-  parsearEstanteriaYEstante(observaciones: string | null | undefined): { estanteria: string | null, estante: string | null } {
+  parsearEstanteriaYEstante(observaciones: string | null | undefined): { estanteria: string | null, estante: string | null, seccion: string | null } {
     if (!observaciones) {
-      return { estanteria: null, estante: null };
+      return { estanteria: null, estante: null, seccion: null };
     }
 
     let estanteria: string | null = null;
     let estante: string | null = null;
+    let seccion: string | null = null;
 
     // Buscar "Estantería: X"
     const estanteriaMatch = observaciones.match(/Estanter[íi]a:\s*([^,|]+)/i);
@@ -478,7 +505,13 @@ export class StockAlmacenComponent implements OnInit {
       estante = estanteMatch[1].trim();
     }
 
-    return { estanteria, estante };
+    // Buscar "Sección: Z"
+    const seccionMatch = observaciones.match(/Secci[óo]n:\s*([^,|]+)/i);
+    if (seccionMatch && seccionMatch[1]) {
+      seccion = seccionMatch[1].trim();
+    }
+
+    return { estanteria, estante, seccion };
   }
 
   /**
@@ -517,8 +550,8 @@ export class StockAlmacenComponent implements OnInit {
         return;
       }
 
-      // Parsear estantería y estante de las observaciones
-      const { estanteria, estante } = this.parsearEstanteriaYEstante(estado.observaciones);
+      // Parsear estantería, estante y sección de las observaciones
+      const { estanteria, estante, seccion } = this.parsearEstanteriaYEstante(estado.observaciones);
       
       items.push({
         id: `dispositivo-${estado.mac}-almacen-${estado.almacenId}`,
@@ -527,6 +560,7 @@ export class StockAlmacenComponent implements OnInit {
         almacen: almacen,
         estanteria: estanteria || 'Dispositivos',
         estante: estante || 'Sin especificar',
+        seccion: seccion || null,
         cantidad: 1,
         numero: device.mac,
         descripcion: `${device.name || device.mac} - ${device.type || 'N/A'}`,
@@ -563,7 +597,108 @@ export class StockAlmacenComponent implements OnInit {
       grupos[almacenKey][estanteriaKey].push(item);
     });
 
+    // Para ALM03 (Almacen Principal), asegurar que todas las estanterías (E1-E6) y estantes (1-3) estén presentes
+    const almacenPrincipalKey = Object.keys(grupos).find(key => 
+      key.toUpperCase().includes('ALM03') || key.toUpperCase().includes('ALMACEN PRINCIPAL')
+    );
+    
+    if (almacenPrincipalKey) {
+      const estanteriasEsperadas = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
+      const estantesEsperados = ['1', '2', '3'];
+      
+      estanteriasEsperadas.forEach(estanteria => {
+        if (!grupos[almacenPrincipalKey][estanteria]) {
+          grupos[almacenPrincipalKey][estanteria] = [];
+        }
+      });
+    }
+
     this.stockOrganizado = grupos;
+    
+    // Preparar datos para el componente 3D si estamos viendo ALM03
+    this.prepararStockData3D(stock);
+  }
+
+  /**
+   * Prepara los datos de stock en formato para el componente 3D
+   * Solo para ALM03 (Almacen Principal)
+   */
+  prepararStockData3D(stock: any[]): void {
+    // Solo preparar datos si estamos viendo el almacén 3 (ALM03)
+    if (this.almacenId !== 3) {
+      this.stockData3D = [];
+      return;
+    }
+
+    // Filtrar stock del ALM03 y convertir al formato StockItem
+    const stockALM03 = stock.filter(item => 
+      item.almacen && 
+      (item.almacen.id === 3 || 
+       item.almacen.numero?.toUpperCase().includes('ALM03') ||
+       item.almacen.nombre?.toUpperCase().includes('ALMACEN PRINCIPAL'))
+    );
+
+    this.stockData3D = stockALM03.map(item => {
+      // Normalizar estantería (E1, E2, etc.)
+      let estanteria = item.estanteria?.toString().trim().toUpperCase() || '';
+      // Si no empieza con E, agregarlo
+      if (estanteria && !estanteria.startsWith('E')) {
+        // Intentar extraer número si es solo un número
+        const numMatch = estanteria.match(/\d+/);
+        if (numMatch) {
+          estanteria = `E${numMatch[0]}`;
+        }
+      }
+
+      // Normalizar estante (1, 2, 3)
+      let estante = item.estante?.toString().trim() || '';
+      // Si es un número, mantenerlo; si no, intentar extraerlo
+      if (estante && !/^\d+$/.test(estante)) {
+        const numMatch = estante.match(/\d+/);
+        if (numMatch) {
+          estante = numMatch[0];
+        }
+      }
+
+      // Normalizar sección (A, B, C)
+      let seccion = item.seccion?.toString().trim().toUpperCase() || '';
+      // Si es una letra, mantenerla; si no, intentar extraerla
+      if (seccion && !/^[A-Z]$/.test(seccion)) {
+        const letraMatch = seccion.match(/[A-Z]/);
+        if (letraMatch) {
+          seccion = letraMatch[0];
+        }
+      }
+
+      return {
+        estanteria: estanteria,
+        estante: estante,
+        seccion: seccion || undefined,
+        cantidad: item.cantidad || 1,
+        ...item
+      } as StockItem;
+    });
+
+    console.log('📦 StockData3D preparado:', this.stockData3D.length, 'items');
+    console.log('📦 Detalles:', this.stockData3D.map(item => ({
+      estanteria: item.estanteria,
+      estante: item.estante,
+      seccion: item.seccion
+    })));
+  }
+
+  /**
+   * Maneja la selección de una caja en el componente 3D
+   */
+  onCaja3DSeleccionada(cajaInfo: any): void {
+    console.log('📦 Caja seleccionada en 3D:', cajaInfo);
+    // Aquí puedes mostrar un modal con los detalles de la caja si lo deseas
+    if (cajaInfo.contenido && cajaInfo.contenido.length > 0) {
+      this.notificationService.showInfo(
+        `Caja ${cajaInfo.estanteria} - Estante ${cajaInfo.nivel} - Sección ${cajaInfo.seccion}`,
+        `Contiene ${cajaInfo.contenido.length} item(s)`
+      );
+    }
   }
 
   getAlmacenes(): string[] {
@@ -602,7 +737,28 @@ export class StockAlmacenComponent implements OnInit {
     stockItems.forEach(item => {
       estantes.add(item.estante);
     });
+    
+    // Para ALM03 (Almacen Principal), mostrar todos los estantes (1-3) aunque estén vacíos
+    const esAlmacenPrincipal = almacen.toUpperCase().includes('ALM03') || 
+                               almacen.toUpperCase().includes('ALMACEN PRINCIPAL');
+    const esEstanteriaValida = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'].includes(estanteria.toUpperCase());
+    
+    if (esAlmacenPrincipal && esEstanteriaValida) {
+      const estantesEsperados = ['1', '2', '3'];
+      estantesEsperados.forEach(estante => {
+        estantes.add(estante);
+      });
+    }
+    
     return Array.from(estantes).sort();
+  }
+  
+  /**
+   * Verifica si un estante está vacío
+   */
+  estaEstanteVacio(almacen: string, estanteria: string, estante: string): boolean {
+    const items = this.getItemsPorEstante(almacen, estanteria, estante);
+    return items.length === 0;
   }
 
   getItemsPorEstante(almacen: string, estanteria: string, estante: string): any[] {
@@ -1129,7 +1285,9 @@ export class StockAlmacenComponent implements OnInit {
   transferirEquipo(item: any, event?: Event): void {
     if (event) {
       event.stopPropagation();
+      event.preventDefault();
     }
+    this.cerrarDropdown();
 
     // Solo permitir transferir equipos o dispositivos especiales
     if (!this.esEquipoEspecial(item)) {
@@ -1174,6 +1332,14 @@ export class StockAlmacenComponent implements OnInit {
 
           modalRef.result.then((transferData: any) => {
             if (transferData) {
+              // Log para debugging - ver qué viene del modal
+              console.log('🔍 StockAlmacen - transferData recibido del modal:', {
+                transferData,
+                seccion: transferData.seccion,
+                seccionType: typeof transferData.seccion,
+                tipoAlmacen: transferData.tipoAlmacen,
+                tieneSeccion: 'seccion' in transferData
+              });
               this.procesarTransferenciaEquipo(item, hardwareId, transferData);
             }
           }).catch(() => {
@@ -1254,10 +1420,50 @@ export class StockAlmacenComponent implements OnInit {
       usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
     };
 
+    // Siempre incluir estantería, estante y sección si tipoAlmacen es 'regular'
     if (transferData.tipoAlmacen === 'regular') {
-      requestData.estanteria = transferData.estanteria;
-      requestData.estante = transferData.estante;
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      // Asegurar que seccion siempre se incluya, incluso si está vacía o es null/undefined
+      // IMPORTANTE: Capturar el valor directamente del transferData
+      // Si viene como string vacío '', también lo capturamos
+      const seccionRaw = transferData.seccion;
+      let seccionValue = '';
+      
+      if (seccionRaw !== undefined && seccionRaw !== null) {
+        // Si es string, usar trim; si es otro tipo, convertir a string y trim
+        seccionValue = typeof seccionRaw === 'string' ? seccionRaw.trim() : String(seccionRaw).trim();
+      }
+      
+      // Forzar que seccion siempre esté presente en el objeto
+      requestData.seccion = seccionValue;
+      
+      console.log('🔍 StockAlmacen - Procesando almacén regular:', {
+        transferDataSeccion: transferData.seccion,
+        transferDataSeccionType: typeof transferData.seccion,
+        seccionValue: seccionValue,
+        requestDataSeccion: requestData.seccion,
+        requestDataKeys: Object.keys(requestData),
+        requestDataJSON: JSON.stringify(requestData)
+      });
+    } else {
+      console.log('🔍 StockAlmacen - NO es almacén regular:', {
+        tipoAlmacen: transferData.tipoAlmacen,
+        transferData
+      });
     }
+    
+    // Log para debugging - ANTES de enviar
+    console.log('🔍 Frontend - Datos de transferencia ANTES de enviar:', {
+      hardwareId,
+      requestData,
+      requestDataKeys: Object.keys(requestData),
+      transferDataSeccion: transferData.seccion,
+      requestDataSeccion: requestData.seccion,
+      requestDataSeccionType: typeof requestData.seccion,
+      tieneSeccionEnRequest: 'seccion' in requestData,
+      requestDataStringified: JSON.stringify(requestData)
+    });
 
     this.estadoEquipoService.transferirEquipo(hardwareId, requestData).subscribe({
       next: (response) => {
@@ -1297,6 +1503,7 @@ export class StockAlmacenComponent implements OnInit {
     if (transferData.tipoAlmacen === 'regular') {
       requestData.estanteria = transferData.estanteria;
       requestData.estante = transferData.estante;
+      requestData.seccion = transferData.seccion;
     }
 
     this.estadoDispositivoService.transferirDispositivo(mac, requestData).subscribe({
@@ -1319,6 +1526,138 @@ export class StockAlmacenComponent implements OnInit {
       },
       complete: () => {
         this.transferiendoItemId = null;
+      }
+    });
+  }
+
+  /**
+   * Toggle del dropdown de acciones
+   */
+  toggleDropdown(item: any, event: Event): void {
+    event.stopPropagation();
+    if (this.dropdownAbiertoId === item.id) {
+      this.dropdownAbiertoId = null;
+    } else {
+      this.dropdownAbiertoId = item.id;
+    }
+  }
+
+  /**
+   * Cerrar dropdown de acciones
+   */
+  cerrarDropdown(): void {
+    this.dropdownAbiertoId = null;
+  }
+
+  /**
+   * Método para reactivar equipo o dispositivo
+   */
+  reactivarEquipo(item: any, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    this.cerrarDropdown();
+
+    // Solo permitir reactivar equipos o dispositivos especiales
+    if (!this.esEquipoEspecial(item)) {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'Solo se pueden reactivar equipos o dispositivos especiales (del cementerio o almacén laboratorio).'
+      );
+      return;
+    }
+
+    const tipoEquipo = this.getTipoEquipo(item);
+    
+    if (tipoEquipo === 'EQUIPO') {
+      const hardwareId = item.itemId || item.estadoInfo?.hardwareId;
+      if (!hardwareId) {
+        this.notificationService.showError(
+          'Error',
+          'No se pudo identificar el equipo a reactivar.'
+        );
+        return;
+      }
+      this.procesarReactivacionEquipo(item, hardwareId);
+    } else if (tipoEquipo === 'DISPOSITIVO') {
+      const mac = item.numero || item.estadoInfo?.mac || item.item?.nombreItem;
+      if (!mac) {
+        this.notificationService.showError(
+          'Error',
+          'No se pudo identificar el dispositivo a reactivar.'
+        );
+        return;
+      }
+      this.procesarReactivacionDispositivo(item, mac);
+    } else {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'Tipo de item no soportado para reactivación.'
+      );
+    }
+  }
+
+  private procesarReactivacionEquipo(item: any, hardwareId: number): void {
+    this.reactivandoItemId = item.id;
+
+    const request: CambioEstadoRequest = {
+      observaciones: 'Reactivado desde almacén',
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    this.estadoEquipoService.reactivarEquipo(hardwareId, request).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.cargarDatos();
+          this.notificationService.showSuccessMessage(
+            `Equipo reactivado exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al reactivar el equipo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al reactivar equipo:', error);
+        this.notificationService.showError(
+          'Error al reactivar equipo',
+          `No se pudo reactivar el equipo: ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.reactivandoItemId = null;
+      }
+    });
+  }
+
+  private procesarReactivacionDispositivo(item: any, mac: string): void {
+    this.reactivandoItemId = item.id;
+
+    const request: CambioEstadoDispositivoRequest = {
+      observaciones: 'Reactivado desde almacén',
+      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+    };
+
+    this.estadoDispositivoService.reactivarDispositivo(mac, request).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.cargarDatos();
+          this.notificationService.showSuccessMessage(
+            `Dispositivo reactivado exitosamente.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al reactivar el dispositivo');
+        }
+      },
+      error: (error) => {
+        console.error('Error al reactivar dispositivo:', error);
+        this.notificationService.showError(
+          'Error al reactivar dispositivo',
+          `No se pudo reactivar el dispositivo: ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.reactivandoItemId = null;
       }
     });
   }

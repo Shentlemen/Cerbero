@@ -41,6 +41,9 @@ export class CementerioComponent implements OnInit {
 
   // Filtro de búsqueda
   nombreEquipoControl = new FormControl('');
+  
+  // Filtro por tipo (todos, equipos, dispositivos)
+  filtroTipo: 'todos' | 'equipos' | 'dispositivos' = 'todos';
 
   // Reactivación
   showReactivarDialog: boolean = false;
@@ -130,9 +133,8 @@ export class CementerioComponent implements OnInit {
           }).filter((dispositivo: any) => dispositivo.mac); // Solo incluir si tiene MAC
         }
         
-        // Combinar todos los items para el filtro
-        this.equiposFiltrados = [...this.equiposEnBaja, ...this.dispositivosEnBaja];
-        this.actualizarPaginacion();
+        // Aplicar filtros iniciales
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (error) => {
@@ -147,14 +149,64 @@ export class CementerioComponent implements OnInit {
   }
 
   private aplicarFiltroNombre(nombre: string): void {
-    if (!nombre.trim()) {
-      this.equiposFiltrados = [...this.equiposEnBaja];
+    this.aplicarFiltros();
+  }
+
+  /**
+   * Aplica todos los filtros (tipo y nombre)
+   */
+  private aplicarFiltros(): void {
+    let itemsFiltrados: any[] = [];
+
+    // Primero filtrar por tipo
+    if (this.filtroTipo === 'equipos') {
+      itemsFiltrados = [...this.equiposEnBaja];
+    } else if (this.filtroTipo === 'dispositivos') {
+      itemsFiltrados = [...this.dispositivosEnBaja];
     } else {
-      this.equiposFiltrados = this.equiposEnBaja.filter(equipo => 
-        equipo.name?.toLowerCase().includes(nombre.toLowerCase())
+      itemsFiltrados = [...this.equiposEnBaja, ...this.dispositivosEnBaja];
+    }
+
+    // Luego filtrar por nombre si hay búsqueda
+    const nombreBusqueda = this.nombreEquipoControl.value?.trim() || '';
+    if (nombreBusqueda) {
+      itemsFiltrados = itemsFiltrados.filter(item => 
+        (item.name || item.mac || '').toLowerCase().includes(nombreBusqueda.toLowerCase())
       );
     }
+
+    this.equiposFiltrados = itemsFiltrados;
     this.actualizarPaginacion();
+  }
+
+  /**
+   * Cambia el filtro por tipo
+   */
+  filtrarPorTipo(tipo: 'todos' | 'equipos' | 'dispositivos'): void {
+    this.filtroTipo = tipo;
+    this.page = 1; // Resetear a la primera página
+    this.aplicarFiltros();
+  }
+
+  /**
+   * Obtiene el total de equipos en el cementerio
+   */
+  getTotalEquipos(): number {
+    return this.equiposEnBaja.length;
+  }
+
+  /**
+   * Obtiene el total de dispositivos en el cementerio
+   */
+  getTotalDispositivos(): number {
+    return this.dispositivosEnBaja.length;
+  }
+
+  /**
+   * Obtiene el total de items (equipos + dispositivos) en el cementerio
+   */
+  getTotalItems(): number {
+    return this.equiposEnBaja.length + this.dispositivosEnBaja.length;
   }
 
   private actualizarPaginacion(): void {

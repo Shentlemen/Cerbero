@@ -125,12 +125,6 @@ export class AlmacenesComponent implements OnInit {
   }
 
   cargarEquiposEspeciales(): void {
-    // Si no hay almacenes especiales, solo usar el stock normal
-    if (!this.almacenCementerio && !this.almacenLaboratorio) {
-      this.loading = false;
-      return;
-    }
-
     forkJoin({
       equiposBaja: this.estadoEquipoService.getEquiposEnBaja(),
       dispositivosBaja: this.estadoDispositivoService.getDispositivosEnBaja(),
@@ -141,30 +135,107 @@ export class AlmacenesComponent implements OnInit {
       networkInfo: this.networkInfoService.getNetworkInfo()
     }).subscribe({
       next: (response) => {
+        const items: any[] = [];
+        
+        // IDs de almacenes especiales para filtrar
+        const almacenCementerioId = this.almacenCementerio?.id;
+        const almacenLaboratorioId = this.almacenLaboratorio?.id;
+
         // Convertir equipos del cementerio a formato StockAlmacen
-        const itemsCementerio = this.convertirEquiposAStock(
-          response.equiposBaja,
-          response.dispositivosBaja,
-          Array.isArray(response.hardware) ? response.hardware : [],
-          Array.isArray(response.bios) ? response.bios : [],
-          response.networkInfo,
-          this.almacenCementerio,
-          'CEMENTERIO'
-        );
+        if (this.almacenCementerio) {
+          const itemsCementerio = this.convertirEquiposAStock(
+            response.equiposBaja,
+            response.dispositivosBaja,
+            Array.isArray(response.hardware) ? response.hardware : [],
+            Array.isArray(response.bios) ? response.bios : [],
+            response.networkInfo,
+            this.almacenCementerio,
+            'CEMENTERIO'
+          );
+          items.push(...itemsCementerio);
+        }
 
         // Convertir equipos del almacén laboratorio a formato StockAlmacen
-        const itemsLaboratorio = this.convertirEquiposAStock(
-          response.equiposAlmacen,
-          response.dispositivosAlmacen,
-          Array.isArray(response.hardware) ? response.hardware : [],
-          Array.isArray(response.bios) ? response.bios : [],
-          response.networkInfo,
-          this.almacenLaboratorio,
-          'ALMACEN'
-        );
+        if (this.almacenLaboratorio) {
+          // Filtrar equipos del laboratorio (almacenId = almacenLaboratorioId)
+          const equiposLab = response.equiposAlmacen?.success && Array.isArray(response.equiposAlmacen.data)
+            ? response.equiposAlmacen.data.filter((e: any) => e.almacenId === almacenLaboratorioId)
+            : [];
+          const dispositivosLab = response.dispositivosAlmacen?.success && Array.isArray(response.dispositivosAlmacen.data)
+            ? response.dispositivosAlmacen.data.filter((d: any) => d.almacenId === almacenLaboratorioId)
+            : [];
+
+          const itemsLaboratorio = this.convertirEquiposAStock(
+            { success: true, data: equiposLab },
+            { success: true, data: dispositivosLab },
+            Array.isArray(response.hardware) ? response.hardware : [],
+            Array.isArray(response.bios) ? response.bios : [],
+            response.networkInfo,
+            this.almacenLaboratorio,
+            'ALMACEN'
+          );
+          items.push(...itemsLaboratorio);
+        }
+
+        // Cargar equipos en almacenes regulares (no cementerio ni laboratorio)
+        const equiposEnAlmacenes = response.equiposAlmacen?.success && Array.isArray(response.equiposAlmacen.data)
+          ? response.equiposAlmacen.data.filter((e: any) => 
+              e.almacenId && 
+              e.almacenId !== almacenCementerioId && 
+              e.almacenId !== almacenLaboratorioId
+            )
+          : [];
+        
+        const dispositivosEnAlmacenes = response.dispositivosAlmacen?.success && Array.isArray(response.dispositivosAlmacen.data)
+          ? response.dispositivosAlmacen.data.filter((d: any) => 
+              d.almacenId && 
+              d.almacenId !== almacenCementerioId && 
+              d.almacenId !== almacenLaboratorioId
+            )
+          : [];
+
+        // Agrupar por almacenId y convertir a formato StockAlmacen
+        const equiposPorAlmacen = new Map<number, any[]>();
+        const dispositivosPorAlmacen = new Map<number, any[]>();
+
+        equiposEnAlmacenes.forEach((estado: any) => {
+          if (estado.almacenId) {
+            if (!equiposPorAlmacen.has(estado.almacenId)) {
+              equiposPorAlmacen.set(estado.almacenId, []);
+            }
+            equiposPorAlmacen.get(estado.almacenId)!.push(estado);
+          }
+        });
+
+        dispositivosEnAlmacenes.forEach((estado: any) => {
+          if (estado.almacenId) {
+            if (!dispositivosPorAlmacen.has(estado.almacenId)) {
+              dispositivosPorAlmacen.set(estado.almacenId, []);
+            }
+            dispositivosPorAlmacen.get(estado.almacenId)!.push(estado);
+          }
+        });
+
+        // Convertir equipos de cada almacén regular
+        equiposPorAlmacen.forEach((equipos, almacenId) => {
+          const almacen = this.almacenes.find(a => a.id === almacenId);
+          if (almacen) {
+            const dispositivos = dispositivosPorAlmacen.get(almacenId) || [];
+            const itemsAlmacen = this.convertirEquiposAStock(
+              { success: true, data: equipos },
+              { success: true, data: dispositivos },
+              Array.isArray(response.hardware) ? response.hardware : [],
+              Array.isArray(response.bios) ? response.bios : [],
+              response.networkInfo,
+              almacen,
+              'ALMACEN'
+            );
+            items.push(...itemsAlmacen);
+          }
+        });
 
         // Combinar con el stock normal
-        this.stock = [...this.stock, ...itemsCementerio, ...itemsLaboratorio];
+        this.stock = [...this.stock, ...items];
         this.loading = false;
       },
       error: (error) => {
@@ -193,6 +264,13 @@ export class AlmacenesComponent implements OnInit {
     
     const biosMap = new Map(bios.map((b: any) => [b.hardwareId, b]));
 
+    // Normalizar el objeto almacen para que tenga la misma estructura que el stock normal
+    const almacenNormalizado = {
+      id: almacen.id,
+      numero: almacen.numero,
+      nombre: almacen.nombre
+    };
+
     // Procesar equipos
     if (equiposResponse?.success && Array.isArray(equiposResponse.data)) {
       equiposResponse.data.forEach((estado: any) => {
@@ -203,7 +281,7 @@ export class AlmacenesComponent implements OnInit {
             id: `equipo-${estado.hardwareId}-${tipo}`,
             itemId: estado.hardwareId,
             idCompra: null,
-            almacen: almacen,
+            almacen: almacenNormalizado,
             estanteria: 'Equipos',
             estante: tipo === 'CEMENTERIO' ? 'En Baja' : 'En Almacén',
             cantidad: 1,
@@ -236,7 +314,7 @@ export class AlmacenesComponent implements OnInit {
             id: `dispositivo-${estado.mac}-${tipo}`,
             itemId: null,
             idCompra: null,
-            almacen: almacen,
+            almacen: almacenNormalizado,
             estanteria: 'Dispositivos',
             estante: tipo === 'CEMENTERIO' ? 'En Baja' : 'En Almacén',
             cantidad: 1,
@@ -364,16 +442,23 @@ export class AlmacenesComponent implements OnInit {
    */
   tieneStock(almacenId: number): boolean {
     // Buscar en el stock si hay items para este almacén
-    return this.stock && this.stock.some((item: any) => item.almacen.id === almacenId);
+    if (!this.stock || !Array.isArray(this.stock)) return false;
+    return this.stock.some((item: any) => {
+      // Asegurar que el almacen existe y tiene id
+      return item.almacen && item.almacen.id === almacenId;
+    });
   }
 
   /**
    * Obtiene el stock disponible de un almacén
    */
   getStockDisponible(almacenId: number): number {
-    if (!this.stock) return 0;
+    if (!this.stock || !Array.isArray(this.stock)) return 0;
     return this.stock
-      .filter((item: any) => item.almacen.id === almacenId)
+      .filter((item: any) => {
+        // Asegurar que el almacen existe y tiene id
+        return item.almacen && item.almacen.id === almacenId;
+      })
       .reduce((total: number, item: any) => total + (item.cantidad || 1), 0);
   }
 

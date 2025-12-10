@@ -10,6 +10,8 @@ import { ComprasService, CompraDTO } from '../../services/compras.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
+import { AlmacenConfigService } from '../../services/almacen-config.service';
+import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -64,6 +66,12 @@ export class UbicacionesComponent implements OnInit {
   // Propiedades para el diálogo de confirmación
   showConfirmDialog: boolean = false;
 
+  // Propiedades para configuración de almacén
+  configAlmacenActual: AlmacenConfig | null = null;
+  estanteriasDisponibles: number[] = [];
+  estantesDisponibles: number[] = [];
+  divisionesDisponibles: string[] = [];
+
   constructor(
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
@@ -72,7 +80,8 @@ export class UbicacionesComponent implements OnInit {
     private modalService: NgbModal,
     private fb: FormBuilder,
     public permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private almacenConfigService: AlmacenConfigService
   ) {
     this.stockForm = this.fb.group({
       compraId: ['', Validators.required],
@@ -80,6 +89,7 @@ export class UbicacionesComponent implements OnInit {
       almacenId: ['', Validators.required],
       estanteria: ['', [Validators.required, Validators.maxLength(50)]],
       estante: ['', [Validators.required, Validators.maxLength(50)]],
+      division: ['', Validators.maxLength(10)], // Nueva división del estante
       cantidad: [1, [Validators.required, Validators.min(1)]],
       numero: ['', Validators.maxLength(50)],
       descripcion: ['', Validators.maxLength(255)]
@@ -98,6 +108,95 @@ export class UbicacionesComponent implements OnInit {
         this.itemsFiltrados = [];
       }
     });
+
+    // Escuchar cambios en almacenId para cargar configuración
+    this.stockForm.get('almacenId')?.valueChanges.subscribe(almacenId => {
+      if (almacenId) {
+        this.cargarConfiguracionAlmacen(parseInt(almacenId));
+      } else {
+        this.limpiarConfiguracionAlmacen();
+      }
+    });
+  }
+
+  cargarConfiguracionAlmacen(almacenId: number): void {
+    this.almacenConfigService.getConfigByAlmacenId(almacenId).subscribe({
+      next: (config) => {
+        if (config) {
+          this.configAlmacenActual = config;
+          // Generar arrays de opciones disponibles
+          this.estanteriasDisponibles = Array.from({ length: config.cantidadEstanterias }, (_, i) => i + 1);
+          this.estantesDisponibles = Array.from({ length: config.cantidadEstantesPorEstanteria }, (_, i) => i + 1);
+          this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(config.divisionesEstante);
+          
+          // Actualizar validaciones
+          this.updateFormValidation();
+        } else {
+          // Si no hay configuración, permitir valores libres (comportamiento anterior)
+          this.limpiarConfiguracionAlmacen();
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar configuración del almacén:', error);
+        this.limpiarConfiguracionAlmacen();
+      }
+    });
+  }
+
+  limpiarConfiguracionAlmacen(): void {
+    this.configAlmacenActual = null;
+    this.estanteriasDisponibles = [];
+    this.estantesDisponibles = [];
+    this.divisionesDisponibles = [];
+    this.updateFormValidation();
+  }
+
+  updateFormValidation(): void {
+    // Validaciones básicas para compraId e itemId
+    const compraIdControl = this.stockForm.get('compraId');
+    const itemIdControl = this.stockForm.get('itemId');
+    
+    compraIdControl?.setValidators([Validators.required]);
+    itemIdControl?.setValidators([Validators.required]);
+    
+    compraIdControl?.updateValueAndValidity();
+    itemIdControl?.updateValueAndValidity();
+
+    // Si hay configuración, agregar validaciones personalizadas para estantería y estante
+    if (this.configAlmacenActual) {
+      const estanteriaControl = this.stockForm.get('estanteria');
+      const estanteControl = this.stockForm.get('estante');
+      
+      if (estanteriaControl) {
+        estanteriaControl.setValidators([
+          Validators.required,
+          (control) => {
+            if (!this.configAlmacenActual) return null;
+            const value = parseInt(control.value);
+            if (isNaN(value) || value < 1 || value > this.configAlmacenActual.cantidadEstanterias) {
+              return { invalidEstanteria: true };
+            }
+            return null;
+          }
+        ]);
+        estanteriaControl.updateValueAndValidity();
+      }
+      
+      if (estanteControl) {
+        estanteControl.setValidators([
+          Validators.required,
+          (control) => {
+            if (!this.configAlmacenActual) return null;
+            const value = parseInt(control.value);
+            if (isNaN(value) || value < 1 || value > this.configAlmacenActual.cantidadEstantesPorEstanteria) {
+              return { invalidEstante: true };
+            }
+            return null;
+          }
+        ]);
+        estanteControl.updateValueAndValidity();
+      }
+    }
   }
 
   cargarDatos(): void {
@@ -137,20 +236,31 @@ export class UbicacionesComponent implements OnInit {
     this.modoEdicion = !!stock;
     this.stockSeleccionado = stock || null;
 
-    console.log('=== DEBUG: Abriendo modal ===');
-    console.log('modoEdicion:', this.modoEdicion);
 
     if (this.modoEdicion && stock) {
       // Modo edición: cargar datos existentes
       // Primero necesitamos encontrar la compra del ítem
       const itemInfo = await this.lotesService.getLote(stock.item.idItem).toPromise();
       if (itemInfo) {
+        // Extraer división del estante si está en el formato "estante-division" o "estante division"
+        let estanteValue = stock.estante;
+        let divisionValue = '';
+        if (stock.estante) {
+          // Intentar extraer división (formato: "1-A" o "1A" o "1 A")
+          const match = stock.estante.match(/^(\d+)[\s-]?([A-Za-z]+)?$/);
+          if (match) {
+            estanteValue = match[1];
+            divisionValue = match[2] || '';
+          }
+        }
+
         this.stockForm.patchValue({
           compraId: itemInfo.idCompra,
           itemId: stock.item.idItem,
           almacenId: stock.almacen.id,
           estanteria: stock.estanteria,
-          estante: stock.estante,
+          estante: estanteValue,
+          division: divisionValue,
           cantidad: stock.cantidad,
           numero: stock.numero,
           descripcion: stock.descripcion
@@ -167,16 +277,20 @@ export class UbicacionesComponent implements OnInit {
       }
     } else {
       // Modo creación: resetear formulario
-      this.stockForm.reset();
+      this.stockForm.reset({
+        cantidad: 1
+      });
       this.itemsDeCompra = [];
       this.itemsFiltrados = [];
+      this.limpiarConfiguracionAlmacen();
     }
-
-    console.log('modoEdicion final:', this.modoEdicion);
 
     // Actualizar validaciones después de configurar el formulario
     this.updateFormValidation();
-    this.modalService.open(modal, { size: 'lg' });
+    this.modalService.open(modal, { 
+      size: 'lg',
+      backdrop: true
+    });
   }
 
   guardarUbicacion(): void {
@@ -197,12 +311,19 @@ export class UbicacionesComponent implements OnInit {
 
   private guardarUbicacionIndividual(): void {
     const formData = this.stockForm.value;
+    
+    // Construir el valor del estante: si hay división, combinarla con el estante
+    let estanteFinal = formData.estante;
+    if (formData.division && formData.division.trim()) {
+      estanteFinal = `${formData.estante}-${formData.division.trim()}`;
+    }
+    
     const nuevoStock: StockAlmacenCreateWithItem = {
       compraId: formData.compraId,
       itemId: formData.itemId,
       almacenId: formData.almacenId,
-      estanteria: formData.estanteria,
-      estante: formData.estante,
+      estanteria: formData.estanteria.toString(),
+      estante: estanteFinal,
       cantidad: formData.cantidad,
       numero: formData.numero,
       descripcion: formData.descripcion
@@ -211,12 +332,18 @@ export class UbicacionesComponent implements OnInit {
     if (this.modoEdicion && this.stockSeleccionado) {
       // Actualizar ubicación existente
       // Para edición, necesitamos convertir a StockAlmacenCreate
+      // Construir el valor del estante: si hay división, combinarla con el estante
+      let estanteFinal = formData.estante;
+      if (formData.division && formData.division.trim()) {
+        estanteFinal = `${formData.estante}-${formData.division.trim()}`;
+      }
+      
       const stockParaActualizar: StockAlmacenCreate = {
         idCompra: formData.compraId, // Usar idCompra en lugar de compraId
         itemId: this.stockSeleccionado.item.idItem, // Mantener el ID original
         almacenId: formData.almacenId,
-        estanteria: formData.estanteria,
-        estante: formData.estante,
+        estanteria: formData.estanteria.toString(),
+        estante: estanteFinal,
         cantidad: formData.cantidad,
         numero: formData.numero,
         descripcion: formData.descripcion
@@ -422,20 +549,6 @@ export class UbicacionesComponent implements OnInit {
     return this.permissionsService.canManageAssets();
   }
 
-  /**
-   * Actualiza las validaciones del formulario
-   */
-  updateFormValidation(): void {
-    const compraIdControl = this.stockForm.get('compraId');
-    const itemIdControl = this.stockForm.get('itemId');
-    
-    // Ambos campos son requeridos
-    compraIdControl?.setValidators([Validators.required]);
-    itemIdControl?.setValidators([Validators.required]);
-    
-    compraIdControl?.updateValueAndValidity();
-    itemIdControl?.updateValueAndValidity();
-  }
 
 
 

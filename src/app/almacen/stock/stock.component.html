@@ -419,23 +419,51 @@
               </div>
             </div>
             
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
               <label for="estanteria" class="form-label">Estantería *</label>
+              <!-- Select si hay configuración, input de texto si no -->
+              <select 
+                *ngIf="configAlmacenActual && estanteriasDisponibles.length > 0"
+                class="form-select" 
+                id="estanteria"
+                formControlName="estanteria">
+                <option value="">Seleccionar estantería</option>
+                <option *ngFor="let num of estanteriasDisponibles" [value]="num">
+                  Estantería {{num}}
+                </option>
+              </select>
               <input 
+                *ngIf="!configAlmacenActual || estanteriasDisponibles.length === 0"
                 type="text" 
                 class="form-control" 
                 id="estanteria"
                 formControlName="estanteria"
-                placeholder="Ej: A1, B2, etc.">
+                placeholder="Ej: 1, 2, 3, etc.">
               <div *ngIf="stockForm.get('estanteria')?.invalid && stockForm.get('estanteria')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('estanteria')?.errors?.['required']">La estantería es requerida</small>
                 <small *ngIf="stockForm.get('estanteria')?.errors?.['maxlength']">La estantería no puede exceder 50 caracteres</small>
+                <small *ngIf="stockForm.get('estanteria')?.errors?.['invalidEstanteria']">La estantería debe estar entre 1 y {{configAlmacenActual?.cantidadEstanterias}}</small>
               </div>
+              <small *ngIf="configAlmacenActual" class="form-text text-muted">
+                Almacén configurado: {{configAlmacenActual.cantidadEstanterias}} estantería(s)
+              </small>
             </div>
             
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
               <label for="estante" class="form-label">Estante *</label>
+              <!-- Select si hay configuración, input de texto si no -->
+              <select 
+                *ngIf="configAlmacenActual && estantesDisponibles.length > 0"
+                class="form-select" 
+                id="estante"
+                formControlName="estante">
+                <option value="">Seleccionar estante</option>
+                <option *ngFor="let num of estantesDisponibles" [value]="num">
+                  Estante {{num}}
+                </option>
+              </select>
               <input 
+                *ngIf="!configAlmacenActual || estantesDisponibles.length === 0"
                 type="text" 
                 class="form-control" 
                 id="estante"
@@ -444,7 +472,27 @@
               <div *ngIf="stockForm.get('estante')?.invalid && stockForm.get('estante')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('estante')?.errors?.['required']">El estante es requerido</small>
                 <small *ngIf="stockForm.get('estante')?.errors?.['maxlength']">El estante no puede exceder 50 caracteres</small>
+                <small *ngIf="stockForm.get('estante')?.errors?.['invalidEstante']">El estante debe estar entre 1 y {{configAlmacenActual?.cantidadEstantesPorEstanteria}}</small>
               </div>
+              <small *ngIf="configAlmacenActual" class="form-text text-muted">
+                {{configAlmacenActual.cantidadEstantesPorEstanteria}} estante(s) por estantería
+              </small>
+            </div>
+
+            <div class="col-md-3 mb-3" *ngIf="configAlmacenActual && divisionesDisponibles.length > 0">
+              <label for="division" class="form-label">División</label>
+              <select 
+                class="form-select" 
+                id="division"
+                formControlName="division">
+                <option value="">Sin división</option>
+                <option *ngFor="let div of divisionesDisponibles" [value]="div">
+                  {{div}}
+                </option>
+              </select>
+              <small class="form-text text-muted">
+                División del estante (opcional)
+              </small>
             </div>
           </div>
         </div>

@@ -111,7 +111,10 @@ export class TiposCompraComponent implements OnInit {
       this.tipoCompraSeleccionado = null;
       this.tipoCompraForm.reset();
     }
-    this.modalService.open(modal, { size: 'lg' });
+    this.modalService.open(modal, { 
+      size: 'lg',
+      backdrop: true
+    });
   }
 
   guardarTipoCompra(): void {

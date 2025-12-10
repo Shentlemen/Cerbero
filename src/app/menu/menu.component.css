@@ -192,9 +192,18 @@ html, body {
   margin-top: 60px; /* Espacio para el header superior */
   padding: 15px;
   min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
+  height: calc(100vh - 60px); /* Altura exacta para que flex funcione */
   background-color: #ecf0f1;
   position: relative;
   z-index: 1; /* Mantenemos un z-index bajo para el contenido principal */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Asegurar que los componentes ocupen el ancho completo */
+.main-content ::ng-deep router-outlet + * {
+  width: 100%;
+  display: block;
 }
 
 /* Para un efecto de colapso en la barra lateral */

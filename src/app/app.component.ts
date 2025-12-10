@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { MaintenanceOverlayComponent } from './components/maintenance-overlay/maintenance-overlay.component';
+import { ModalBackdropFixService } from './services/modal-backdrop-fix.service';
 
 @Component({
   selector: 'app-root',
@@ -31,7 +32,8 @@ import { MaintenanceOverlayComponent } from './components/maintenance-overlay/ma
   `]
 })
 export class AppComponent {
-  constructor() {
-    // Componente simplificado - footer eliminado
+  constructor(private modalBackdropFixService: ModalBackdropFixService) {
+    // El servicio se inicializa automáticamente al inyectarlo
+    // Esto ajustará todos los backdrops de modales globalmente
   }
 }

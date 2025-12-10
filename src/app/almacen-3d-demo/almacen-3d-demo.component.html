@@ -1,7 +1,10 @@
 <div class="demo-container">
-  <div class="demo-header">
-    <h1><i class="fas fa-warehouse"></i> Vista 3D del Almacén</h1>
-    <p class="subtitle">Prototipo - ALM03 Estantería A1</p>
+  <!-- Indicador de carga -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando stock...</span>
+    </div>
+    <p class="mt-2">Cargando datos del almacén...</p>
   </div>
 
   <div class="content-wrapper">
@@ -11,6 +14,7 @@
       [estanteriaId]="'A1'"
       [niveles]="3"
       [cajasporNivel]="4"
+      [stockData]="stockData3D"
       (cajaSeleccionada)="onCajaSeleccionada($event)">
     </app-almacen-3d>
   </div>

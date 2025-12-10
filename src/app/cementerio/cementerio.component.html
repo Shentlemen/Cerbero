@@ -22,6 +22,45 @@
         </button>
       </div>
     </div>
+    
+    <!-- Filtros por tipo -->
+    <div class="filters-container" *ngIf="!loading">
+      <button 
+        class="filter-btn" 
+        [class.active]="filtroTipo === 'todos'"
+        (click)="filtrarPorTipo('todos')"
+        [style.--device-color]="'#2c3e50'"
+        [style.--device-bg-color]="'#f8f9fa'"
+        [style.--device-border-color]="'#dee2e6'">
+        <i class="fas fa-th-large"></i>
+        <span>Todos</span>
+        <span class="count">({{ getTotalItems() }})</span>
+      </button>
+      
+      <button 
+        class="filter-btn" 
+        [class.active]="filtroTipo === 'equipos'"
+        [style.--device-color]="'#1976d2'"
+        [style.--device-bg-color]="'#e3f2fd'"
+        [style.--device-border-color]="'#bbdefb'"
+        (click)="filtrarPorTipo('equipos')">
+        <i class="fas fa-desktop"></i>
+        <span>Equipos</span>
+        <span class="count">({{ getTotalEquipos() }})</span>
+      </button>
+      
+      <button 
+        class="filter-btn" 
+        [class.active]="filtroTipo === 'dispositivos'"
+        [style.--device-color]="'#d32f2f'"
+        [style.--device-bg-color]="'#ffebee'"
+        [style.--device-border-color]="'#ffcdd2'"
+        (click)="filtrarPorTipo('dispositivos')">
+        <i class="fas fa-network-wired"></i>
+        <span>Dispositivos</span>
+        <span class="count">({{ getTotalDispositivos() }})</span>
+      </button>
+    </div>
   </div>
 
   <div class="cementerio-content">

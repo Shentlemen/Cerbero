@@ -46,6 +46,57 @@
   margin-left: 0.5rem;
 }
 
+/* Filtros por tipo */
+.filters-container {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--device-border-color, #e9ecef);
+  border-radius: 25px;
+  background: var(--device-bg-color, white);
+  color: var(--device-color, #6c757d);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  outline: none;
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: var(--device-color, #3498db);
+  color: var(--device-color, #3498db);
+}
+
+.filter-btn.active {
+  background: var(--device-bg-color, #e3f2fd);
+  border-color: var(--device-border-color, #bbdefb);
+  color: var(--device-color, #1976d2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-weight: 600;
+}
+
+.filter-btn i {
+  font-size: 0.8rem;
+}
+
+.filter-btn .count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
 .print-btn {
   display: flex;
   align-items: center;

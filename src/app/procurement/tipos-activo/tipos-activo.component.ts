@@ -122,7 +122,9 @@ export class TiposActivoComponent implements OnInit {
     this.modoEdicion = false;
     this.tipoActivoSeleccionado = null;
     this.tipoActivoForm.reset();
-    this.modalService.open(this.tipoActivoModal);
+    this.modalService.open(this.tipoActivoModal, { 
+      backdrop: false  // Deshabilitar el backdrop
+    });
   }
 
   editTipoActivo(tipo: TipoDeActivoDTO): void {
@@ -132,7 +134,9 @@ export class TiposActivoComponent implements OnInit {
       descripcion: tipo.descripcion,
       idUsuario: tipo.idUsuario
     });
-    this.modalService.open(this.tipoActivoModal);
+    this.modalService.open(this.tipoActivoModal, { 
+      backdrop: false  // Deshabilitar el backdrop
+    });
   }
 
   saveTipoActivo(): void {

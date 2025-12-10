@@ -1,0 +1,203 @@
+<div class="config-almacenes-container">
+  <!-- Contenedor de notificaciones -->
+  <app-notification-container></app-notification-container>
+  
+  <div class="page-header">
+    <h2>
+      <i class="fas fa-warehouse me-2"></i>
+      Configuración de Almacenes 3D
+    </h2>
+    <p class="text-muted">Configure la estructura física de cada almacén para el modelado 3D y la validación de ubicaciones</p>
+  </div>
+  
+  <div class="controls-section mb-4">
+    <button 
+      class="btn btn-primary" 
+      (click)="abrirModalConfig(configModal)"
+      [disabled]="loadingConfigs">
+      <i class="fas fa-plus me-2"></i>
+      Nueva Configuración
+    </button>
+  </div>
+
+  <!-- Lista de configuraciones -->
+  <div *ngIf="loadingConfigs" class="text-center py-5">
+    <i class="fas fa-spinner fa-spin fa-2x me-2"></i>
+    <p>Cargando configuraciones...</p>
+  </div>
+
+  <div *ngIf="!loadingConfigs && almacenes.length > 0" class="configs-list">
+    <div *ngFor="let almacen of almacenes" class="config-card mb-3">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-0">
+              <i class="fas fa-warehouse me-2"></i>
+              {{almacen.numero}} - {{almacen.nombre}}
+            </h5>
+          </div>
+          <div>
+            <button 
+              class="btn btn-sm btn-primary me-2" 
+              (click)="abrirModalConfig(configModal, getConfigForAlmacen(almacen.id))"
+              *ngIf="getConfigForAlmacen(almacen.id) !== undefined">
+              <i class="fas fa-edit me-1"></i>
+              Editar
+            </button>
+            <button 
+              class="btn btn-sm btn-success me-2" 
+              (click)="abrirModalConfig(configModal)"
+              *ngIf="getConfigForAlmacen(almacen.id) === undefined">
+              <i class="fas fa-plus me-1"></i>
+              Configurar
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="getConfigForAlmacen(almacen.id) as config; else sinConfig">
+            <div class="config-details">
+              <div class="row">
+                <div class="col-md-3">
+                  <strong>Nombre:</strong><br>
+                  <span>{{config.nombre || almacen.nombre}}</span>
+                </div>
+                <div class="col-md-3">
+                  <strong>Estanterías:</strong><br>
+                  <span class="badge bg-primary">{{config.cantidadEstanterias}}</span>
+                </div>
+                <div class="col-md-3">
+                  <strong>Estantes por Estantería:</strong><br>
+                  <span class="badge bg-info">{{config.cantidadEstantesPorEstanteria}}</span>
+                </div>
+                <div class="col-md-3">
+                  <strong>Divisiones:</strong><br>
+                  <span *ngFor="let div of getDivisionesArray(config.divisionesEstante)" class="badge bg-secondary me-1">
+                    {{div}}
+                  </span>
+                </div>
+              </div>
+              <div class="mt-3">
+                <button 
+                  class="btn btn-sm btn-danger" 
+                  (click)="eliminarConfig(config)">
+                  <i class="fas fa-trash me-1"></i>
+                  Eliminar Configuración
+                </button>
+              </div>
+            </div>
+          </div>
+          <ng-template #sinConfig>
+            <div class="text-muted">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Este almacén no tiene configuración. Configure la estructura para habilitar validación y modelado 3D.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loadingConfigs && almacenes.length === 0" class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    No hay almacenes disponibles. Cree almacenes primero antes de configurarlos.
+  </div>
+
+  <!-- Modal para crear/editar configuración -->
+  <ng-template #configModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">
+        <i class="fas fa-warehouse me-2"></i>
+        {{modoEdicionConfig ? 'Editar' : 'Nueva'}} Configuración de Almacén
+      </h4>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="almacenConfigForm">
+        <div class="mb-3">
+          <label for="almacenId" class="form-label">Almacén <span class="text-danger">*</span></label>
+          <select 
+            id="almacenId" 
+            class="form-select" 
+            formControlName="almacenId"
+            [disabled]="modoEdicionConfig">
+            <option value="">Seleccione un almacén</option>
+            <option *ngFor="let almacen of almacenes" [value]="almacen.id">
+              {{almacen.numero}} - {{almacen.nombre}}
+            </option>
+          </select>
+          <div *ngIf="almacenConfigForm.get('almacenId')?.invalid && almacenConfigForm.get('almacenId')?.touched" class="text-danger">
+            Debe seleccionar un almacén
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Nombre Personalizado (Opcional)</label>
+          <input 
+            type="text" 
+            id="nombre" 
+            class="form-control" 
+            formControlName="nombre"
+            placeholder="Ej: Almacén Principal">
+          <small class="form-text text-muted">Si se deja vacío, se usará el nombre del almacén</small>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="cantidadEstanterias" class="form-label">Cantidad de Estanterías <span class="text-danger">*</span></label>
+            <input 
+              type="number" 
+              id="cantidadEstanterias" 
+              class="form-control" 
+              formControlName="cantidadEstanterias"
+              min="1">
+            <div *ngIf="almacenConfigForm.get('cantidadEstanterias')?.invalid && almacenConfigForm.get('cantidadEstanterias')?.touched" class="text-danger">
+              Debe ser al menos 1
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="cantidadEstantesPorEstanteria" class="form-label">Estantes por Estantería <span class="text-danger">*</span></label>
+            <input 
+              type="number" 
+              id="cantidadEstantesPorEstanteria" 
+              class="form-control" 
+              formControlName="cantidadEstantesPorEstanteria"
+              min="1">
+            <div *ngIf="almacenConfigForm.get('cantidadEstantesPorEstanteria')?.invalid && almacenConfigForm.get('cantidadEstantesPorEstanteria')?.touched" class="text-danger">
+              Debe ser al menos 1
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="divisionesEstante" class="form-label">Divisiones de Estante <span class="text-danger">*</span></label>
+          <input 
+            type="text" 
+            id="divisionesEstante" 
+            class="form-control" 
+            formControlName="divisionesEstante"
+            placeholder="A,B,C">
+          <small class="form-text text-muted">Separe las divisiones por comas (ej: A,B,C o 1,2,3)</small>
+          <div *ngIf="almacenConfigForm.get('divisionesEstante')?.invalid && almacenConfigForm.get('divisionesEstante')?.touched" class="text-danger">
+            Debe especificar al menos una división
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+        <i class="fas fa-times me-2"></i>
+        Cancelar
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="guardarConfig()"
+        [disabled]="!almacenConfigForm.valid">
+        <i class="fas fa-save me-2"></i>
+        Guardar
+      </button>
+    </div>
+  </ng-template>
+</div>
+

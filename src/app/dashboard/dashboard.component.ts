@@ -5,9 +5,9 @@ import { BiosService } from '../services/bios.service';
 import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { NgbPaginationModule, NgbModalModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { AlertService, Alerta } from '../services/alert.service';
-import { finalize } from 'rxjs/operators';
+import { finalize, catchError } from 'rxjs/operators';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { PermissionsService } from '../services/permissions.service';
@@ -16,6 +16,7 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { ConfigService } from '../services/config.service';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
+import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
 
 declare var bootstrap: any;
 
@@ -78,7 +79,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private modalService: NgbModal,
     private configService: ConfigService,
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private estadoDispositivoService: EstadoDispositivoService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -94,18 +96,40 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     forkJoin({
       hardware: this.hardwareService.getActiveHardware(),
       bios: this.biosService.getAllBios(),
-      network: this.networkInfoService.getNetworkInfo()
+      network: this.networkInfoService.getNetworkInfo(),
+      macsInactivas: this.estadoDispositivoService.getMacsInactivas().pipe(
+        catchError(error => {
+          console.warn('⚠️ Error al obtener MACs inactivas, usando array vacío:', error);
+          return of({ success: false, data: [] });
+        })
+      )
     }).subscribe(
-      ({ hardware, bios, network }) => {
+      ({ hardware, bios, network, macsInactivas }) => {
         const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
+        
+        // Filtrar BIOS para incluir solo los de hardware activo
+        const hardwareIdsSet = new Set(hardware.map(h => h.id));
+        const biosActivos = bios.filter(b => hardwareIdsSet.has(b.hardwareId));
+        
         const typeData = this.prepareHardwareTypeData(hardware, biosMap);
-        const brandData = this.prepareBrandData(bios);
+        const brandData = this.prepareBrandData(biosActivos);
         const osData = this.prepareChartData(hardware, 'osName');
 
-        // Procesar datos de red
+        // Procesar datos de red - filtrar dispositivos inactivos (en almacenes o cementerio)
         let networkData: NetworkInfoDTO[] = [];
         if (network && 'success' in network && network.success) {
           networkData = network.data || [];
+          
+          // Obtener MACs inactivas para filtrar
+          const macsInactivasList = (macsInactivas?.success && Array.isArray(macsInactivas.data)) 
+            ? macsInactivas.data 
+            : [];
+          const macsInactivasSet = new Set(macsInactivasList);
+          
+          // Filtrar dispositivos que NO están en almacenes o cementerio
+          networkData = networkData.filter(device => !macsInactivasSet.has(device.mac));
+          
+          console.log(`📊 [Dashboard] Dispositivos de red total: ${network.data?.length || 0}, Inactivos (baja/almacén): ${macsInactivasList.length}, Activos: ${networkData.length}`);
         }
 
         // Configuración común para todas las gráficas

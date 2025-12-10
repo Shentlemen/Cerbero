@@ -21,6 +21,7 @@ export interface StockAlmacen {
   };
   estanteria: string;
   estante: string;
+  seccion?: string;
   descripcion?: string;
   cantidad: number;
   numero?: string;
@@ -33,6 +34,7 @@ export interface StockAlmacenCreate {
   almacenId: number;
   estanteria: string;
   estante: string;
+  seccion?: string;
   cantidad: number;
   numero?: string;
   descripcion?: string;
@@ -157,6 +159,7 @@ export class StockAlmacenService extends BaseRestService {
       almacenId: stock.almacenId,
       estanteria: stock.estanteria,
       estante: stock.estante,
+      seccion: stock.seccion,
       cantidad: stock.cantidad,
       numero: stock.numero
     };

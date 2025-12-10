@@ -1,0 +1,51 @@
+.config-almacenes-container {
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-header h2 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.controls-section {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.configs-list {
+  margin-top: 20px;
+}
+
+.config-card .card {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.config-card .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.config-details {
+  padding: 10px 0;
+}
+
+.config-details .row {
+  margin-bottom: 15px;
+}
+
+.config-details strong {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.config-details .badge {
+  font-size: 0.9rem;
+  padding: 0.4em 0.6em;
+}
+

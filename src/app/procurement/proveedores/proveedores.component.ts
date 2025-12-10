@@ -170,7 +170,10 @@ export class ProveedoresComponent implements OnInit {
       this.contactosCargados = true;
       // No agregar contacto automáticamente, el usuario debe hacerlo manualmente
     }
-    this.modalService.open(modal, { size: 'lg' });
+    this.modalService.open(modal, { 
+      size: 'lg',
+      backdrop: true
+    });
   }
 
   cargarContactosProveedor(idProveedores: number) {

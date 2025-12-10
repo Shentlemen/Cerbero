@@ -41,6 +41,9 @@ export class AlmacenLaboratorioComponent implements OnInit {
 
   // Filtro de búsqueda
   nombreEquipoControl = new FormControl('');
+  
+  // Filtro por tipo (todos, equipos, dispositivos)
+  filtroTipo: 'todos' | 'equipos' | 'dispositivos' = 'todos';
 
   // Reactivación
   showReactivarDialog: boolean = false;
@@ -131,9 +134,8 @@ export class AlmacenLaboratorioComponent implements OnInit {
           }).filter((dispositivo: any) => dispositivo.mac); // Solo incluir si tiene MAC
         }
         
-        // Combinar todos los items para el filtro
-        this.equiposFiltrados = [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen];
-        this.actualizarPaginacion();
+        // Aplicar filtros iniciales
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (error) => {
@@ -148,15 +150,43 @@ export class AlmacenLaboratorioComponent implements OnInit {
   }
 
   private aplicarFiltroNombre(nombre: string): void {
-    if (!nombre.trim()) {
-      this.equiposFiltrados = [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen];
+    this.aplicarFiltros();
+  }
+
+  /**
+   * Aplica todos los filtros (tipo y nombre)
+   */
+  private aplicarFiltros(): void {
+    let itemsFiltrados: any[] = [];
+
+    // Primero filtrar por tipo
+    if (this.filtroTipo === 'equipos') {
+      itemsFiltrados = [...this.equiposEnAlmacen];
+    } else if (this.filtroTipo === 'dispositivos') {
+      itemsFiltrados = [...this.dispositivosEnAlmacen];
     } else {
-      const todosItems = [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen];
-      this.equiposFiltrados = todosItems.filter(item => 
-        (item.name || item.mac || '').toLowerCase().includes(nombre.toLowerCase())
+      itemsFiltrados = [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen];
+    }
+
+    // Luego filtrar por nombre si hay búsqueda
+    const nombreBusqueda = this.nombreEquipoControl.value?.trim() || '';
+    if (nombreBusqueda) {
+      itemsFiltrados = itemsFiltrados.filter(item => 
+        (item.name || item.mac || '').toLowerCase().includes(nombreBusqueda.toLowerCase())
       );
     }
+
+    this.equiposFiltrados = itemsFiltrados;
     this.actualizarPaginacion();
+  }
+
+  /**
+   * Cambia el filtro por tipo
+   */
+  filtrarPorTipo(tipo: 'todos' | 'equipos' | 'dispositivos'): void {
+    this.filtroTipo = tipo;
+    this.page = 1; // Resetear a la primera página
+    this.aplicarFiltros();
   }
 
   private actualizarPaginacion(resetPage: boolean = true): void {
@@ -179,6 +209,27 @@ export class AlmacenLaboratorioComponent implements OnInit {
     const startItem = (this.page - 1) * this.pageSize;
     const endItem = this.page * this.pageSize;
     return this.equiposFiltrados.slice(startItem, endItem);
+  }
+
+  /**
+   * Obtiene el total de equipos en el almacén
+   */
+  getTotalEquipos(): number {
+    return this.equiposEnAlmacen.length;
+  }
+
+  /**
+   * Obtiene el total de dispositivos en el almacén
+   */
+  getTotalDispositivos(): number {
+    return this.dispositivosEnAlmacen.length;
+  }
+
+  /**
+   * Obtiene el total de items (equipos + dispositivos) en el almacén
+   */
+  getTotalItems(): number {
+    return this.equiposFiltrados.length;
   }
 
   verDetallesEquipo(equipo: any): void {

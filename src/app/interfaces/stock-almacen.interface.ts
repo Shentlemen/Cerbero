@@ -11,6 +11,7 @@ export interface StockAlmacen {
     };
     estanteria: string;
     estante: string;
+    seccion?: string;
     cantidad: number;
     numero?: string;
     descripcion?: string;
@@ -23,6 +24,7 @@ export interface StockAlmacenCreate {
     almacenId: number;
     estanteria: string;
     estante: string;
+    seccion?: string;
     cantidad: number;
     numero?: string;
     descripcion?: string;
@@ -35,6 +37,7 @@ export interface StockAlmacenCreateWithItem {
     almacenId: number;
     estanteria: string;
     estante: string;
+    seccion?: string;
     cantidad: number;
     numero?: string;
     descripcion?: string;
