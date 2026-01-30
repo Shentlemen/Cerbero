@@ -811,12 +811,29 @@ canvasjs-chart {
   position: relative;
 }
 
+/* FIX: Compensar el zoom global de 0.8 del body para que las gráficas detecten 
+   correctamente la posición del mouse. 1/0.8 = 1.25 
+   
+   El zoom de 1.25 hace que el elemento sea 1.25x más grande, por eso reducimos
+   las dimensiones a 80% (1/1.25 = 0.8) para mantener el mismo tamaño visual.
+   - height original: 320px → 256px (320 * 0.8)
+   - width: 80% del contenedor
+*/
+.chart-card canvasjs-chart {
+  zoom: 1.25;
+  width: 80% !important;
+  height: 256px !important;
+  min-height: 256px !important;
+}
+
 /* Responsive mejorado para diferentes tamaños de pantalla */
+/* NOTA: Los valores de altura están reducidos al 80% porque el zoom 1.25 
+   aplicado a canvasjs-chart aumenta el tamaño visual 1.25x */
 @media (max-width: 1800px) {
-  canvasjs-chart {
-    width: 100% !important;
-    height: 300px !important;
-    min-height: 300px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 240px !important; /* 300px * 0.8 */
+    min-height: 240px !important;
   }
   .chart-card {
     height: fit-content;
@@ -824,10 +841,10 @@ canvasjs-chart {
 }
 
 @media (max-width: 1600px) {
-  canvasjs-chart {
-    width: 100% !important;
-    height: 280px !important;
-    min-height: 280px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 224px !important; /* 280px * 0.8 */
+    min-height: 224px !important;
   }
   .chart-card {
     height: fit-content;
@@ -835,10 +852,10 @@ canvasjs-chart {
 }
 
 @media (max-width: 1400px) {
-  canvasjs-chart {
-    width: 100% !important;
-    height: 260px !important;
-    min-height: 260px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 208px !important; /* 260px * 0.8 */
+    min-height: 208px !important;
   }
   .chart-card {
     height: fit-content;
@@ -851,10 +868,10 @@ canvasjs-chart {
     gap: 8px;
   }
   
-  canvasjs-chart {
-    width: 100% !important;
-    height: 320px !important;
-    min-height: 320px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 256px !important; /* 320px * 0.8 */
+    min-height: 256px !important;
   }
   
   .chart-card {
@@ -869,10 +886,10 @@ canvasjs-chart {
     gap: 8px;
   }
   
-  canvasjs-chart {
-    width: 100% !important;
-    height: 350px !important;
-    min-height: 350px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 280px !important; /* 350px * 0.8 */
+    min-height: 280px !important;
   }
   
   .chart-card {
@@ -882,10 +899,10 @@ canvasjs-chart {
 }
 
 @media (max-width: 768px) {
-  canvasjs-chart {
-    width: 100% !important;
-    height: 300px !important;
-    min-height: 300px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 240px !important; /* 300px * 0.8 */
+    min-height: 240px !important;
   }
   
   .chart-card {
@@ -895,10 +912,10 @@ canvasjs-chart {
 }
 
 @media (max-width: 576px) {
-  canvasjs-chart {
-    width: 100% !important;
-    height: 280px !important;
-    min-height: 280px !important;
+  .chart-card canvasjs-chart {
+    width: 80% !important;
+    height: 224px !important; /* 280px * 0.8 */
+    min-height: 224px !important;
   }
   
   .chart-card {
@@ -979,13 +996,6 @@ canvasjs-chart {
   background: transparent;
   border: none;
   padding: 0;
-}
-
-/* Asegurar que todas las gráficas tengan el mismo tamaño */
-canvasjs-chart {
-  width: 100% !important;
-  height: 300px !important;
-  display: block;
 }
 
 .new-hardware-alert {

@@ -385,106 +385,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   private fixChartMouseCoordinates(): void {
-    // Esperar a que las gráficas se rendericen completamente
-    setTimeout(() => {
-      const chartContainers = document.querySelectorAll('canvasjs-chart');
-      const zoomFactor = 0.8; // El zoom aplicado al body en styles.css
-      
-      chartContainers.forEach((container: any) => {
-        // Buscar el canvas dentro del contenedor de CanvasJS
-        const canvas = container.querySelector('canvas');
-        if (!canvas) return;
-        
-        // Interceptar eventos del mouse antes de que CanvasJS los procese
-        const adjustMouseEvent = (e: MouseEvent) => {
-          const rect = canvas.getBoundingClientRect();
-          
-          // Calcular coordenadas relativas al canvas (ya afectadas por el zoom visual)
-          const relativeX = e.clientX - rect.left;
-          const relativeY = e.clientY - rect.top;
-          
-          // Obtener dimensiones del canvas
-          const canvasWidth = canvas.width;
-          const canvasHeight = canvas.height;
-          const displayWidth = rect.width; // Tamaño visual (ya afectado por zoom 0.8)
-          const displayHeight = rect.height; // Tamaño visual (ya afectado por zoom 0.8)
-          
-          // Explicación del problema y solución:
-          // Con zoom 0.8, el canvas se muestra 80% del tamaño original
-          // Las coordenadas del mouse están en el espacio visual (con zoom)
-          // CanvasJS calcula coordenadas basándose en el tamaño visual del canvas
-          // pero el canvas interno mantiene su tamaño original
-          //
-          // Solución profesional: Ajustar coordenadas considerando:
-          // 1. El zoom aplicado al body (0.8)
-          // 2. La relación entre tamaño interno y visual del canvas
-          
-          // Solución profesional: Ajustar coordenadas considerando el zoom del body
-          // 
-          // Explicación del problema:
-          // - Con zoom 0.8 en el body, todo se muestra 80% del tamaño
-          // - El canvas se renderiza a su tamaño interno (canvasWidth x canvasHeight)
-          // - Pero se muestra visualmente más pequeño (displayWidth x displayHeight)
-          // - Las coordenadas del mouse están en el espacio visual (con zoom)
-          // - CanvasJS espera coordenadas en el espacio del canvas interno
-          //
-          // Solución: Convertir coordenadas visuales a coordenadas del canvas interno
-          // 
-          // El factor de escala relaciona el tamaño interno con el visual:
-          // scale = canvasWidth / displayWidth
-          // 
-          // Pero displayWidth ya está afectado por el zoom, así que:
-          // displayWidth_real = displayWidth / zoomFactor
-          // scale = canvasWidth / (displayWidth / zoomFactor) = (canvasWidth * zoomFactor) / displayWidth
-          //
-          // Sin embargo, CanvasJS ya maneja el scale internamente basándose en displayWidth,
-          // así que solo necesitamos compensar el zoom:
-          const scaleX = canvasWidth / displayWidth;
-          const scaleY = canvasHeight / displayHeight;
-          
-          // Solución profesional: Ajustar coordenadas considerando el zoom del body
-          // 
-          // Con zoom 0.8 en el body:
-          // - El canvas se muestra 80% del tamaño original visualmente
-          // - Las coordenadas del mouse están en el espacio visual (ya afectado por zoom)
-          // - CanvasJS calcula coordenadas basándose en el tamaño visual del canvas
-          // - Pero el canvas interno mantiene su tamaño original
-          //
-          // El factor de escala relaciona el tamaño interno con el visual:
-          // scaleX = canvasWidth / displayWidth
-          // donde displayWidth ya está afectado por el zoom 0.8
-          //
-          // Para convertir coordenadas visuales a coordenadas del canvas interno:
-          // Con zoom 0.8, si haces clic en posición visual 100px, deberías estar en 125px del canvas
-          // Fórmula: coordenada_canvas = coordenada_visual / zoomFactor
-          // Esto convierte de espacio visual (80%) a espacio real (100%)
-          const canvasX = relativeX / zoomFactor;
-          const canvasY = relativeY / zoomFactor;
-          
-          // Modificar el evento para que CanvasJS use las coordenadas correctas
-          try {
-            Object.defineProperty(e, 'offsetX', { 
-              value: canvasX, 
-              writable: true,
-              configurable: true 
-            });
-            Object.defineProperty(e, 'offsetY', { 
-              value: canvasY, 
-              writable: true,
-              configurable: true 
-            });
-          } catch (err) {
-            console.debug('No se pudieron ajustar las propiedades del evento:', err);
-          }
-        };
-        
-        // Agregar listeners en fase de captura para interceptar antes que CanvasJS
-        container.addEventListener('mousedown', adjustMouseEvent, true);
-        container.addEventListener('mousemove', adjustMouseEvent, true);
-        container.addEventListener('mouseup', adjustMouseEvent, true);
-        container.addEventListener('click', adjustMouseEvent, true);
-      });
-    }, 2000); // Esperar 2 segundos para que las gráficas se rendericen completamente
+    // NOTA: La corrección del desfase del mouse ahora se maneja con CSS
+    // aplicando zoom: 1.25 a .chart-card canvasjs-chart en dashboard.component.css
+    // Esto compensa el zoom: 0.8 del body (1/0.8 = 1.25)
+    // 
+    // Se mantiene esta función vacía por compatibilidad pero ya no es necesaria.
+    console.log('📊 Corrección de coordenadas del mouse para gráficas aplicada via CSS');
   }
 
   loadAlertas(): void {
