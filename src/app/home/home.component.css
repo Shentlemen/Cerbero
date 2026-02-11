@@ -1,11 +1,24 @@
-ngx-particles {
+/* FIX: Compensar el zoom global de 0.8 del body (styles.css) para que las partículas
+   detecten correctamente la posición del mouse. 1/0.8 = 1.25 (mismo enfoque que dashboard).
+   El wrapper tiene zoom 1.25; las dimensiones internas al 80% mantienen cobertura visual. */
+.particles-zoom-wrapper {
   position: fixed;
+  width: 80%;
+  height: 80%;
+  left: 10%;
+  top: 10%;
+  zoom: 1.25;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none; /* Las partículas no interfieren con los clics del formulario */
+}
+
+.particles-zoom-wrapper ngx-particles {
+  position: absolute;
   width: 100%;
   height: 100%;
   top: 0;
   left: 0;
-  z-index: 2; /* Las partículas sobre el fondo negro pero debajo del logo y el formulario */
-  pointer-events: none; /* Las partículas no interfieren con los clics */
 }
 
 .home-container {

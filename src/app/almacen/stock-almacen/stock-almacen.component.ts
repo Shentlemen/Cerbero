@@ -66,6 +66,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   // Estado del dropdown de acciones
   dropdownAbiertoId: string | number | null = null;
 
+  // Buscador con resaltado (no filtra, solo resalta)
+  searchTerm: string = '';
+
   // Datos de stock para el componente 3D (solo para ALM03)
   stockData3D: StockItem[] = [];
 
@@ -160,136 +163,36 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   }
 
   cargarEquiposEspeciales(): void {
-    if (!this.almacenCementerio && !this.almacenLaboratorio) {
-      // Si no hay almacenes especiales, solo organizar el stock normal
-      let stockCompleto = [...this.stock];
-      
-      // Filtrar por almacén si hay un ID específico
-      if (this.almacenId) {
-        stockCompleto = stockCompleto.filter(item => item.almacen.id === this.almacenId);
-      }
-      
-      this.organizarStock(stockCompleto);
-      this.loading = false;
-      return;
-    }
+    // El stock_almacen es la única fuente de verdad para el inventario.
+    // Al transferir, el backend crea la entrada en stock_almacen (createStockEquipo/createStockDispositivo).
+    // Solo necesitamos enriquecer los items con item_id null (equipos/dispositivos) para Transferir/Reactivar.
 
     forkJoin({
-      equiposBaja: this.estadoEquipoService.getEquiposEnBaja(),
-      dispositivosBaja: this.estadoDispositivoService.getDispositivosEnBaja(),
-      equiposAlmacen: this.estadoEquipoService.getEquiposEnAlmacen(),
-      dispositivosAlmacen: this.estadoDispositivoService.getDispositivosEnAlmacen(),
       hardware: this.hardwareService.getHardware(),
-      bios: this.biosService.getAllBios(),
       networkInfo: this.networkInfoService.getNetworkInfo()
     }).subscribe({
       next: (response) => {
-        console.log('📊 Respuesta de equipos en baja:', response.equiposBaja);
-        console.log('📊 Respuesta de equipos en almacén:', response.equiposAlmacen);
-        console.log('📊 Respuesta de dispositivos en baja:', response.dispositivosBaja);
-        console.log('📊 Respuesta de dispositivos en almacén:', response.dispositivosAlmacen);
-        
-        // Convertir equipos del cementerio a formato StockAlmacen
-        const itemsCementerio = this.convertirEquiposAStock(
-          response.equiposBaja,
-          response.dispositivosBaja,
-          Array.isArray(response.hardware) ? response.hardware : [],
-          Array.isArray(response.bios) ? response.bios : [],
-          response.networkInfo,
-          this.almacenCementerio,
-          'CEMENTERIO'
-        );
+        const hardware = Array.isArray(response.hardware) ? response.hardware : [];
+        const networkInfoData = response.networkInfo?.success && Array.isArray(response.networkInfo.data)
+          ? response.networkInfo.data : [];
 
-        // Filtrar equipos en almacén para separar laboratorio de almacenes regulares
-        const equiposEnAlmacen = response.equiposAlmacen?.success && Array.isArray(response.equiposAlmacen.data) 
-          ? response.equiposAlmacen.data 
-          : [];
-        
-        console.log('📦 Equipos en almacén recibidos:', equiposEnAlmacen.length);
-        console.log('📦 Equipos con almacenId:', equiposEnAlmacen.filter((e: any) => e.almacenId).map((e: any) => ({
-          hardwareId: e.hardwareId,
-          almacenId: e.almacenId
-        })));
-        
-        // Filtrar dispositivos en almacén para separar laboratorio de almacenes regulares
-        const dispositivosEnAlmacen = response.dispositivosAlmacen?.success && Array.isArray(response.dispositivosAlmacen.data) 
-          ? response.dispositivosAlmacen.data 
-          : [];
-        
-        const laboratorioId = this.almacenLaboratorio?.id;
-        // Equipos del laboratorio: aquellos con almacenId del laboratorio O sin almacenId (antiguos)
-        const equiposLaboratorio = equiposEnAlmacen.filter((e: any) => 
-          e.almacenId === laboratorioId || e.almacenId === null || e.almacenId === undefined
-        );
-        // Equipos de almacenes regulares: aquellos con almacenId pero que no es el laboratorio
-        const equiposAlmacenesRegulares = equiposEnAlmacen.filter((e: any) => 
-          e.almacenId && e.almacenId !== laboratorioId
-        );
-        
-        // Dispositivos del laboratorio: aquellos con almacenId del laboratorio O sin almacenId (antiguos)
-        const dispositivosLaboratorio = dispositivosEnAlmacen.filter((d: any) => 
-          d.almacenId === laboratorioId || d.almacenId === null || d.almacenId === undefined
-        );
-        // Dispositivos de almacenes regulares: aquellos con almacenId pero que no es el laboratorio
-        const dispositivosAlmacenesRegulares = dispositivosEnAlmacen.filter((d: any) => 
-          d.almacenId && d.almacenId !== laboratorioId
-        );
-        
-        console.log('📦 Equipos del laboratorio (almacenId=' + laboratorioId + '):', equiposLaboratorio.length);
-        console.log('🏢 Equipos en almacenes regulares:', equiposAlmacenesRegulares.length);
-        console.log('📱 Dispositivos del laboratorio:', dispositivosLaboratorio.length);
-        console.log('📱 Dispositivos en almacenes regulares:', dispositivosAlmacenesRegulares.length);
+        // Enriquecer stock: marcar equipos/dispositivos (item_id null) con esEquipoEspecial y datos para acciones
+        const stockEnriquecido = this.enriquecerStockConEquipos(this.stock, hardware, networkInfoData);
 
-        // Convertir equipos del almacén laboratorio a formato StockAlmacen
-        const itemsLaboratorio = this.convertirEquiposAStock(
-          { success: true, data: equiposLaboratorio },
-          { success: true, data: dispositivosLaboratorio },
-          Array.isArray(response.hardware) ? response.hardware : [],
-          Array.isArray(response.bios) ? response.bios : [],
-          response.networkInfo,
-          this.almacenLaboratorio,
-          'ALMACEN'
-        );
-
-        // Cargar equipos transferidos a almacenes regulares
-        const itemsEquiposAlmacenesRegulares = this.cargarEquiposTransferidosAAlmacenesRegulares(
-          equiposAlmacenesRegulares,
-          Array.isArray(response.hardware) ? response.hardware : [],
-          Array.isArray(response.bios) ? response.bios : []
-        );
-
-        // Cargar dispositivos transferidos a almacenes regulares
-        const itemsDispositivosAlmacenesRegulares = this.cargarDispositivosTransferidosAAlmacenesRegulares(
-          dispositivosAlmacenesRegulares,
-          response.networkInfo
-        );
-
-        const itemsAlmacenesRegulares = [...itemsEquiposAlmacenesRegulares, ...itemsDispositivosAlmacenesRegulares];
-
-        console.log('⚰️ Items cementerio convertidos:', itemsCementerio.length);
-        console.log('📦 Items almacén laboratorio convertidos:', itemsLaboratorio.length);
-        console.log('🏢 Items almacenes regulares convertidos:', itemsAlmacenesRegulares.length);
-
-        // Combinar con el stock normal
-        let stockCompleto: any[] = [...this.stock, ...itemsCementerio, ...itemsLaboratorio, ...itemsAlmacenesRegulares];
-        
         // Filtrar por almacén si hay un ID específico
+        let stockCompleto = [...stockEnriquecido];
         if (this.almacenId) {
-          stockCompleto = stockCompleto.filter(item => item.almacen.id === this.almacenId);
+          stockCompleto = stockCompleto.filter(item => item.almacen?.id === this.almacenId);
         }
-        
-        console.log('📋 Stock completo total:', stockCompleto.length);
-        
-        // Organizar todo el stock
+
         this.organizarStock(stockCompleto);
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error al cargar equipos especiales:', error);
-        // Si falla, al menos mostrar el stock normal
+        console.error('Error al enriquecer stock:', error);
         let stockCompleto = [...this.stock];
         if (this.almacenId) {
-          stockCompleto = stockCompleto.filter(item => item.almacen.id === this.almacenId);
+          stockCompleto = stockCompleto.filter(item => item.almacen?.id === this.almacenId);
         }
         this.organizarStock(stockCompleto);
         this.loading = false;
@@ -297,286 +200,59 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     });
   }
 
-  convertirEquiposAStock(
-    equiposResponse: any,
-    dispositivosResponse: any,
-    hardware: any[],
-    bios: any[],
-    networkInfo: any,
-    almacen: Almacen | null,
-    tipo: 'CEMENTERIO' | 'ALMACEN'
-  ): any[] {
-    if (!almacen) {
-      console.warn(`⚠️ No se encontró almacén para ${tipo}`);
-      return [];
-    }
-
-    const items: any[] = [];
-    
-    // Verificar que hardware y bios sean arrays
-    if (!Array.isArray(hardware)) hardware = [];
-    if (!Array.isArray(bios)) bios = [];
-    
-    const biosMap = new Map(bios.map((b: any) => [b.hardwareId, b]));
-
-    // Procesar equipos
-    console.log(`🔧 Procesando equipos para ${tipo}:`, {
-      responseSuccess: equiposResponse?.success,
-      dataIsArray: Array.isArray(equiposResponse?.data),
-      dataLength: equiposResponse?.data?.length || 0,
-      hardwareLength: hardware.length
-    });
-
-    if (equiposResponse?.success && Array.isArray(equiposResponse.data)) {
-      equiposResponse.data.forEach((estado: any) => {
-        const hw = hardware.find((h: any) => h.id === estado.hardwareId);
-        if (hw) {
-          const biosData = biosMap.get(estado.hardwareId);
-          items.push({
-            id: `equipo-${estado.hardwareId}-${tipo}`,
-            itemId: estado.hardwareId,
-            idCompra: null,
-            almacen: almacen,
-            estanteria: 'Equipos',
-            estante: tipo === 'CEMENTERIO' ? 'En Baja' : 'En Almacén',
-            cantidad: 1,
-            numero: hw.name || `EQ-${estado.hardwareId}`,
-            descripcion: `${hw.name || 'Equipo'} - ${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`,
-            fechaRegistro: estado.fechaCambio,
-            item: {
-              nombreItem: hw.name || `Equipo ${estado.hardwareId}`,
-              descripcion: `${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`
-            },
-            esEquipoEspecial: true,
-            tipoEquipo: 'EQUIPO',
-            estadoInfo: estado
-          });
-        } else {
-          console.warn(`⚠️ No se encontró hardware para hardwareId: ${estado.hardwareId}`);
-        }
-      });
-    } else {
-      console.warn(`⚠️ Respuesta de equipos inválida para ${tipo}:`, equiposResponse);
-    }
-
-    // Procesar dispositivos
-    console.log(`🔧 Procesando dispositivos para ${tipo}:`, {
-      responseSuccess: dispositivosResponse?.success,
-      dataIsArray: Array.isArray(dispositivosResponse?.data),
-      dataLength: dispositivosResponse?.data?.length || 0,
-      networkInfoSuccess: networkInfo?.success,
-      networkInfoDataIsArray: Array.isArray(networkInfo?.data),
-      networkInfoDataLength: networkInfo?.data?.length || 0
-    });
-
-    if (dispositivosResponse?.success && Array.isArray(dispositivosResponse.data) && 
-        networkInfo?.success && Array.isArray(networkInfo.data)) {
-      const networkInfoMap = new Map(
-        networkInfo.data.map((device: any) => [device.mac, device])
-      );
-
-      dispositivosResponse.data.forEach((estado: any) => {
-        const device: any = networkInfoMap.get(estado.mac);
-        if (device) {
-          items.push({
-            id: `dispositivo-${estado.mac}-${tipo}`,
-            itemId: null,
-            idCompra: null,
-            almacen: almacen,
-            estanteria: 'Dispositivos',
-            estante: tipo === 'CEMENTERIO' ? 'En Baja' : 'En Almacén',
-            cantidad: 1,
-            numero: device.mac,
-            descripcion: `${device.name || device.mac} - ${device.type || 'N/A'}`,
-            fechaRegistro: estado.fechaCambio,
-            item: {
-              nombreItem: device.name || device.mac,
-              descripcion: `${device.type || 'N/A'} | ${device.description || 'Sin descripción'}`
-            },
-            esEquipoEspecial: true,
-            tipoEquipo: 'DISPOSITIVO',
-            estadoInfo: estado
-          });
-        } else {
-          console.warn(`⚠️ No se encontró dispositivo para MAC: ${estado.mac}`);
-        }
-      });
-    } else {
-      console.warn(`⚠️ Respuesta de dispositivos inválida para ${tipo}:`, {
-        dispositivosResponse,
-        networkInfo
-      });
-    }
-
-    console.log(`✅ Total items convertidos para ${tipo}:`, items.length);
-    return items;
-  }
-
   /**
-   * Carga y convierte equipos transferidos a almacenes regulares
+   * Enriquece items de stock que son equipos/dispositivos transferidos (item_id null)
+   * para habilitar Transferir/Reactivar. Usa hardware y networkInfo para resolver hardwareId/mac.
    */
-  cargarEquiposTransferidosAAlmacenesRegulares(
-    equiposEnAlmacen: any[],
-    hardware: any[],
-    bios: any[]
-  ): any[] {
-    const items: any[] = [];
-    
-    if (!Array.isArray(equiposEnAlmacen) || equiposEnAlmacen.length === 0) {
-      return items;
-    }
+  enriquecerStockConEquipos(stock: any[], hardware: any[], networkInfoData: any[]): any[] {
+    const networkByMac = new Map<string, any>(networkInfoData.map((d: any) => [d.mac, d]));
+    const networkByName = new Map<string, any>();
+    networkInfoData.forEach((d: any) => {
+      if (d.name) networkByName.set(d.name, d);
+    });
 
-    if (!Array.isArray(hardware)) hardware = [];
-    if (!Array.isArray(bios)) bios = [];
-    
-    const biosMap = new Map(bios.map((b: any) => [b.hardwareId, b]));
-
-    equiposEnAlmacen.forEach((estado: any) => {
-      // Solo procesar equipos con almacen_id (almacenes regulares)
-      if (!estado.almacenId) {
-        return;
+    return stock.map(item => {
+      const idItem = item.item?.idItem ?? item.item?.id;
+      if (idItem != null) {
+        return item; // Item de compra (lote) - no es equipo transferido
       }
 
-      const hw = hardware.find((h: any) => h.id === estado.hardwareId);
-      if (!hw) {
-        console.warn(`⚠️ No se encontró hardware para hardwareId: ${estado.hardwareId}`);
-        return;
+      const numero = item.numero || item.item?.nombreItem || '';
+      if (!numero) return item;
+
+      // Buscar como EQUIPO (hardware por nombre, case-insensitive)
+      const numeroNorm = (numero || '').trim().toLowerCase();
+      const hw = hardware.find((h: any) => (h.name || '').trim().toLowerCase() === numeroNorm);
+      if (hw) {
+        return {
+          ...item,
+          itemId: hw.id,
+          esEquipoEspecial: true,
+          tipoEquipo: 'EQUIPO',
+          estadoInfo: { hardwareId: hw.id }
+        };
       }
 
-      // Buscar el almacén correspondiente
-      const almacen = this.almacenes.find(a => a.id === estado.almacenId);
-      if (!almacen) {
-        console.warn(`⚠️ No se encontró almacén para almacenId: ${estado.almacenId}`);
-        return;
+      // Buscar como DISPOSITIVO (por mac o name - numero en stock puede ser la MAC)
+      const device = networkByMac.get(numero) || networkByName.get(numero.trim()) ||
+        networkInfoData.find((d: any) => (d.mac || '') === numero || (d.name || '').toLowerCase() === numeroNorm);
+      if (device) {
+        return {
+          ...item,
+          itemId: null,
+          esEquipoEspecial: true,
+          tipoEquipo: 'DISPOSITIVO',
+          estadoInfo: { mac: device.mac }
+        };
       }
 
-      // Parsear estantería, estante y sección de las observaciones
-      const { estanteria, estante, seccion } = this.parsearEstanteriaYEstante(estado.observaciones);
-      
-      const biosData = biosMap.get(estado.hardwareId);
-      
-      items.push({
-        id: `equipo-${estado.hardwareId}-almacen-${estado.almacenId}`,
-        itemId: estado.hardwareId,
-        idCompra: null,
-        almacen: almacen,
-        estanteria: estanteria || 'Equipos',
-        estante: estante || 'Sin especificar',
-        seccion: seccion || null,
-        cantidad: 1,
-        numero: hw.name || `EQ-${estado.hardwareId}`,
-        descripcion: `${hw.name || 'Equipo'} - ${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`,
-        fechaRegistro: estado.fechaCambio,
-        item: {
-          nombreItem: hw.name || `Equipo ${estado.hardwareId}`,
-          descripcion: `${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`
-        },
+      // Equipo/dispositivo sin match en hardware/networkInfo - marcar como equipo para mostrar UI
+      return {
+        ...item,
         esEquipoEspecial: true,
-        tipoEquipo: 'EQUIPO',
-        estadoInfo: estado
-      });
+        tipoEquipo: 'EQUIPO'
+      };
     });
-
-    return items;
-  }
-
-  /**
-   * Parsea estantería, estante y sección de las observaciones
-   * Formato esperado: "Estantería: X, Estante: Y, Sección: Z" o "Estantería: X | Estante: Y | Sección: Z"
-   */
-  parsearEstanteriaYEstante(observaciones: string | null | undefined): { estanteria: string | null, estante: string | null, seccion: string | null } {
-    if (!observaciones) {
-      return { estanteria: null, estante: null, seccion: null };
-    }
-
-    let estanteria: string | null = null;
-    let estante: string | null = null;
-    let seccion: string | null = null;
-
-    // Buscar "Estantería: X"
-    const estanteriaMatch = observaciones.match(/Estanter[íi]a:\s*([^,|]+)/i);
-    if (estanteriaMatch && estanteriaMatch[1]) {
-      estanteria = estanteriaMatch[1].trim();
-    }
-
-    // Buscar "Estante: Y"
-    const estanteMatch = observaciones.match(/Estante:\s*([^,|]+)/i);
-    if (estanteMatch && estanteMatch[1]) {
-      estante = estanteMatch[1].trim();
-    }
-
-    // Buscar "Sección: Z"
-    const seccionMatch = observaciones.match(/Secci[óo]n:\s*([^,|]+)/i);
-    if (seccionMatch && seccionMatch[1]) {
-      seccion = seccionMatch[1].trim();
-    }
-
-    return { estanteria, estante, seccion };
-  }
-
-  /**
-   * Cargar dispositivos transferidos a almacenes regulares
-   */
-  cargarDispositivosTransferidosAAlmacenesRegulares(
-    dispositivosAlmacenesRegulares: any[],
-    networkInfo: any
-  ): any[] {
-    const items: any[] = [];
-
-    if (!dispositivosAlmacenesRegulares || dispositivosAlmacenesRegulares.length === 0) {
-      return items;
-    }
-
-    if (!networkInfo?.success || !Array.isArray(networkInfo.data)) {
-      console.warn('⚠️ No se encontró información de red para dispositivos');
-      return items;
-    }
-
-    const networkInfoMap = new Map(
-      networkInfo.data.map((device: any) => [device.mac, device])
-    );
-
-    dispositivosAlmacenesRegulares.forEach((estado: any) => {
-      const device: any = networkInfoMap.get(estado.mac);
-      if (!device) {
-        console.warn(`⚠️ No se encontró dispositivo para MAC: ${estado.mac}`);
-        return;
-      }
-
-      // Buscar el almacén correspondiente
-      const almacen = this.almacenes.find(a => a.id === estado.almacenId);
-      if (!almacen) {
-        console.warn(`⚠️ No se encontró almacén para almacenId: ${estado.almacenId}`);
-        return;
-      }
-
-      // Parsear estantería, estante y sección de las observaciones
-      const { estanteria, estante, seccion } = this.parsearEstanteriaYEstante(estado.observaciones);
-      
-      items.push({
-        id: `dispositivo-${estado.mac}-almacen-${estado.almacenId}`,
-        itemId: null,
-        idCompra: null,
-        almacen: almacen,
-        estanteria: estanteria || 'Dispositivos',
-        estante: estante || 'Sin especificar',
-        seccion: seccion || null,
-        cantidad: 1,
-        numero: device.mac,
-        descripcion: `${device.name || device.mac} - ${device.type || 'N/A'}`,
-        fechaRegistro: estado.fechaCambio,
-        item: {
-          nombreItem: device.name || device.mac,
-          descripcion: `${device.type || 'N/A'} | ${device.description || 'Sin descripción'}`
-        },
-        esEquipoEspecial: true,
-        tipoEquipo: 'DISPOSITIVO',
-        estadoInfo: estado
-      });
-    });
-
-    console.log('✅ Total items de dispositivos en almacenes regulares:', items.length);
-    return items;
   }
 
   organizarStock(stock: any[]): void {
@@ -706,7 +382,25 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   }
 
   getEstanterias(almacen: string): string[] {
-    return Object.keys(this.stockOrganizado[almacen] || {});
+    const keys = Object.keys(this.stockOrganizado[almacen] || {});
+    return this.ordenarClavesNumericas(keys);
+  }
+
+  /**
+   * Ordena claves que pueden ser numéricas (1,2,3) o alfanuméricas (E1,E2,E3)
+   * para mantener orden consistente independientemente del orden de inserción.
+   */
+  private ordenarClavesNumericas(keys: string[]): string[] {
+    return [...keys].sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ''), 10);
+      const numB = parseInt(b.replace(/\D/g, ''), 10);
+      const aTieneNumero = !isNaN(numA) && a.match(/\d/);
+      const bTieneNumero = !isNaN(numB) && b.match(/\d/);
+      if (aTieneNumero && bTieneNumero) {
+        return numA - numB;
+      }
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
   }
 
   getStockPorEstanteria(almacen: string, estanteria: string): any[] {
@@ -750,7 +444,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       });
     }
     
-    return Array.from(estantes).sort();
+    return this.ordenarClavesNumericas(Array.from(estantes));
   }
   
   /**
@@ -1293,7 +987,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     if (!this.esEquipoEspecial(item)) {
       this.notificationService.showError(
         'Operación no permitida',
-        'Solo se pueden transferir equipos o dispositivos especiales (del cementerio o almacén laboratorio).'
+        'Solo se pueden transferir equipos o dispositivos del sistema.'
       );
       return;
     }
@@ -1301,59 +995,31 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     const tipoEquipo = this.getTipoEquipo(item);
     
     if (tipoEquipo === 'EQUIPO') {
-      // Obtener el hardwareId del item
-      const hardwareId = item.itemId || item.estadoInfo?.hardwareId;
+      // Obtener el hardwareId del item (enriquecido o desde estadoInfo)
+      let hardwareId = item.itemId || item.estadoInfo?.hardwareId;
+      if (!hardwareId && item.numero) {
+        // Fallback: buscar hardware por nombre (p.ej. cuando el enriquecimiento no encontró match)
+        this.hardwareService.getHardware().subscribe({
+          next: (hwList) => {
+            const hw = (hwList || []).find((h: any) =>
+              (h.name || '').trim().toLowerCase() === (item.numero || '').trim().toLowerCase()
+            );
+            if (hw) {
+              this.abrirModalTransferirEquipo(item, hw.id);
+            } else {
+              this.notificationService.showError('Error', 'No se pudo identificar el equipo a transferir.');
+            }
+          },
+          error: () => this.notificationService.showError('Error', 'No se pudo cargar el hardware.')
+        });
+        return;
+      }
       if (!hardwareId) {
-        this.notificationService.showError(
-          'Error',
-          'No se pudo identificar el equipo a transferir.'
-        );
+        this.notificationService.showError('Error', 'No se pudo identificar el equipo a transferir.');
         return;
       }
 
-      // Buscar el hardware completo para pasar al modal
-      this.hardwareService.getHardware().subscribe({
-        next: (hardwareList) => {
-          const hardware = hardwareList.find((h: any) => h.id === hardwareId);
-          if (!hardware) {
-            this.notificationService.showError(
-              'Error',
-              'No se encontró la información del equipo.'
-            );
-            return;
-          }
-
-          const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
-          modalRef.componentInstance.item = {
-            ...hardware,
-            tipo: 'EQUIPO',
-            name: hardware.name
-          };
-
-          modalRef.result.then((transferData: any) => {
-            if (transferData) {
-              // Log para debugging - ver qué viene del modal
-              console.log('🔍 StockAlmacen - transferData recibido del modal:', {
-                transferData,
-                seccion: transferData.seccion,
-                seccionType: typeof transferData.seccion,
-                tipoAlmacen: transferData.tipoAlmacen,
-                tieneSeccion: 'seccion' in transferData
-              });
-              this.procesarTransferenciaEquipo(item, hardwareId, transferData);
-            }
-          }).catch(() => {
-            // Usuario canceló el modal
-          });
-        },
-        error: (error) => {
-          console.error('Error al cargar hardware:', error);
-          this.notificationService.showError(
-            'Error',
-            'No se pudo cargar la información del equipo.'
-          );
-        }
-      });
+      this.abrirModalTransferirEquipo(item, hardwareId);
     } else if (tipoEquipo === 'DISPOSITIVO') {
       // Obtener la MAC del dispositivo
       const mac = item.numero || item.estadoInfo?.mac || item.item?.nombreItem;
@@ -1407,6 +1073,29 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
         'Tipo de item no soportado para transferencia.'
       );
     }
+  }
+
+  private abrirModalTransferirEquipo(item: any, hardwareId: number): void {
+    this.hardwareService.getHardware().subscribe({
+      next: (hardwareList) => {
+        const hardware = hardwareList.find((h: any) => h.id === hardwareId);
+        if (!hardware) {
+          this.notificationService.showError('Error', 'No se encontró la información del equipo.');
+          return;
+        }
+        const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+        modalRef.componentInstance.item = { ...hardware, tipo: 'EQUIPO', name: hardware.name };
+        modalRef.result.then((transferData: any) => {
+          if (transferData) {
+            this.procesarTransferenciaEquipo(item, hardwareId, transferData);
+          }
+        }).catch(() => {});
+      },
+      error: (error) => {
+        console.error('Error al cargar hardware:', error);
+        this.notificationService.showError('Error', 'No se pudo cargar la información del equipo.');
+      }
+    });
   }
 
   private procesarTransferenciaEquipo(item: any, hardwareId: number, transferData: any): void {
@@ -1563,7 +1252,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     if (!this.esEquipoEspecial(item)) {
       this.notificationService.showError(
         'Operación no permitida',
-        'Solo se pueden reactivar equipos o dispositivos especiales (del cementerio o almacén laboratorio).'
+        'Solo se pueden reactivar equipos o dispositivos del sistema.'
       );
       return;
     }
@@ -1609,10 +1298,17 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     this.estadoEquipoService.reactivarEquipo(hardwareId, request).subscribe({
       next: (response) => {
         if (response.success) {
-          this.cargarDatos();
-          this.notificationService.showSuccessMessage(
-            `Equipo reactivado exitosamente.`
-          );
+          // Eliminar del stock_almacen: el equipo vuelve a assets
+          const stockId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
+          if (!isNaN(stockId)) {
+            this.stockAlmacenService.deleteStock(stockId).subscribe({
+              next: () => this.cargarDatos(),
+              error: () => this.cargarDatos()
+            });
+          } else {
+            this.cargarDatos();
+          }
+          this.notificationService.showSuccessMessage('Equipo reactivado exitosamente.');
         } else {
           throw new Error(response.message || 'Error al reactivar el equipo');
         }
@@ -1641,10 +1337,17 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     this.estadoDispositivoService.reactivarDispositivo(mac, request).subscribe({
       next: (response) => {
         if (response.success) {
-          this.cargarDatos();
-          this.notificationService.showSuccessMessage(
-            `Dispositivo reactivado exitosamente.`
-          );
+          // Eliminar del stock_almacen: el dispositivo vuelve a assets
+          const stockId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
+          if (!isNaN(stockId)) {
+            this.stockAlmacenService.deleteStock(stockId).subscribe({
+              next: () => this.cargarDatos(),
+              error: () => this.cargarDatos()
+            });
+          } else {
+            this.cargarDatos();
+          }
+          this.notificationService.showSuccessMessage('Dispositivo reactivado exitosamente.');
         } else {
           throw new Error(response.message || 'Error al reactivar el dispositivo');
         }
@@ -1660,5 +1363,30 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
         this.reactivandoItemId = null;
       }
     });
+  }
+
+  /**
+   * Verifica si un item coincide con el término de búsqueda.
+   * Se usa para resaltar (no filtrar) los elementos que coinciden.
+   */
+  itemCoincideConBusqueda(item: any): boolean {
+    if (!this.searchTerm || !this.searchTerm.trim()) {
+      return false;
+    }
+    const term = this.searchTerm.toLowerCase().trim();
+    const camposABuscar: string[] = [
+      item?.item?.nombreItem || '',
+      item?.item?.descripcion || '',
+      item?.numero || '',
+      item?.descripcion || '',
+      item?.almacen?.nombre || '',
+      item?.almacen?.numero || '',
+      item?.estanteria || '',
+      item?.estante || ''
+    ].filter(Boolean);
+    
+    return camposABuscar.some(campo => 
+      String(campo).toLowerCase().includes(term)
+    );
   }
 } 

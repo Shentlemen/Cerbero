@@ -43,29 +43,24 @@
 
     <!-- Contenido del stock -->
     <div *ngIf="!loading && !error" class="stock-organizado">
-      <!-- Resumen general -->
-      <div class="stock-summary mb-4">
-        <div class="summary-card">
-          <div class="summary-icon">
-            <i class="fas fa-warehouse"></i>
-          </div>
-          <div class="summary-info">
-            <h4 *ngIf="almacenSeleccionado; else defaultSummary">
-              Stock del {{ almacenSeleccionado.numero }}
-            </h4>
-            <ng-template #defaultSummary>
-              <h4>Stock Total del Sistema</h4>
-            </ng-template>
-            <p class="text-muted mb-0">
-              <i class="fas fa-boxes me-2"></i>
-              <span *ngIf="almacenSeleccionado; else defaultStockInfo">
-                {{ stock.length }} item(s) en este almacén
-              </span>
-              <ng-template #defaultStockInfo>
-                {{ getTotalAlmacenes() }} almacén{{ getTotalAlmacenes() !== 1 ? 'es' : '' }} con stock
-              </ng-template>
-            </p>
-          </div>
+      <!-- Buscador con resaltado -->
+      <div class="search-highlight-section mb-4">
+        <div class="search-input-wrapper">
+          <i class="fas fa-search search-icon"></i>
+          <input 
+            type="text" 
+            class="form-control search-input" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Buscar por nombre, número, descripción... (resalta coincidencias)"
+            autocomplete="off">
+          <button 
+            *ngIf="searchTerm" 
+            type="button" 
+            class="btn btn-link search-clear-btn" 
+            (click)="searchTerm = ''"
+            title="Limpiar búsqueda">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
       </div>
 
@@ -154,7 +149,8 @@
                            'equipo-especial': esEquipoEspecial(item),
                            'equipo-cementerio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'cementerio',
                            'equipo-laboratorio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'laboratorio',
-                           'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular'
+                           'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular',
+                           'search-match': itemCoincideConBusqueda(item)
                          }"
                          (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item, modalCantidad) : null"
                          [style.cursor]="canManageStock() && !esEquipoEspecial(item) ? 'pointer' : 'default'"
