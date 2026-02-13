@@ -177,21 +177,17 @@
                               <i class="fas fa-eye"></i>
                             </span>
                           </div>
-                          <small *ngIf="esEquipoEspecial(item) && getDescripcionEquipo(item)" class="text-muted d-block mt-1" style="font-size: 0.75rem;">
-                            {{ getDescripcionEquipo(item) }}
-                          </small>
                           <div *ngIf="esEquipoEspecial(item) && (getTipoEquipo(item) === 'EQUIPO' || getTipoEquipo(item) === 'DISPOSITIVO') && canManageStock()" class="mt-2 position-relative">
                             <button 
                               type="button"
-                              class="btn btn-primary btn-sm" 
+                              class="btn btn-sm btn-acciones-equipo" 
                               [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
-                              (click)="toggleDropdown(item, $event)"
-                              style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
-                              <i class="fas" [ngClass]="(transferiendoItemId === item.id || reactivandoItemId === item.id) ? 'fa-spinner fa-spin' : 'fa-cog'"></i>
+                              (click)="toggleDropdown(item, $event)">
+                              <i class="fas me-2" [ngClass]="(transferiendoItemId === item.id || reactivandoItemId === item.id) ? 'fa-spinner fa-spin' : 'fa-cog'"></i>
                               <span *ngIf="transferiendoItemId === item.id">Transferiendo...</span>
                               <span *ngIf="reactivandoItemId === item.id">Reactivando...</span>
                               <span *ngIf="transferiendoItemId !== item.id && reactivandoItemId !== item.id">Acciones</span>
-                              <i class="fas fa-chevron-down ms-1" style="font-size: 0.6rem;"></i>
+                              <i class="fas fa-chevron-down ms-2" style="font-size: 0.6rem;"></i>
                             </button>
                             <div *ngIf="dropdownAbiertoId === item.id" 
                                  class="dropdown-menu show" 

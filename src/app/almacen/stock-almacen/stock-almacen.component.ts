@@ -133,7 +133,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
         this.almacenCementerio = almacenes.find((a: Almacen) => 
           a.numero?.toLowerCase().trim() === 'alm01' || 
           a.numero?.toLowerCase().trim() === 'alm 01' ||
-          a.nombre?.toLowerCase().includes('subsuelo')
+          a.nombre?.toLowerCase().includes('subsuelo') ||
+          a.nombre?.toLowerCase().includes('cementerio')
         ) || null;
         
         this.almacenLaboratorio = almacenes.find((a: Almacen) => 
@@ -142,18 +143,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
           a.nombre?.toLowerCase().includes('pañol 3')
         ) || null;
         
-        // Debug: mostrar qué almacenes se encontraron
-        console.log('🔍 Almacenes disponibles:', almacenes.map((a: Almacen) => `${a.numero} - ${a.nombre}`));
-        console.log('🏛️ Almacén Cementerio encontrado:', this.almacenCementerio ? `${this.almacenCementerio.numero} - ${this.almacenCementerio.nombre}` : 'NO ENCONTRADO');
-        console.log('📦 Almacén Laboratorio encontrado:', this.almacenLaboratorio ? `${this.almacenLaboratorio.numero} - ${this.almacenLaboratorio.nombre}` : 'NO ENCONTRADO');
-        
-        // Encontrar el almacén seleccionado
-        if (this.almacenId) {
-          this.almacenSeleccionado = this.almacenes.find(a => a.id === this.almacenId) || null;
+        // Encontrar el almacén seleccionado (comparar como número)
+        if (this.almacenId != null) {
+          const idNum = Number(this.almacenId);
+          this.almacenSeleccionado = this.almacenes.find(a => Number(a.id) === idNum) || null;
         }
       }
 
-      // Cargar equipos del cementerio y almacén laboratorio
       this.cargarEquiposEspeciales();
     }).catch(error => {
       console.error('Error al cargar datos:', error);
@@ -163,26 +159,67 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   }
 
   cargarEquiposEspeciales(): void {
-    // El stock_almacen es la única fuente de verdad para el inventario.
-    // Al transferir, el backend crea la entrada en stock_almacen (createStockEquipo/createStockDispositivo).
-    // Solo necesitamos enriquecer los items con item_id null (equipos/dispositivos) para Transferir/Reactivar.
+    // Si estamos viendo un almacén concreto, cargar también equipos/dispositivos en almacén o en baja
+    // para que coincida con la cuenta de la lista y se puedan transferir los que faltan en stock_almacen
+    const esVistaCementerio = this.almacenCementerio != null && this.almacenId != null &&
+      Number(this.almacenId) === Number(this.almacenCementerio.id);
+    const esVistaAlmacenConcreto = this.almacenId != null && this.almacenSeleccionado != null;
 
-    forkJoin({
+    const observables: any = {
       hardware: this.hardwareService.getHardware(),
       networkInfo: this.networkInfoService.getNetworkInfo()
-    }).subscribe({
-      next: (response) => {
+    };
+    if (esVistaCementerio) {
+      observables.equiposEnBaja = this.estadoEquipoService.getEquiposEnBaja();
+      observables.dispositivosEnBaja = this.estadoDispositivoService.getDispositivosEnBaja();
+      observables.bios = this.biosService.getAllBios();
+    }
+    if (esVistaAlmacenConcreto) {
+      observables.equiposEnAlmacen = this.estadoEquipoService.getEquiposEnAlmacen();
+      observables.dispositivosEnAlmacen = this.estadoDispositivoService.getDispositivosEnAlmacen();
+      if (!observables.bios) observables.bios = this.biosService.getAllBios();
+    }
+
+    forkJoin(observables).subscribe({
+      next: (response: any) => {
+        let stockActual = [...this.stock];
         const hardware = Array.isArray(response.hardware) ? response.hardware : [];
         const networkInfoData = response.networkInfo?.success && Array.isArray(response.networkInfo.data)
           ? response.networkInfo.data : [];
+        const bios = Array.isArray(response.bios) ? response.bios : [];
 
-        // Enriquecer stock: marcar equipos/dispositivos (item_id null) con esEquipoEspecial y datos para acciones
-        const stockEnriquecido = this.enriquecerStockConEquipos(this.stock, hardware, networkInfoData);
+        if (esVistaCementerio && this.almacenCementerio && response.equiposEnBaja != null) {
+          const itemsCementerio = this.convertirEnBajaAStockCementerio(
+            response.equiposEnBaja,
+            response.dispositivosEnBaja || { success: false, data: [] },
+            hardware,
+            bios,
+            { success: true, data: networkInfoData }
+          );
+          stockActual = this.mergeSinDuplicadosPorNumero(stockActual, itemsCementerio, this.almacenCementerio.id);
+        }
+
+        // Para cualquier almacén: añadir equipos que están "en almacén" según estado pero no en stock_almacen
+        if (esVistaAlmacenConcreto && this.almacenSeleccionado && response.equiposEnAlmacen != null) {
+          const itemsEnAlmacen = this.convertirEquiposEnAlmacenAStock(
+            response.equiposEnAlmacen,
+            response.dispositivosEnAlmacen || { success: false, data: [] },
+            hardware,
+            bios,
+            { success: true, data: networkInfoData },
+            this.almacenSeleccionado
+          );
+          stockActual = this.mergeSinDuplicadosPorNumero(stockActual, itemsEnAlmacen, this.almacenSeleccionado.id);
+        }
+
+        // Enriquecer stock: marcar equipos/dispositivos (item_id null) con esEquipoEspecial
+        const stockEnriquecido = this.enriquecerStockConEquipos(stockActual, hardware, networkInfoData);
 
         // Filtrar por almacén si hay un ID específico
         let stockCompleto = [...stockEnriquecido];
-        if (this.almacenId) {
-          stockCompleto = stockCompleto.filter(item => item.almacen?.id === this.almacenId);
+        if (this.almacenId != null) {
+          const idBuscado = Number(this.almacenId);
+          stockCompleto = stockCompleto.filter(item => item.almacen != null && Number(item.almacen.id) === idBuscado);
         }
 
         this.organizarStock(stockCompleto);
@@ -191,8 +228,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error al enriquecer stock:', error);
         let stockCompleto = [...this.stock];
-        if (this.almacenId) {
-          stockCompleto = stockCompleto.filter(item => item.almacen?.id === this.almacenId);
+        if (this.almacenId != null) {
+          const idBuscado = Number(this.almacenId);
+          stockCompleto = stockCompleto.filter(item => item.almacen != null && Number(item.almacen.id) === idBuscado);
         }
         this.organizarStock(stockCompleto);
         this.loading = false;
@@ -255,13 +293,241 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Convierte equipos/dispositivos en baja a formato stock (misma fuente que /menu/cementerio).
+   */
+  private convertirEnBajaAStockCementerio(
+    equiposEnBaja: any,
+    dispositivosEnBaja: any,
+    hardware: any[],
+    bios: any[],
+    networkInfo: any
+  ): any[] {
+    if (!this.almacenCementerio) return [];
+    const almacenNorm = {
+      id: this.almacenCementerio.id,
+      numero: this.almacenCementerio.numero,
+      nombre: this.almacenCementerio.nombre
+    };
+    const items: any[] = [];
+    const biosMap = new Map((bios || []).map((b: any) => [b.hardwareId, b]));
+
+    if (equiposEnBaja?.success && Array.isArray(equiposEnBaja.data)) {
+      equiposEnBaja.data.forEach((estado: any) => {
+        const hw = (hardware || []).find((h: any) => h.id === estado.hardwareId);
+        if (hw) {
+          const biosData = biosMap.get(estado.hardwareId);
+          items.push({
+            id: `equipo-cementerio-${estado.hardwareId}`,
+            item: { idItem: null, nombreItem: hw.name || `Equipo ${estado.hardwareId}` },
+            almacen: almacenNorm,
+            estanteria: 'Cementerio',
+            estante: 'En Baja',
+            cantidad: 1,
+            numero: hw.name || `EQ-${estado.hardwareId}`,
+            descripcion: `Equipo transferido: ${hw.name || estado.hardwareId}`,
+            esEquipoEspecial: true,
+            tipoEquipo: 'EQUIPO',
+            estadoInfo: { ...estado, hardwareId: estado.hardwareId }
+          });
+        }
+      });
+    }
+
+    if (dispositivosEnBaja?.success && Array.isArray(dispositivosEnBaja.data) &&
+        networkInfo?.success && Array.isArray(networkInfo.data)) {
+      const netMap = new Map(networkInfo.data.map((d: any) => [d.mac, d]));
+      dispositivosEnBaja.data.forEach((estado: any) => {
+        const device = netMap.get(estado.mac) as any;
+        if (device) {
+          items.push({
+            id: `dispositivo-cementerio-${estado.mac}`,
+            item: { idItem: null, nombreItem: device?.name || estado.mac },
+            almacen: almacenNorm,
+            estanteria: 'Cementerio',
+            estante: 'En Baja',
+            cantidad: 1,
+            numero: device?.mac ?? estado.mac,
+            descripcion: `Dispositivo transferido: ${device?.name || estado.mac}`,
+            esEquipoEspecial: true,
+            tipoEquipo: 'DISPOSITIVO',
+            estadoInfo: { ...estado, mac: estado.mac }
+          });
+        }
+      });
+    }
+    return items;
+  }
+
+  /**
+   * Une ítems del cementerio desde "en baja" sin duplicar con los que ya vienen de stock_almacen.
+   */
+  private mergeCementerioSinDuplicados(stockActual: any[], itemsCementerio: any[]): any[] {
+    return this.mergeSinDuplicadosPorNumero(
+      stockActual,
+      itemsCementerio,
+      this.almacenCementerio != null ? this.almacenCementerio.id : 0
+    );
+  }
+
+  /**
+   * Añade ítems nuevos sin duplicar por numero respecto al stock ya existente en el almacén.
+   */
+  private mergeSinDuplicadosPorNumero(
+    stockActual: any[],
+    nuevosItems: any[],
+    almacenId: number
+  ): any[] {
+    const numerosExistentes = new Set<string>();
+    stockActual
+      .filter(item => item.almacen && Number(item.almacen.id) === Number(almacenId))
+      .forEach(item => {
+        const num = (item.numero || '').toString().trim().toLowerCase();
+        if (num) numerosExistentes.add(num);
+      });
+    const añadidos = nuevosItems.filter(item => {
+      const num = (item.numero || '').toString().trim().toLowerCase();
+      return num && !numerosExistentes.has(num);
+    });
+    return [...stockActual, ...añadidos];
+  }
+
+  /**
+   * Extrae estantería, estante y sección del texto de observaciones guardado al transferir
+   * (formato backend: "Estantería: E1, Estante: 2, Sección: A").
+   */
+  private extraerUbicacionDeObservaciones(observaciones: string | null | undefined): {
+    estanteria: string | null;
+    estante: string | null;
+    seccion: string | null;
+  } {
+    const result = { estanteria: null as string | null, estante: null as string | null, seccion: null as string | null };
+    if (!observaciones || typeof observaciones !== 'string') return result;
+    const text = observaciones.trim();
+    const estanteriaMatch = text.match(/Estantería:\s*([^,|]+)/i);
+    const estanteMatch = text.match(/Estante:\s*([^,|]+)/i);
+    const seccionMatch = text.match(/Sección:\s*([^,|]+)/i);
+    if (estanteriaMatch) result.estanteria = estanteriaMatch[1].trim();
+    if (estanteMatch) result.estante = estanteMatch[1].trim();
+    if (seccionMatch) result.seccion = seccionMatch[1].trim();
+    return result;
+  }
+
+  /**
+   * Convierte equipos/dispositivos "en almacén" (estado) a formato stock para el almacén actual.
+   * Solo incluye los que tienen estado.almacenId === almacen.id.
+   * Usa la ubicación guardada en observaciones (Estantería/Estante/Sección) para mostrarlos en la card correcta.
+   */
+  private convertirEquiposEnAlmacenAStock(
+    equiposResponse: any,
+    dispositivosResponse: any,
+    hardware: any[],
+    bios: any[],
+    networkInfo: any,
+    almacen: { id: number; numero?: string; nombre?: string }
+  ): any[] {
+    const items: any[] = [];
+    const idAlmacen = Number(almacen.id);
+    if (!Array.isArray(hardware)) hardware = [];
+    if (!Array.isArray(bios)) bios = [];
+    const biosMap = new Map(bios.map((b: any) => [b.hardwareId, b]));
+    const almacenNormalizado = {
+      id: almacen.id,
+      numero: almacen.numero,
+      nombre: almacen.nombre
+    };
+
+    if (equiposResponse?.success && Array.isArray(equiposResponse.data)) {
+      const equiposDelAlmacen = equiposResponse.data.filter(
+        (estado: any) => estado.almacenId != null && Number(estado.almacenId) === idAlmacen
+      );
+      equiposDelAlmacen.forEach((estado: any) => {
+        const hw = hardware.find((h: any) => h.id === estado.hardwareId);
+        if (hw) {
+          const ubic = this.extraerUbicacionDeObservaciones(estado.observaciones);
+          const estanteria = ubic.estanteria || 'Equipos';
+          const estante = ubic.estante || 'En Almacén';
+          const biosData = biosMap.get(estado.hardwareId);
+          const item: any = {
+            id: `equipo-${estado.hardwareId}-almacen-${idAlmacen}`,
+            itemId: estado.hardwareId,
+            idCompra: null,
+            almacen: almacenNormalizado,
+            estanteria,
+            estante,
+            cantidad: 1,
+            numero: hw.name || `EQ-${estado.hardwareId}`,
+            descripcion: `${hw.name || 'Equipo'} - ${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`,
+            fechaRegistro: estado.fechaCambio,
+            item: {
+              nombreItem: hw.name || `Equipo ${estado.hardwareId}`,
+              descripcion: `${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`
+            },
+            esEquipoEspecial: true,
+            tipoEquipo: 'EQUIPO',
+            estadoInfo: estado
+          };
+          if (ubic.seccion) item.seccion = ubic.seccion;
+          items.push(item);
+        }
+      });
+    }
+
+    if (
+      dispositivosResponse?.success &&
+      Array.isArray(dispositivosResponse.data) &&
+      networkInfo?.success &&
+      Array.isArray(networkInfo.data)
+    ) {
+      const networkInfoMap = new Map(networkInfo.data.map((device: any) => [device.mac, device]));
+      const dispositivosDelAlmacen = (dispositivosResponse.data as any[]).filter(
+        (estado: any) => estado.almacenId != null && Number(estado.almacenId) === idAlmacen
+      );
+      dispositivosDelAlmacen.forEach((estado: any) => {
+        const device: any = networkInfoMap.get(estado.mac);
+        if (device) {
+          const ubic = this.extraerUbicacionDeObservaciones(estado.observaciones);
+          const estanteria = ubic.estanteria || 'Dispositivos';
+          const estante = ubic.estante || 'En Almacén';
+          const item: any = {
+            id: `dispositivo-${estado.mac}-almacen-${idAlmacen}`,
+            itemId: null,
+            idCompra: null,
+            almacen: almacenNormalizado,
+            estanteria,
+            estante,
+            cantidad: 1,
+            numero: device.mac,
+            descripcion: `${device.name || device.mac} - ${device.type || 'N/A'}`,
+            fechaRegistro: estado.fechaCambio,
+            item: {
+              nombreItem: device.name || device.mac,
+              descripcion: `${device.type || 'N/A'} | ${device.description || 'Sin descripción'}`
+            },
+            esEquipoEspecial: true,
+            tipoEquipo: 'DISPOSITIVO',
+            estadoInfo: estado
+          };
+          if (ubic.seccion) item.seccion = ubic.seccion;
+          items.push(item);
+        }
+      });
+    }
+    return items;
+  }
+
   organizarStock(stock: any[]): void {
-    // Organizar stock por almacén y estantería
+    // Organizar stock por almacén y estantería (equipos cementerio pueden tener estantería/estante null)
     const grupos: { [key: string]: { [key: string]: any[] } } = {};
 
     stock.forEach(item => {
-      const almacenKey = `${item.almacen.numero} - ${item.almacen.nombre}`;
-      const estanteriaKey = item.estanteria;
+      const almacen = item.almacen;
+      const almacenKey = almacen
+        ? `${almacen.numero ?? 'Sin número'} - ${almacen.nombre ?? 'Sin nombre'}`
+        : 'Sin almacén';
+      const estanteriaKey = item.estanteria != null && item.estanteria !== ''
+        ? String(item.estanteria)
+        : 'Sin ubicación';
 
       if (!grupos[almacenKey]) {
         grupos[almacenKey] = {};
@@ -424,12 +690,17 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     return this.getAlmacenes().length;
   }
 
+  /** Clave normalizada para estante (null/vacío → 'Sin ubicación') */
+  private normalizarClaveEstante(estante: any): string {
+    return estante != null && estante !== '' ? String(estante) : 'Sin ubicación';
+  }
+
   // Nuevos métodos para la estructura de estantes
   getEstantesPorEstanteria(almacen: string, estanteria: string): string[] {
     const stockItems = this.getStockPorEstanteria(almacen, estanteria);
     const estantes = new Set<string>();
     stockItems.forEach(item => {
-      estantes.add(item.estante);
+      estantes.add(this.normalizarClaveEstante(item.estante));
     });
     
     // Para ALM03 (Almacen Principal), mostrar todos los estantes (1-3) aunque estén vacíos
@@ -457,7 +728,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
 
   getItemsPorEstante(almacen: string, estanteria: string, estante: string): any[] {
     const stockItems = this.getStockPorEstanteria(almacen, estanteria);
-    return stockItems.filter(item => item.estante === estante);
+    return stockItems.filter(item => this.normalizarClaveEstante(item.estante) === estante);
   }
 
   /**

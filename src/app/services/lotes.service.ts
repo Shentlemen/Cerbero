@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, switchMap, forkJoin, throwError } from 'rxjs';
+import { Observable, map, switchMap, forkJoin, throwError, of, catchError } from 'rxjs';
 import { ConfigService } from './config.service';
 import { ComprasService, CompraDTO } from './compras.service';
 import { ProveedoresService, ProveedorDTO } from './proveedores.service';
@@ -50,14 +50,33 @@ export class LotesService {
   }
 
   private enrichLoteWithCompraInfo(lote: LoteDTO): Observable<LoteDTO> {
-    // Solo enriquecer con información de compra (siempre existe)
+    // Validar que el idCompra sea válido antes de intentar obtener la compra
+    if (!this.validateId(lote.idCompra)) {
+      return of({
+        ...lote,
+        compraDescripcion: 'Sin compra asociada',
+        proveedorNombreComercial: lote.idProveedor && lote.idProveedor > 0 ? 'Cargando...' : 'Sin especificar',
+        servicioGarantiaNombreComercial: lote.idServicioGarantia && lote.idServicioGarantia > 0 ? 'Cargando...' : 'Sin especificar'
+      });
+    }
+    
+    // Enriquecer con información de compra, manejando el caso cuando la compra no existe
     return this.comprasService.getCompraById(lote.idCompra).pipe(
       map(compra => ({
         ...lote,
         compraDescripcion: compra.descripcion,
         proveedorNombreComercial: lote.idProveedor && lote.idProveedor > 0 ? 'Cargando...' : 'Sin especificar',
         servicioGarantiaNombreComercial: lote.idServicioGarantia && lote.idServicioGarantia > 0 ? 'Cargando...' : 'Sin especificar'
-      }))
+      })),
+      catchError(() => {
+        // Si la compra no existe, devolver el lote sin información de compra
+        return of({
+          ...lote,
+          compraDescripcion: 'Compra no encontrada',
+          proveedorNombreComercial: lote.idProveedor && lote.idProveedor > 0 ? 'Cargando...' : 'Sin especificar',
+          servicioGarantiaNombreComercial: lote.idServicioGarantia && lote.idServicioGarantia > 0 ? 'Cargando...' : 'Sin especificar'
+        });
+      })
     );
   }
 

@@ -10,7 +10,7 @@ import { StockAlmacenCreateWithItem } from '../interfaces/stock-almacen.interfac
 export interface StockAlmacen {
   id: number;
   item: {
-    idItem: number;
+    idItem: number | null;
     nombreItem: string;
     descripcion?: string;
   };

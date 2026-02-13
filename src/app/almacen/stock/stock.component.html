@@ -277,8 +277,8 @@
             <div class="col-md-6 mb-3">
               <label for="compraId" class="form-label">Compra *</label>
               
-              <!-- Campo editable para nueva ubicación con búsqueda -->
-              <div *ngIf="!modoEdicion" class="position-relative">
+              <!-- Campo editable con búsqueda (creación y edición) -->
+              <div class="position-relative">
                 <input 
                   type="text" 
                   class="form-control" 
@@ -314,17 +314,7 @@
                 </div>
               </div>
               
-              <!-- Campo de solo lectura para edición -->
-              <input 
-                *ngIf="modoEdicion"
-                type="text" 
-                class="form-control" 
-                id="compraId"
-                [value]="stockSeleccionado && stockSeleccionado.item.idItem ? getCompraInfo(stockSeleccionado.item.idItem)?.numeroCompra : ''"
-                readonly
-                style="background-color: #f8f9fa; cursor: not-allowed;">
-              
-              <div *ngIf="!modoEdicion && stockForm.get('compraId')?.invalid && stockForm.get('compraId')?.touched" class="text-danger mt-1">
+              <div *ngIf="stockForm.get('compraId')?.invalid && stockForm.get('compraId')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('compraId')?.errors?.['required']">La compra es requerida</small>
               </div>
             </div>
@@ -332,8 +322,8 @@
             <div class="col-md-6 mb-3">
               <label for="itemId" class="form-label">Ítem de la Compra *</label>
               
-              <!-- Campo editable para nueva ubicación con búsqueda -->
-              <div *ngIf="!modoEdicion" class="position-relative">
+              <!-- Campo editable con búsqueda (creación y edición) -->
+              <div class="position-relative">
                 <input 
                   type="text" 
                   class="form-control" 
@@ -342,7 +332,7 @@
                   [(ngModel)]="itemSearchTerm"
                   [ngModelOptions]="{standalone: true}"
                   (input)="filtrarItems()"
-                  (focus)="mostrarDropdownItems = true"
+                  (focus)="mostrarDropdownItems = true; filtrarItems()"
                   (blur)="onItemBlur()"
                   autocomplete="off"
                   [disabled]="!stockForm.get('compraId')?.value">
@@ -375,17 +365,7 @@
                 </div>
               </div>
               
-              <!-- Campo de solo lectura para edición -->
-              <input 
-                *ngIf="modoEdicion"
-                type="text" 
-                class="form-control" 
-                id="itemId"
-                [value]="stockSeleccionado && stockSeleccionado.item.idItem ? getItemInfo(stockSeleccionado.item.idItem)?.nombreItem : ''"
-                readonly
-                style="background-color: #f8f9fa; cursor: not-allowed;">
-              
-              <div *ngIf="!modoEdicion && stockForm.get('itemId')?.invalid && stockForm.get('itemId')?.touched" class="text-danger mt-1">
+              <div *ngIf="stockForm.get('itemId')?.invalid && stockForm.get('itemId')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('itemId')?.errors?.['required']">El ítem es requerido</small>
               </div>
             </div>
@@ -409,7 +389,7 @@
                 class="form-select" 
                 id="almacenId"
                 formControlName="almacenId">
-                <option value="">Seleccionar almacén</option>
+                <option value="">Sin selección</option>
                 <option *ngFor="let almacen of almacenes" [value]="almacen.id">
                   {{ almacen.numero }} - {{ almacen.nombre }}
                 </option>
@@ -421,78 +401,50 @@
             
             <div class="col-md-3 mb-3">
               <label for="estanteria" class="form-label">Estantería *</label>
-              <!-- Select si hay configuración, input de texto si no -->
               <select 
-                *ngIf="configAlmacenActual && estanteriasDisponibles.length > 0"
                 class="form-select" 
                 id="estanteria"
                 formControlName="estanteria">
-                <option value="">Seleccionar estantería</option>
-                <option *ngFor="let num of estanteriasDisponibles" [value]="num">
-                  Estantería {{num}}
+                <option value="">Sin selección</option>
+                <option *ngFor="let est of estanteriasDisponibles" [value]="est">
+                  {{ est }}
                 </option>
               </select>
-              <input 
-                *ngIf="!configAlmacenActual || estanteriasDisponibles.length === 0"
-                type="text" 
-                class="form-control" 
-                id="estanteria"
-                formControlName="estanteria"
-                placeholder="Ej: 1, 2, 3, etc.">
               <div *ngIf="stockForm.get('estanteria')?.invalid && stockForm.get('estanteria')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('estanteria')?.errors?.['required']">La estantería es requerida</small>
-                <small *ngIf="stockForm.get('estanteria')?.errors?.['maxlength']">La estantería no puede exceder 50 caracteres</small>
-                <small *ngIf="stockForm.get('estanteria')?.errors?.['invalidEstanteria']">La estantería debe estar entre 1 y {{configAlmacenActual?.cantidadEstanterias}}</small>
+                <small *ngIf="stockForm.get('estanteria')?.errors?.['invalidEstanteria']">Seleccione una estantería válida del listado</small>
               </div>
-              <small *ngIf="configAlmacenActual" class="form-text text-muted">
-                Almacén configurado: {{configAlmacenActual.cantidadEstanterias}} estantería(s)
-              </small>
             </div>
             
             <div class="col-md-3 mb-3">
               <label for="estante" class="form-label">Estante *</label>
-              <!-- Select si hay configuración, input de texto si no -->
               <select 
-                *ngIf="configAlmacenActual && estantesDisponibles.length > 0"
                 class="form-select" 
                 id="estante"
                 formControlName="estante">
-                <option value="">Seleccionar estante</option>
-                <option *ngFor="let num of estantesDisponibles" [value]="num">
-                  Estante {{num}}
+                <option value="">Sin selección</option>
+                <option *ngFor="let est of estantesDisponibles" [value]="est">
+                  Estante {{ est }}
                 </option>
               </select>
-              <input 
-                *ngIf="!configAlmacenActual || estantesDisponibles.length === 0"
-                type="text" 
-                class="form-control" 
-                id="estante"
-                formControlName="estante"
-                placeholder="Ej: 1, 2, 3, etc.">
               <div *ngIf="stockForm.get('estante')?.invalid && stockForm.get('estante')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('estante')?.errors?.['required']">El estante es requerido</small>
-                <small *ngIf="stockForm.get('estante')?.errors?.['maxlength']">El estante no puede exceder 50 caracteres</small>
-                <small *ngIf="stockForm.get('estante')?.errors?.['invalidEstante']">El estante debe estar entre 1 y {{configAlmacenActual?.cantidadEstantesPorEstanteria}}</small>
+                <small *ngIf="stockForm.get('estante')?.errors?.['invalidEstante']">Seleccione un estante válido del listado</small>
               </div>
-              <small *ngIf="configAlmacenActual" class="form-text text-muted">
-                {{configAlmacenActual.cantidadEstantesPorEstanteria}} estante(s) por estantería
-              </small>
             </div>
 
-            <div class="col-md-3 mb-3" *ngIf="configAlmacenActual && divisionesDisponibles.length > 0">
-              <label for="division" class="form-label">División</label>
+            <div class="col-md-3 mb-3" *ngIf="divisionesDisponibles.length > 0">
+              <label for="division" class="form-label">Sección</label>
               <select 
                 class="form-select" 
                 id="division"
                 formControlName="division">
-                <option value="">Sin división</option>
+                <option value="">Sin sección</option>
                 <option *ngFor="let div of divisionesDisponibles" [value]="div">
-                  {{div}}
+                  {{ div }}
                 </option>
               </select>
-              <small class="form-text text-muted">
-                División del estante (opcional)
-              </small>
+              <small class="form-text text-muted">Opcional</small>
             </div>
           </div>
         </div>

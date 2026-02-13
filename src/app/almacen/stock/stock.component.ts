@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -43,6 +43,7 @@ export class UbicacionesComponent implements OnInit {
   error: string | null = null;
   stockForm: FormGroup;
   modoEdicion: boolean = false;
+  private cargandoFormularioEdicion: boolean = false;
   stockSeleccionado: StockAlmacen | null = null;
   stockAEliminar: StockAlmacen | null = null;
 
@@ -66,10 +67,10 @@ export class UbicacionesComponent implements OnInit {
   // Propiedades para el diálogo de confirmación
   showConfirmDialog: boolean = false;
 
-  // Propiedades para configuración de almacén
+  // Propiedades para configuración de almacén (mismo formato que transferir equipo: E1, E2... / 1, 2, 3 / A, B, C)
   configAlmacenActual: AlmacenConfig | null = null;
-  estanteriasDisponibles: number[] = [];
-  estantesDisponibles: number[] = [];
+  estanteriasDisponibles: string[] = [];
+  estantesDisponibles: string[] = [];
   divisionesDisponibles: string[] = [];
 
   constructor(
@@ -81,7 +82,8 @@ export class UbicacionesComponent implements OnInit {
     private fb: FormBuilder,
     public permissionsService: PermissionsService,
     private notificationService: NotificationService,
-    private almacenConfigService: AlmacenConfigService
+    private almacenConfigService: AlmacenConfigService,
+    private cdr: ChangeDetectorRef
   ) {
     this.stockForm = this.fb.group({
       compraId: ['', Validators.required],
@@ -99,20 +101,22 @@ export class UbicacionesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarDatos();
     
-    // Escuchar cambios en compraId para resetear itemId
+    // Escuchar cambios en compraId para resetear itemId (no resetear cuando estamos cargando el form en edición)
     this.stockForm.get('compraId')?.valueChanges.subscribe(compraId => {
-      if (compraId) {
-        // Resetear itemId cuando cambia la compra
+      if (compraId && !this.cargandoFormularioEdicion) {
         this.stockForm.patchValue({ itemId: '' });
         this.itemSearchTerm = '';
         this.itemsFiltrados = [];
       }
     });
 
-    // Escuchar cambios en almacenId para cargar configuración
+    // Escuchar cambios en almacenId para cargar configuración y resetear ubicación
     this.stockForm.get('almacenId')?.valueChanges.subscribe(almacenId => {
       if (almacenId) {
         this.cargarConfiguracionAlmacen(parseInt(almacenId));
+        if (!this.cargandoFormularioEdicion) {
+          this.stockForm.patchValue({ estanteria: '', estante: '', division: '' });
+        }
       } else {
         this.limpiarConfiguracionAlmacen();
       }
@@ -124,31 +128,47 @@ export class UbicacionesComponent implements OnInit {
       next: (config) => {
         if (config) {
           this.configAlmacenActual = config;
-          // Generar arrays de opciones disponibles
-          this.estanteriasDisponibles = Array.from({ length: config.cantidadEstanterias }, (_, i) => i + 1);
-          this.estantesDisponibles = Array.from({ length: config.cantidadEstantesPorEstanteria }, (_, i) => i + 1);
+          // Mismas opciones que el modal de transferir equipo: E1, E2... / 1, 2, 3 / A, B, C
+          this.estanteriasDisponibles = Array.from({ length: config.cantidadEstanterias }, (_, i) => `E${i + 1}`);
+          this.estantesDisponibles = Array.from({ length: config.cantidadEstantesPorEstanteria }, (_, i) => `${i + 1}`);
           this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(config.divisionesEstante);
-          
-          // Actualizar validaciones
           this.updateFormValidation();
         } else {
-          // Si no hay configuración, permitir valores libres (comportamiento anterior)
-          this.limpiarConfiguracionAlmacen();
+          // Sin configuración: usar mismos valores por defecto que transferir equipo
+          this.configAlmacenActual = null;
+          this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
+          this.estantesDisponibles = ['1', '2', '3'];
+          this.divisionesDisponibles = ['A', 'B', 'C'];
+          this.updateFormValidation();
         }
       },
       error: (error) => {
         console.error('Error al cargar configuración del almacén:', error);
-        this.limpiarConfiguracionAlmacen();
+        this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
+        this.estantesDisponibles = ['1', '2', '3'];
+        this.divisionesDisponibles = ['A', 'B', 'C'];
+        this.configAlmacenActual = null;
+        this.updateFormValidation();
       }
     });
   }
 
   limpiarConfiguracionAlmacen(): void {
     this.configAlmacenActual = null;
-    this.estanteriasDisponibles = [];
-    this.estantesDisponibles = [];
-    this.divisionesDisponibles = [];
+    this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
+    this.estantesDisponibles = ['1', '2', '3'];
+    this.divisionesDisponibles = ['A', 'B', 'C'];
     this.updateFormValidation();
+  }
+
+  /** Normaliza valor de estantería para el dropdown (E1, E2...) si viene como número "1", "2" */
+  private normalizarEstanteriaParaForm(estanteria: string | null | undefined): string {
+    if (!estanteria) return '';
+    const s = String(estanteria).trim();
+    if (/^E\d+$/i.test(s)) return s;
+    const num = parseInt(s, 10);
+    if (!isNaN(num) && num >= 1) return `E${num}`;
+    return s;
   }
 
   updateFormValidation(): void {
@@ -162,36 +182,26 @@ export class UbicacionesComponent implements OnInit {
     compraIdControl?.updateValueAndValidity();
     itemIdControl?.updateValueAndValidity();
 
-    // Si hay configuración, agregar validaciones personalizadas para estantería y estante
+    // Si hay configuración, validar que estantería y estante estén en las opciones disponibles
     if (this.configAlmacenActual) {
       const estanteriaControl = this.stockForm.get('estanteria');
       const estanteControl = this.stockForm.get('estante');
-      
       if (estanteriaControl) {
         estanteriaControl.setValidators([
           Validators.required,
           (control) => {
-            if (!this.configAlmacenActual) return null;
-            const value = parseInt(control.value);
-            if (isNaN(value) || value < 1 || value > this.configAlmacenActual.cantidadEstanterias) {
-              return { invalidEstanteria: true };
-            }
-            return null;
+            if (!control.value || this.estanteriasDisponibles.length === 0) return null;
+            return this.estanteriasDisponibles.includes(String(control.value)) ? null : { invalidEstanteria: true };
           }
         ]);
         estanteriaControl.updateValueAndValidity();
       }
-      
       if (estanteControl) {
         estanteControl.setValidators([
           Validators.required,
           (control) => {
-            if (!this.configAlmacenActual) return null;
-            const value = parseInt(control.value);
-            if (isNaN(value) || value < 1 || value > this.configAlmacenActual.cantidadEstantesPorEstanteria) {
-              return { invalidEstante: true };
-            }
-            return null;
+            if (!control.value || this.estantesDisponibles.length === 0) return null;
+            return this.estantesDisponibles.includes(String(control.value)) ? null : { invalidEstante: true };
           }
         ]);
         estanteControl.updateValueAndValidity();
@@ -238,47 +248,84 @@ export class UbicacionesComponent implements OnInit {
 
 
     if (this.modoEdicion && stock) {
-      // Modo edición: cargar datos existentes
-      // Primero necesitamos encontrar la compra del ítem
-      const itemInfo = await this.lotesService.getLote(stock.item.idItem).toPromise();
-      if (itemInfo) {
-        // Extraer división del estante si está en el formato "estante-division" o "estante division"
+      this.cargandoFormularioEdicion = true;
+      const idItem = stock.item?.idItem ?? null;
+      if (idItem != null) {
+        const itemInfo = await this.lotesService.getLote(idItem).toPromise();
+        if (itemInfo) {
+          let estanteValue = stock.estante;
+          let divisionValue = '';
+          if (stock.estante) {
+            const match = stock.estante.match(/^(\d+)[\s-]?([A-Za-z]+)?$/);
+            if (match) {
+              estanteValue = match[1];
+              divisionValue = match[2] || '';
+            }
+          }
+
+          const estanteriaForForm = this.normalizarEstanteriaParaForm(stock.estanteria);
+          this.stockForm.patchValue({
+            compraId: itemInfo.idCompra,
+            itemId: idItem,
+            almacenId: stock.almacen.id,
+            estanteria: estanteriaForForm,
+            estante: estanteValue,
+            division: divisionValue || stock.seccion || '',
+            cantidad: stock.cantidad,
+            numero: stock.numero,
+            descripcion: stock.descripcion
+          });
+          
+          await this.cargarItemsDeCompra(itemInfo.idCompra);
+          
+          const compraInfo = this.compras.find(c => c.idCompra === itemInfo.idCompra);
+          if (compraInfo) {
+            this.compraSearchTerm = compraInfo.numeroCompra || '';
+          }
+          const idBuscado = Number(idItem);
+          const itemCargado = this.itemsDeCompra.find(i => Number(i.idItem) === idBuscado);
+          this.itemSearchTerm = itemCargado?.nombreItem ?? (stock.item as any)?.nombreItem ?? (stock.item as any)?.nombre ?? '';
+        }
+      } else {
+        // Equipo/dispositivo transferido (sin ítem de compra): solo cargar ubicación y detalles
         let estanteValue = stock.estante;
         let divisionValue = '';
         if (stock.estante) {
-          // Intentar extraer división (formato: "1-A" o "1A" o "1 A")
           const match = stock.estante.match(/^(\d+)[\s-]?([A-Za-z]+)?$/);
           if (match) {
             estanteValue = match[1];
             divisionValue = match[2] || '';
           }
         }
-
+        const estanteriaForForm = this.normalizarEstanteriaParaForm(stock.estanteria);
         this.stockForm.patchValue({
-          compraId: itemInfo.idCompra,
-          itemId: stock.item.idItem,
           almacenId: stock.almacen.id,
-          estanteria: stock.estanteria,
+          estanteria: estanteriaForForm,
           estante: estanteValue,
-          division: divisionValue,
+          division: divisionValue || stock.seccion || '',
           cantidad: stock.cantidad,
           numero: stock.numero,
           descripcion: stock.descripcion
         });
-        
-        // Cargar los ítems de esta compra para el dropdown
-        await this.cargarItemsDeCompra(itemInfo.idCompra);
-        
-        // Establecer el numeroCompra en el campo de búsqueda
-        const compraInfo = this.compras.find(c => c.idCompra === itemInfo.idCompra);
-        if (compraInfo) {
-          this.compraSearchTerm = compraInfo.numeroCompra || '';
-        }
+        this.compraSearchTerm = 'Equipo transferido';
+        this.itemSearchTerm = stock.item?.nombreItem || stock.numero || 'Equipo transferido';
+        this.itemsDeCompra = [];
+        this.itemsFiltrados = [];
       }
+      this.cargandoFormularioEdicion = false;
+      this.cdr.detectChanges();
     } else {
-      // Modo creación: resetear formulario
+      // Modo creación: resetear formulario (valores '' para que los dropdowns muestren "Sin selección")
       this.stockForm.reset({
-        cantidad: 1
+        compraId: '',
+        itemId: '',
+        almacenId: '',
+        estanteria: '',
+        estante: '',
+        division: '',
+        cantidad: 1,
+        numero: '',
+        descripcion: ''
       });
       this.itemsDeCompra = [];
       this.itemsFiltrados = [];
@@ -291,6 +338,20 @@ export class UbicacionesComponent implements OnInit {
       size: 'lg',
       backdrop: true
     });
+    // Reaplicar nombre del ítem después de abrir el modal (algo en el render del modal lo deja en blanco)
+    if (this.modoEdicion && this.stockSeleccionado) {
+      setTimeout(() => {
+        const idItem = this.stockSeleccionado!.item?.idItem;
+        if (idItem != null) {
+          const idBuscado = Number(idItem);
+          const itemCargado = this.itemsDeCompra.find(i => Number(i.idItem) === idBuscado);
+          this.itemSearchTerm = itemCargado?.nombreItem ?? (this.stockSeleccionado!.item as any)?.nombreItem ?? (this.stockSeleccionado!.item as any)?.nombre ?? '';
+        } else {
+          this.itemSearchTerm = this.stockSeleccionado!.item?.nombreItem || this.stockSeleccionado!.numero || 'Equipo transferido';
+        }
+        this.cdr.detectChanges();
+      }, 0);
+    }
   }
 
   guardarUbicacion(): void {
@@ -311,39 +372,29 @@ export class UbicacionesComponent implements OnInit {
 
   private guardarUbicacionIndividual(): void {
     const formData = this.stockForm.value;
-    
-    // Construir el valor del estante: si hay división, combinarla con el estante
-    let estanteFinal = formData.estante;
-    if (formData.division && formData.division.trim()) {
-      estanteFinal = `${formData.estante}-${formData.division.trim()}`;
-    }
-    
+    const estanteFinal = formData.estante ? String(formData.estante) : '';
+    const seccionFinal = formData.division && String(formData.division).trim() ? String(formData.division).trim() : undefined;
+
     const nuevoStock: StockAlmacenCreateWithItem = {
       compraId: formData.compraId,
       itemId: formData.itemId,
       almacenId: formData.almacenId,
-      estanteria: formData.estanteria.toString(),
+      estanteria: formData.estanteria ? String(formData.estanteria) : '',
       estante: estanteFinal,
+      seccion: seccionFinal,
       cantidad: formData.cantidad,
       numero: formData.numero,
       descripcion: formData.descripcion
     };
 
     if (this.modoEdicion && this.stockSeleccionado) {
-      // Actualizar ubicación existente
-      // Para edición, necesitamos convertir a StockAlmacenCreate
-      // Construir el valor del estante: si hay división, combinarla con el estante
-      let estanteFinal = formData.estante;
-      if (formData.division && formData.division.trim()) {
-        estanteFinal = `${formData.estante}-${formData.division.trim()}`;
-      }
-      
       const stockParaActualizar: StockAlmacenCreate = {
-        idCompra: formData.compraId, // Usar idCompra en lugar de compraId
-        itemId: this.stockSeleccionado.item.idItem, // Mantener el ID original
+        idCompra: formData.compraId,
+        itemId: formData.itemId,
         almacenId: formData.almacenId,
-        estanteria: formData.estanteria.toString(),
+        estanteria: formData.estanteria ? String(formData.estanteria) : '',
         estante: estanteFinal,
+        seccion: seccionFinal,
         cantidad: formData.cantidad,
         numero: formData.numero,
         descripcion: formData.descripcion
@@ -568,33 +619,50 @@ export class UbicacionesComponent implements OnInit {
   // Métodos para manejar compras y ítems
   async getComprasDisponibles(): Promise<any[]> {
     try {
-      // Obtener todas las compras del sistema
       const compras = await this.comprasService.getCompras().toPromise();
-      if (compras) {
-        // Obtener los lotes para verificar qué compras tienen ítems disponibles
-        const lotes = await this.lotesService.getLotes().toPromise();
-        if (lotes) {
-          // Crear un mapa de compras que tienen lotes
-          const comprasConLotes = new Map();
-          
-          lotes.forEach(lote => {
-            const compra = compras.find(c => c.idCompra === lote.idCompra);
-            if (compra && !comprasConLotes.has(compra.idCompra)) {
-              comprasConLotes.set(compra.idCompra, {
-                idCompra: compra.idCompra,
-                numeroCompra: compra.numeroCompra, // Usar el numeroCompra real
-                items: []
-              });
-            }
-            if (compra && comprasConLotes.has(compra.idCompra)) {
-              comprasConLotes.get(compra.idCompra)!.items.push(lote);
-            }
-          });
-          
-          return Array.from(comprasConLotes.values());
-        }
+      if (!compras || compras.length === 0) {
+        return [];
       }
-      return [];
+      
+      let lotes: any[] = [];
+      try {
+        const lotesResult = await this.lotesService.getLotes().toPromise();
+        lotes = lotesResult || [];
+      } catch (lotesError) {
+        return compras.map(compra => ({
+          idCompra: compra.idCompra,
+          numeroCompra: compra.numeroCompra,
+          descripcion: compra.descripcion,
+          items: []
+        }));
+      }
+      
+      if (lotes.length === 0) {
+        return compras.map(compra => ({
+          idCompra: compra.idCompra,
+          numeroCompra: compra.numeroCompra,
+          descripcion: compra.descripcion,
+          items: []
+        }));
+      }
+      
+      const comprasConLotes = new Map();
+      lotes.forEach(lote => {
+        const compra = compras.find(c => Number(c.idCompra) === Number(lote.idCompra));
+        if (compra && !comprasConLotes.has(Number(compra.idCompra))) {
+          comprasConLotes.set(Number(compra.idCompra), {
+            idCompra: compra.idCompra,
+            numeroCompra: compra.numeroCompra,
+            descripcion: compra.descripcion,
+            items: []
+          });
+        }
+        if (compra && comprasConLotes.has(Number(compra.idCompra))) {
+          comprasConLotes.get(Number(compra.idCompra))!.items.push(lote);
+        }
+      });
+      
+      return Array.from(comprasConLotes.values());
     } catch (error) {
       console.error('Error al cargar compras:', error);
       return [];
@@ -607,11 +675,12 @@ export class UbicacionesComponent implements OnInit {
       this.comprasFiltradas = [...this.compras];
       return;
     }
-    
     const searchTerm = this.compraSearchTerm.toLowerCase().trim();
-    this.comprasFiltradas = this.compras.filter(compra => 
-      compra.numeroCompra?.toLowerCase().includes(searchTerm) // Filtrar por numeroCompra
-    );
+    this.comprasFiltradas = this.compras.filter(compra => {
+      const numeroCompra = String(compra.numeroCompra || '').toLowerCase();
+      const idCompra = String(compra.idCompra || '').toLowerCase();
+      return numeroCompra.includes(searchTerm) || idCompra.includes(searchTerm);
+    });
   }
 
   seleccionarCompra(compra: any): void {
@@ -634,13 +703,16 @@ export class UbicacionesComponent implements OnInit {
     }, 200);
   }
 
-  // Métodos para manejar ítems de la compra seleccionada
+  // Métodos para manejar ítems de la compra seleccionada (usa by-compra para evitar fallos de tipo idCompra)
   async cargarItemsDeCompra(compraId: number): Promise<void> {
     try {
-      const lotes = await this.lotesService.getLotes().toPromise();
-      if (lotes) {
-        this.itemsDeCompra = lotes.filter(lote => lote.idCompra === compraId);
+      const lotes = await this.lotesService.getLotesByCompra(compraId).toPromise();
+      if (lotes && lotes.length >= 0) {
+        this.itemsDeCompra = lotes;
         this.itemsFiltrados = [...this.itemsDeCompra];
+      } else {
+        this.itemsDeCompra = [];
+        this.itemsFiltrados = [];
       }
     } catch (error) {
       console.error('Error al cargar ítems de la compra:', error);

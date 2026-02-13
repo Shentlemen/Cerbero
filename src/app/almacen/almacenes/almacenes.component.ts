@@ -102,7 +102,8 @@ export class AlmacenesComponent implements OnInit {
         this.almacenCementerio = almacenes.find((a: Almacen) => 
           a.numero?.toLowerCase().trim() === 'alm01' || 
           a.numero?.toLowerCase().trim() === 'alm 01' ||
-          a.nombre?.toLowerCase().includes('subsuelo')
+          a.nombre?.toLowerCase().includes('subsuelo') ||
+          a.nombre?.toLowerCase().includes('cementerio')
         ) || null;
         
         this.almacenLaboratorio = almacenes.find((a: Almacen) => 
