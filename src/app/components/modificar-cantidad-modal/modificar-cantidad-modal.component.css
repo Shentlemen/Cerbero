@@ -1,0 +1,241 @@
+/* Modal blanco, negro y rojo - estado ANTES del fix de bordes blancos */
+.modificar-cantidad-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #212529;
+  border-left: 5px solid #dc3545;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%);
+  border-bottom: 2px solid #212529;
+}
+
+.modal-title {
+  color: #212529;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.modal-title i {
+  color: #212529;
+}
+
+.btn-close {
+  background: transparent
+    url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e")
+    center/1em auto no-repeat;
+  border: none;
+  width: 1em;
+  height: 1em;
+  cursor: pointer;
+  padding: 0.25rem;
+  opacity: 0.8;
+  filter: none;
+}
+
+.btn-close:hover {
+  opacity: 1;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23dc3545'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e");
+}
+
+.modal-body {
+  padding: 1.5rem;
+  background: #ffffff;
+}
+
+/* Card de información */
+.item-info-card {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid #dee2e6;
+  border-left: 4px solid #212529;
+}
+
+.item-info-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-icon-large {
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 2px solid #212529;
+  flex-shrink: 0;
+}
+
+.item-icon-large i {
+  font-size: 1.5rem;
+  color: #212529;
+}
+
+.item-name-modal {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.item-location {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge-almacen,
+.badge-estanteria,
+.badge-estante,
+.badge-seccion {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.badge-almacen {
+  background: #212529;
+  color: white;
+}
+
+.badge-estanteria {
+  background: #495057;
+  color: white;
+}
+
+.badge-estante {
+  background: #6c757d;
+  color: white;
+}
+
+.badge-seccion {
+  background: #dee2e6;
+  color: #212529;
+}
+
+/* Controles de cantidad */
+.cantidad-controls {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 2px solid #dee2e6;
+}
+
+.cantidad-controls .form-label {
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.cantidad-input {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #212529;
+  background: #ffffff;
+  border: 2px solid #dee2e6;
+  text-align: center;
+}
+
+.input-group .btn {
+  padding: 0.75rem 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 2px solid #212529;
+  background: #ffffff;
+  color: #212529;
+  min-width: 50px;
+  transition: all 0.2s ease;
+}
+
+.input-group .btn:hover:not(:disabled) {
+  background: #212529;
+  color: white;
+}
+
+.btn-outline-reduce {
+  border-radius: 8px 0 0 8px;
+}
+
+.btn-outline-increase {
+  border-radius: 0 8px 8px 0;
+}
+
+.input-group .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Alert eliminación */
+.alert-eliminacion {
+  background: #fff5f5;
+  border: 2px solid #dc3545;
+  border-radius: 8px;
+  color: #721c24;
+}
+
+.alert-eliminacion i {
+  color: #dc3545;
+  font-size: 1.2rem;
+}
+
+/* Footer */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%);
+  border-top: 2px solid #212529;
+}
+
+.btn-cancelar {
+  background: #212529;
+  color: white;
+  border: 2px solid #212529;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancelar:hover {
+  background: #495057;
+  border-color: #495057;
+}
+
+.btn-guardar {
+  background: #dc3545;
+  color: white;
+  border: 2px solid #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-guardar:hover:not(:disabled) {
+  background: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-guardar.btn-eliminar:hover:not(:disabled) {
+  background: #bd2130;
+}
+
+.btn-guardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

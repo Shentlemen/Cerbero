@@ -1,4 +1,5 @@
 <div class="demo-container">
+  <app-notification-container></app-notification-container>
   <!-- Indicador de carga -->
   <div *ngIf="loading" class="loading-overlay">
     <div class="spinner-border text-primary" role="status">
@@ -10,8 +11,8 @@
   <div class="content-wrapper">
     <!-- Componente 3D -->
     <app-almacen-3d
-      [almacenId]="'ALM03'"
-      [estanteriaId]="'A1'"
+      [almacenId]="'ALM02'"
+      [estanteriaId]="'E1'"
       [niveles]="3"
       [cajasporNivel]="4"
       [stockData]="stockData3D"
@@ -25,7 +26,7 @@
       <div class="modal-header">
         <h3>
           <i class="fas fa-box-open"></i>
-          Caja {{ cajaSeleccionada?.estanteria }} - Nivel {{ cajaSeleccionada?.nivel }} - Posición {{ cajaSeleccionada?.posicion }}
+          Estantería {{ cajaSeleccionada?.estanteria }} - Estante {{ cajaSeleccionada?.nivel }} - Sección {{ cajaSeleccionada?.seccion?.toUpperCase() }}
         </h3>
         <button class="close-btn" (click)="cerrarModal()">
           <i class="fas fa-times"></i>
@@ -36,20 +37,17 @@
         <div *ngIf="tieneContenido(); else sinContenido">
           <h4>Contenido de la caja:</h4>
           <div class="items-list">
-            <div *ngFor="let item of cajaSeleccionada?.contenido || []" class="item-card">
+            <div *ngFor="let item of cajaSeleccionada?.contenido || []" 
+                 class="item-card"
+                 [class.clickable]="!!item?.id"
+                 (click)="item?.id && abrirModalCantidad(item)">
               <div class="item-info">
-                <span class="item-tipo" [ngClass]="item.tipo.toLowerCase()">{{ item.tipo }}</span>
-                <span class="item-nombre">{{ item.nombre }}</span>
-                <span class="item-cantidad">x{{ item.cantidad }}</span>
+                <span class="item-nombre">{{ item.item?.nombreItem || item.nombre || 'Sin nombre' }}</span>
+                <span class="item-cantidad">x{{ item.cantidad || 1 }}</span>
+                <span *ngIf="item.numero" class="item-numero">{{ item.numero }}</span>
               </div>
-              <div class="item-actions">
-                <button class="btn-action transferir" (click)="transferirItem(item)" *ngIf="item.tipo === 'PC'">
-                  <i class="fas fa-exchange-alt"></i> Transferir
-                </button>
-                <button class="btn-action quitar" (click)="quitarItem(item)">
-                  <i class="fas fa-minus"></i> Quitar
-                </button>
-              </div>
+              <span *ngIf="!item.id" class="item-hint">Equipo - gestionar en vista principal</span>
+              <i *ngIf="item.id" class="fas fa-edit item-icon" title="Clic para modificar cantidad"></i>
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
 })
 export class RegistrarStockModalComponent implements OnInit {
   @Input() almacenIdPreseleccionado?: number;
+  @Input() ubicacionPreseleccionada?: { estanteria: string; estante: string; division: string };
 
   stockForm: FormGroup;
   almacenes: Almacen[] = [];
@@ -86,7 +87,9 @@ export class RegistrarStockModalComponent implements OnInit {
       this.stockForm.get('almacenId')?.valueChanges.subscribe(almacenId => {
         if (almacenId) {
           this.cargarConfiguracionAlmacen(Number(almacenId));
-          this.stockForm.patchValue({ estanteria: '', estante: '', division: '' }, { emitEvent: false });
+          if (!this.ubicacionPreseleccionada) {
+            this.stockForm.patchValue({ estanteria: '', estante: '', division: '' }, { emitEvent: false });
+          }
         } else {
           this.limpiarConfiguracionAlmacen();
         }
@@ -129,6 +132,13 @@ export class RegistrarStockModalComponent implements OnInit {
           this.estanteriasDisponibles = Array.from({ length: config.cantidadEstanterias }, (_, i) => `E${i + 1}`);
           this.estantesDisponibles = Array.from({ length: config.cantidadEstantesPorEstanteria }, (_, i) => `${i + 1}`);
           this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(config.divisionesEstante);
+          if (this.ubicacionPreseleccionada) {
+            this.stockForm.patchValue({
+              estanteria: this.ubicacionPreseleccionada.estanteria,
+              estante: this.ubicacionPreseleccionada.estante,
+              division: this.ubicacionPreseleccionada.division
+            }, { emitEvent: false });
+          }
         } else {
           this.configAlmacenActual = null;
           this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
@@ -142,6 +152,13 @@ export class RegistrarStockModalComponent implements OnInit {
         this.estantesDisponibles = ['1', '2', '3'];
         this.divisionesDisponibles = ['A', 'B', 'C'];
         this.configAlmacenActual = null;
+        if (this.ubicacionPreseleccionada) {
+          this.stockForm.patchValue({
+            estanteria: this.ubicacionPreseleccionada.estanteria,
+            estante: this.ubicacionPreseleccionada.estante,
+            division: this.ubicacionPreseleccionada.division
+          }, { emitEvent: false });
+        }
         this.updateFormValidation();
       }
     });

@@ -29,7 +29,7 @@ export interface StockItem {
 export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   @ViewChild('renderCanvas', { static: true }) renderCanvas!: ElementRef<HTMLCanvasElement>;
   
-  @Input() almacenId: string = 'ALM03';
+  @Input() almacenId: string = 'ALM02';
   @Input() estanteriaId: string = 'A1';
   @Input() niveles: number = 3;
   @Input() cajasporNivel: number = 4;
@@ -61,43 +61,21 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Si cambian los datos de stock, necesitamos recrear las cajas
+    // Si cambian los datos de stock, solo recrear las cajas (no la estructura)
     if (changes['stockData'] && this.scene) {
       console.log('🔄 Cambios en stockData detectados:', {
-        firstChange: changes['stockData'].firstChange,
-        previousValue: changes['stockData'].previousValue?.length || 0,
-        currentValue: changes['stockData'].currentValue?.length || 0,
-        stockData: this.stockData
+        currentValue: (this.stockData?.length || 0),
+        sample: this.stockData?.slice(0, 3).map((s: any) => ({ estanteria: s.estanteria, estante: s.estante, seccion: s.seccion }))
       });
       
-      // Limpiar cajas existentes
+      // Limpiar solo las cajas existentes (no la estructura de estanterías)
       this.cajasMap.forEach((info, mesh) => {
         mesh.dispose();
       });
       this.cajasMap.clear();
       
-      // Limpiar etiquetas de estanterías existentes
-      this.etiquetasEstanterias.forEach((mesh) => {
-        mesh.dispose();
-      });
-      this.etiquetasEstanterias.clear();
-      
-      // Recrear las cajas con los nuevos datos
-      const numFilas = 2;
-      const anchoEstanteria = 18;
-      const espacioEntreFilas = 15;
-      const profundidadEstanteria = 1.5;
-      const espacioEntreEstanterias = 10;
-      const anchoTotalFilas = numFilas * anchoEstanteria + (numFilas - 1) * espacioEntreFilas;
-      const offsetInicialX = -anchoTotalFilas / 2 + anchoEstanteria / 2;
-      
-      let estanteriaNum = 1;
-      for (let fila = 0; fila < numFilas; fila++) {
-        const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
-        this.crearEstanteria(offsetX, -profundidadEstanteria - espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
-        this.crearEstanteria(offsetX, 0, `E${estanteriaNum++}`);
-        this.crearEstanteria(offsetX, profundidadEstanteria + espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
-      }
+      // Recrear solo las cajas con los nuevos datos
+      this.crearSoloCajasEnTodasLasEstanterias();
       
       console.log('✅ Cajas recreadas. Total cajas:', this.cajasMap.size);
     }
@@ -314,14 +292,17 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
           const pickedMesh = pickResult.pickedMesh;
           console.log('🎯 Mesh encontrado:', pickedMesh.name);
           
-          // Verificar si es una caja - buscar en el mapa
-          // Como cajasMap usa Mesh, necesitamos buscar el mesh correcto
+          // Verificar si es una caja o un hijo de una caja (ej. la cinta)
+          // Buscar en el mapa: primero el mesh directo, luego subir por la jerarquía de padres
           let foundCaja: BABYLON.Mesh | undefined;
-          this.cajasMap.forEach((info, mesh) => {
-            if (mesh === pickedMesh) {
-              foundCaja = mesh;
+          let meshToCheck: BABYLON.Node | null = pickedMesh;
+          while (meshToCheck) {
+            if (this.cajasMap.has(meshToCheck as BABYLON.Mesh)) {
+              foundCaja = meshToCheck as BABYLON.Mesh;
+              break;
             }
-          });
+            meshToCheck = meshToCheck.parent;
+          }
           
           if (foundCaja) {
             console.log('📦 Caja detectada!');
@@ -539,6 +520,25 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     this.crearCajas(offsetX, offsetZ, estanteriaId);
   }
 
+  /** Recrea solo las cajas en las 6 estanterías (llamar cuando stockData cambia) */
+  private crearSoloCajasEnTodasLasEstanterias(): void {
+    const numFilas = 2;
+    const anchoEstanteria = 18;
+    const espacioEntreFilas = 15;
+    const profundidadEstanteria = 1.5;
+    const espacioEntreEstanterias = 10;
+    const anchoTotalFilas = numFilas * anchoEstanteria + (numFilas - 1) * espacioEntreFilas;
+    const offsetInicialX = -anchoTotalFilas / 2 + anchoEstanteria / 2;
+    
+    let estanteriaNum = 1;
+    for (let fila = 0; fila < numFilas; fila++) {
+      const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
+      this.crearCajas(offsetX, -profundidadEstanteria - espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
+      this.crearCajas(offsetX, 0, `E${estanteriaNum++}`);
+      this.crearCajas(offsetX, profundidadEstanteria + espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
+    }
+  }
+
   private crearEtiquetaEstanteria(offsetX: number, offsetZ: number, estanteriaId: string, alturaEstanteria: number): void {
     // Crear un plano para la etiqueta
     const labelPlane = BABYLON.MeshBuilder.CreatePlane(`label_${estanteriaId}`, {
@@ -724,6 +724,25 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     cintaSuperior.material = bordeMaterial;
     cintaSuperior.parent = caja;
     cintaSuperior.position = BABYLON.Vector3.Zero();
+
+    // Hover en la cinta: resaltar la caja padre y mostrar cursor pointer
+    cintaSuperior.actionManager = new BABYLON.ActionManager(this.scene);
+    cintaSuperior.actionManager.registerAction(
+      new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPointerOverTrigger, () => {
+        if (caja.material instanceof BABYLON.StandardMaterial) {
+          caja.material.emissiveColor = new BABYLON.Color3(0.2, 0.15, 0.1);
+        }
+        document.body.style.cursor = 'pointer';
+      })
+    );
+    cintaSuperior.actionManager.registerAction(
+      new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPointerOutTrigger, () => {
+        if (caja.material instanceof BABYLON.StandardMaterial) {
+          caja.material.emissiveColor = new BABYLON.Color3(0, 0, 0);
+        }
+        document.body.style.cursor = 'default';
+      })
+    );
   }
 
   private crearEtiquetas(): void {

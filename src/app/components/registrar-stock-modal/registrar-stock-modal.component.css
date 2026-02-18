@@ -10,7 +10,7 @@
 }
 
 .modal-title i {
-  color: #3498db;
+  color: #212529;
 }
 
 /* Form cards */
@@ -36,7 +36,7 @@
 }
 
 .form-card-title i {
-  color: #3498db;
+  color: #212529;
 }
 
 .form-card-body {
@@ -83,8 +83,17 @@
 }
 
 .item-option.selected {
-  background: #e3f2fd;
-  border-left: 3px solid #3498db;
+  background: #f0f0f0;
+  border-left: 3px solid #212529;
+}
+
+/* Iconos negros en todo el modal */
+:host .modal-header i,
+:host .modal-body i,
+:host .modal-footer i,
+:host .form-card i,
+:host .item-option i {
+  color: #212529 !important;
 }
 
 .item-option.disabled {

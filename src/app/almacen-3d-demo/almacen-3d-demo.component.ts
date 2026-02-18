@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Almacen3DComponent, CajaInfo, StockItem } from '../components/almacen-3d/almacen-3d.component';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { StockAlmacenService } from '../services/stock-almacen.service';
 import { AlmacenService } from '../services/almacen.service';
+import { NotificationService } from '../services/notification.service';
+import { RegistrarStockModalComponent } from '../components/registrar-stock-modal/registrar-stock-modal.component';
+import { ModificarCantidadModalComponent } from '../components/modificar-cantidad-modal/modificar-cantidad-modal.component';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { EstadoEquipoService } from '../services/estado-equipo.service';
 import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
 import { HardwareService } from '../services/hardware.service';
@@ -15,7 +19,7 @@ import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-almacen-3d-demo',
   standalone: true,
-  imports: [CommonModule, Almacen3DComponent],
+  imports: [CommonModule, NgbModule, Almacen3DComponent, NotificationContainerComponent],
   templateUrl: './almacen-3d-demo.component.html',
   styleUrls: ['./almacen-3d-demo.component.css']
 })
@@ -25,17 +29,12 @@ export class Almacen3DDemoComponent implements OnInit {
   mostrarModal: boolean = false;
   loading: boolean = false;
   stockData3D: StockItem[] = [];
-  
-  // Datos de ejemplo para las cajas (fallback)
-  contenidoEjemplo: any[] = [
-    { id: 1, nombre: 'Monitor Dell 24"', tipo: 'MONITOR', cantidad: 2 },
-    { id: 2, nombre: 'Teclado Logitech K120', tipo: 'TECLADO', cantidad: 5 },
-    { id: 3, nombre: 'Mouse Logitech M100', tipo: 'MOUSE', cantidad: 8 }
-  ];
+  almacenIdALM02: number = 2;
 
   constructor(
     private modalService: NgbModal,
     private stockAlmacenService: StockAlmacenService,
+    private notificationService: NotificationService,
     private almacenService: AlmacenService,
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
@@ -48,8 +47,8 @@ export class Almacen3DDemoComponent implements OnInit {
     this.cargarStockALM02();
   }
 
-  cargarStockALM02(): void {
-    this.loading = true;
+  cargarStockALM02(onComplete?: () => void, silent = false): void {
+    if (!silent) this.loading = true;
     
     // Cargar almacenes primero para encontrar ALM02
     this.almacenService.getAllAlmacenes().subscribe({
@@ -61,9 +60,10 @@ export class Almacen3DDemoComponent implements OnInit {
 
         if (!almacenALM02) {
           console.warn('⚠️ No se encontró ALM02');
-          this.loading = false;
+          if (!silent) this.loading = false;
           return;
         }
+        this.almacenIdALM02 = almacenALM02.id;
 
         // Cargar stock del ALM02 (principalmente stock_almacen, equipos si los hay)
         forkJoin({
@@ -110,17 +110,18 @@ export class Almacen3DDemoComponent implements OnInit {
             
             // Preparar datos para el componente 3D
             this.prepararStockData3D(stockCompleto);
-            this.loading = false;
+            if (!silent) this.loading = false;
+            onComplete?.();
           },
           error: (error) => {
             console.error('Error al cargar stock:', error);
-            this.loading = false;
+            if (!silent) this.loading = false;
           }
         });
       },
       error: (error) => {
         console.error('Error al cargar almacenes:', error);
-        this.loading = false;
+        if (!silent) this.loading = false;
       }
     });
   }
@@ -327,19 +328,6 @@ export class Almacen3DDemoComponent implements OnInit {
   }
 
   onCajaSeleccionada(info: CajaInfo): void {
-    console.log('Caja seleccionada:', info);
-    
-    // Usar el contenido real de la caja si está disponible
-    // Si no hay contenido, usar datos de ejemplo como fallback
-    if (!info.contenido || info.contenido.length === 0) {
-      // Fallback a datos de ejemplo solo si no hay contenido real
-      if (info.nivel === 1 && info.posicion === 1) {
-        info.contenido = this.contenidoEjemplo;
-      } else {
-        info.contenido = [];
-      }
-    }
-    
     this.cajaSeleccionada = info;
     this.mostrarModal = true;
   }
@@ -353,19 +341,51 @@ export class Almacen3DDemoComponent implements OnInit {
     return !!(this.cajaSeleccionada?.contenido && this.cajaSeleccionada.contenido.length > 0);
   }
 
-  agregarItem(): void {
-    // TODO: Implementar lógica de agregar item
-    console.log('Agregar item a la caja');
+  /** Actualiza el contenido de la caja seleccionada desde stockData3D */
+  private actualizarContenidoCajaModal(): void {
+    if (!this.cajaSeleccionada || !this.stockData3D.length) return;
+    const estanteria = this.cajaSeleccionada.estanteria?.toString().toUpperCase().trim();
+    const estante = this.cajaSeleccionada.nivel?.toString().trim();
+    const seccion = this.cajaSeleccionada.seccion?.toString().toLowerCase().trim();
+    if (!estanteria || !estante || !seccion) return;
+    this.cajaSeleccionada.contenido = this.stockData3D.filter((item: any) => {
+      const itemEst = item.estanteria?.toString().toUpperCase().trim();
+      const itemNiv = item.estante?.toString().trim();
+      const itemSec = item.seccion?.toString().toLowerCase().trim();
+      return itemEst === estanteria && itemNiv === estante && itemSec === seccion;
+    });
   }
 
-  quitarItem(item: any): void {
-    // TODO: Implementar lógica de quitar item
-    console.log('Quitar item:', item);
+  agregarItem(): void {
+    if (!this.cajaSeleccionada) return;
+    const modalRef = this.modalService.open(RegistrarStockModalComponent, { size: 'lg', backdrop: true });
+    modalRef.componentInstance.almacenIdPreseleccionado = this.almacenIdALM02;
+    modalRef.componentInstance.ubicacionPreseleccionada = {
+      estanteria: this.cajaSeleccionada.estanteria,
+      estante: String(this.cajaSeleccionada.nivel),
+      division: (this.cajaSeleccionada.seccion || '').toUpperCase()
+    };
+    modalRef.result.then((result: { success?: boolean }) => {
+      if (result?.success) {
+        this.cargarStockALM02();
+        this.cerrarModal();
+      }
+    }).catch(() => {});
+  }
+
+  abrirModalCantidad(item: any): void {
+    if (!item?.id) return;
+    const modalRef = this.modalService.open(ModificarCantidadModalComponent, { size: 'md' });
+    modalRef.componentInstance.item = item;
+    modalRef.result.then((result: { success?: boolean }) => {
+      if (result?.success) {
+        this.cargarStockALM02(() => this.actualizarContenidoCajaModal(), true);
+      }
+    }).catch(() => {});
   }
 
   transferirItem(item: any): void {
-    // TODO: Implementar lógica de transferir
-    console.log('Transferir item:', item);
+    this.notificationService.showInfo('Transferir', 'Funcionalidad de transferencia disponible en la vista principal de stock.');
   }
 }
 

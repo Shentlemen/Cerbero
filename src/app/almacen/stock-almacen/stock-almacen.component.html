@@ -147,7 +147,7 @@
                          'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular',
                          'search-match': itemCoincideConBusqueda(item)
                        }"
-                       (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item, modalCantidad) : null"
+                       (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item) : null"
                        [style.cursor]="canManageStock() && !esEquipoEspecial(item) ? 'pointer' : 'default'"
                        [title]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'Equipo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular') : 'Dispositivo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular')) : (canManageStock() ? 'Click para modificar cantidad' : 'Solo visualización')">
                     <div class="item-content">
@@ -239,7 +239,7 @@
                            'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular',
                            'search-match': itemCoincideConBusqueda(item)
                          }"
-                         (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item, modalCantidad) : null"
+                         (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item) : null"
                          [style.cursor]="canManageStock() && !esEquipoEspecial(item) ? 'pointer' : 'default'"
                          [title]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'Equipo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular') : 'Dispositivo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular')) : (canManageStock() ? 'Click para modificar cantidad' : 'Solo visualización')">
                       <div class="item-content">
@@ -320,92 +320,3 @@
     </div>
   </div>
 </div> 
-
-<!-- Modal para modificar cantidad -->
-<ng-template #modalCantidad let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">
-      <i class="fas fa-edit me-2"></i>
-      Modificar Cantidad
-    </h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-  </div>
-  <div class="modal-body">
-    <div *ngIf="itemSeleccionado" class="mb-4">
-      <!-- Información del item -->
-      <div class="item-info-card">
-        <div class="item-info-header">
-          <div class="item-icon-large">
-            <i class="fas fa-box"></i>
-          </div>
-          <div class="item-info-details">
-            <h5 class="item-name-modal">{{ itemSeleccionado.item.nombreItem }}</h5>
-            <div class="item-location">
-              <span class="badge bg-secondary me-1">{{ itemSeleccionado.almacen.numero }}</span>
-              <span class="badge bg-info me-1">{{ itemSeleccionado.estanteria }}</span>
-              <span class="badge bg-success">{{ itemSeleccionado.estante }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Controles de cantidad -->
-      <form [formGroup]="cantidadForm">
-        <div class="cantidad-controls">
-          <label class="form-label">Cantidad actual</label>
-          <div class="input-group input-group-lg">
-            <button 
-              type="button" 
-              class="btn btn-outline-danger"
-              (click)="reducirCantidad()"
-              [disabled]="cantidadForm.get('cantidad')?.value <= 0">
-              <i class="fas fa-minus"></i>
-            </button>
-            <input 
-              type="number" 
-              class="form-control text-center cantidad-input"
-              formControlName="cantidad"
-              min="0"
-              readonly>
-            <button 
-              type="button" 
-              class="btn btn-outline-success"
-              (click)="aumentarCantidad()">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-          <div *ngIf="cantidadForm.get('cantidad')?.invalid && cantidadForm.get('cantidad')?.touched" 
-               class="text-danger mt-1">
-            <small>La cantidad debe ser un número válido (0 o mayor)</small>
-          </div>
-        </div>
-      </form>
-
-      <!-- Advertencia de eliminación -->
-      <div *ngIf="mostrarConfirmacionEliminacion" class="alert alert-warning mt-3">
-        <div class="d-flex align-items-center">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          <div>
-            <strong>¡Atención!</strong><br>
-            <small>Si confirmas con cantidad 0, el item será eliminado completamente del stock.</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="cancelarCambios()">
-      <i class="fas fa-times me-1"></i>
-      Cancelar
-    </button>
-    <button 
-      type="button" 
-      class="btn" 
-      [ngClass]="mostrarConfirmacionEliminacion ? 'btn-danger' : 'btn-primary'"
-      (click)="guardarCantidad()"
-      [disabled]="!cantidadForm.valid">
-      <i class="fas" [ngClass]="mostrarConfirmacionEliminacion ? 'fa-trash' : 'fa-save'" class="me-1"></i>
-      {{ mostrarConfirmacionEliminacion ? 'Eliminar Item' : 'Actualizar Cantidad' }}
-    </button>
-  </div>
-</ng-template> 

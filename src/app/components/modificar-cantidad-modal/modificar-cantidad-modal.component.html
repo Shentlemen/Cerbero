@@ -1,0 +1,85 @@
+<div class="modificar-cantidad-modal">
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-edit me-2"></i>
+      Modificar Cantidad
+    </h4>
+    <button type="button" class="btn-close" (click)="cancelarCambios()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="item" class="mb-4">
+      <div class="item-info-card">
+        <div class="item-info-header">
+          <div class="item-icon-large">
+            <i class="fas fa-box"></i>
+          </div>
+          <div class="item-info-details">
+            <h5 class="item-name-modal">{{ item.item?.nombreItem || item.nombre || 'Sin nombre' }}</h5>
+            <div class="item-location">
+              <span class="badge badge-almacen" *ngIf="item.almacen">{{ item.almacen.numero }}</span>
+              <span class="badge badge-estanteria" *ngIf="item.estanteria">{{ item.estanteria }}</span>
+              <span class="badge badge-estante" *ngIf="item.estante">{{ item.estante }}</span>
+              <span class="badge badge-seccion" *ngIf="item.seccion">{{ item.seccion }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <form [formGroup]="cantidadForm">
+        <div class="cantidad-controls">
+          <label class="form-label">Cantidad</label>
+          <div class="input-group input-group-lg">
+            <button 
+              type="button" 
+              class="btn btn-outline-reduce"
+              (click)="reducirCantidad()"
+              [disabled]="cantidadForm.get('cantidad')?.value <= 0">
+              <i class="fas fa-minus"></i>
+            </button>
+            <input 
+              type="number" 
+              class="form-control text-center cantidad-input"
+              formControlName="cantidad"
+              min="0"
+              readonly>
+            <button 
+              type="button" 
+              class="btn btn-outline-increase"
+              (click)="aumentarCantidad()">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div *ngIf="cantidadForm.get('cantidad')?.invalid && cantidadForm.get('cantidad')?.touched" 
+               class="text-danger mt-1">
+            <small>La cantidad debe ser un número válido (0 o mayor)</small>
+          </div>
+        </div>
+      </form>
+
+      <div *ngIf="mostrarConfirmacionEliminacion" class="alert alert-eliminacion mt-3">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <div>
+            <strong>¡Atención!</strong><br>
+            <small>Si confirmas con cantidad 0, el item será eliminado completamente del stock.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn-cancelar" (click)="cancelarCambios()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button 
+      type="button" 
+      class="btn-guardar"
+      [class.btn-eliminar]="mostrarConfirmacionEliminacion"
+      (click)="guardarCantidad()"
+      [disabled]="!cantidadForm.valid">
+      <i class="fas" [ngClass]="mostrarConfirmacionEliminacion ? 'fa-trash' : 'fa-save'" class="me-1"></i>
+      {{ mostrarConfirmacionEliminacion ? 'Eliminar Item' : 'Actualizar Cantidad' }}
+    </button>
+  </div>
+</div>

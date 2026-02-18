@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, Router } from '@angular/router';
 import { StockAlmacenService, StockAlmacen } from '../../services/stock-almacen.service';
@@ -10,6 +10,7 @@ import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { RegistrarStockModalComponent } from '../../components/registrar-stock-modal/registrar-stock-modal.component';
+import { ModificarCantidadModalComponent } from '../../components/modificar-cantidad-modal/modificar-cantidad-modal.component';
 import { Almacen3DComponent, StockItem } from '../../components/almacen-3d/almacen-3d.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../../services/estado-dispositivo.service';
@@ -41,11 +42,6 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   almacenId: number | null = null;
   loading: boolean = false;
   error: string | null = null;
-
-  // Modal de cantidad
-  itemSeleccionado: StockAlmacen | null = null;
-  cantidadForm: FormGroup;
-  mostrarConfirmacionEliminacion: boolean = false;
 
   // Organización del stock por almacén y estantería
   stockOrganizado: { [key: string]: { [key: string]: any[] } } = {};
@@ -79,7 +75,6 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private modalService: NgbModal,
-    private fb: FormBuilder,
     public permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private estadoEquipoService: EstadoEquipoService,
@@ -87,11 +82,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private networkInfoService: NetworkInfoService
-  ) {
-    this.cantidadForm = this.fb.group({
-      cantidad: [1, [Validators.required, Validators.min(0)]]
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     // Suscribirse a los parámetros de la ruta para obtener el ID del almacén
@@ -786,8 +777,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   /**
    * Abre el modal para modificar la cantidad de un item
    */
-  abrirModalCantidad(item: any, modal: any): void {
-    // No permitir editar equipos especiales (cementerio y almacén laboratorio)
+  abrirModalCantidad(item: any, _modal?: any): void {
     if (item.esEquipoEspecial) {
       this.notificationService.showError(
         'No se puede modificar',
@@ -804,115 +794,11 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.itemSeleccionado = item;
-    this.cantidadForm.patchValue({
-      cantidad: item.cantidad
-    });
-    this.mostrarConfirmacionEliminacion = false;
-    this.modalService.open(modal, { size: 'md' });
-  }
-
-  /**
-   * Aumenta la cantidad en 1
-   */
-  aumentarCantidad(): void {
-    const cantidadActual = this.cantidadForm.get('cantidad')?.value || 0;
-    this.cantidadForm.patchValue({
-      cantidad: cantidadActual + 1
-    });
-    this.mostrarConfirmacionEliminacion = false;
-  }
-
-  /**
-   * Reduce la cantidad en 1
-   */
-  reducirCantidad(): void {
-    const cantidadActual = this.cantidadForm.get('cantidad')?.value || 0;
-    const nuevaCantidad = Math.max(0, cantidadActual - 1);
-    this.cantidadForm.patchValue({
-      cantidad: nuevaCantidad
-    });
-    
-    // Mostrar confirmación si la cantidad llega a 0
-    this.mostrarConfirmacionEliminacion = nuevaCantidad === 0;
-  }
-
-  /**
-   * Guarda los cambios de cantidad
-   */
-  guardarCantidad(): void {
-    if (!this.itemSeleccionado || !this.cantidadForm.valid) {
-      return;
-    }
-
-    const nuevaCantidad = this.cantidadForm.get('cantidad')?.value;
-
-    if (nuevaCantidad === 0) {
-      // Eliminar el item si la cantidad es 0
-      this.eliminarItem();
-    } else {
-      // Actualizar la cantidad
-      this.actualizarCantidad(nuevaCantidad);
-    }
-  }
-
-  /**
-   * Actualiza la cantidad del item
-   */
-  private actualizarCantidad(nuevaCantidad: number): void {
-    if (!this.itemSeleccionado) return;
-
-    this.stockAlmacenService.updateStockQuantity(this.itemSeleccionado.id, nuevaCantidad).subscribe({
-      next: () => {
-        this.notificationService.showSuccess(
-          'Stock Actualizado',
-          `La cantidad se ha actualizado a ${nuevaCantidad} unidades.`
-        );
-        this.modalService.dismissAll();
-        this.cargarDatos();
-      },
-      error: (error) => {
-        console.error('Error al actualizar cantidad:', error);
-        this.notificationService.showError(
-          'Error',
-          'No se pudo actualizar la cantidad. Intente nuevamente.'
-        );
-      }
-    });
-  }
-
-  /**
-   * Elimina el item del stock
-   */
-  private eliminarItem(): void {
-    if (!this.itemSeleccionado) return;
-
-    this.stockAlmacenService.deleteStock(this.itemSeleccionado.id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess(
-          'Item Eliminado',
-          'El item ha sido eliminado del stock.'
-        );
-        this.modalService.dismissAll();
-        this.cargarDatos();
-      },
-      error: (error) => {
-        console.error('Error al eliminar item:', error);
-        this.notificationService.showError(
-          'Error',
-          'No se pudo eliminar el item. Intente nuevamente.'
-        );
-      }
-    });
-  }
-
-  /**
-   * Cancela los cambios y cierra el modal
-   */
-  cancelarCambios(): void {
-    this.modalService.dismissAll();
-    this.itemSeleccionado = null;
-    this.mostrarConfirmacionEliminacion = false;
+    const modalRef = this.modalService.open(ModificarCantidadModalComponent, { size: 'md' });
+    modalRef.componentInstance.item = item;
+    modalRef.result.then((result: { success?: boolean }) => {
+      if (result?.success) this.cargarDatos();
+    }).catch(() => {});
   }
 
   /**
