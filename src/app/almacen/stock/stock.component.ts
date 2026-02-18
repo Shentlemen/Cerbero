@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -46,6 +47,9 @@ export class UbicacionesComponent implements OnInit {
   private cargandoFormularioEdicion: boolean = false;
   stockSeleccionado: StockAlmacen | null = null;
   stockAEliminar: StockAlmacen | null = null;
+  stockParaVer: StockAlmacen | null = null;
+
+  @ViewChild('modalUbicacion') modalUbicacionRef!: TemplateRef<any>;
 
   // Paginación
   page = 1;
@@ -83,7 +87,9 @@ export class UbicacionesComponent implements OnInit {
     public permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private almacenConfigService: AlmacenConfigService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.stockForm = this.fb.group({
       compraId: ['', Validators.required],
@@ -101,21 +107,16 @@ export class UbicacionesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarDatos();
     
-    // Escuchar cambios en compraId para resetear itemId (no resetear cuando estamos cargando el form en edición)
-    this.stockForm.get('compraId')?.valueChanges.subscribe(compraId => {
-      if (compraId && !this.cargandoFormularioEdicion) {
-        this.stockForm.patchValue({ itemId: '' });
-        this.itemSearchTerm = '';
-        this.itemsFiltrados = [];
-      }
-    });
+    // Nota: NO usamos compraId.valueChanges para resetear itemId porque provoca un bug:
+    // al seleccionar almacén, algo dispara una emisión falsa que borra el ítem. En su lugar,
+    // seleccionarCompra() ya limpia itemId cuando el usuario elige una nueva compra.
 
     // Escuchar cambios en almacenId para cargar configuración y resetear ubicación
     this.stockForm.get('almacenId')?.valueChanges.subscribe(almacenId => {
       if (almacenId) {
         this.cargarConfiguracionAlmacen(parseInt(almacenId));
         if (!this.cargandoFormularioEdicion) {
-          this.stockForm.patchValue({ estanteria: '', estante: '', division: '' });
+          this.stockForm.patchValue({ estanteria: '', estante: '', division: '' }, { emitEvent: false });
         }
       } else {
         this.limpiarConfiguracionAlmacen();
@@ -141,6 +142,7 @@ export class UbicacionesComponent implements OnInit {
           this.divisionesDisponibles = ['A', 'B', 'C'];
           this.updateFormValidation();
         }
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error al cargar configuración del almacén:', error);
@@ -149,6 +151,7 @@ export class UbicacionesComponent implements OnInit {
         this.divisionesDisponibles = ['A', 'B', 'C'];
         this.configAlmacenActual = null;
         this.updateFormValidation();
+        this.cdr.detectChanges();
       }
     });
   }
@@ -209,6 +212,30 @@ export class UbicacionesComponent implements OnInit {
     }
   }
 
+  /**
+   * Filtra el stock excluyendo items en cementerio o laboratorio.
+   * Los equipos en esos almacenes especiales no deben aparecer en la gestión de stock.
+   */
+  private filtrarStockExcluyendoAlmacenesEspeciales(stock: StockAlmacen[], almacenes: any[]): StockAlmacen[] {
+    const idsExcluidos = new Set<number>();
+    for (const a of almacenes) {
+      const numero = (a?.numero || '').toLowerCase().trim();
+      const nombre = (a?.nombre || '').toLowerCase();
+      const esCementerio = numero === 'alm01' || numero === 'alm 01' ||
+        nombre.includes('subsuelo') || nombre.includes('cementerio');
+      const esLaboratorio = numero === 'alm05' || numero === 'alm 05' ||
+        nombre.includes('pañol 3');
+      if (esCementerio || esLaboratorio) {
+        idsExcluidos.add(Number(a.id));
+      }
+    }
+    if (idsExcluidos.size === 0) return stock;
+    return stock.filter(item => {
+      const almacenId = item?.almacen?.id;
+      return almacenId == null || !idsExcluidos.has(Number(almacenId));
+    });
+  }
+
   cargarDatos(): void {
     this.loading = true;
     this.error = null;
@@ -219,14 +246,15 @@ export class UbicacionesComponent implements OnInit {
       this.almacenService.getAllAlmacenes().toPromise(),
       this.getComprasDisponibles()
     ]).then(([stock, almacenes, compras]) => {
-      if (stock) {
-        this.stock = stock;
-        this.stockFiltrado = [...this.stock];
-        this.actualizarPaginacion();
-      }
-
       if (almacenes) {
         this.almacenes = almacenes;
+      }
+
+      if (stock) {
+        // Excluir items en cementerio o laboratorio: nunca deben aparecer en gestión de stock
+        this.stock = this.filtrarStockExcluyendoAlmacenesEspeciales(stock, almacenes || []);
+        this.stockFiltrado = [...this.stock];
+        this.actualizarPaginacion();
       }
 
       if (compras) {
@@ -235,6 +263,16 @@ export class UbicacionesComponent implements OnInit {
       }
 
       this.loading = false;
+
+      // Si llegamos con query registrarAlmacen, abrir modal de registro con ese almacén pre-seleccionado
+      const registrarAlmacen = this.route.snapshot.queryParams['registrarAlmacen'];
+      if (registrarAlmacen != null && registrarAlmacen !== '') {
+        const almacenId = Number(registrarAlmacen);
+        if (!isNaN(almacenId) && this.permissionsService.canManageAssets()) {
+          this.abrirModalRegistrarConAlmacen(almacenId);
+          this.router.navigate([], { relativeTo: this.route, queryParams: {}, queryParamsHandling: '' });
+        }
+      }
     }).catch(error => {
       console.error('Error al cargar datos:', error);
       this.error = 'Error al cargar datos. Por favor, intente nuevamente.';
@@ -242,7 +280,32 @@ export class UbicacionesComponent implements OnInit {
     });
   }
 
-  async abrirModalUbicacion(modal: any, stock?: StockAlmacen): Promise<void> {
+  /**
+   * Abre el modal de registro de stock con un almacén ya pre-seleccionado.
+   * Se usa cuando el usuario llega desde la vista de un almacén concreto.
+   */
+  abrirModalRegistrarConAlmacen(almacenId: number): void {
+    this.abrirModalUbicacion(this.modalUbicacionRef, undefined, almacenId);
+  }
+
+  abrirModalVer(modal: any, stock: StockAlmacen): void {
+    this.stockParaVer = stock;
+    this.modalService.open(modal, { size: 'md', backdrop: true });
+  }
+
+  cerrarYEditarStock(): void {
+    if (!this.stockParaVer) return;
+    const stock = this.stockParaVer;
+    this.modalService.dismissAll();
+    setTimeout(() => this.abrirModalUbicacion(this.modalUbicacionRef, stock), 150);
+  }
+
+  getDescripcionResumida(descripcion: string | null | undefined): string {
+    if (!descripcion?.trim()) return '-';
+    return descripcion.length > 40 ? descripcion.slice(0, 40) + '...' : descripcion;
+  }
+
+  async abrirModalUbicacion(modal: any, stock?: StockAlmacen, almacenIdPreseleccionado?: number): Promise<void> {
     this.modoEdicion = !!stock;
     this.stockSeleccionado = stock || null;
 
@@ -316,10 +379,12 @@ export class UbicacionesComponent implements OnInit {
       this.cdr.detectChanges();
     } else {
       // Modo creación: resetear formulario (valores '' para que los dropdowns muestren "Sin selección")
+      // Si viene almacenIdPreseleccionado (ej. desde vista de almacén), pre-seleccionar ese almacén
+      const almacenInicial = almacenIdPreseleccionado ?? '';
       this.stockForm.reset({
         compraId: '',
         itemId: '',
-        almacenId: '',
+        almacenId: almacenInicial,
         estanteria: '',
         estante: '',
         division: '',
@@ -329,7 +394,11 @@ export class UbicacionesComponent implements OnInit {
       });
       this.itemsDeCompra = [];
       this.itemsFiltrados = [];
-      this.limpiarConfiguracionAlmacen();
+      if (almacenIdPreseleccionado != null) {
+        this.cargarConfiguracionAlmacen(almacenIdPreseleccionado);
+      } else {
+        this.limpiarConfiguracionAlmacen();
+      }
     }
 
     // Actualizar validaciones después de configurar el formulario
@@ -718,6 +787,31 @@ export class UbicacionesComponent implements OnInit {
       console.error('Error al cargar ítems de la compra:', error);
       this.itemsDeCompra = [];
       this.itemsFiltrados = [];
+    }
+  }
+
+  /** Valor mostrado en el input de ítem: usa itemId como fuente de verdad para evitar que se borre al cambiar almacén */
+  getItemInputDisplayValue(): string {
+    const itemId = this.stockForm.get('itemId')?.value;
+    if (itemId && this.itemsDeCompra?.length > 0) {
+      const item = this.itemsDeCompra.find(i => Number(i.idItem) === Number(itemId));
+      if (item) {
+        return item.nombreItem || '';
+      }
+    }
+    return this.itemSearchTerm || '';
+  }
+
+  onItemInputChange(value: string): void {
+    this.itemSearchTerm = value || '';
+    this.filtrarItems();
+    // Si el usuario escribe algo distinto al ítem seleccionado, limpiar la selección
+    const itemId = this.stockForm.get('itemId')?.value;
+    if (itemId) {
+      const item = this.itemsDeCompra.find(i => Number(i.idItem) === Number(itemId));
+      if (item && item.nombreItem !== value) {
+        this.stockForm.patchValue({ itemId: '' }, { emitEvent: false });
+      }
     }
   }
 

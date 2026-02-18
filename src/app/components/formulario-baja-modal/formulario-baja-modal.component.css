@@ -446,51 +446,50 @@
 .modal-footer-custom {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 15px 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
   background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
   border-top: 1px solid #333;
 }
 
-.modal-footer-custom .btn {
-  padding: 10px 20px;
+/* Botones con clases propias para NO heredar de styles.css */
+.modal-footer-custom .fb-btn {
+  padding: 8px 16px;
   border-radius: 6px;
   font-weight: 500;
-  display: flex;
+  font-size: 0.95rem;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
 }
 
-.modal-footer-custom .btn-secondary {
-  background: #6c757d;
-  border: none;
-  color: white;
+.modal-footer-custom .fb-btn i {
+  color: #fff;
 }
 
-.modal-footer-custom .btn-secondary:hover {
-  background: #5a6268;
+/* Cancelar */
+.modal-footer-custom .fb-btn-cancelar:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
 }
 
-.modal-footer-custom .btn-primary {
-  background: #1a7a8c;
-  border: none;
-  color: white;
+/* Imprimir */
+.modal-footer-custom .fb-btn-imprimir:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
 }
 
-.modal-footer-custom .btn-primary:hover {
-  background: #15616d;
-}
-
-.modal-footer-custom .btn-danger {
-  background: #dc3545;
-  border: none;
-  color: white;
-}
-
-.modal-footer-custom .btn-danger:hover {
-  background: #c82333;
+/* Confirmar Baja */
+.modal-footer-custom .fb-btn-confirmar:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
 }
 
 /* ===== RESPONSIVE ===== */

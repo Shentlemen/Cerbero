@@ -45,28 +45,27 @@ export class Almacen3DDemoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cargarStockALM03();
+    this.cargarStockALM02();
   }
 
-  cargarStockALM03(): void {
+  cargarStockALM02(): void {
     this.loading = true;
     
-    // Cargar almacenes primero para encontrar ALM03
+    // Cargar almacenes primero para encontrar ALM02
     this.almacenService.getAllAlmacenes().subscribe({
       next: (almacenes) => {
-        const almacenALM03 = almacenes.find((a: any) => 
-          a.id === 3 || 
-          a.numero?.toUpperCase().includes('ALM03') ||
-          a.nombre?.toUpperCase().includes('ALMACEN PRINCIPAL')
+        const almacenALM02 = almacenes.find((a: any) => 
+          a.id === 2 || 
+          a.numero?.toUpperCase().includes('ALM02')
         );
 
-        if (!almacenALM03) {
-          console.warn('⚠️ No se encontró ALM03');
+        if (!almacenALM02) {
+          console.warn('⚠️ No se encontró ALM02');
           this.loading = false;
           return;
         }
 
-        // Cargar stock y equipos especiales
+        // Cargar stock del ALM02 (principalmente stock_almacen, equipos si los hay)
         forkJoin({
           stock: this.stockAlmacenService.getAllStock(),
           equiposAlmacen: this.estadoEquipoService.getEquiposEnAlmacen(),
@@ -78,34 +77,33 @@ export class Almacen3DDemoComponent implements OnInit {
           next: (response) => {
             let stockCompleto: any[] = [];
             
-            // Agregar stock normal del ALM03
+            // Agregar stock normal del ALM02
             if (Array.isArray(response.stock)) {
               stockCompleto = response.stock.filter((item: any) => 
-                item.almacen && item.almacen.id === almacenALM03.id
+                item.almacen && item.almacen.id === almacenALM02.id
               );
             }
 
-            // Agregar equipos transferidos a ALM03
+            // Agregar equipos transferidos a ALM02 (si los hay)
             const equiposEnAlmacen = response.equiposAlmacen?.success && Array.isArray(response.equiposAlmacen.data)
-              ? response.equiposAlmacen.data.filter((e: any) => e.almacenId === almacenALM03.id)
+              ? response.equiposAlmacen.data.filter((e: any) => e.almacenId === almacenALM02.id)
               : [];
             
             const dispositivosEnAlmacen = response.dispositivosAlmacen?.success && Array.isArray(response.dispositivosAlmacen.data)
-              ? response.dispositivosAlmacen.data.filter((d: any) => d.almacenId === almacenALM03.id)
+              ? response.dispositivosAlmacen.data.filter((d: any) => d.almacenId === almacenALM02.id)
               : [];
 
-            // Convertir equipos y dispositivos a formato StockAlmacen
             const itemsEquipos = this.convertirEquiposAStock(
               equiposEnAlmacen,
               Array.isArray(response.hardware) ? response.hardware : [],
               Array.isArray(response.bios) ? response.bios : [],
-              almacenALM03
+              almacenALM02
             );
 
             const itemsDispositivos = this.convertirDispositivosAStock(
               dispositivosEnAlmacen,
               response.networkInfo,
-              almacenALM03
+              almacenALM02
             );
 
             stockCompleto = [...stockCompleto, ...itemsEquipos, ...itemsDispositivos];
@@ -235,11 +233,10 @@ export class Almacen3DDemoComponent implements OnInit {
 
     this.stockData3D = stock
       .filter(item => {
-        // Solo incluir items del ALM03
-        const esALM03 = item.almacen && (item.almacen.id === 3 || 
-          item.almacen.numero?.toUpperCase().includes('ALM03') ||
-          item.almacen.nombre?.toUpperCase().includes('ALMACEN PRINCIPAL'));
-        return esALM03;
+        // Solo incluir items del ALM02
+        const esALM02 = item.almacen && (item.almacen.id === 2 || 
+          item.almacen.numero?.toUpperCase().includes('ALM02'));
+        return esALM02;
       })
       .map(item => {
         // Normalizar estantería (E1, E2, etc.)

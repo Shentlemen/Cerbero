@@ -13,16 +13,6 @@
           Gestión de Stock de Almacén
         </ng-template>
       </h1>
-      <button
-        *ngIf="getAlmacenes().length > 0"
-        class="btn btn-danger print-btn"
-        (click)="exportarPDFAlmacenCompleto()"
-        [disabled]="loading || isExporting"
-        title="Exportar almacén completo a PDF"
-        data-help="📄 Exporta todo el contenido del almacén a un archivo PDF">
-        <i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
-        {{ isExporting ? 'Generando PDF...' : 'Imprimir Almacén' }}
-      </button>
     </div>
   </div>
 
@@ -51,7 +41,7 @@
             type="text" 
             class="form-control search-input" 
             [(ngModel)]="searchTerm" 
-            placeholder="Buscar por nombre, número, descripción... (resalta coincidencias)"
+            placeholder="Buscar por nombre, número, descripción... (filtra y resalta)"
             autocomplete="off">
           <button 
             *ngIf="searchTerm" 
@@ -88,11 +78,32 @@
                 </p>
               </div>
             </div>
+            <div class="almacen-header-actions">
+              <button
+                *ngIf="canManageStock() && almacenSeleccionado"
+                class="btn registrar-stock-btn"
+                (click)="irARegistrarStock()"
+                title="Registrar stock en este almacén">
+                <i class="fas fa-box"></i>
+                Registrar Stock
+              </button>
+              <button
+                class="btn btn-danger print-btn"
+                (click)="exportarPDFAlmacen(almacenKey)"
+                [disabled]="loading || isExporting"
+                title="Exportar almacén a PDF"
+                data-help="📄 Exporta todo el contenido del almacén a un archivo PDF">
+                <i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
+                {{ isExporting ? 'Generando PDF...' : 'Imprimir Almacén' }}
+              </button>
+            </div>
           </div>
 
           <!-- Estanterías del almacén -->
-          <div class="estanterias-grid">
-            <div *ngFor="let estanteriaKey of getEstanterias(almacenKey)" class="estanteria-main-card">
+          <div class="estanterias-grid" [class.estanterias-grid-full]="esAlmacenCementerioOLaboratorio(almacenKey)">
+            <div *ngFor="let estanteriaKey of getEstanterias(almacenKey)" 
+                 class="estanteria-main-card" 
+                 [class.estanteria-main-card-full]="esAlmacenCementerioOLaboratorio(almacenKey)">
               <!-- Header de la estantería -->
               <div class="estanteria-card-header">
                 <div class="estanteria-icon">
@@ -102,8 +113,8 @@
                   <h4 class="estanteria-name">Estantería {{ estanteriaKey }}</h4>
                   <p class="estanteria-summary">
                     {{ getTotalStockPorEstanteria(almacenKey, estanteriaKey) }} items
-                    <span class="separator">•</span>
-                    {{ getEstantesPorEstanteria(almacenKey, estanteriaKey).length }} estantes
+                    <span *ngIf="!esAlmacenCementerioOLaboratorio(almacenKey)" class="separator">•</span>
+                    <span *ngIf="!esAlmacenCementerioOLaboratorio(almacenKey)">{{ getEstantesPorEstanteria(almacenKey, estanteriaKey).length }} estantes</span>
                   </p>
                 </div>
                 <button
@@ -117,7 +128,83 @@
                 </button>
               </div>
 
-              <!-- Estantes de la estantería -->
+              <!-- Contenido: sin estantes (cementerio/laboratorio) o con estantes (regular) -->
+              <ng-container *ngIf="esAlmacenCementerioOLaboratorio(almacenKey); else conEstantes">
+                <!-- Items directamente en la estantería (cementerio/laboratorio) -->
+                <div class="items-container items-horizontal items-container-directo">
+                  <div *ngIf="getItemsPorEstanteria(almacenKey, estanteriaKey).length === 0" class="estante-vacio">
+                    <i class="fas fa-inbox"></i>
+                    <span>Sin items</span>
+                  </div>
+                  <div *ngFor="let item of getItemsPorEstanteria(almacenKey, estanteriaKey)" 
+                       class="item-card"
+                       [ngClass]="{
+                         'clickable': canManageStock() && !esEquipoEspecial(item),
+                         'read-only': !canManageStock() || esEquipoEspecial(item),
+                         'equipo-especial': esEquipoEspecial(item),
+                         'equipo-cementerio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'cementerio',
+                         'equipo-laboratorio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'laboratorio',
+                         'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular',
+                         'search-match': itemCoincideConBusqueda(item)
+                       }"
+                       (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item, modalCantidad) : null"
+                       [style.cursor]="canManageStock() && !esEquipoEspecial(item) ? 'pointer' : 'default'"
+                       [title]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'Equipo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular') : 'Dispositivo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular')) : (canManageStock() ? 'Click para modificar cantidad' : 'Solo visualización')">
+                    <div class="item-content">
+                      <div class="item-icon">
+                        <i class="fas" [ngClass]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired') : 'fa-box'"></i>
+                      </div>
+                      <div class="item-details">
+                        <h6 *ngIf="!esEquipoEspecial(item)" class="item-name">{{ item.item.nombreItem }}</h6>
+                        <h6 *ngIf="esEquipoEspecial(item) && item.numero" class="item-name item-numero-equipo">{{ item.numero }}</h6>
+                        <div class="item-metadata">
+                          <span *ngIf="!esEquipoEspecial(item)" class="cantidad-badge">{{ item.cantidad }} unidades</span>
+                          <span *ngIf="item.numero && !esEquipoEspecial(item)" class="numero-badge">{{ item.numero }}</span>
+                          <span *ngIf="!canManageStock() && !esEquipoEspecial(item)" class="readonly-badge" title="Solo visualización">
+                            <i class="fas fa-eye"></i>
+                          </span>
+                        </div>
+                      </div>
+                      <div *ngIf="esEquipoEspecial(item) && (getTipoEquipo(item) === 'EQUIPO' || getTipoEquipo(item) === 'DISPOSITIVO') && canManageStock()" class="item-acciones-wrapper position-relative">
+                        <button 
+                          type="button"
+                          class="btn btn-sm btn-acciones-equipo" 
+                          [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
+                          (click)="toggleDropdown(item, $event)">
+                          <i class="fas me-2" [ngClass]="(transferiendoItemId === item.id || reactivandoItemId === item.id) ? 'fa-spinner fa-spin' : 'fa-cog'"></i>
+                          <span *ngIf="transferiendoItemId === item.id">Transferiendo...</span>
+                          <span *ngIf="reactivandoItemId === item.id">Reactivando...</span>
+                          <span *ngIf="transferiendoItemId !== item.id && reactivandoItemId !== item.id">Acciones</span>
+                          <i class="fas fa-chevron-down ms-2" style="font-size: 0.6rem;"></i>
+                        </button>
+                        <div *ngIf="dropdownAbiertoId === item.id" 
+                             class="dropdown-menu show" 
+                             style="position: absolute; top: 100%; right: 0; left: auto; z-index: 1000; min-width: 150px; margin-top: 2px;">
+                          <button 
+                            type="button"
+                            class="dropdown-item" 
+                            (click)="transferirEquipo(item, $event)"
+                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
+                            <i class="fas fa-exchange-alt me-2"></i>
+                            Transferir
+                          </button>
+                          <button 
+                            type="button"
+                            class="dropdown-item" 
+                            (click)="reactivarEquipo(item, $event)"
+                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
+                            <i class="fas fa-undo me-2"></i>
+                            Reactivar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #conEstantes>
+              <!-- Estantes de la estantería (almacenes regulares) -->
               <div class="estantes-grid">
                 <div *ngFor="let estanteKey of getEstantesPorEstanteria(almacenKey, estanteriaKey)" class="estante-card">
                   <!-- Header del estante -->
@@ -141,7 +228,7 @@
                     </div>
                     
                     <!-- Items del estante -->
-                    <div *ngFor="let item of getItemsPorEstante(almacenKey, estanteriaKey, estanteKey)" 
+                    <div *ngFor="let item of getItemsPorEstante(almacenKey, estanteriaKey, estanteKey)"
                          class="item-card"
                          [ngClass]="{
                            'clickable': canManageStock() && !esEquipoEspecial(item),
@@ -161,18 +248,10 @@
                         </div>
                         <div class="item-details">
                           <h6 *ngIf="!esEquipoEspecial(item)" class="item-name">{{ item.item.nombreItem }}</h6>
+                          <h6 *ngIf="esEquipoEspecial(item) && item.numero" class="item-name item-numero-equipo">{{ item.numero }}</h6>
                           <div class="item-metadata">
                             <span *ngIf="!esEquipoEspecial(item)" class="cantidad-badge">{{ item.cantidad }} unidades</span>
-                            <span *ngIf="esEquipoEspecial(item)" class="badge badge-icono-almacen" 
-                                  [ngClass]="getBadgeColorAlmacen(item)"
-                                  [title]="getTipoAlmacen(item) === 'cementerio' ? 'Cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'Almacén Laboratorio' : 'Almacén Regular'"
-                                  style="font-size: 0.85rem; padding: 0.3rem 0.5rem;">
-                              <i class="fas" [ngClass]="getIconoAlmacen(item)"></i>
-                            </span>
-                            <span *ngIf="item.numero" class="numero-badge">{{ item.numero }}</span>
-                            <span *ngIf="esEquipoEspecial(item)" class="readonly-badge" title="Equipo del sistema - Solo visualización">
-                              <i class="fas fa-info-circle"></i>
-                            </span>
+                            <span *ngIf="item.numero && !esEquipoEspecial(item)" class="numero-badge">{{ item.numero }}</span>
                             <span *ngIf="!canManageStock() && !esEquipoEspecial(item)" class="readonly-badge" title="Solo visualización">
                               <i class="fas fa-eye"></i>
                             </span>
@@ -216,6 +295,7 @@
                   </div>
                 </div>
               </div>
+              </ng-template>
             </div>
           </div>
         </div>
@@ -224,9 +304,15 @@
       <!-- Estado vacío -->
       <ng-template #noStock>
         <div class="empty-state text-center p-5">
-          <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-          <h5 class="text-muted">No hay stock disponible</h5>
-          <p class="text-muted">
+          <i class="fas fa-search fa-3x text-muted mb-3" *ngIf="searchTerm?.trim()"></i>
+          <i class="fas fa-box-open fa-3x text-muted mb-3" *ngIf="!searchTerm?.trim()"></i>
+          <h5 class="text-muted" *ngIf="searchTerm?.trim()">No se encontraron resultados</h5>
+          <h5 class="text-muted" *ngIf="!searchTerm?.trim()">No hay stock disponible</h5>
+          <p class="text-muted" *ngIf="searchTerm?.trim()">
+            No hay items que coincidan con "{{ searchTerm }}". Prueba con otro término o
+            <button type="button" class="btn btn-link p-0 align-baseline" (click)="searchTerm = ''">limpiar la búsqueda</button>.
+          </p>
+          <p class="text-muted" *ngIf="!searchTerm?.trim()">
             No se encontró stock en ningún almacén del sistema.
           </p>
         </div>

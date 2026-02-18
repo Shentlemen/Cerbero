@@ -14,6 +14,10 @@ export interface StockAlmacen {
     nombreItem: string;
     descripcion?: string;
   };
+  compra?: {
+    idCompra: number;
+    numeroCompra: string;
+  };
   almacen: {
     id: number;
     numero: string;
@@ -161,7 +165,8 @@ export class StockAlmacenService extends BaseRestService {
       estante: stock.estante,
       seccion: stock.seccion,
       cantidad: stock.cantidad,
-      numero: stock.numero
+      numero: stock.numero,
+      descripcion: stock.descripcion
     };
     
     return this.post<StockAlmacen>(stockCreate).pipe(

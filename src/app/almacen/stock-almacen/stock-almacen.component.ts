@@ -2,13 +2,14 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { StockAlmacenService, StockAlmacen } from '../../services/stock-almacen.service';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { RegistrarStockModalComponent } from '../../components/registrar-stock-modal/registrar-stock-modal.component';
 import { Almacen3DComponent, StockItem } from '../../components/almacen-3d/almacen-3d.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../../services/estado-dispositivo.service';
@@ -76,6 +77,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
     private route: ActivatedRoute,
+    private router: Router,
     private modalService: NgbModal,
     private fb: FormBuilder,
     public permissionsService: PermissionsService,
@@ -644,12 +646,33 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   }
 
   getAlmacenes(): string[] {
-    return Object.keys(this.stockOrganizado);
+    const almacenes = Object.keys(this.stockOrganizado);
+    if (!this.searchTerm?.trim()) return almacenes;
+    return almacenes.filter(alm => this.almacenTieneItemsCoincidentes(alm));
+  }
+
+  private almacenTieneItemsCoincidentes(almacen: string): boolean {
+    const estanterias = Object.keys(this.stockOrganizado[almacen] || {});
+    return estanterias.some(est => this.estanteriaTieneItemsCoincidentes(almacen, est));
+  }
+
+  private estanteriaTieneItemsCoincidentes(almacen: string, estanteria: string): boolean {
+    const items = this.getStockPorEstanteria(almacen, estanteria);
+    return items.some((item: any) => this.itemCoincideConBusqueda(item));
+  }
+
+  /** Indica si el almacén es cementerio (ALM01) o laboratorio (ALM05) - 1 estantería/estante, layout horizontal */
+  esAlmacenCementerioOLaboratorio(almacenKey: string): boolean {
+    const k = (almacenKey || '').toLowerCase();
+    return k.includes('alm01') || k.includes('alm 01') || k.includes('cementerio') || k.includes('subsuelo') ||
+           k.includes('alm05') || k.includes('alm 05') || k.includes('pañol 3') || k.includes('laboratorio');
   }
 
   getEstanterias(almacen: string): string[] {
     const keys = Object.keys(this.stockOrganizado[almacen] || {});
-    return this.ordenarClavesNumericas(keys);
+    const ordenadas = this.ordenarClavesNumericas(keys);
+    if (!this.searchTerm?.trim()) return ordenadas;
+    return ordenadas.filter(est => this.estanteriaTieneItemsCoincidentes(almacen, est));
   }
 
   /**
@@ -675,15 +698,28 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
 
   getTotalStockPorAlmacen(almacen: string): number {
     const estanterias = this.getEstanterias(almacen);
+    if (!this.searchTerm?.trim()) {
+      return estanterias.reduce((total, estanteria) => {
+        const stock = this.getStockPorEstanteria(almacen, estanteria);
+        return total + stock.reduce((sum, item) => sum + (item.cantidad || 1), 0);
+      }, 0);
+    }
     return estanterias.reduce((total, estanteria) => {
       const stock = this.getStockPorEstanteria(almacen, estanteria);
-      return total + stock.reduce((sum, item) => sum + (item.cantidad || 1), 0);
+      return total + stock
+        .filter((item: any) => this.itemCoincideConBusqueda(item))
+        .reduce((sum, item) => sum + (item.cantidad || 1), 0);
     }, 0);
   }
 
   getTotalStockPorEstanteria(almacen: string, estanteria: string): number {
     const stock = this.getStockPorEstanteria(almacen, estanteria);
-    return stock.reduce((total, item) => total + (item.cantidad || 1), 0);
+    if (!this.searchTerm?.trim()) {
+      return stock.reduce((total, item) => total + (item.cantidad || 1), 0);
+    }
+    return stock
+      .filter((item: any) => this.itemCoincideConBusqueda(item))
+      .reduce((total, item) => total + (item.cantidad || 1), 0);
   }
 
   getTotalAlmacenes(): number {
@@ -700,21 +736,23 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     const stockItems = this.getStockPorEstanteria(almacen, estanteria);
     const estantes = new Set<string>();
     stockItems.forEach(item => {
-      estantes.add(this.normalizarClaveEstante(item.estante));
+      if (!this.searchTerm?.trim() || this.itemCoincideConBusqueda(item)) {
+        estantes.add(this.normalizarClaveEstante(item.estante));
+      }
     });
-    
-    // Para ALM03 (Almacen Principal), mostrar todos los estantes (1-3) aunque estén vacíos
-    const esAlmacenPrincipal = almacen.toUpperCase().includes('ALM03') || 
+
+    // Para ALM03 (Almacen Principal), mostrar todos los estantes (1-3) aunque estén vacíos (solo sin filtro)
+    const esAlmacenPrincipal = almacen.toUpperCase().includes('ALM03') ||
                                almacen.toUpperCase().includes('ALMACEN PRINCIPAL');
     const esEstanteriaValida = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'].includes(estanteria.toUpperCase());
-    
-    if (esAlmacenPrincipal && esEstanteriaValida) {
+
+    if (!this.searchTerm?.trim() && esAlmacenPrincipal && esEstanteriaValida) {
       const estantesEsperados = ['1', '2', '3'];
       estantesEsperados.forEach(estante => {
         estantes.add(estante);
       });
     }
-    
+
     return this.ordenarClavesNumericas(Array.from(estantes));
   }
   
@@ -726,9 +764,23 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     return items.length === 0;
   }
 
-  getItemsPorEstante(almacen: string, estanteria: string, estante: string): any[] {
+  /** Items por estante sin filtrar por búsqueda (para uso interno) */
+  private getItemsPorEstanteSinFiltrar(almacen: string, estanteria: string, estante: string): any[] {
     const stockItems = this.getStockPorEstanteria(almacen, estanteria);
     return stockItems.filter(item => this.normalizarClaveEstante(item.estante) === estante);
+  }
+
+  getItemsPorEstante(almacen: string, estanteria: string, estante: string): any[] {
+    const items = this.getItemsPorEstanteSinFiltrar(almacen, estanteria, estante);
+    if (!this.searchTerm?.trim()) return items;
+    return items.filter(item => this.itemCoincideConBusqueda(item));
+  }
+
+  /** Items de toda la estantería (para cementerio/laboratorio sin cards de estante) */
+  getItemsPorEstanteria(almacen: string, estanteria: string): any[] {
+    const stock = this.getStockPorEstanteria(almacen, estanteria);
+    if (!this.searchTerm?.trim()) return stock;
+    return stock.filter((item: any) => this.itemCoincideConBusqueda(item));
   }
 
   /**
@@ -868,6 +920,18 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
    */
   canManageStock(): boolean {
     return this.permissionsService.canManageAssets();
+  }
+
+  /** Abre el modal de registrar stock sin cambiar de pantalla, con el almacén actual pre-seleccionado */
+  irARegistrarStock(): void {
+    if (this.almacenId == null) return;
+    const modalRef = this.modalService.open(RegistrarStockModalComponent, { size: 'lg', backdrop: true });
+    modalRef.componentInstance.almacenIdPreseleccionado = this.almacenId;
+    modalRef.result.then((result: { success?: boolean }) => {
+      if (result?.success) {
+        this.cargarDatos();
+      }
+    }).catch(() => {});
   }
 
   /**
@@ -1638,7 +1702,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
 
   /**
    * Verifica si un item coincide con el término de búsqueda.
-   * Se usa para resaltar (no filtrar) los elementos que coinciden.
+   * Se usa tanto para filtrar como para resaltar los elementos que coinciden.
    */
   itemCoincideConBusqueda(item: any): boolean {
     if (!this.searchTerm || !this.searchTerm.trim()) {
@@ -1653,10 +1717,11 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       item?.almacen?.nombre || '',
       item?.almacen?.numero || '',
       item?.estanteria || '',
-      item?.estante || ''
+      item?.estante || '',
+      item?.compra?.numeroCompra || ''
     ].filter(Boolean);
-    
-    return camposABuscar.some(campo => 
+
+    return camposABuscar.some(campo =>
       String(campo).toLowerCase().includes(term)
     );
   }

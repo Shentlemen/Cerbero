@@ -1,0 +1,99 @@
+/* Modal header */
+.modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #dee2e6;
+}
+
+.modal-title {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.modal-title i {
+  color: #3498db;
+}
+
+/* Form cards */
+.form-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.form-card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 12px 12px 0 0;
+}
+
+.form-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.form-card-title i {
+  color: #3498db;
+}
+
+.form-card-body {
+  padding: 1.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  padding: 0.75rem;
+}
+
+/* Dropdown */
+.items-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.item-option {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.item-option:hover {
+  background: #f8f9fa;
+}
+
+.item-option.selected {
+  background: #e3f2fd;
+  border-left: 3px solid #3498db;
+}
+
+.item-option.disabled {
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.no-results {
+  padding: 1rem;
+  text-align: center;
+  color: #6c757d;
+}

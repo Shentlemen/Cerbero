@@ -1,0 +1,167 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="fas fa-box me-2"></i>
+    Registrar Stock
+  </h4>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+<div class="modal-body">
+  <form [formGroup]="stockForm" (ngSubmit)="guardar()">
+    
+    <div class="form-card mb-4">
+      <div class="form-card-header">
+        <h6 class="form-card-title">
+          <i class="fas fa-shopping-cart me-2"></i>
+          Compra e Ítem
+        </h6>
+      </div>
+      <div class="form-card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="compraId" class="form-label">Compra *</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="compraSearch"
+                placeholder="Escriba para buscar compras por número..."
+                [(ngModel)]="compraSearchTerm" [ngModelOptions]="{standalone: true}"
+                (input)="filtrarCompras()" (focus)="mostrarDropdownCompras = true" (blur)="onCompraBlur()" autocomplete="off">
+              <div *ngIf="mostrarDropdownCompras && comprasFiltradas.length > 0" class="items-dropdown">
+                <div *ngFor="let compra of comprasFiltradas" class="item-option" data-type="compra"
+                  (click)="seleccionarCompra(compra)"
+                  [class.selected]="compra.idCompra === stockForm.get('compraId')?.value">
+                  <i class="fas fa-shopping-cart me-2"></i>
+                  <strong>Compra {{ compra.numeroCompra }}</strong>
+                </div>
+              </div>
+              <div *ngIf="mostrarDropdownCompras && comprasFiltradas.length === 0 && compraSearchTerm" class="items-dropdown no-results">
+                <div class="item-option disabled"><i class="fas fa-search me-2"></i>No se encontraron compras</div>
+              </div>
+            </div>
+            <div *ngIf="stockForm.get('compraId')?.invalid && stockForm.get('compraId')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('compraId')?.errors?.['required']">La compra es requerida</small>
+            </div>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label for="itemId" class="form-label">Ítem de la Compra *</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="itemSearch"
+                placeholder="Primero seleccione una compra..."
+                [ngModel]="getItemInputDisplayValue()" (ngModelChange)="onItemInputChange($event)" [ngModelOptions]="{standalone: true}"
+                (focus)="mostrarDropdownItems = true; filtrarItems()" (blur)="onItemBlur()" autocomplete="off"
+                [disabled]="!stockForm.get('compraId')?.value">
+              <div *ngIf="mostrarDropdownItems && itemsFiltrados.length > 0" class="items-dropdown">
+                <div *ngFor="let item of itemsFiltrados" class="item-option" data-type="item"
+                  (click)="seleccionarItem(item)" [class.selected]="item.idItem === stockForm.get('itemId')?.value">
+                  <i class="fas fa-box me-2"></i>
+                  <strong>{{ item.nombreItem }}</strong>
+                </div>
+              </div>
+              <div *ngIf="mostrarDropdownItems && itemsFiltrados.length === 0 && itemSearchTerm" class="items-dropdown no-results">
+                <div class="item-option disabled"><i class="fas fa-search me-2"></i>No se encontraron ítems</div>
+              </div>
+              <div *ngIf="!stockForm.get('compraId')?.value" class="text-muted mt-1">
+                <small><i class="fas fa-info-circle me-1"></i>Primero seleccione una compra</small>
+              </div>
+            </div>
+            <div *ngIf="stockForm.get('itemId')?.invalid && stockForm.get('itemId')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('itemId')?.errors?.['required']">El ítem es requerido</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card mb-4">
+      <div class="form-card-header">
+        <h6 class="form-card-title">
+          <i class="fas fa-map-marker-alt me-2"></i>
+          Ubicación en Almacén
+        </h6>
+      </div>
+      <div class="form-card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="almacenId" class="form-label">Almacén *</label>
+            <select class="form-select" id="almacenId" formControlName="almacenId">
+              <option value="">Sin selección</option>
+              <option *ngFor="let almacen of almacenes" [value]="almacen.id">{{ almacen.numero }} - {{ almacen.nombre }}</option>
+            </select>
+            <div *ngIf="stockForm.get('almacenId')?.invalid && stockForm.get('almacenId')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('almacenId')?.errors?.['required']">El almacén es requerido</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="estanteria" class="form-label">Estantería *</label>
+            <select class="form-select" id="estanteria" formControlName="estanteria">
+              <option value="">Sin selección</option>
+              <option *ngFor="let est of estanteriasDisponibles" [value]="est">{{ est }}</option>
+            </select>
+            <div *ngIf="stockForm.get('estanteria')?.invalid && stockForm.get('estanteria')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('estanteria')?.errors?.['required']">La estantería es requerida</small>
+              <small *ngIf="stockForm.get('estanteria')?.errors?.['invalidEstanteria']">Seleccione una estantería válida</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="estante" class="form-label">Estante *</label>
+            <select class="form-select" id="estante" formControlName="estante">
+              <option value="">Sin selección</option>
+              <option *ngFor="let est of estantesDisponibles" [value]="est">Estante {{ est }}</option>
+            </select>
+            <div *ngIf="stockForm.get('estante')?.invalid && stockForm.get('estante')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('estante')?.errors?.['required']">El estante es requerido</small>
+              <small *ngIf="stockForm.get('estante')?.errors?.['invalidEstante']">Seleccione un estante válido</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3" *ngIf="divisionesDisponibles.length > 0">
+            <label for="division" class="form-label">Sección</label>
+            <select class="form-select" id="division" formControlName="division">
+              <option value="">Sin sección</option>
+              <option *ngFor="let div of divisionesDisponibles" [value]="div">{{ div }}</option>
+            </select>
+            <small class="form-text text-muted">Opcional</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-header">
+        <h6 class="form-card-title">
+          <i class="fas fa-info-circle me-2"></i>
+          Detalles del Stock
+        </h6>
+      </div>
+      <div class="form-card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="cantidad" class="form-label">Cantidad *</label>
+            <input type="number" class="form-control" id="cantidad" formControlName="cantidad" min="1" placeholder="1" required>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="numero" class="form-label">Número</label>
+            <input type="text" class="form-control" id="numero" formControlName="numero" placeholder="Número identificador (opcional)" maxlength="50">
+            <div *ngIf="stockForm.get('numero')?.invalid && stockForm.get('numero')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('numero')?.errors?.['maxlength']">Máximo 50 caracteres</small>
+            </div>
+          </div>
+          <div class="col-md-12 mb-3">
+            <label for="descripcion" class="form-label">Descripción</label>
+            <textarea class="form-control" id="descripcion" formControlName="descripcion" placeholder="Descripción adicional (opcional)" maxlength="255" rows="3"></textarea>
+            <div *ngIf="stockForm.get('descripcion')?.invalid && stockForm.get('descripcion')?.touched" class="text-danger mt-1">
+              <small *ngIf="stockForm.get('descripcion')?.errors?.['maxlength']">Máximo 255 caracteres</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">
+    <i class="fas fa-times me-1"></i>Cancelar
+  </button>
+  <button type="button" class="btn btn-warning" (click)="guardar()" [disabled]="!isFormValid() || guardando">
+    <i class="fas" [ngClass]="guardando ? 'fa-spinner fa-spin' : 'fa-save'" class="me-1"></i>
+    {{ guardando ? 'Guardando...' : 'Registrar' }}
+  </button>
+</div>

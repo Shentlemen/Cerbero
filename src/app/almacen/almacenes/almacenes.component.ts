@@ -235,8 +235,9 @@ export class AlmacenesComponent implements OnInit {
           }
         });
 
-        // Combinar con el stock normal
-        this.stock = [...this.stock, ...items];
+        // Combinar con el stock normal, evitando duplicados por número
+        // (cuando se transfiere un equipo, existe en stock_almacen Y en equiposEnAlmacen)
+        this.stock = this.mergeSinDuplicadosPorNumero(this.stock, items);
         this.loading = false;
       },
       error: (error) => {
@@ -436,6 +437,31 @@ export class AlmacenesComponent implements OnInit {
    */
   private calcularStockPorAlmacen(stock: any[]): void {
     // Esta función se puede implementar si es necesario para cálculos adicionales
+  }
+
+  /**
+   * Combina stock existente con nuevos items evitando duplicados.
+   * Un item se considera duplicado si ya existe en stock uno con el mismo almacen.id y numero
+   * (por ej. cuando un equipo transferido está en stock_almacen Y en equiposEnAlmacen).
+   */
+  private mergeSinDuplicadosPorNumero(stockActual: any[], nuevosItems: any[]): any[] {
+    const clavesExistentes = new Set<string>();
+    stockActual.forEach(item => {
+      if (item.almacen?.id != null && (item.numero || item.item?.nombreItem)) {
+        const num = (item.numero || item.item?.nombreItem || '').toString().trim().toLowerCase();
+        if (num) {
+          clavesExistentes.add(`${Number(item.almacen.id)}:${num}`);
+        }
+      }
+    });
+    const añadidos = nuevosItems.filter(item => {
+      if (!item.almacen?.id) return true;
+      const num = (item.numero || item.item?.nombreItem || '').toString().trim().toLowerCase();
+      if (!num) return true;
+      const clave = `${Number(item.almacen.id)}:${num}`;
+      return !clavesExistentes.has(clave);
+    });
+    return [...stockActual, ...añadidos];
   }
 
   /**

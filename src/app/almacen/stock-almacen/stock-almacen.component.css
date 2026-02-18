@@ -187,6 +187,53 @@ button.print-estanteria-btn i {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   padding: 1.5rem;
   border-bottom: 1px solid #dee2e6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.almacen-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.almacen-header-actions .print-btn {
+  margin-left: 0;
+}
+
+/* Botón Registrar Stock - mismo estilo que Imprimir para coherencia visual */
+.registrar-stock-btn,
+.btn.registrar-stock-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  background: #000 !important;
+  background-color: #000 !important;
+  border: 1px solid #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+  transition: all 0.3s ease;
+}
+
+.registrar-stock-btn:hover,
+.btn.registrar-stock-btn:hover {
+  background: #212529 !important;
+  background-color: #212529 !important;
+  border-color: #000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  color: #fff !important;
+}
+
+.registrar-stock-btn i,
+.btn.registrar-stock-btn i {
+  font-size: 1rem;
 }
 
 .almacen-info {
@@ -199,12 +246,12 @@ button.print-estanteria-btn i {
   background: white;
   padding: 0.75rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .almacen-icon i {
   font-size: 1.5rem;
-  color: #3498db;
+  color: #212529;
 }
 
 .almacen-details h2 {
@@ -244,35 +291,78 @@ button.print-estanteria-btn i {
   color: #6c757d;
 }
 
-/* Grid de estanterías */
+/* Grid de estanterías: 3 columnas (3 arriba, 3 abajo) para aprovechar espacio horizontal */
 .estanterias-grid {
   padding: 1.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
 }
 
-/* Card de estantería */
+/* Cementerio/Laboratorio: 1 columna, card a tamaño completo */
+.estanterias-grid-full {
+  grid-template-columns: 1fr;
+  padding: 1rem;
+}
+
+.estanteria-main-card-full {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 280px);
+}
+
+.estanteria-main-card-full .items-container-directo {
+  flex: 1;
+  min-height: 200px;
+  max-height: none;
+  /* Cards más anchas: min 280px para que no se vean apretadas */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+/* Botón Acciones a la derecha y alineación consistente en cementerio/laboratorio */
+.items-container-directo .item-content {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.items-container-directo .item-acciones-wrapper {
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Nombre/número del equipo siempre arriba para alineación consistente en grid */
+.items-container-directo .item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+}
+
+/* Card de estantería - borde izquierdo negro para identificar claramente */
 .estanteria-main-card {
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  border: 2px solid #d0d7de;
+  border-left: 5px solid #212529;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .estanteria-main-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 18px rgba(0,0,0,0.1);
-  border-color: #3498db;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.08);
+  border-color: #495057;
+  border-left-color: #212529;
 }
 
-/* Header de estantería */
+/* Header de estantería - fondo diferenciado */
 .estanteria-card-header {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%);
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 2px solid #212529;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -289,12 +379,12 @@ button.print-estanteria-btn i {
   background: white;
   padding: 0.5rem;
   border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(52,152,219,0.2);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
 .estanteria-icon i {
   font-size: 1.1rem;
-  color: #3498db;
+  color: #212529;
 }
 
 .estanteria-info h4 {
@@ -351,33 +441,36 @@ button.print-estanteria-btn i {
   font-size: 0.9rem;
 }
 
-/* Grid de estantes */
+/* Grid de estantes: uno debajo del otro (columna única) */
 .estantes-grid {
   padding: 1rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
 }
 
-/* Card de estante */
+/* Card de estante - contraste con estantería: borde negro y fondo distinto */
 .estante-card {
   background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  border: 2px solid #adb5bd;
+  border-left: 4px solid #212529;
   overflow: hidden;
   transition: all 0.3s ease;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 }
 
 .estante-card:hover {
-  border-color: #3498db;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.15);
+  border-color: #495057;
+  border-left-color: #212529;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
 
-/* Header del estante */
+/* Header del estante - fondo que contrasta con el área de items */
 .estante-header {
-  background: white;
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
   padding: 0.75rem;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 2px solid #212529;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -410,15 +503,24 @@ button.print-estanteria-btn i {
   border-radius: 10px;
 }
 
-/* Contenedor de items */
+/* Contenedor de items: grid 2 columnas para mostrar 2 items por renglón */
 .items-container {
   padding: 1rem;
   max-height: 500px;
   min-height: 150px;
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  align-content: start;
 }
 
-/* Estante vacío */
+/* Cementerio (ALM01) y Laboratorio (ALM05): 1 estantería/estante, items en fila horizontal cuantos entren */
+.items-container.items-horizontal {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+/* Estante vacío - ocupa todo el ancho del grid */
 .estante-vacio {
   display: flex;
   flex-direction: column;
@@ -428,6 +530,7 @@ button.print-estanteria-btn i {
   color: #95a5a6;
   text-align: center;
   min-height: 150px;
+  grid-column: 1 / -1; /* Abarca todas las columnas del grid */
 }
 
 .estante-vacio i {
@@ -460,13 +563,9 @@ button.print-estanteria-btn i {
 .item-card {
   background: white;
   border-radius: 6px;
-  margin-bottom: 0.75rem;
   border: 1px solid #e9ecef;
   transition: all 0.3s ease;
-}
-
-.item-card:last-child {
-  margin-bottom: 0;
+  min-width: 0; /* Evita overflow en grid */
 }
 
 .item-card:hover {
@@ -850,6 +949,17 @@ button.print-estanteria-btn i {
 
   .items-container {
     max-height: 150px;
+    grid-template-columns: 1fr; /* 1 item por fila en móvil */
+  }
+}
+
+/* Tablet: 2 estanterías por fila, 2 items por fila */
+@media (max-width: 1200px) {
+  .estanterias-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .estanterias-grid-full {
+    grid-template-columns: 1fr; /* cementerio/laboratorio: siempre full */
   }
 } 
 
