@@ -31,7 +31,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
 }
 
@@ -975,7 +975,7 @@ button.print-estanteria-btn i {
 }
 
 .modal-title i {
-  color: #3498db;
+  color: #212529;
 }
 
 /* Card de información del item en el modal */

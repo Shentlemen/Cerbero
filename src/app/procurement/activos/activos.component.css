@@ -13,6 +13,12 @@
   overflow: hidden !important;
 }
 
+/* Título Gestión de Activos - icono negro */
+.header-content h1 i,
+.title-wrapper h1 i {
+  color: #212529;
+}
+
 /* Estilos específicos para activos */
 .activo-row {
   cursor: pointer;
@@ -720,10 +726,10 @@
   margin-left: 0.5rem;
 }
 
-/* Grid de detalles */
+/* Grid de detalles - 2 filas de 3 cards */
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 

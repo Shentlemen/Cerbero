@@ -98,13 +98,15 @@
         <thead>
           <tr>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('tipo')" title="Ordenar por tipo">
                 <span>Tipo</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('tipo')"></i>
               </div>
             </th>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('nombre')" title="Ordenar por nombre">
                 <span>Nombre</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('nombre')"></i>
               </div>
             </th>
             <th>
@@ -113,13 +115,21 @@
               </div>
             </th>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('fecha')" title="Ordenar por fecha">
                 <span>Fecha de Almacén</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('fecha')"></i>
               </div>
             </th>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('usuario')" title="Ordenar por usuario">
                 <span>Usuario</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('usuario')"></i>
+              </div>
+            </th>
+            <th>
+              <div class="th-content sortable" (click)="ordenarPor('ubicacion')" title="Ordenar por ubicación">
+                <span>Ubicación</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('ubicacion')"></i>
               </div>
             </th>
             <th>
@@ -182,11 +192,14 @@
               <span class="usuario-cambio">{{ item.usuarioCambio || 'No especificado' }}</span>
             </td>
             <td>
+              <span class="ubicacion-text">{{ getUbicacionDisplay(item) }}</span>
+            </td>
+            <td>
               <div class="observaciones-cell" *ngIf="!estaEditandoObservaciones(item)" 
                    (click)="iniciarEdicionObservaciones(item, $event)"
                    [class.editable]="canManageAssets()"
-                   [title]="canManageAssets() ? 'Haz clic para editar' : item.observaciones">
-                <span class="observaciones-text">{{ item.observaciones || 'Sin observaciones' }}</span>
+                   [title]="canManageAssets() ? 'Haz clic para editar' : extraerSoloObservaciones(item.observaciones)">
+                <span class="observaciones-text">{{ extraerSoloObservaciones(item.observaciones) || 'Sin observaciones' }}</span>
                 <i class="fas fa-edit edit-icon" *ngIf="canManageAssets()"></i>
               </div>
               <div class="observaciones-edit" *ngIf="estaEditandoObservaciones(item)" 
@@ -215,7 +228,7 @@
               <div class="action-buttons">
                 <button 
                   *ngIf="item.tipo === 'EQUIPO'"
-                  class="btn btn-primary btn-sm transferir-btn" 
+                  class="btn btn-sm transferir-btn" 
                   (click)="transferirEquipo(item); $event.stopPropagation()"
                   [disabled]="transferiendoItemId === item.id"
                   title="Transferir este equipo a otro almacén"

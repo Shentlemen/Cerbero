@@ -14,10 +14,13 @@ import { ModificarCantidadModalComponent } from '../../components/modificar-cant
 import { Almacen3DComponent, StockItem } from '../../components/almacen-3d/almacen-3d.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../../services/estado-dispositivo.service';
+import { AuthService } from '../../services/auth.service';
+import { AlmacenConfigService } from '../../services/almacen-config.service';
+import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
 import { HardwareService } from '../../services/hardware.service';
 import { BiosService } from '../../services/bios.service';
 import { NetworkInfoService } from '../../services/network-info.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, firstValueFrom } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -69,6 +72,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   // Datos de stock para el componente 3D (solo para ALM03)
   stockData3D: StockItem[] = [];
 
+  // Configuraciones de almacenes (estanterías, estantes, secciones desde AlmacenConfig)
+  almacenConfigs: Map<number, AlmacenConfig> = new Map();
+
   constructor(
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
@@ -79,6 +85,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
+    private authService: AuthService,
+    private almacenConfigService: AlmacenConfigService,
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private networkInfoService: NetworkInfoService
@@ -112,9 +120,10 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     this.error = null;
 
     Promise.all([
-      this.stockAlmacenService.getAllStock().toPromise(),
-      this.almacenService.getAllAlmacenes().toPromise()
-    ]).then(([stock, almacenes]) => {
+      firstValueFrom(this.stockAlmacenService.getAllStock()),
+      firstValueFrom(this.almacenService.getAllAlmacenes()),
+      firstValueFrom(this.almacenConfigService.getAllConfigs())
+    ]).then(([stock, almacenes, configs]: [any, any, any]) => {
       if (stock) {
         this.stock = stock;
       }
@@ -143,11 +152,40 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
         }
       }
 
+      // Mapa de configuraciones por almacén
+      this.almacenConfigs = new Map();
+      if (Array.isArray(configs)) {
+        configs.forEach((c: AlmacenConfig) => {
+          if (c.almacen?.id) this.almacenConfigs.set(c.almacen.id, c);
+        });
+      }
+
       this.cargarEquiposEspeciales();
-    }).catch(error => {
+    }).catch(async error => {
       console.error('Error al cargar datos:', error);
       this.error = 'Error al cargar los datos';
       this.loading = false;
+      try {
+        const [stock, almacenes] = await Promise.all([
+          firstValueFrom(this.stockAlmacenService.getAllStock()),
+          firstValueFrom(this.almacenService.getAllAlmacenes())
+        ]);
+        if (stock) this.stock = stock;
+        if (almacenes) {
+          this.almacenes = almacenes;
+          this.almacenCementerio = almacenes.find((a: Almacen) => a.numero?.toLowerCase().trim() === 'alm01' || a.nombre?.toLowerCase().includes('subsuelo')) || null;
+          this.almacenLaboratorio = almacenes.find((a: Almacen) => a.numero?.toLowerCase().trim() === 'alm05' || a.nombre?.toLowerCase().includes('pañol 3')) || null;
+          if (this.almacenId != null) {
+            this.almacenSeleccionado = almacenes.find((a: Almacen) => Number(a.id) === Number(this.almacenId)) || null;
+          }
+        }
+        this.almacenConfigs = new Map();
+        this.cargarEquiposEspeciales();
+        this.error = null;
+      } catch (e) {
+        console.error('Fallback de carga falló:', e);
+        this.loading = false;
+      }
     });
   }
 
@@ -309,13 +347,14 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       equiposEnBaja.data.forEach((estado: any) => {
         const hw = (hardware || []).find((h: any) => h.id === estado.hardwareId);
         if (hw) {
+          const ubic = this.extraerUbicacionDeObservaciones(estado.observaciones);
           const biosData = biosMap.get(estado.hardwareId);
           items.push({
             id: `equipo-cementerio-${estado.hardwareId}`,
             item: { idItem: null, nombreItem: hw.name || `Equipo ${estado.hardwareId}` },
             almacen: almacenNorm,
-            estanteria: 'Cementerio',
-            estante: 'En Baja',
+            estanteria: ubic.estanteria || 'Sin ubicación',
+            estante: ubic.estante || 'Sin ubicación',
             cantidad: 1,
             numero: hw.name || `EQ-${estado.hardwareId}`,
             descripcion: `Equipo transferido: ${hw.name || estado.hardwareId}`,
@@ -333,12 +372,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       dispositivosEnBaja.data.forEach((estado: any) => {
         const device = netMap.get(estado.mac) as any;
         if (device) {
+          const ubic = this.extraerUbicacionDeObservaciones(estado.observaciones);
           items.push({
             id: `dispositivo-cementerio-${estado.mac}`,
             item: { idItem: null, nombreItem: device?.name || estado.mac },
             almacen: almacenNorm,
-            estanteria: 'Cementerio',
-            estante: 'En Baja',
+            estanteria: ubic.estanteria || 'Sin ubicación',
+            estante: ubic.estante || 'Sin ubicación',
             cantidad: 1,
             numero: device?.mac ?? estado.mac,
             descripcion: `Dispositivo transferido: ${device?.name || estado.mac}`,
@@ -438,8 +478,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
         const hw = hardware.find((h: any) => h.id === estado.hardwareId);
         if (hw) {
           const ubic = this.extraerUbicacionDeObservaciones(estado.observaciones);
-          const estanteria = ubic.estanteria || 'Equipos';
-          const estante = ubic.estante || 'En Almacén';
+          const estanteria = ubic.estanteria || 'Sin ubicación';
+          const estante = ubic.estante || 'Sin ubicación';
           const biosData = biosMap.get(estado.hardwareId);
           const item: any = {
             id: `equipo-${estado.hardwareId}-almacen-${idAlmacen}`,
@@ -480,8 +520,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
         const device: any = networkInfoMap.get(estado.mac);
         if (device) {
           const ubic = this.extraerUbicacionDeObservaciones(estado.observaciones);
-          const estanteria = ubic.estanteria || 'Dispositivos';
-          const estante = ubic.estante || 'En Almacén';
+          const estanteria = ubic.estanteria || 'Sin ubicación';
+          const estante = ubic.estante || 'Sin ubicación';
           const item: any = {
             id: `dispositivo-${estado.mac}-almacen-${idAlmacen}`,
             itemId: null,
@@ -532,21 +572,21 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       grupos[almacenKey][estanteriaKey].push(item);
     });
 
-    // Para ALM03 (Almacen Principal), asegurar que todas las estanterías (E1-E6) y estantes (1-3) estén presentes
-    const almacenPrincipalKey = Object.keys(grupos).find(key => 
-      key.toUpperCase().includes('ALM03') || key.toUpperCase().includes('ALMACEN PRINCIPAL')
-    );
-    
-    if (almacenPrincipalKey) {
-      const estanteriasEsperadas = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
-      const estantesEsperados = ['1', '2', '3'];
-      
-      estanteriasEsperadas.forEach(estanteria => {
-        if (!grupos[almacenPrincipalKey][estanteria]) {
-          grupos[almacenPrincipalKey][estanteria] = [];
+    // Para cada almacén con AlmacenConfig, asegurar que las estanterías definidas en config estén presentes
+    this.almacenes.forEach(almacen => {
+      const config = this.almacenConfigs.get(almacen.id);
+      if (!config) return;
+      const almacenKey = Object.keys(grupos).find(k => 
+        k.includes(almacen.numero || '') && k.includes(almacen.nombre || '')
+      );
+      if (!almacenKey) return;
+      for (let i = 1; i <= config.cantidadEstanterias; i++) {
+        const estanteria = `E${i}`;
+        if (!grupos[almacenKey][estanteria]) {
+          grupos[almacenKey][estanteria] = [];
         }
-      });
-    }
+      }
+    });
 
     this.stockOrganizado = grupos;
     
@@ -652,7 +692,23 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     return items.some((item: any) => this.itemCoincideConBusqueda(item));
   }
 
-  /** Indica si el almacén es cementerio (ALM01) o laboratorio (ALM05) - 1 estantería/estante, layout horizontal */
+  /** Indica si el almacén tiene AlmacenConfig con estructura (estanterías/estantes definidos) */
+  tieneConfigConEstructura(almacenKey: string): boolean {
+    const almacenMatch = this.almacenes.find(a =>
+      almacenKey.includes(a.numero || '') && almacenKey.includes(a.nombre || '')
+    );
+    return almacenMatch ? this.almacenConfigs.has(almacenMatch.id) : false;
+  }
+
+  /**
+   * Usar layout simplificado (una card con todo el contenido, sin estantes) cuando NO hay AlmacenConfig.
+   * Con config definido → grid de estanterías y estantes. Sin config (ej. cementerio) → una sola card.
+   */
+  usarLayoutSimplificado(almacenKey: string): boolean {
+    return !this.tieneConfigConEstructura(almacenKey);
+  }
+
+  /** Indica si el almacén es cementerio (ALM01) o laboratorio (ALM05) - para estilos de items, no para layout */
   esAlmacenCementerioOLaboratorio(almacenKey: string): boolean {
     const k = (almacenKey || '').toLowerCase();
     return k.includes('alm01') || k.includes('alm 01') || k.includes('cementerio') || k.includes('subsuelo') ||
@@ -732,16 +788,18 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Para ALM03 (Almacen Principal), mostrar todos los estantes (1-3) aunque estén vacíos (solo sin filtro)
-    const esAlmacenPrincipal = almacen.toUpperCase().includes('ALM03') ||
-                               almacen.toUpperCase().includes('ALMACEN PRINCIPAL');
-    const esEstanteriaValida = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'].includes(estanteria.toUpperCase());
+    // Para almacenes con AlmacenConfig, mostrar todos los estantes aunque estén vacíos (solo sin filtro)
+    const almacenMatch = this.almacenes.find(a => 
+      almacen.includes(a.numero || '') && almacen.includes(a.nombre || '')
+    );
+    const config = almacenMatch ? this.almacenConfigs.get(almacenMatch.id) : null;
+    const estanteriasDesdeConfig = config ? Array.from({ length: config.cantidadEstanterias }, (_, i) => `E${i + 1}`) : [];
+    const esEstanteriaValida = config && estanteriasDesdeConfig.includes(estanteria.toUpperCase());
 
-    if (!this.searchTerm?.trim() && esAlmacenPrincipal && esEstanteriaValida) {
-      const estantesEsperados = ['1', '2', '3'];
-      estantesEsperados.forEach(estante => {
-        estantes.add(estante);
-      });
+    if (!this.searchTerm?.trim() && config && esEstanteriaValida) {
+      for (let i = 1; i <= config.cantidadEstantesPorEstanteria; i++) {
+        estantes.add(i.toString());
+      }
     }
 
     return this.ordenarClavesNumericas(Array.from(estantes));
@@ -1327,11 +1385,11 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       almacenId: transferData.almacenId,
       tipoAlmacen: transferData.tipoAlmacen,
       observaciones: transferData.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
-    // Siempre incluir estantería, estante y sección si tipoAlmacen es 'regular'
-    if (transferData.tipoAlmacen === 'regular') {
+    // Incluir estantería, estante y sección cuando hay AlmacenConfig (regular o laboratorio)
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
       requestData.estanteria = transferData.estanteria || '';
       requestData.estante = transferData.estante || '';
       // Asegurar que seccion siempre se incluya, incluso si está vacía o es null/undefined
@@ -1407,13 +1465,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
       almacenId: transferData.almacenId,
       tipoAlmacen: transferData.tipoAlmacen,
       observaciones: transferData.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
-    if (transferData.tipoAlmacen === 'regular') {
-      requestData.estanteria = transferData.estanteria;
-      requestData.estante = transferData.estante;
-      requestData.seccion = transferData.seccion;
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
     }
 
     this.estadoDispositivoService.transferirDispositivo(mac, requestData).subscribe({
@@ -1513,7 +1571,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
 
     const request: CambioEstadoRequest = {
       observaciones: 'Reactivado desde almacén',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     this.estadoEquipoService.reactivarEquipo(hardwareId, request).subscribe({
@@ -1552,7 +1610,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
 
     const request: CambioEstadoDispositivoRequest = {
       observaciones: 'Reactivado desde almacén',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     this.estadoDispositivoService.reactivarDispositivo(mac, request).subscribe({

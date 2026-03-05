@@ -11,6 +11,7 @@ import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { PermissionsService } from '../services/permissions.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { AuthService } from '../services/auth.service';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { forkJoin } from 'rxjs';
 import { FormControl } from '@angular/forms';
@@ -100,6 +101,7 @@ export class DevicesComponent implements OnInit {
     private notificationService: NotificationService,
     private permissionsService: PermissionsService,
     private estadoDispositivoService: EstadoDispositivoService,
+    private authService: AuthService,
     private modalService: NgbModal
   ) {
     // Suscribirse a cambios en el filtro de nombre
@@ -448,7 +450,7 @@ export class DevicesComponent implements OnInit {
 
     const request: CambioEstadoDispositivoRequest = {
       observaciones: this.estadoObservaciones.trim(),
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     const observable = this.estadoAction === 'baja' 
@@ -532,12 +534,13 @@ export class DevicesComponent implements OnInit {
       almacenId: transferData.almacenId,
       tipoAlmacen: transferData.tipoAlmacen,
       observaciones: transferData.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
-    if (transferData.tipoAlmacen === 'regular') {
-      requestData.estanteria = transferData.estanteria;
-      requestData.estante = transferData.estante;
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
     }
 
     this.estadoDispositivoService.transferirDispositivo(device.mac, requestData).subscribe({

@@ -316,7 +316,7 @@ export class ActivoDetailsComponent implements OnInit {
       next: (entrega) => {
         this.entregaSeleccionada = entrega;
         this.cargarNombreItemEntregaInfo(entrega.idItem, () => {
-          this.modalService.open(entregaModal, { size: 'lg' });
+          this.modalService.open(entregaModal, { size: 'lg', windowClass: 'activo-details-modal' });
         });
       },
       error: (error) => {
@@ -352,7 +352,7 @@ export class ActivoDetailsComponent implements OnInit {
     this.ubicacionesService.getUbicacionEquipo(idUbicacion).subscribe({
       next: (ubicacion: UbicacionDTO) => {
         this.ubicacionSeleccionada = ubicacion;
-        this.modalService.open(ubicacionModal, { size: 'lg' });
+        this.modalService.open(ubicacionModal, { size: 'lg', windowClass: 'activo-details-modal' });
       },
       error: (error: any) => {
         this.error = 'Error al cargar los detalles de la ubicación';
@@ -364,7 +364,7 @@ export class ActivoDetailsComponent implements OnInit {
     this.usuariosService.getUsuario(idUsuario).subscribe({
       next: (usuario) => {
         this.usuarioSeleccionado = usuario;
-        this.modalService.open(usuarioModal, { size: 'lg' });
+        this.modalService.open(usuarioModal, { size: 'lg', windowClass: 'activo-details-modal' });
       },
       error: (error) => {
         this.error = 'Error al cargar los detalles del usuario';
@@ -377,7 +377,7 @@ export class ActivoDetailsComponent implements OnInit {
       next: (tipoActivo) => {
         this.tipoActivoSeleccionado = tipoActivo;
         this.cargarUsuarioResponsable(tipoActivo.idUsuario);
-        this.modalService.open(tipoActivoModal, { size: 'lg' });
+        this.modalService.open(tipoActivoModal, { size: 'lg', windowClass: 'activo-details-modal' });
       },
       error: (error) => {
         this.error = 'Error al cargar los detalles del tipo de activo';
@@ -396,16 +396,16 @@ export class ActivoDetailsComponent implements OnInit {
           this.tiposCompraService.getTipoCompra(compra.idTipoCompra).subscribe({
             next: (tipo) => {
               this.tipoCompraDescripcion = tipo && tipo.descripcion ? tipo.descripcion : compra.idTipoCompra.toString();
-              this.modalService.open(compraModal, { size: 'lg' });
+              this.modalService.open(compraModal, { size: 'lg', windowClass: 'activo-details-modal' });
             },
             error: () => {
               this.tipoCompraDescripcion = compra.idTipoCompra.toString();
-              this.modalService.open(compraModal, { size: 'lg' });
+              this.modalService.open(compraModal, { size: 'lg', windowClass: 'activo-details-modal' });
             }
           });
         } else {
           this.tipoCompraDescripcion = '';
-          this.modalService.open(compraModal, { size: 'lg' });
+          this.modalService.open(compraModal, { size: 'lg', windowClass: 'activo-details-modal' });
         }
       },
       error: (error) => {
@@ -442,26 +442,26 @@ export class ActivoDetailsComponent implements OnInit {
             this.serviciosGarantiaService.getServicioGarantia(lote.idServicioGarantia).subscribe({
               next: (servicio) => {
                 this.nombreComercialServicioInfo = servicio && servicio.nombreComercial ? servicio.nombreComercial : lote.idServicioGarantia.toString();
-                this.modalService.open(loteModal, { size: 'lg' });
+                this.modalService.open(loteModal, { size: 'lg', windowClass: 'activo-details-modal' });
               },
               error: () => {
                 this.nombreComercialServicioInfo = lote.idServicioGarantia.toString();
-                this.modalService.open(loteModal, { size: 'lg' });
+                this.modalService.open(loteModal, { size: 'lg', windowClass: 'activo-details-modal' });
               }
             });
           } else {
             this.nombreComercialServicioInfo = '';
-            this.modalService.open(loteModal, { size: 'lg' });
+            this.modalService.open(loteModal, { size: 'lg', windowClass: 'activo-details-modal' });
           }
         },
         error: () => {
           this.numeroCompraLoteInfo = lote.idCompra.toString();
-          this.modalService.open(loteModal, { size: 'lg' });
+          this.modalService.open(loteModal, { size: 'lg', windowClass: 'activo-details-modal' });
         }
       });
     } else {
       this.numeroCompraLoteInfo = '';
-      this.modalService.open(loteModal, { size: 'lg' });
+      this.modalService.open(loteModal, { size: 'lg', windowClass: 'activo-details-modal' });
     }
   }
 
@@ -469,7 +469,7 @@ export class ActivoDetailsComponent implements OnInit {
     this.serviciosGarantiaService.getServicioGarantia(idServicioGarantia).subscribe({
       next: (servicio) => {
         this.servicioGarantiaSeleccionado = servicio;
-        this.modalService.open(servicioGarantiaModal, { size: 'lg' });
+        this.modalService.open(servicioGarantiaModal, { size: 'lg', windowClass: 'activo-details-modal' });
       },
       error: (error) => {
         this.error = 'Error al cargar los detalles del servicio de garantía';

@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Almacen3DComponent, CajaInfo, StockItem } from '../components/almacen-3d/almacen-3d.component';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { StockAlmacenService } from '../services/stock-almacen.service';
 import { AlmacenService } from '../services/almacen.service';
+import { AlmacenConfigService } from '../services/almacen-config.service';
 import { NotificationService } from '../services/notification.service';
 import { RegistrarStockModalComponent } from '../components/registrar-stock-modal/registrar-stock-modal.component';
 import { ModificarCantidadModalComponent } from '../components/modificar-cantidad-modal/modificar-cantidad-modal.component';
@@ -14,12 +16,13 @@ import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
+import { AlmacenConfig } from '../interfaces/almacen-config.interface';
 import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-almacen-3d-demo',
   standalone: true,
-  imports: [CommonModule, NgbModule, Almacen3DComponent, NotificationContainerComponent],
+  imports: [CommonModule, FormsModule, NgbModule, Almacen3DComponent, NotificationContainerComponent],
   templateUrl: './almacen-3d-demo.component.html',
   styleUrls: ['./almacen-3d-demo.component.css']
 })
@@ -29,13 +32,18 @@ export class Almacen3DDemoComponent implements OnInit {
   mostrarModal: boolean = false;
   loading: boolean = false;
   stockData3D: StockItem[] = [];
-  almacenIdALM02: number = 2;
+  almacenes: any[] = [];
+  almacenSeleccionado: any = null;
+  configSeleccionada: AlmacenConfig | null = null;
+  almacenConfigsMap: Map<number, AlmacenConfig> = new Map();
+  almacenIdParaModal: number = 2;
 
   constructor(
     private modalService: NgbModal,
     private stockAlmacenService: StockAlmacenService,
     private notificationService: NotificationService,
     private almacenService: AlmacenService,
+    private almacenConfigService: AlmacenConfigService,
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
     private hardwareService: HardwareService,
@@ -44,83 +52,114 @@ export class Almacen3DDemoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cargarStockALM02();
+    forkJoin({
+      almacenes: this.almacenService.getAllAlmacenes(),
+      configs: this.almacenConfigService.getAllConfigs()
+    }).subscribe({
+      next: (res: any) => {
+        this.almacenes = Array.isArray(res.almacenes) ? res.almacenes : [];
+        this.almacenConfigsMap = new Map();
+        if (Array.isArray(res.configs)) {
+          res.configs.forEach((c: AlmacenConfig) => {
+            if (c.almacen?.id) this.almacenConfigsMap.set(c.almacen.id, c);
+          });
+        }
+        const defaultAlmacen = this.almacenes.find((a: any) =>
+          a.id === 2 || a.numero?.toUpperCase().includes('ALM02')
+        ) || this.almacenes[0];
+        if (defaultAlmacen) {
+          this.almacenSeleccionado = defaultAlmacen;
+          this.configSeleccionada = this.almacenConfigsMap.get(defaultAlmacen.id) || null;
+          this.cargarStockParaAlmacen(defaultAlmacen);
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar almacenes/config:', err);
+      }
+    });
   }
 
-  cargarStockALM02(onComplete?: () => void, silent = false): void {
+  compareAlmacenes(a: any, b: any): boolean {
+    return a && b && a.id === b.id;
+  }
+
+  onAlmacenCambio(): void {
+    if (!this.almacenSeleccionado) return;
+    this.configSeleccionada = this.almacenConfigsMap.get(this.almacenSeleccionado.id) || null;
+    this.cargarStockParaAlmacen(this.almacenSeleccionado);
+  }
+
+  esCementerio(almacen: any): boolean {
+    if (!almacen) return false;
+    const num = (almacen.numero || '').toString().toLowerCase().trim();
+    const nom = (almacen.nombre || '').toString().toLowerCase();
+    return num === 'alm01' || num === 'alm 01' || nom.includes('subsuelo') || nom.includes('cementerio');
+  }
+
+  cargarStockParaAlmacen(almacen: any, onComplete?: () => void, silent = false): void {
+    if (!almacen) return;
     if (!silent) this.loading = true;
-    
-    // Cargar almacenes primero para encontrar ALM02
-    this.almacenService.getAllAlmacenes().subscribe({
-      next: (almacenes) => {
-        const almacenALM02 = almacenes.find((a: any) => 
-          a.id === 2 || 
-          a.numero?.toUpperCase().includes('ALM02')
-        );
+    this.almacenIdParaModal = almacen.id;
+    const esCementerio = this.esCementerio(almacen);
 
-        if (!almacenALM02) {
-          console.warn('⚠️ No se encontró ALM02');
-          if (!silent) this.loading = false;
-          return;
+    const observables: any = {
+      stock: this.stockAlmacenService.getAllStock(),
+      hardware: this.hardwareService.getHardware(),
+      bios: this.biosService.getAllBios(),
+      networkInfo: this.networkInfoService.getNetworkInfo()
+    };
+    if (esCementerio) {
+      observables.equiposEnBaja = this.estadoEquipoService.getEquiposEnBaja();
+      observables.dispositivosEnBaja = this.estadoDispositivoService.getDispositivosEnBaja();
+    } else {
+      observables.equiposAlmacen = this.estadoEquipoService.getEquiposEnAlmacen();
+      observables.dispositivosAlmacen = this.estadoDispositivoService.getDispositivosEnAlmacen();
+    }
+
+    forkJoin(observables).subscribe({
+      next: (response: any) => {
+        let stockCompleto: any[] = [];
+        if (Array.isArray(response.stock)) {
+          stockCompleto = response.stock.filter((item: any) =>
+            item.almacen && item.almacen.id === almacen.id
+          );
         }
-        this.almacenIdALM02 = almacenALM02.id;
-
-        // Cargar stock del ALM02 (principalmente stock_almacen, equipos si los hay)
-        forkJoin({
-          stock: this.stockAlmacenService.getAllStock(),
-          equiposAlmacen: this.estadoEquipoService.getEquiposEnAlmacen(),
-          dispositivosAlmacen: this.estadoDispositivoService.getDispositivosEnAlmacen(),
-          hardware: this.hardwareService.getHardware(),
-          bios: this.biosService.getAllBios(),
-          networkInfo: this.networkInfoService.getNetworkInfo()
-        }).subscribe({
-          next: (response) => {
-            let stockCompleto: any[] = [];
-            
-            // Agregar stock normal del ALM02
-            if (Array.isArray(response.stock)) {
-              stockCompleto = response.stock.filter((item: any) => 
-                item.almacen && item.almacen.id === almacenALM02.id
-              );
-            }
-
-            // Agregar equipos transferidos a ALM02 (si los hay)
-            const equiposEnAlmacen = response.equiposAlmacen?.success && Array.isArray(response.equiposAlmacen.data)
-              ? response.equiposAlmacen.data.filter((e: any) => e.almacenId === almacenALM02.id)
-              : [];
-            
-            const dispositivosEnAlmacen = response.dispositivosAlmacen?.success && Array.isArray(response.dispositivosAlmacen.data)
-              ? response.dispositivosAlmacen.data.filter((d: any) => d.almacenId === almacenALM02.id)
-              : [];
-
-            const itemsEquipos = this.convertirEquiposAStock(
-              equiposEnAlmacen,
-              Array.isArray(response.hardware) ? response.hardware : [],
-              Array.isArray(response.bios) ? response.bios : [],
-              almacenALM02
-            );
-
-            const itemsDispositivos = this.convertirDispositivosAStock(
-              dispositivosEnAlmacen,
-              response.networkInfo,
-              almacenALM02
-            );
-
-            stockCompleto = [...stockCompleto, ...itemsEquipos, ...itemsDispositivos];
-            
-            // Preparar datos para el componente 3D
-            this.prepararStockData3D(stockCompleto);
-            if (!silent) this.loading = false;
-            onComplete?.();
-          },
-          error: (error) => {
-            console.error('Error al cargar stock:', error);
-            if (!silent) this.loading = false;
-          }
-        });
+        if (esCementerio) {
+          const itemsCementerio = this.convertirEnBajaAStock(
+            response.equiposEnBaja,
+            response.dispositivosEnBaja,
+            Array.isArray(response.hardware) ? response.hardware : [],
+            Array.isArray(response.bios) ? response.bios : [],
+            response.networkInfo,
+            almacen
+          );
+          stockCompleto = [...stockCompleto, ...itemsCementerio];
+        } else {
+          const equiposEnAlmacen = response.equiposAlmacen?.success && Array.isArray(response.equiposAlmacen.data)
+            ? response.equiposAlmacen.data.filter((e: any) => e.almacenId === almacen.id)
+            : [];
+          const dispositivosEnAlmacen = response.dispositivosAlmacen?.success && Array.isArray(response.dispositivosAlmacen.data)
+            ? response.dispositivosAlmacen.data.filter((d: any) => d.almacenId === almacen.id)
+            : [];
+          const itemsEquipos = this.convertirEquiposAStock(
+            equiposEnAlmacen,
+            Array.isArray(response.hardware) ? response.hardware : [],
+            Array.isArray(response.bios) ? response.bios : [],
+            almacen
+          );
+          const itemsDispositivos = this.convertirDispositivosAStock(
+            dispositivosEnAlmacen,
+            response.networkInfo,
+            almacen
+          );
+          stockCompleto = [...stockCompleto, ...itemsEquipos, ...itemsDispositivos];
+        }
+        this.prepararStockData3D(stockCompleto, almacen);
+        if (!silent) this.loading = false;
+        onComplete?.();
       },
       error: (error) => {
-        console.error('Error al cargar almacenes:', error);
+        console.error('Error al cargar stock:', error);
         if (!silent) this.loading = false;
       }
     });
@@ -223,22 +262,73 @@ export class Almacen3DDemoComponent implements OnInit {
     return { estanteria, estante, seccion };
   }
 
-  prepararStockData3D(stock: any[]): void {
-    console.log('📦 Preparando StockData3D. Stock recibido:', stock.length, 'items');
-    console.log('📦 Stock crudo (primeros 5):', stock.slice(0, 5).map(item => ({
-      estanteria: item.estanteria,
-      estante: item.estante,
-      seccion: item.seccion,
-      almacen: item.almacen?.id
-    })));
+  /** Convierte equipos/dispositivos en baja a formato stock para cementerio */
+  convertirEnBajaAStock(
+    equiposEnBaja: any,
+    dispositivosEnBaja: any,
+    hardware: any[],
+    bios: any[],
+    networkInfo: any,
+    almacen: any
+  ): any[] {
+    const items: any[] = [];
+    const biosMap = new Map((bios || []).map((b: any) => [b.hardwareId, b]));
+    const almacenNorm = { id: almacen.id, numero: almacen.numero, nombre: almacen.nombre };
 
-    this.stockData3D = stock
-      .filter(item => {
-        // Solo incluir items del ALM02
-        const esALM02 = item.almacen && (item.almacen.id === 2 || 
-          item.almacen.numero?.toUpperCase().includes('ALM02'));
-        return esALM02;
-      })
+    if (equiposEnBaja?.success && Array.isArray(equiposEnBaja.data)) {
+      equiposEnBaja.data.forEach((estado: any) => {
+        const hw = (hardware || []).find((h: any) => h.id === estado.hardwareId);
+        if (hw) {
+          const { estanteria, estante, seccion } = this.parsearEstanteriaYEstante(estado.observaciones);
+          const biosData = biosMap.get(estado.hardwareId);
+          items.push({
+            almacen: almacenNorm,
+            estanteria: estanteria || null,
+            estante: estante || null,
+            seccion: seccion || null,
+            cantidad: 1,
+            item: {
+              nombreItem: hw.name || `Equipo ${estado.hardwareId}`,
+              descripcion: `${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`
+            }
+          });
+        }
+      });
+    }
+
+    if (dispositivosEnBaja?.success && Array.isArray(dispositivosEnBaja.data) &&
+        networkInfo?.success && Array.isArray(networkInfo.data)) {
+      const netMap = new Map(networkInfo.data.map((d: any) => [d.mac, d]));
+      dispositivosEnBaja.data.forEach((estado: any) => {
+        const device = netMap.get(estado.mac);
+        if (device) {
+          const { estanteria, estante, seccion } = this.parsearEstanteriaYEstante(estado.observaciones);
+          items.push({
+            almacen: almacenNorm,
+            estanteria: estanteria || null,
+            estante: estante || null,
+            seccion: seccion || null,
+            cantidad: 1,
+            item: {
+              nombreItem: (device as any).name || estado.mac,
+              descripcion: `${(device as any).type || 'N/A'} | ${(device as any).description || 'Sin descripción'}`
+            }
+          });
+        }
+      });
+    }
+    return items;
+  }
+
+  prepararStockData3D(stock: any[], almacen: any): void {
+    const almacenId = almacen?.id;
+    const tieneConfig = this.configSeleccionada != null;
+
+    let itemsFiltrados = stock.filter((item: any) =>
+      item.almacen && item.almacen.id === almacenId
+    );
+
+    this.stockData3D = itemsFiltrados
       .map(item => {
         // Normalizar estantería (E1, E2, etc.)
         let estanteria = item.estanteria?.toString().trim().toUpperCase() || '';
@@ -306,16 +396,10 @@ export class Almacen3DDemoComponent implements OnInit {
         return resultado;
       })
       .filter(item => {
-        // Solo incluir items que tengan estantería, estante Y sección
-        const tieneDatosCompletos = item.estanteria && item.estante && item.seccion;
-        if (!tieneDatosCompletos) {
-          console.warn(`❌ Item excluido por falta de datos:`, {
-            estanteria: item.estanteria,
-            estante: item.estante,
-            seccion: item.seccion
-          });
+        if (tieneConfig) {
+          return !!(item.estanteria && item.estante && item.seccion);
         }
-        return tieneDatosCompletos;
+        return true;
       });
 
     console.log('📦 StockData3D preparado para demo:', this.stockData3D.length, 'items válidos');
@@ -341,6 +425,11 @@ export class Almacen3DDemoComponent implements OnInit {
     return !!(this.cajaSeleccionada?.contenido && this.cajaSeleccionada.contenido.length > 0);
   }
 
+  /** Indica si el modal muestra la montaña de cajas (almacén sin estructura) */
+  esMontana(): boolean {
+    return this.cajaSeleccionada?.estanteria === 'Montaña';
+  }
+
   /** Actualiza el contenido de la caja seleccionada desde stockData3D */
   private actualizarContenidoCajaModal(): void {
     if (!this.cajaSeleccionada || !this.stockData3D.length) return;
@@ -359,15 +448,15 @@ export class Almacen3DDemoComponent implements OnInit {
   agregarItem(): void {
     if (!this.cajaSeleccionada) return;
     const modalRef = this.modalService.open(RegistrarStockModalComponent, { size: 'lg', backdrop: true });
-    modalRef.componentInstance.almacenIdPreseleccionado = this.almacenIdALM02;
-    modalRef.componentInstance.ubicacionPreseleccionada = {
+    modalRef.componentInstance.almacenIdPreseleccionado = this.almacenIdParaModal;
+    modalRef.componentInstance.ubicacionPreseleccionada = this.esMontana() ? undefined : {
       estanteria: this.cajaSeleccionada.estanteria,
       estante: String(this.cajaSeleccionada.nivel),
       division: (this.cajaSeleccionada.seccion || '').toUpperCase()
     };
     modalRef.result.then((result: { success?: boolean }) => {
       if (result?.success) {
-        this.cargarStockALM02();
+        this.cargarStockParaAlmacen(this.almacenSeleccionado);
         this.cerrarModal();
       }
     }).catch(() => {});
@@ -379,7 +468,7 @@ export class Almacen3DDemoComponent implements OnInit {
     modalRef.componentInstance.item = item;
     modalRef.result.then((result: { success?: boolean }) => {
       if (result?.success) {
-        this.cargarStockALM02(() => this.actualizarContenidoCajaModal(), true);
+        this.cargarStockParaAlmacen(this.almacenSeleccionado, () => this.actualizarContenidoCajaModal(), true);
       }
     }).catch(() => {});
   }

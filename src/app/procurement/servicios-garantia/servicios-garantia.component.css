@@ -36,7 +36,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
 }
 
@@ -197,7 +197,7 @@ ngb-pagination {
 }
 
 .servicio-card-header i {
-  color: #3498db;
+  color: #212529;
 }
 
 .servicio-card-body {
@@ -212,7 +212,7 @@ ngb-pagination {
 }
 
 .servicio-card .form-label i {
-  color: #3498db;
+  color: #212529;
   width: 16px;
 }
 
@@ -259,8 +259,8 @@ body ngb-pagination.custom-pagination ul.pagination .page-item .page-link {
   justify-content: center !important;
   border-radius: 10px !important;
   border: 2px solid transparent !important;
-  background-color: #f0f4f8 !important;
-  color: #475569 !important;
+  background-color: #fce8e8 !important;
+  color: #721c24 !important;
   font-weight: 600 !important;
   font-size: 0.95rem !important;
   transition: all 0.2s ease !important;
@@ -273,20 +273,20 @@ body ngb-pagination.custom-pagination ul.pagination .page-item:last-child .page-
   width: auto !important;
   padding: 0 15px !important;
   font-size: 0.9rem !important;
-  background-color: #e8eef7 !important;
+  background-color: #f8d7da !important;
 }
 
 body ngb-pagination.custom-pagination ul.pagination .page-item .page-link:hover {
-  background-color: #e2e8f0 !important;
-  color: #3498db !important;
+  background-color: #dc3545 !important;
+  color: white !important;
   transform: translateY(-1px) !important;
 }
 
 body ngb-pagination.custom-pagination ul.pagination .page-item.active .page-link {
-  background-color: #3498db !important;
+  background-color: #dc3545 !important;
   color: white !important;
-  border-color: #3498db !important;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25) !important;
+  border-color: #dc3545 !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25) !important;
 }
 
 body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-link {

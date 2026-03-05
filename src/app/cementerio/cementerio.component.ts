@@ -9,6 +9,7 @@ import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { EstadoEquipoService, CambioEstadoRequest, EstadoEquipo } from '../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { AuthService } from '../services/auth.service';
 import { NetworkInfoService } from '../services/network-info.service';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
@@ -45,6 +46,10 @@ export class CementerioComponent implements OnInit {
   // Filtro por tipo (todos, equipos, dispositivos)
   filtroTipo: 'todos' | 'equipos' | 'dispositivos' = 'todos';
 
+  // Ordenamiento
+  sortColumn: 'tipo' | 'nombre' | 'fecha' | 'usuario' | '' = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   // Reactivación
   showReactivarDialog: boolean = false;
   equipoToReactivar: any = null;
@@ -63,6 +68,7 @@ export class CementerioComponent implements OnInit {
     private biosService: BiosService,
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
+    private authService: AuthService,
     private networkInfoService: NetworkInfoService,
     private router: Router,
     private permissionsService: PermissionsService,
@@ -214,10 +220,57 @@ export class CementerioComponent implements OnInit {
     this.page = 1;
   }
 
+  ordenarPor(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): void {
+    if (this.sortColumn === columna) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = columna;
+      this.sortDirection = 'asc';
+    }
+    this.page = 1;
+  }
+
+  isSortedBy(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): boolean {
+    return this.sortColumn === columna;
+  }
+
+  getSortIcon(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): string {
+    if (this.sortColumn !== columna) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  private getListaOrdenada(): any[] {
+    const lista = [...this.equiposFiltrados];
+    const col = this.sortColumn;
+    if (!col) return lista;
+    return lista.sort((a, b) => {
+      const valA = this.getValorOrdenamiento(a, col);
+      const valB = this.getValorOrdenamiento(b, col);
+      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
+      return this.sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  private getValorOrdenamiento(item: any, columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): string | number {
+    switch (columna) {
+      case 'tipo':
+        return (item.tipo || '').toString();
+      case 'nombre':
+        return (item.name || item.mac || '').toLowerCase();
+      case 'fecha':
+        return item.fechaBaja ? new Date(item.fechaBaja).getTime() : 0;
+      case 'usuario':
+        return (item.usuarioCambio || '').toLowerCase();
+      default:
+        return '';
+    }
+  }
+
   get pagedEquipos(): any[] {
+    const listaOrdenada = this.getListaOrdenada();
     const startItem = (this.page - 1) * this.pageSize;
     const endItem = this.page * this.pageSize;
-    return this.equiposFiltrados.slice(startItem, endItem);
+    return listaOrdenada.slice(startItem, endItem);
   }
 
   verDetallesEquipo(equipo: any): void {
@@ -403,7 +456,7 @@ export class CementerioComponent implements OnInit {
 
     const request: CambioEstadoDispositivoRequest = {
       observaciones: '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     console.log('📤 Enviando request de reactivación:', request);
@@ -446,7 +499,7 @@ export class CementerioComponent implements OnInit {
 
     const request: CambioEstadoRequest = {
       observaciones: '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     this.estadoEquipoService.reactivarEquipo(equipo.id, request).subscribe({
@@ -617,12 +670,13 @@ export class CementerioComponent implements OnInit {
       almacenId: transferData.almacenId,
       tipoAlmacen: transferData.tipoAlmacen,
       observaciones: transferData.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
-    if (transferData.tipoAlmacen === 'regular') {
-      requestData.estanteria = transferData.estanteria;
-      requestData.estante = transferData.estante;
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
     }
 
     this.estadoEquipoService.transferirEquipo(item.id, requestData).subscribe({

@@ -31,7 +31,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
 }
 
@@ -156,11 +156,11 @@
 
 .almacen-card .almacen-numero i {
   font-size: 1.3rem;
-  color: #3498db;
+  color: #dc3545;
   background: white;
   padding: 0.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.2);
+  box-shadow: 0 2px 8px rgba(220,53,69,0.2);
 }
 
 /* Acciones de la card */
@@ -222,6 +222,7 @@
   font-size: 1.1rem;
   width: 20px;
   text-align: center;
+  color: #212529 !important;
 }
 
 .info-item span {
@@ -287,7 +288,7 @@
 }
 
 .modal-title i {
-  color: #3498db;
+  color: #212529;
 }
 
 /* Estilos para las cards del formulario */
@@ -321,7 +322,7 @@
 }
 
 .form-card-title i {
-  color: #3498db;
+  color: #212529;
   font-size: 1.1rem;
 }
 

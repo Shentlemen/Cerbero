@@ -21,6 +21,34 @@
   height: 100%;
 }
 
+.selector-almacen {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.selector-almacen label {
+  color: #e0e0e0;
+  margin: 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.selector-almacen .form-select {
+  max-width: 360px;
+  background: #1a1a2e;
+  color: #fff;
+  border: 1px solid #333;
+}
+
+.selector-almacen .form-select:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
 .content-wrapper {
   flex: 1;
   display: flex;
@@ -126,6 +154,10 @@
   max-height: 400px;
   overflow-y: auto;
   background: #ffffff;
+}
+
+.modal-content.modal-montana .modal-body {
+  max-height: 60vh;
 }
 
 .modal-body h4 {

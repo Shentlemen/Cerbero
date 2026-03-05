@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, Vie
 import { CommonModule } from '@angular/common';
 import * as BABYLON from '@babylonjs/core';
 import '@babylonjs/loaders';
+import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
 
 export interface CajaInfo {
   estanteria: string;
@@ -30,9 +31,11 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   @ViewChild('renderCanvas', { static: true }) renderCanvas!: ElementRef<HTMLCanvasElement>;
   
   @Input() almacenId: string = 'ALM02';
+  @Input() almacenNombre: string = '';
   @Input() estanteriaId: string = 'A1';
   @Input() niveles: number = 3;
   @Input() cajasporNivel: number = 4;
+  @Input() config: AlmacenConfig | null = null; // Si null → vista "sin estructura"
   @Input() stockData: StockItem[] = []; // Datos de stock para filtrar cajas
   
   @Output() cajaSeleccionada = new EventEmitter<CajaInfo>();
@@ -41,9 +44,13 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   private scene!: BABYLON.Scene;
   private camera!: BABYLON.ArcRotateCamera;
   private cajasMap: Map<BABYLON.Mesh, CajaInfo> = new Map();
-  private etiquetasEstanterias: Map<string, BABYLON.Mesh> = new Map(); // Mapa para rastrear etiquetas de estanterías
+  private etiquetasEstanterias: Map<string, BABYLON.Mesh> = new Map();
   private resizeObserver?: ResizeObserver;
   private windowResizeListener?: () => void;
+  private layoutEstanterias: { offsetX: number; offsetZ: number; estanteriaId: string }[] = [];
+  private sinEstructura: boolean = false;
+  private seccionesNombres: string[] = ['a', 'b', 'c'];
+  private sceneReady: boolean = false;
   
   // Colores para los niveles
   private nivelesColores = [
@@ -61,28 +68,42 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Si cambian los datos de stock, solo recrear las cajas (no la estructura)
-    if (changes['stockData'] && this.scene) {
-      console.log('🔄 Cambios en stockData detectados:', {
-        currentValue: (this.stockData?.length || 0),
-        sample: this.stockData?.slice(0, 3).map((s: any) => ({ estanteria: s.estanteria, estante: s.estante, seccion: s.seccion }))
-      });
-      
-      // Limpiar solo las cajas existentes (no la estructura de estanterías)
-      this.cajasMap.forEach((info, mesh) => {
-        mesh.dispose();
-      });
-      this.cajasMap.clear();
-      
-      // Recrear solo las cajas con los nuevos datos
-      this.crearSoloCajasEnTodasLasEstanterias();
-      
-      console.log('✅ Cajas recreadas. Total cajas:', this.cajasMap.size);
+    const configChanged = changes['config'] && !changes['config'].firstChange;
+    const almacenIdChanged = changes['almacenId'] && !changes['almacenId'].firstChange;
+    const stockDataChanged = changes['stockData'] && !changes['stockData'].firstChange;
+
+    // Si cambia config o almacenId → reconstruir escena completa
+    if ((configChanged || almacenIdChanged) && this.engine) {
+      this.destroyScene();
+      setTimeout(() => this.initBabylon(), 0);
+      return;
+    }
+
+    // Si solo cambian los datos de stock
+    if (stockDataChanged && this.scene) {
+      if (this.sinEstructura) {
+        this.actualizarItemsVistaSinEstructura();
+      } else {
+        this.cajasMap.forEach((_, mesh) => mesh.dispose());
+        this.cajasMap.clear();
+        this.crearSoloCajasEnTodasLasEstanterias();
+      }
+    }
+  }
+
+  private destroyScene(): void {
+    this.sceneReady = false;
+    this.etiquetasEstanterias.forEach((m) => m.dispose());
+    this.etiquetasEstanterias.clear();
+    this.cajasMap.forEach((_, mesh) => mesh.dispose());
+    this.cajasMap.clear();
+    this.layoutEstanterias = [];
+    if (this.scene) {
+      this.scene.dispose();
     }
   }
 
   ngOnDestroy(): void {
-    // Limpiar listeners de resize
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = undefined;
@@ -115,18 +136,19 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
 
   private initBabylon(): void {
     const canvas = this.renderCanvas.nativeElement;
-    
-    // Crear el engine
-    this.engine = new BABYLON.Engine(canvas, true, {
-      preserveDrawingBuffer: true,
-      stencil: true
-    });
+    const isRebuild = !!this.engine;
 
-    // Crear la escena
+    if (!this.engine) {
+      this.engine = new BABYLON.Engine(canvas, true, {
+        preserveDrawingBuffer: true,
+        stencil: true
+      });
+      this.setupResizeHandlers();
+    }
+
     this.scene = new BABYLON.Scene(this.engine);
     this.scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1);
 
-    // Crear cámara orbital - ajustada para ver las 3 estanterías
     this.camera = new BABYLON.ArcRotateCamera(
       'camera',
       -Math.PI / 2,
@@ -140,7 +162,6 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     this.camera.upperRadiusLimit = 50;
     this.camera.wheelPrecision = 20;
 
-    // Luces
     const hemisphericLight = new BABYLON.HemisphericLight(
       'hemiLight',
       new BABYLON.Vector3(0, 1, 0),
@@ -156,51 +177,167 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     directionalLight.intensity = 0.8;
     directionalLight.position = new BABYLON.Vector3(5, 10, 5);
 
-    // Crear el piso
     this.crearPiso();
 
-    // Crear 2 filas de estanterías, cada una con 3 estanterías a lo ancho (eje Z)
-    const espacioEntreEstanterias = 10; // Espacio entre estanterías en profundidad (eje Z)
-    const espacioEntreFilas = 15; // Espacio entre filas a lo largo (eje X) - reducido
-    const profundidadEstanteria = 1.5;
-    const anchoEstanteria = 18;
-    const numFilas = 2;
-    
-    // Calcular el ancho total ocupado por las filas
-    const anchoTotalFilas = numFilas * anchoEstanteria + (numFilas - 1) * espacioEntreFilas;
-    
-    // Calcular el offset inicial para centrar las filas
-    const offsetInicialX = -anchoTotalFilas / 2 + anchoEstanteria / 2;
-    
-    // Crear 2 filas de estanterías (6 estanterías en total: E1-E6)
-    // Fila 0: E1 (frontal), E2 (central), E3 (trasera)
-    // Fila 1: E4 (frontal), E5 (central), E6 (trasera)
-    let estanteriaNum = 1;
-    for (let fila = 0; fila < numFilas; fila++) {
-      const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
-      
-      // Crear estantería frontal (más cercana a la cámara)
-      this.crearEstanteria(offsetX, -profundidadEstanteria - espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
-      
-      // Crear estantería central
-      this.crearEstanteria(offsetX, 0, `E${estanteriaNum++}`);
-      
-      // Crear estantería trasera (más lejana de la cámara)
-      this.crearEstanteria(offsetX, profundidadEstanteria + espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
+    if (!this.config) {
+      this.sinEstructura = true;
+      this.crearVistaSinEstructura();
+    } else {
+      this.sinEstructura = false;
+      this.crearEstructuraDesdeConfig();
     }
 
-    // Configurar picking (clicks)
     this.configurarPicking();
+    if (!isRebuild) {
+      this.fixMouseCoordinates();
+    }
 
-    // Corregir coordenadas del mouse para compensar el zoom del body
-    this.fixMouseCoordinates();
+    this.sceneReady = true;
+    if (!isRebuild) {
+      this.engine.runRenderLoop(() => {
+        if (this.sceneReady && this.scene) this.scene.render();
+      });
+    }
+  }
 
-    // Iniciar el render loop
-    this.engine.runRenderLoop(() => {
-      this.scene.render();
+  /** Estructura dinámica según AlmacenConfig */
+  private crearEstructuraDesdeConfig(): void {
+    const cfg = this.config!;
+    const numEstanterias = cfg.cantidadEstanterias || 6;
+    const niveles = cfg.cantidadEstantesPorEstanteria || 3;
+    this.seccionesNombres = (cfg.divisionesEstante || 'A,B,C').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (this.seccionesNombres.length === 0) this.seccionesNombres = ['a', 'b', 'c'];
+    this.niveles = niveles;
+
+    const espacioEntreEstanterias = 7;
+    const espacioEntreFilas = 8;
+    const profundidadEstanteria = 1.5;
+    const anchoEstanteria = 18;
+
+    const numCols = Math.ceil(Math.sqrt(numEstanterias));
+    const numFilas = Math.ceil(numEstanterias / numCols);
+    const anchoTotal = numFilas * anchoEstanteria + (numFilas - 1) * espacioEntreFilas;
+    const profTotal = numCols * profundidadEstanteria + (numCols - 1) * espacioEntreEstanterias;
+    const offsetInicialX = -anchoTotal / 2 + anchoEstanteria / 2;
+    const offsetInicialZ = -profTotal / 2 + profundidadEstanteria / 2;
+
+    this.layoutEstanterias = [];
+    let idx = 0;
+    for (let fila = 0; fila < numFilas && idx < numEstanterias; fila++) {
+      const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
+      for (let col = 0; col < numCols && idx < numEstanterias; col++) {
+        const offsetZ = offsetInicialZ + col * (profundidadEstanteria + espacioEntreEstanterias);
+        const estanteriaId = `E${idx + 1}`;
+        this.layoutEstanterias.push({ offsetX, offsetZ, estanteriaId });
+        this.crearEstanteria(offsetX, offsetZ, estanteriaId);
+        idx++;
+      }
+    }
+  }
+
+  /** Vista alternativa: montaña de cajas desordenada. Click en cualquier caja abre modal con todo el contenido */
+  private crearVistaSinEstructura(): void {
+    const items = this.stockData || [];
+    const cajaInfoMontana: CajaInfo = {
+      estanteria: 'Montaña',
+      nivel: 1,
+      posicion: 1,
+      seccion: '-',
+      contenido: []
+    };
+
+    const cardboardTexturePath = 'assets/textures/cardboard.jpg';
+    const baseSide = 7;
+    let numCajas = 0;
+    for (let l = 0; baseSide - 2 * l >= 1; l++) {
+      const s = baseSide - 2 * l;
+      numCajas += s * s;
+    }
+    const baseY = 0.05;
+    const boxSize = 1.7;
+    const spacing = 1.9;
+    const jitter = () => (Math.random() - 0.5) * 0.4;
+    const rotJitter = () => (Math.random() - 0.5) * 0.4;
+
+    let idx = 0;
+    const boxHeight = boxSize * 0.7;
+    const layerHeight = boxHeight * 1.15;
+    for (let layer = 0; baseSide - 2 * layer >= 1; layer++) {
+      const side = baseSide - 2 * layer;
+      const layerSpacing = spacing * (1 + layer * 0.02);
+      const layerBaseY = baseY + layer * layerHeight;
+      for (let row = 0; row < side; row++) {
+        for (let col = 0; col < side; col++) {
+          const centerOffset = (side - 1) / 2;
+          const baseX = (col - centerOffset) * layerSpacing + jitter();
+          const baseZ = (row - centerOffset) * layerSpacing + jitter();
+          const y = layerBaseY + Math.random() * 0.1;
+          const cube = BABYLON.MeshBuilder.CreateBox(`item_${idx}`, {
+            width: boxSize * (0.9 + Math.random() * 0.2),
+            height: boxSize * 0.7,
+            depth: boxSize * (0.8 + Math.random() * 0.2)
+          }, this.scene);
+          cube.position = new BABYLON.Vector3(baseX, y + boxSize * 0.35, baseZ);
+          cube.rotation.y = rotJitter();
+          cube.rotation.x = (Math.random() - 0.5) * 0.12;
+          cube.rotation.z = (Math.random() - 0.5) * 0.12;
+          const boxMat = new BABYLON.StandardMaterial(`itemMat_${idx}`, this.scene);
+          boxMat.diffuseColor = new BABYLON.Color3(0.82 + Math.random() * 0.1, 0.78 + Math.random() * 0.1, 0.68 + Math.random() * 0.12);
+          try {
+            const tex = new BABYLON.Texture(cardboardTexturePath, this.scene);
+            boxMat.diffuseTexture = tex;
+          } catch (_) {}
+          cube.material = boxMat;
+          this.cajasMap.set(cube, cajaInfoMontana);
+          cube.actionManager = new BABYLON.ActionManager(this.scene);
+          cube.actionManager.registerAction(
+            new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPointerOverTrigger, () => {
+              document.body.style.cursor = 'pointer';
+            })
+          );
+          cube.actionManager.registerAction(
+            new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPointerOutTrigger, () => {
+              document.body.style.cursor = 'default';
+            })
+          );
+          cube.actionManager.registerAction(
+            new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => this.onCajaClick(cube))
+          );
+          idx++;
+        }
+      }
+    }
+
+    if (items.length === 0) {
+      const label = BABYLON.MeshBuilder.CreatePlane('labelEmpty', { width: 4, height: 1 }, this.scene);
+      label.position = new BABYLON.Vector3(0, 6, 0);
+      label.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+      const dt = new BABYLON.DynamicTexture('labelTex', { width: 256, height: 64 }, this.scene);
+      const ctx = dt.getContext() as CanvasRenderingContext2D;
+      ctx.fillStyle = '#888';
+      ctx.font = '22px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Almacén vacío', 128, 32);
+      dt.update();
+      const lm = new BABYLON.StandardMaterial('labelMat', this.scene);
+      lm.diffuseTexture = dt;
+      lm.emissiveTexture = dt;
+      label.material = lm;
+      this.etiquetasEstanterias.set('empty', label);
+    }
+  }
+
+  private actualizarItemsVistaSinEstructura(): void {
+    this.cajasMap.forEach((_, mesh) => mesh.dispose());
+    this.cajasMap.clear();
+    this.etiquetasEstanterias.forEach((m) => m.dispose());
+    this.etiquetasEstanterias.clear();
+    ['labelEmpty'].forEach(name => {
+      const m = this.scene.getMeshByName(name);
+      if (m) m.dispose();
     });
-
-    // El resize se maneja en setupResizeHandlers()
+    this.scene.meshes.filter(m => m.name.startsWith('item_')).forEach(m => m.dispose());
+    this.crearVistaSinEstructura();
   }
 
   private setupResizeHandlers(): void {
@@ -476,8 +613,8 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
       barraTrasera.material = metalMaterial;
     }
 
-    // Barras verticales divisorias (dividen en 3 secciones)
-    const secciones = 3;
+    // Barras verticales divisorias (según secciones de config)
+    const secciones = Math.max(1, this.seccionesNombres.length);
     const anchoSeccion = anchoEstanteria / secciones;
     
     for (let i = 1; i < secciones; i++) {
@@ -520,23 +657,11 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     this.crearCajas(offsetX, offsetZ, estanteriaId);
   }
 
-  /** Recrea solo las cajas en las 6 estanterías (llamar cuando stockData cambia) */
+  /** Recrea solo las cajas según layoutEstanterias (cuando stockData cambia) */
   private crearSoloCajasEnTodasLasEstanterias(): void {
-    const numFilas = 2;
-    const anchoEstanteria = 18;
-    const espacioEntreFilas = 15;
-    const profundidadEstanteria = 1.5;
-    const espacioEntreEstanterias = 10;
-    const anchoTotalFilas = numFilas * anchoEstanteria + (numFilas - 1) * espacioEntreFilas;
-    const offsetInicialX = -anchoTotalFilas / 2 + anchoEstanteria / 2;
-    
-    let estanteriaNum = 1;
-    for (let fila = 0; fila < numFilas; fila++) {
-      const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
-      this.crearCajas(offsetX, -profundidadEstanteria - espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
-      this.crearCajas(offsetX, 0, `E${estanteriaNum++}`);
-      this.crearCajas(offsetX, profundidadEstanteria + espacioEntreEstanterias / 2, `E${estanteriaNum++}`);
-    }
+    this.layoutEstanterias.forEach(({ offsetX, offsetZ, estanteriaId }) => {
+      this.crearCajas(offsetX, offsetZ, estanteriaId);
+    });
   }
 
   private crearEtiquetaEstanteria(offsetX: number, offsetZ: number, estanteriaId: string, alturaEstanteria: number): void {
@@ -593,9 +718,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     const alturaTotal = 5;
     const alturaNivel = alturaTotal / this.niveles;
     
-    // 3 secciones (a, b, c), 2 cajas por sección
-    const secciones = 3;
-    const seccionesNombres = ['a', 'b', 'c'];
+    const secciones = Math.max(1, this.seccionesNombres.length);
     const cajasPorSeccion = 2;
     const anchoSeccion = anchoEstanteria / secciones;
     const margenSeccion = 0.15; // Margen en cada lado de la sección
@@ -608,7 +731,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     for (let nivel = 0; nivel < this.niveles; nivel++) {
       const estanteNum = nivel + 1; // Estante 1, 2, 3
       for (let seccion = 0; seccion < secciones; seccion++) {
-        const seccionNombre = seccionesNombres[seccion];
+        const seccionNombre = this.seccionesNombres[seccion];
         
         // Verificar si hay stock en esta estantería/estante/sección
         const tieneStock = this.tieneStockEnUbicacion(estanteriaId, estanteNum.toString(), seccionNombre);
@@ -785,8 +908,15 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   private onCajaClick(caja: BABYLON.Mesh): void {
     const info = this.cajasMap.get(caja);
     if (info) {
-      console.log('Caja seleccionada:', info);
-      this.cajaSeleccionada.emit(info);
+      if (info.estanteria === 'Montaña') {
+        const infoConContenido: CajaInfo = {
+          ...info,
+          contenido: [...(this.stockData || [])]
+        };
+        this.cajaSeleccionada.emit(infoConContenido);
+      } else {
+        this.cajaSeleccionada.emit(info);
+      }
     }
   }
 

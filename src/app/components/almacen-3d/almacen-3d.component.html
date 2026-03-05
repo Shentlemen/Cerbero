@@ -1,6 +1,6 @@
 <div class="almacen-3d-container">
   <div class="header-3d">
-    <h3><i class="fas fa-cube"></i> Vista 3D - {{ almacenId }} - Estantería {{ estanteriaId }}</h3>
+    <h3><i class="fas fa-cube"></i> Vista 3D - {{ almacenId }}{{ almacenNombre ? ' - ' + almacenNombre : '' }}</h3>
     <div class="controles">
       <button class="btn-control" (click)="resetearCamara()" title="Resetear vista">
         <i class="fas fa-sync-alt"></i>

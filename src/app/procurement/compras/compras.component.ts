@@ -18,7 +18,7 @@ import { CurrencyMaskDirective } from '../../shared/directives/currency-mask.dir
 
 // Importaciones para PDF
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
@@ -1247,7 +1247,7 @@ export class ComprasComponent implements OnInit {
   
 
   // Método para exportar a PDF
-  async exportarAPDF(): Promise<void> {
+  exportarAPDF(): void {
     try {
       // Deshabilitar el botón durante la exportación
       const exportButton = document.querySelector('.export-pdf-btn') as HTMLButtonElement;
@@ -1262,11 +1262,8 @@ export class ComprasComponent implements OnInit {
         return;
       }
 
-      // Crear el contenido del PDF
-      const pdfContent = this.generarContenidoPDF();
-      
       // Generar y descargar el PDF
-      await this.generarPDF(pdfContent);
+      this.generarPDF();
 
       // Restaurar el botón
       if (exportButton) {
@@ -1287,9 +1284,10 @@ export class ComprasComponent implements OnInit {
     }
   }
 
-  private generarContenidoPDF(): string {
-    if (!this.compraSeleccionada) return '';
+  private generarPDF(): void {
+    if (!this.compraSeleccionada) return;
 
+    const doc = new jsPDF('p', 'mm', 'a4');
     const compra = this.compraSeleccionada;
     const nombreCompra = this.getNombreCompraFormateado(compra);
     const montoFormateado = this.formatearMoneda(compra.monto || 0, compra.moneda || 'USD');
@@ -1297,249 +1295,146 @@ export class ComprasComponent implements OnInit {
     const fechaFinal = this.formatearFecha(compra.fechaFinal || '');
     const tipoCompra = this.getTipoCompraDescripcion(compra.idTipoCompra || 0);
 
-    let html = `
-      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #41A1AF; padding-bottom: 15px;">
-          <h1 style="color: #2c3e50; margin: 0; font-size: 20px;">${nombreCompra}</h1>
-          <p style="color: #6c757d; margin: 8px 0 0 0; font-size: 14px;">${compra.descripcion || ''}</p>
-          <div style="margin-top: 12px;">
-            <span style="background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 15px; font-weight: bold; font-size: 12px;">
-              ${compra.moneda || 'USD'}
-            </span>
-            <span style="margin-left: 12px; font-size: 16px; font-weight: bold; color: #2c3e50;">
-              ${montoFormateado}
-            </span>
-          </div>
-        </div>
+    let y = 20;
+    const margin = 14;
+    const pageHeight = 277; // Altura útil A4
 
-        <div style="margin-bottom: 25px;">
-          <h2 style="color: #2c3e50; font-size: 16px; border-bottom: 1px solid #e9ecef; padding-bottom: 8px; margin-bottom: 12px;">
-            <i class="fas fa-info-circle"></i> Información de la Compra
-          </h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
-              <strong style="color: #495057; font-size: 12px;">Tipo de Compra:</strong><br>
-              <span style="color: #2c3e50; font-size: 13px;">${tipoCompra}</span>
-            </div>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
-              <strong style="color: #495057; font-size: 12px;">Número:</strong><br>
-              <span style="color: #2c3e50; font-size: 13px;">${compra.numeroCompra || 'No disponible'}</span>
-            </div>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
-              <strong style="color: #495057; font-size: 12px;">Año:</strong><br>
-              <span style="color: #2c3e50; font-size: 13px;">${compra.ano || 'No disponible'}</span>
-            </div>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
-              <strong style="color: #495057; font-size: 12px;">Fecha Apertura:</strong><br>
-              <span style="color: #2c3e50; font-size: 13px;">${fechaInicio}</span>
-            </div>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
-              <strong style="color: #495057; font-size: 12px;">Fecha Adjudicación:</strong><br>
-              <span style="color: #2c3e50; font-size: 13px;">${fechaFinal}</span>
-            </div>
-          </div>
-        </div>
-    `;
+    // Título principal
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(nombreCompra, margin, y);
+    y += 8;
 
-    // Agregar ítems si existen
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(compra.descripcion || '', margin, y);
+    y += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${compra.moneda || 'USD'} ${montoFormateado}`, margin, y);
+    y += 12;
+
+    // Información de la compra (tabla simple)
+    autoTable(doc, {
+      head: [['Campo', 'Valor']],
+      body: [
+        ['Tipo de Compra', tipoCompra],
+        ['Número', compra.numeroCompra || 'No disponible'],
+        ['Año', String(compra.ano || 'No disponible')],
+        ['Fecha Apertura', fechaInicio],
+        ['Fecha Adjudicación', fechaFinal]
+      ],
+      startY: y,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [65, 161, 175], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
+      theme: 'grid'
+    });
+    y = (doc as any).lastAutoTable.finalY + 12;
+
+    // Tabla de ítems
     if (this.lotesDetalles.length > 0) {
-      html += `
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
-            <i class="fas fa-box"></i> Ítems de la Compra (${this.lotesDetalles.length})
-          </h2>
-          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead style="background: #f8f9fa;">
-                <tr>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Ítem</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Cantidad</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Garantía</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Proveedor</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Servicio</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Obs.</th>
-                </tr>
-              </thead>
-              <tbody>
-      `;
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Ítems de la Compra (${this.lotesDetalles.length})`, margin, y);
+      y += 8;
 
-      this.lotesDetalles.forEach((lote, index) => {
-        html += `
-          <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.nombreItem}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.cantidad}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.mesesGarantia} meses</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.getProveedorNombre(lote.idProveedor)}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.getServicioGarantiaNombre(lote.idServicioGarantia)}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${lote.descripcion || '-'}</td>
-          </tr>
-        `;
+      const itemsBody = this.lotesDetalles.map(lote => [
+        lote.nombreItem || '',
+        String(lote.cantidad),
+        `${lote.mesesGarantia} meses`,
+        this.getProveedorNombre(lote.idProveedor),
+        this.getServicioGarantiaNombre(lote.idServicioGarantia),
+        (lote.descripcion || '-').substring(0, 30)
+      ]);
+
+      autoTable(doc, {
+        head: [['Ítem', 'Cant.', 'Garantía', 'Proveedor', 'Servicio', 'Obs.']],
+        body: itemsBody,
+        startY: y,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [108, 117, 125], textColor: 255 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        theme: 'striped',
+        tableWidth: 'auto'
       });
-
-      html += `
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
+      y = (doc as any).lastAutoTable.finalY + 12;
     }
 
-    // Agregar entregas si existen
+    // Tabla de entregas
     if (this.entregasDetalles.length > 0) {
-      html += `
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
-            <i class="fas fa-truck"></i> Entregas (${this.entregasDetalles.length})
-          </h2>
-          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead style="background: #f8f9fa;">
-                <tr>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Ítem</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Cantidad</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fecha Entrega</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fin Garantía</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Obs.</th>
-                </tr>
-              </thead>
-              <tbody>
-      `;
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Entregas (${this.entregasDetalles.length})`, margin, y);
+      y += 8;
 
-      this.entregasDetalles.forEach((entrega, index) => {
-        html += `
-          <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.getLoteNombre(entrega.idItem)}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${entrega.cantidad}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.formatearFecha(entrega.fechaPedido)}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${this.formatearFecha(entrega.fechaFinGarantia)}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${entrega.descripcion || '-'}</td>
-          </tr>
-        `;
+      const entregasBody = this.entregasDetalles.map(e => [
+        this.getLoteNombre(e.idItem),
+        String(e.cantidad),
+        this.formatearFecha(e.fechaPedido),
+        this.formatearFecha(e.fechaFinGarantia),
+        (e.descripcion || '-').substring(0, 25)
+      ]);
+
+      autoTable(doc, {
+        head: [['Ítem', 'Cant.', 'Fecha Entrega', 'Fin Garantía', 'Obs.']],
+        body: entregasBody,
+        startY: y,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [108, 117, 125], textColor: 255 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        theme: 'striped',
+        tableWidth: 'auto'
       });
-
-      html += `
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
+      y = (doc as any).lastAutoTable.finalY + 12;
     }
 
-    // Agregar documentos si existen
+    // Tabla de documentos
     if (this.documentosCompra.length > 0) {
-      html += `
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #2c3e50; font-size: 18px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px;">
-            <i class="fas fa-file-alt"></i> Documentos de Entrega (${this.documentosCompra.length})
-          </h2>
-          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead style="background: #f8f9fa;">
-                <tr>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Archivo</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Tamaño</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">Fecha</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; color: #495057;">Descripción</th>
-                </tr>
-              </thead>
-              <tbody>
-      `;
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Documentos de Entrega (${this.documentosCompra.length})`, margin, y);
+      y += 8;
 
-      this.documentosCompra.forEach((documento, index) => {
-        html += `
-          <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${documento.nombreArchivoOriginal}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearTamanoArchivo(documento.tamanoArchivo)}</td>
-            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef; color: #495057;">${this.formatearFecha(documento.fechaCreacion)}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e9ecef; color: #2c3e50;">${documento.descripcion || '-'}</td>
-          </tr>
-        `;
+      const docsBody = this.documentosCompra.map(d => [
+        (d.nombreArchivoOriginal || '').substring(0, 35),
+        this.formatearTamanoArchivo(d.tamanoArchivo),
+        this.formatearFecha(d.fechaCreacion),
+        (d.descripcion || '-').substring(0, 30)
+      ]);
+
+      autoTable(doc, {
+        head: [['Archivo', 'Tamaño', 'Fecha', 'Descripción']],
+        body: docsBody,
+        startY: y,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [108, 117, 125], textColor: 255 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        theme: 'striped',
+        tableWidth: 'auto'
       });
-
-      html += `
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
     }
 
-
-    // Cerrar el HTML
-    html += `
-        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 12px;">
-          <p>Documento generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
-          <p>Sistema Cerbero - Gestión de Compras</p>
-        </div>
-      </div>
-    `;
-
-    return html;
-  }
-
-  private async generarPDF(htmlContent: string): Promise<void> {
-    try {
-      // Crear un elemento temporal para renderizar el HTML
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = htmlContent;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '-9999px';
-      tempDiv.style.width = '800px';
-      tempDiv.style.backgroundColor = 'white';
-      document.body.appendChild(tempDiv);
-
-      // Esperar a que el contenido se renderice
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Convertir HTML a canvas usando html2canvas
-      const canvas = await html2canvas(tempDiv, {
-        scale: 2, // Mejor calidad
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 800,
-        height: tempDiv.scrollHeight
-      });
-
-      // Crear el PDF
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      // Calcular dimensiones
-      const imgWidth = 210; // A4 width en mm
-      const pageHeight = 295; // A4 height en mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      let position = 0; // Posición inicial
-
-      // Agregar primera página
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Agregar páginas adicionales si es necesario
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Descargar el PDF
-      const fileName = `compra_${this.compraSeleccionada?.numeroCompra || 'detalles'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
-
-      // Limpiar
-      document.body.removeChild(tempDiv);
-      
-      // Mostrar mensaje de éxito
-      this.error = null;
-      
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      throw new Error('Error al generar el PDF. Por favor, intente nuevamente.');
+    // Pie de página en la última página
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Documento generado el ${new Date().toLocaleDateString('es-ES')} - Sistema Cerbero - Página ${i} de ${totalPages}`,
+        doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
     }
+
+    const fileName = `compra_${compra.numeroCompra || 'detalles'}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    this.error = null;
   }
 
   // Métodos separados para el dropdown del servicio de garantía

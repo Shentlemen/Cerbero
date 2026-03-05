@@ -13,7 +13,7 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
   template: `
     <div class="modal-header bg-light">
       <h4 class="modal-title d-flex align-items-center gap-2">
-        <i class="fas fa-exchange-alt text-primary"></i>
+        <i class="fas fa-exchange-alt text-dark"></i>
         Transferir Equipo
       </h4>
       <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
@@ -53,8 +53,8 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
           </div>
         </div>
 
-        <!-- Campos para almacén regular -->
-        <div *ngIf="esAlmacenRegular()" class="mb-3">
+        <!-- Campos de ubicación (estantería, estante, sección) según AlmacenConfig -->
+        <div *ngIf="tieneCamposUbicacion()" class="mb-3">
           <div *ngIf="cargandoConfig" class="text-center py-3">
             <div class="spinner-border spinner-border-sm text-primary" role="status">
               <span class="visually-hidden">Cargando configuración...</span>
@@ -62,8 +62,8 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
             <small class="d-block mt-2 text-muted">Cargando configuración del almacén...</small>
           </div>
           
-          <div *ngIf="!cargandoConfig" class="row g-3">
-            <div class="col-md-4">
+          <div *ngIf="!cargandoConfig && almacenConfig" class="row g-3">
+            <div [class.col-md-4]="seccionesDisponibles.length > 0" [class.col-md-6]="seccionesDisponibles.length === 0">
               <label class="form-label">Estantería *</label>
               <select 
                 class="form-select" 
@@ -80,7 +80,7 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
               </div>
             </div>
             
-            <div class="col-md-4">
+            <div [class.col-md-4]="seccionesDisponibles.length > 0" [class.col-md-6]="seccionesDisponibles.length === 0">
               <label class="form-label">Estante *</label>
               <select 
                 class="form-select" 
@@ -97,7 +97,7 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
               </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-4" *ngIf="seccionesDisponibles.length > 0">
               <label class="form-label">Sección *</label>
               <select 
                 class="form-select" 
@@ -113,6 +113,11 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
                 La sección es requerida
               </div>
             </div>
+          </div>
+          
+          <div *ngIf="!cargandoConfig && (esAlmacenRegular() || esAlmacenLaboratorio()) && !almacenConfig" class="alert alert-warning mt-2">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Configure este almacén en <strong>Almacén Config</strong> para indicar estantería y estante.
           </div>
         </div>
 
@@ -137,7 +142,7 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
           </button>
           <button 
             type="submit" 
-            class="btn btn-primary" 
+            class="btn btn-transferir" 
             [disabled]="!transferForm.valid || procesando">
             <i class="fas" [ngClass]="procesando ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
             {{ procesando ? 'Transferiendo...' : 'Transferir' }}
@@ -165,18 +170,20 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
       border-radius: 8px;
       transition: all 0.3s ease;
     }
-    .btn-primary {
-      background: #0d6efd;
+    .btn-transferir {
+      background: #212529;
       border: none;
+      color: #fff;
     }
-    .btn-primary:disabled {
+    .btn-transferir:disabled {
       background: #E2E8F0;
       color: #94A3B8;
     }
-    .btn-primary:not(:disabled):hover {
-      background: #0b5ed7;
+    .btn-transferir:not(:disabled):hover {
+      background: #000;
+      color: #fff;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
     .btn-secondary {
       background: #6c757d;
@@ -271,20 +278,21 @@ export class TransferirEquipoModalComponent implements OnInit {
     this.estantesDisponibles = [];
     this.seccionesDisponibles = [];
     
-    if (this.esAlmacenRegular()) {
-      // Cargar configuración del almacén
+    const esCementerio = almacenId === 'cementerio';
+    const esLaboratorio = almacenId === 'laboratorio';
+    const esRegular = !esCementerio && !esLaboratorio && almacenId && !isNaN(Number(almacenId));
+    
+    // Cargar AlmacenConfig para almacenes que pueden tener ubicación (regular y laboratorio)
+    // Los validadores se configuran en cargarConfiguracionAlmacen según si hay config o no
+    this.transferForm.get('estanteria')?.clearValidators();
+    this.transferForm.get('estante')?.clearValidators();
+    this.transferForm.get('seccion')?.clearValidators();
+    
+    if (esRegular) {
       this.cargarConfiguracionAlmacen(Number(almacenId));
-      
-      // Validar estantería, estante y sección para almacenes regulares
-      this.transferForm.get('estanteria')?.setValidators([Validators.required]);
-      this.transferForm.get('estante')?.setValidators([Validators.required]);
-      this.transferForm.get('seccion')?.setValidators([Validators.required]);
-      this.transferForm.get('observaciones')?.clearValidators();
+    } else if (esLaboratorio && this.almacenLaboratorio) {
+      this.cargarConfiguracionAlmacen(this.almacenLaboratorio.id);
     } else {
-      // Para almacenes especiales, no se requiere estantería ni estante
-      this.transferForm.get('estanteria')?.clearValidators();
-      this.transferForm.get('estante')?.clearValidators();
-      this.transferForm.get('seccion')?.clearValidators();
       this.transferForm.get('observaciones')?.clearValidators();
     }
     
@@ -302,41 +310,61 @@ export class TransferirEquipoModalComponent implements OnInit {
         if (config) {
           this.almacenConfig = config;
           
-          // Generar lista de estanterías (E1, E2, E3, ...)
+          // Estanterías desde config (E1, E2, ...)
           this.estanteriasDisponibles = [];
           for (let i = 1; i <= config.cantidadEstanterias; i++) {
             this.estanteriasDisponibles.push(`E${i}`);
           }
           
-          // Generar lista de estantes (1, 2, 3, ...)
+          // Estantes desde config (1, 2, 3, ...)
           this.estantesDisponibles = [];
           for (let i = 1; i <= config.cantidadEstantesPorEstanteria; i++) {
             this.estantesDisponibles.push(i.toString());
           }
           
-          // Generar lista de secciones (A, B, C, ...)
+          // Secciones desde config (divisionesEstante); si vacío, no hay sección
           this.seccionesDisponibles = [];
-          if (config.divisionesEstante) {
-            const divisiones = config.divisionesEstante.split(',').map(d => d.trim());
-            this.seccionesDisponibles = divisiones;
-          } else {
-            // Por defecto A, B, C
-            this.seccionesDisponibles = ['A', 'B', 'C'];
+          if (config.divisionesEstante && config.divisionesEstante.trim()) {
+            this.seccionesDisponibles = config.divisionesEstante.split(',').map(d => d.trim()).filter(d => d);
           }
+          
+          this.transferForm.get('seccion')?.clearValidators();
+          if (this.seccionesDisponibles.length > 0) {
+            this.transferForm.get('seccion')?.setValidators([Validators.required]);
+          }
+          // Requerir estantería y estante cuando hay config
+          this.transferForm.get('estanteria')?.setValidators([Validators.required]);
+          this.transferForm.get('estante')?.setValidators([Validators.required]);
         } else {
-          // Si no hay configuración, usar valores por defecto
-          this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
-          this.estantesDisponibles = ['1', '2', '3'];
-          this.seccionesDisponibles = ['A', 'B', 'C'];
+          this.almacenConfig = null;
+          this.estanteriasDisponibles = [];
+          this.estantesDisponibles = [];
+          this.seccionesDisponibles = [];
+          this.transferForm.get('seccion')?.clearValidators();
+          // Laboratorio sin config: no requerir ubicación (solo observaciones)
+          // Regular sin config: requerir ubicación pero no hay opciones → usuario debe crear config
+          if (this.esAlmacenRegular()) {
+            this.transferForm.get('estanteria')?.setValidators([Validators.required]);
+            this.transferForm.get('estante')?.setValidators([Validators.required]);
+          }
         }
+        this.transferForm.get('estanteria')?.updateValueAndValidity();
+        this.transferForm.get('estante')?.updateValueAndValidity();
+        this.transferForm.get('seccion')?.updateValueAndValidity();
       },
       error: (error) => {
         console.error('Error al cargar configuración del almacén:', error);
         this.cargandoConfig = false;
-        // Usar valores por defecto en caso de error
-        this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
-        this.estantesDisponibles = ['1', '2', '3'];
-        this.seccionesDisponibles = ['A', 'B', 'C'];
+        this.almacenConfig = null;
+        this.estanteriasDisponibles = [];
+        this.estantesDisponibles = [];
+        this.seccionesDisponibles = [];
+        this.transferForm.get('estanteria')?.clearValidators();
+        this.transferForm.get('estante')?.clearValidators();
+        this.transferForm.get('seccion')?.clearValidators();
+        this.transferForm.get('estanteria')?.updateValueAndValidity();
+        this.transferForm.get('estante')?.updateValueAndValidity();
+        this.transferForm.get('seccion')?.updateValueAndValidity();
       }
     });
   }
@@ -347,6 +375,15 @@ export class TransferirEquipoModalComponent implements OnInit {
       return false;
     }
     return !isNaN(Number(almacenId));
+  }
+
+  esAlmacenLaboratorio(): boolean {
+    return this.transferForm.get('almacenId')?.value === 'laboratorio';
+  }
+
+  /** Muestra campos de ubicación cuando el almacén seleccionado puede tener AlmacenConfig (regular o laboratorio) */
+  tieneCamposUbicacion(): boolean {
+    return this.esAlmacenRegular() || this.esAlmacenLaboratorio();
   }
 
   esAlmacenEspecial(): boolean {
@@ -391,36 +428,16 @@ export class TransferirEquipoModalComponent implements OnInit {
         observaciones: formData.observaciones || ''
       };
 
-      // Si es almacén regular, incluir estantería, estante y sección
-      if (tipoAlmacen === 'regular') {
+      // Incluir estantería, estante y sección cuando hay AlmacenConfig (regular o laboratorio)
+      if ((tipoAlmacen === 'regular' || tipoAlmacen === 'laboratorio') && this.almacenConfig) {
         transferData.estanteria = formData.estanteria || '';
         transferData.estante = formData.estante || '';
-        // Asegurar que seccion siempre se incluya, incluso si está vacía o es null/undefined
         transferData.seccion = formData.seccion != null ? formData.seccion : '';
-        
-        // Log para debugging
-        console.log('🔍 Modal - Datos del formulario (almacén regular):', {
-          formData,
-          estanteria: formData.estanteria,
-          estante: formData.estante,
-          seccion: formData.seccion,
-          seccionType: typeof formData.seccion,
-          transferData
-        });
       }
-
-      // Log final antes de cerrar el modal
-      console.log('🔍 Modal - transferData final antes de cerrar:', {
-        transferData,
-        seccion: transferData.seccion,
-        seccionType: typeof transferData.seccion,
-        tipoAlmacen: transferData.tipoAlmacen,
-        tieneSeccion: 'seccion' in transferData,
-        keys: Object.keys(transferData)
-      });
 
       this.activeModal.close(transferData);
     }
   }
 }
+
 

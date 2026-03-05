@@ -141,16 +141,16 @@ export class RegistrarStockModalComponent implements OnInit {
           }
         } else {
           this.configAlmacenActual = null;
-          this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
-          this.estantesDisponibles = ['1', '2', '3'];
-          this.divisionesDisponibles = ['A', 'B', 'C'];
+          this.estanteriasDisponibles = [];
+          this.estantesDisponibles = [];
+          this.divisionesDisponibles = [];
         }
         this.updateFormValidation();
       },
       error: () => {
-        this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
-        this.estantesDisponibles = ['1', '2', '3'];
-        this.divisionesDisponibles = ['A', 'B', 'C'];
+        this.estanteriasDisponibles = [];
+        this.estantesDisponibles = [];
+        this.divisionesDisponibles = [];
         this.configAlmacenActual = null;
         if (this.ubicacionPreseleccionada) {
           this.stockForm.patchValue({
@@ -166,9 +166,9 @@ export class RegistrarStockModalComponent implements OnInit {
 
   limpiarConfiguracionAlmacen(): void {
     this.configAlmacenActual = null;
-    this.estanteriasDisponibles = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
-    this.estantesDisponibles = ['1', '2', '3'];
-    this.divisionesDisponibles = ['A', 'B', 'C'];
+    this.estanteriasDisponibles = [];
+    this.estantesDisponibles = [];
+    this.divisionesDisponibles = [];
     this.updateFormValidation();
   }
 

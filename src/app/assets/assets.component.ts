@@ -14,6 +14,7 @@ import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../services/estado-equipo.service';
+import { AuthService } from '../services/auth.service';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { FormularioBajaModalComponent, DatosBaja } from '../components/formulario-baja-modal/formulario-baja-modal.component';
 import { catchError, of } from 'rxjs';
@@ -78,6 +79,7 @@ export class AssetsComponent implements OnInit {
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private estadoEquipoService: EstadoEquipoService,
+    private authService: AuthService,
     private modalService: NgbModal
   ) {
     this.filterForm = this.fb.group({
@@ -673,7 +675,7 @@ export class AssetsComponent implements OnInit {
     // Usar solo las observaciones escritas por el usuario
     const request: CambioEstadoRequest = {
       observaciones: datosFormulario.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
     
     this.estadoEquipoService.darDeBaja(asset.id, request).subscribe({
@@ -725,7 +727,7 @@ export class AssetsComponent implements OnInit {
 
     const request: CambioEstadoRequest = {
       observaciones: this.estadoObservaciones.trim(),
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     this.estadoEquipoService.enviarAAlmacen(this.assetToChangeState.id, request).subscribe({
@@ -800,12 +802,13 @@ export class AssetsComponent implements OnInit {
       almacenId: transferData.almacenId,
       tipoAlmacen: transferData.tipoAlmacen,
       observaciones: transferData.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
-    if (transferData.tipoAlmacen === 'regular') {
-      requestData.estanteria = transferData.estanteria;
-      requestData.estante = transferData.estante;
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
     }
 
     this.estadoEquipoService.transferirEquipo(asset.id, requestData).subscribe({

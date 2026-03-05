@@ -98,13 +98,15 @@
         <thead>
           <tr>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('tipo')" title="Ordenar por tipo">
                 <span>Tipo</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('tipo')"></i>
               </div>
             </th>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('nombre')" title="Ordenar por nombre">
                 <span>Nombre</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('nombre')"></i>
               </div>
             </th>
             <th>
@@ -113,13 +115,15 @@
               </div>
             </th>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('fecha')" title="Ordenar por fecha">
                 <span>Fecha de Baja</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('fecha')"></i>
               </div>
             </th>
             <th>
-              <div class="th-content">
+              <div class="th-content sortable" (click)="ordenarPor('usuario')" title="Ordenar por usuario">
                 <span>Usuario</span>
+                <i class="fas sort-icon" [ngClass]="getSortIcon('usuario')"></i>
               </div>
             </th>
             <th>
@@ -215,7 +219,7 @@
               <div class="action-buttons">
                 <button 
                   *ngIf="item.tipo === 'EQUIPO'"
-                  class="btn btn-primary btn-sm transferir-btn" 
+                  class="btn btn-sm transferir-btn" 
                   (click)="transferirEquipo(item); $event.stopPropagation()"
                   [disabled]="transferiendoItemId === item.id"
                   title="Transferir este equipo a otro almacén"

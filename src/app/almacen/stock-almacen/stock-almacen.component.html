@@ -100,10 +100,10 @@
           </div>
 
           <!-- Estanterías del almacén -->
-          <div class="estanterias-grid" [class.estanterias-grid-full]="esAlmacenCementerioOLaboratorio(almacenKey)">
+          <div class="estanterias-grid" [class.estanterias-grid-full]="usarLayoutSimplificado(almacenKey)">
             <div *ngFor="let estanteriaKey of getEstanterias(almacenKey)" 
                  class="estanteria-main-card" 
-                 [class.estanteria-main-card-full]="esAlmacenCementerioOLaboratorio(almacenKey)">
+                 [class.estanteria-main-card-full]="usarLayoutSimplificado(almacenKey)">
               <!-- Header de la estantería -->
               <div class="estanteria-card-header">
                 <div class="estanteria-icon">
@@ -113,8 +113,8 @@
                   <h4 class="estanteria-name">Estantería {{ estanteriaKey }}</h4>
                   <p class="estanteria-summary">
                     {{ getTotalStockPorEstanteria(almacenKey, estanteriaKey) }} items
-                    <span *ngIf="!esAlmacenCementerioOLaboratorio(almacenKey)" class="separator">•</span>
-                    <span *ngIf="!esAlmacenCementerioOLaboratorio(almacenKey)">{{ getEstantesPorEstanteria(almacenKey, estanteriaKey).length }} estantes</span>
+                    <span *ngIf="!usarLayoutSimplificado(almacenKey)" class="separator">•</span>
+                    <span *ngIf="!usarLayoutSimplificado(almacenKey)">{{ getEstantesPorEstanteria(almacenKey, estanteriaKey).length }} estantes</span>
                   </p>
                 </div>
                 <button
@@ -128,8 +128,8 @@
                 </button>
               </div>
 
-              <!-- Contenido: sin estantes (cementerio/laboratorio) o con estantes (regular) -->
-              <ng-container *ngIf="esAlmacenCementerioOLaboratorio(almacenKey); else conEstantes">
+              <!-- Contenido: sin estantes (sin config) o con estantes (con AlmacenConfig) -->
+              <ng-container *ngIf="usarLayoutSimplificado(almacenKey); else conEstantes">
                 <!-- Items directamente en la estantería (cementerio/laboratorio) -->
                 <div class="items-container items-horizontal items-container-directo">
                   <div *ngIf="getItemsPorEstanteria(almacenKey, estanteriaKey).length === 0" class="estante-vacio">

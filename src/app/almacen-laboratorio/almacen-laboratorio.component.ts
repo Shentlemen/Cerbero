@@ -9,6 +9,7 @@ import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { EstadoEquipoService, CambioEstadoRequest, EstadoEquipo } from '../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { AuthService } from '../services/auth.service';
 import { NetworkInfoService } from '../services/network-info.service';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
@@ -45,6 +46,10 @@ export class AlmacenLaboratorioComponent implements OnInit {
   // Filtro por tipo (todos, equipos, dispositivos)
   filtroTipo: 'todos' | 'equipos' | 'dispositivos' = 'todos';
 
+  // Ordenamiento
+  sortColumn: 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion' | '' = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   // Reactivación
   showReactivarDialog: boolean = false;
   equipoToReactivar: any = null;
@@ -63,6 +68,7 @@ export class AlmacenLaboratorioComponent implements OnInit {
     private biosService: BiosService,
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
+    private authService: AuthService,
     private networkInfoService: NetworkInfoService,
     private router: Router,
     private permissionsService: PermissionsService,
@@ -205,10 +211,117 @@ export class AlmacenLaboratorioComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  ordenarPor(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion'): void {
+    if (this.sortColumn === columna) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = columna;
+      this.sortDirection = 'asc';
+    }
+    this.page = 1;
+  }
+
+  isSortedBy(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion'): boolean {
+    return this.sortColumn === columna;
+  }
+
+  getSortIcon(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion'): string {
+    if (this.sortColumn !== columna) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  private getListaOrdenada(): any[] {
+    const lista = [...this.equiposFiltrados];
+    const col = this.sortColumn;
+    if (!col) return lista;
+    return lista.sort((a, b) => {
+      const valA = this.getValorOrdenamiento(a, col);
+      const valB = this.getValorOrdenamiento(b, col);
+      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
+      return this.sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  private getValorOrdenamiento(item: any, columna: 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion'): string | number {
+    switch (columna) {
+      case 'tipo':
+        return (item.tipo || '').toString();
+      case 'nombre':
+        return (item.name || item.mac || '').toLowerCase();
+      case 'fecha':
+        return item.fechaAlmacen ? new Date(item.fechaAlmacen).getTime() : 0;
+      case 'usuario':
+        return (item.usuarioCambio || '').toLowerCase();
+      case 'ubicacion':
+        return this.getUbicacionDisplay(item).toLowerCase();
+      default:
+        return '';
+    }
+  }
+
+  /** Extrae solo las observaciones de texto del usuario (sin Estantería/Estante/Sección) */
+  extraerSoloObservaciones(observaciones: string | null | undefined): string {
+    if (!observaciones || typeof observaciones !== 'string') return '';
+    const text = observaciones.trim();
+    const idx = text.indexOf(' | ');
+    if (idx >= 0) {
+      const parteAntes = text.substring(0, idx).trim();
+      const parteDespues = text.substring(idx + 3).trim();
+      if (/Estantería:\s*/i.test(parteDespues)) {
+        return parteAntes;
+      }
+    }
+    if (/Estantería:\s*/i.test(text)) {
+      return '';
+    }
+    return text;
+  }
+
+  /** Extrae ubicación (estantería, estante, sección) de las observaciones */
+  extraerUbicacionDeObservaciones(observaciones: string | null | undefined): { estanteria: string | null; estante: string | null; seccion: string | null } {
+    const result = { estanteria: null as string | null, estante: null as string | null, seccion: null as string | null };
+    if (!observaciones || typeof observaciones !== 'string') return result;
+    const text = observaciones.trim();
+    const estanteriaMatch = text.match(/Estantería:\s*([^,|]+)/i);
+    const estanteMatch = text.match(/Estante:\s*([^,|]+)/i);
+    const seccionMatch = text.match(/Sección:\s*([^,|]+)/i);
+    if (estanteriaMatch) result.estanteria = estanteriaMatch[1].trim();
+    if (estanteMatch) result.estante = estanteMatch[1].trim();
+    if (seccionMatch) result.seccion = seccionMatch[1].trim();
+    return result;
+  }
+
+  /** Formato de visualización: "E1 - 2 - A" o "Sin ubicación" */
+  getUbicacionDisplay(item: any): string {
+    const ubic = this.extraerUbicacionDeObservaciones(item?.observaciones);
+    const partes: string[] = [];
+    if (ubic.estanteria) partes.push(ubic.estanteria);
+    if (ubic.estante) partes.push(ubic.estante);
+    if (ubic.seccion) partes.push(ubic.seccion);
+    return partes.length > 0 ? partes.join(' - ') : 'Sin ubicación';
+  }
+
+  /** Reconstruye observaciones completas para guardar (solo obs + ubicación preservada) */
+  private construirObservacionesCompletas(soloObservaciones: string, item: any): string {
+    const ubic = this.extraerUbicacionDeObservaciones(item?.observaciones);
+    const tieneUbicacion = ubic.estanteria || ubic.estante || ubic.seccion;
+    const partes: string[] = [];
+    if (soloObservaciones.trim()) partes.push(soloObservaciones.trim());
+    if (tieneUbicacion) {
+      const ubParts: string[] = [];
+      if (ubic.estanteria) ubParts.push('Estantería: ' + ubic.estanteria);
+      if (ubic.estante) ubParts.push('Estante: ' + ubic.estante);
+      if (ubic.seccion) ubParts.push('Sección: ' + ubic.seccion);
+      partes.push(ubParts.join(', '));
+    }
+    return partes.join(' | ');
+  }
+
   get pagedEquipos(): any[] {
+    const listaOrdenada = this.getListaOrdenada();
     const startItem = (this.page - 1) * this.pageSize;
     const endItem = this.page * this.pageSize;
-    return this.equiposFiltrados.slice(startItem, endItem);
+    return listaOrdenada.slice(startItem, endItem);
   }
 
   /**
@@ -381,7 +494,7 @@ export class AlmacenLaboratorioComponent implements OnInit {
 
     const request: CambioEstadoDispositivoRequest = {
       observaciones: '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     console.log('📤 Enviando request de reactivación:', request);
@@ -424,7 +537,7 @@ export class AlmacenLaboratorioComponent implements OnInit {
 
     const request: CambioEstadoRequest = {
       observaciones: '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
     this.estadoEquipoService.reactivarEquipo(equipo.id, request).subscribe({
@@ -497,7 +610,7 @@ export class AlmacenLaboratorioComponent implements OnInit {
     }
     const itemId = item.tipo === 'EQUIPO' ? item.id : item.mac;
     this.editingObservacionesId = itemId;
-    this.editingObservacionesValue = item.observaciones || '';
+    this.editingObservacionesValue = this.extraerSoloObservaciones(item.observaciones);
   }
 
   cancelarEdicionObservaciones(event?: Event): void {
@@ -517,20 +630,19 @@ export class AlmacenLaboratorioComponent implements OnInit {
     }
 
     this.updatingObservaciones = true;
-    const observaciones = this.editingObservacionesValue.trim();
+    const observacionesCompletas = this.construirObservacionesCompletas(this.editingObservacionesValue, item);
 
     if (item.tipo === 'EQUIPO') {
-      this.estadoEquipoService.actualizarObservaciones(item.id, observaciones).subscribe({
+      this.estadoEquipoService.actualizarObservaciones(item.id, observacionesCompletas).subscribe({
         next: (response) => {
           if (response.success) {
-            // Actualizar el item en la lista local
             const equipoIndex = this.equiposEnAlmacen.findIndex(e => e.id === item.id);
             if (equipoIndex !== -1) {
-              this.equiposEnAlmacen[equipoIndex].observaciones = observaciones;
+              this.equiposEnAlmacen[equipoIndex].observaciones = observacionesCompletas;
             }
             const filtradoIndex = this.equiposFiltrados.findIndex(e => e.id === item.id);
             if (filtradoIndex !== -1) {
-              this.equiposFiltrados[filtradoIndex].observaciones = observaciones;
+              this.equiposFiltrados[filtradoIndex].observaciones = observacionesCompletas;
             }
             this.notificationService.showSuccessMessage('Observaciones actualizadas exitosamente');
           } else {
@@ -551,17 +663,16 @@ export class AlmacenLaboratorioComponent implements OnInit {
         }
       });
     } else if (item.tipo === 'DISPOSITIVO') {
-      this.estadoDispositivoService.actualizarObservaciones(item.mac, observaciones).subscribe({
+      this.estadoDispositivoService.actualizarObservaciones(item.mac, observacionesCompletas).subscribe({
         next: (response) => {
           if (response.success) {
-            // Actualizar el item en la lista local
             const dispositivoIndex = this.dispositivosEnAlmacen.findIndex(d => d.mac === item.mac);
             if (dispositivoIndex !== -1) {
-              this.dispositivosEnAlmacen[dispositivoIndex].observaciones = observaciones;
+              this.dispositivosEnAlmacen[dispositivoIndex].observaciones = observacionesCompletas;
             }
             const filtradoIndex = this.equiposFiltrados.findIndex(d => d.mac === item.mac);
             if (filtradoIndex !== -1) {
-              this.equiposFiltrados[filtradoIndex].observaciones = observaciones;
+              this.equiposFiltrados[filtradoIndex].observaciones = observacionesCompletas;
             }
             this.notificationService.showSuccessMessage('Observaciones actualizadas exitosamente');
           } else {
@@ -624,12 +735,13 @@ export class AlmacenLaboratorioComponent implements OnInit {
       almacenId: transferData.almacenId,
       tipoAlmacen: transferData.tipoAlmacen,
       observaciones: transferData.observaciones || '',
-      usuario: 'Usuario' // TODO: Obtener del contexto de autenticación
+      usuario: this.authService.getUsuarioParaAuditoria()
     };
 
-    if (transferData.tipoAlmacen === 'regular') {
-      requestData.estanteria = transferData.estanteria;
-      requestData.estante = transferData.estante;
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
     }
 
     this.estadoEquipoService.transferirEquipo(item.id, requestData).subscribe({
@@ -695,12 +807,13 @@ export class AlmacenLaboratorioComponent implements OnInit {
       item.tipo === 'EQUIPO' ? (item.ipAddr || 'N/A') : (item.ip || 'N/A'),
       this.formatFecha(item.fechaAlmacen),
       item.usuarioCambio || 'No especificado',
-      item.observaciones || 'Sin observaciones'
+      this.getUbicacionDisplay(item),
+      this.extraerSoloObservaciones(item.observaciones) || 'Sin observaciones'
     ]);
     
     // Crear la tabla
     autoTable(doc, {
-      head: [['Tipo', 'Nombre', 'Detalles', 'IP', 'Fecha de Almacén', 'Usuario', 'Observaciones']],
+      head: [['Tipo', 'Nombre', 'Detalles', 'IP', 'Fecha de Almacén', 'Usuario', 'Ubicación', 'Observaciones']],
       body: tableData,
       startY: 46,
       styles: { fontSize: 7, cellPadding: 2 },

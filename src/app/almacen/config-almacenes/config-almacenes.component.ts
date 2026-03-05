@@ -74,7 +74,7 @@ export class ConfigAlmacenesComponent implements OnInit {
     });
   }
 
-  abrirModalConfig(modal: any, config?: AlmacenConfig): void {
+  abrirModalConfig(modal: any, config?: AlmacenConfig, almacenPreseleccionado?: Almacen): void {
     this.modoEdicionConfig = !!config;
     this.configSeleccionada = config || null;
 
@@ -87,8 +87,9 @@ export class ConfigAlmacenesComponent implements OnInit {
         divisionesEstante: config.divisionesEstante
       });
     } else {
+      const almacenId = almacenPreseleccionado?.id ?? '';
       this.almacenConfigForm.reset({
-        almacenId: '',
+        almacenId,
         nombre: '',
         cantidadEstanterias: 1,
         cantidadEstantesPorEstanteria: 1,

@@ -73,6 +73,17 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  /**
+   * Obtiene el identificador del usuario actual para auditoría (estado de equipos, traslados, etc.).
+   * Usa nombre completo si está disponible, si no username, o 'Sistema' si no hay sesión.
+   */
+  getUsuarioParaAuditoria(): string {
+    const user = this.getCurrentUser();
+    if (!user) return 'Sistema';
+    const nombreCompleto = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    return nombreCompleto || user.username || 'Usuario';
+  }
+
   hasRole(role: string): boolean {
     const user = this.getCurrentUser();
     return user?.role === role;

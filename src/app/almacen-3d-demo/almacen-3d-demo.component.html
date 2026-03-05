@@ -8,13 +8,28 @@
     <p class="mt-2">Cargando datos del almacén...</p>
   </div>
 
-  <div class="content-wrapper">
-    <!-- Componente 3D -->
+  <div class="selector-almacen" *ngIf="almacenes.length > 0">
+    <label for="almacen-select">
+      <i class="fas fa-warehouse me-2"></i>Almacén para vista 3D:
+    </label>
+    <select
+      id="almacen-select"
+      class="form-select"
+      [(ngModel)]="almacenSeleccionado"
+      (ngModelChange)="onAlmacenCambio()"
+      [compareWith]="compareAlmacenes">
+      <option *ngFor="let a of almacenes" [ngValue]="a">
+        {{ a.numero }} - {{ a.nombre }}
+        {{ almacenConfigsMap.has(a.id) ? '(con estructura)' : '(sin estructura)' }}
+      </option>
+    </select>
+  </div>
+
+  <div class="content-wrapper" *ngIf="almacenSeleccionado">
     <app-almacen-3d
-      [almacenId]="'ALM02'"
-      [estanteriaId]="'E1'"
-      [niveles]="3"
-      [cajasporNivel]="4"
+      [almacenId]="almacenSeleccionado.numero || 'Sin número'"
+      [almacenNombre]="almacenSeleccionado.nombre || ''"
+      [config]="configSeleccionada"
       [stockData]="stockData3D"
       (cajaSeleccionada)="onCajaSeleccionada($event)">
     </app-almacen-3d>
@@ -22,11 +37,16 @@
 
   <!-- Modal de detalle de caja -->
   <div *ngIf="mostrarModal" class="modal-overlay" (click)="cerrarModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-content" [class.modal-montana]="esMontana()" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <i class="fas fa-box-open"></i>
-          Estantería {{ cajaSeleccionada?.estanteria }} - Estante {{ cajaSeleccionada?.nivel }} - Sección {{ cajaSeleccionada?.seccion?.toUpperCase() }}
+          <i class="fas" [ngClass]="esMontana() ? 'fa-cubes' : 'fa-box-open'"></i>
+          <ng-container *ngIf="esMontana(); else tituloCaja">
+            Contenido del almacén (sin estructura)
+          </ng-container>
+          <ng-template #tituloCaja>
+            Estantería {{ cajaSeleccionada?.estanteria }} - Estante {{ cajaSeleccionada?.nivel }} - Sección {{ cajaSeleccionada?.seccion?.toUpperCase() }}
+          </ng-template>
         </h3>
         <button class="close-btn" (click)="cerrarModal()">
           <i class="fas fa-times"></i>
@@ -35,14 +55,14 @@
       
       <div class="modal-body">
         <div *ngIf="tieneContenido(); else sinContenido">
-          <h4>Contenido de la caja:</h4>
+          <h4>{{ esMontana() ? 'Items en el almacén:' : 'Contenido de la caja:' }}</h4>
           <div class="items-list">
             <div *ngFor="let item of cajaSeleccionada?.contenido || []" 
                  class="item-card"
                  [class.clickable]="!!item?.id"
                  (click)="item?.id && abrirModalCantidad(item)">
               <div class="item-info">
-                <span class="item-nombre">{{ item.item?.nombreItem || item.nombre || 'Sin nombre' }}</span>
+                <span class="item-nombre">{{ item.item?.nombreItem || item.nombre || item.name || 'Sin nombre' }}</span>
                 <span class="item-cantidad">x{{ item.cantidad || 1 }}</span>
                 <span *ngIf="item.numero" class="item-numero">{{ item.numero }}</span>
               </div>
@@ -55,7 +75,7 @@
         <ng-template #sinContenido>
           <div class="empty-box">
             <i class="fas fa-box fa-3x"></i>
-            <p>Esta caja está vacía</p>
+            <p>{{ esMontana() ? 'El almacén está vacío' : 'Esta caja está vacía' }}</p>
           </div>
         </ng-template>
       </div>

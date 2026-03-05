@@ -1,79 +1,51 @@
-/* Estilo Profesional para Gestión de Usuarios */
+/* User Management - Estilos alineados con el resto de la aplicación */
 
-.user-management-container {
-  min-height: 100vh;
-  background: #f8f9fa;
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* Sección de filtros */
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
 }
 
-.content-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 30px;
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-/* Título profesional */
-.page-title {
-  color: #2c3e50;
-  font-size: 2rem;
+.filters-section .filter-group-label {
+  font-size: 0.9rem;
   font-weight: 600;
-  text-align: center;
-  margin-bottom: 30px;
-  border-bottom: 2px solid #3498db;
-  padding-bottom: 10px;
+  color: #2c3e50;
 }
 
-/* Mensajes profesionales */
-.error-message {
-  background: #e74c3c;
-  color: white;
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: none;
+.filters-section .filters-container {
+  margin-top: 0;
 }
 
-.success-message {
-  background: #27ae60;
-  color: white;
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: none;
+/* Botones de filtro con color siempre visible (como al pasar el mouse) */
+.filters-section .filter-btn-colored {
+  background: var(--device-bg-color, #e3f2fd) !important;
+  border-color: var(--device-border-color, #bbdefb) !important;
+  color: var(--device-color, #1976d2) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Botón de agregar usuario profesional */
-.button-container {
-  text-align: right;
-  margin-bottom: 25px;
+.filters-section .filter-btn-colored:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.add-user-btn {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.filters-section .filter-btn-colored.active {
+  background: var(--device-bg-color, #e3f2fd) !important;
+  border-color: var(--device-color, #1976d2) !important;
+  color: var(--device-color, #1976d2) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.add-user-btn:hover {
-  background: #2980b9;
-}
-
-.add-user-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-}
-
-/* Modal profesional */
+/* Modal personalizado */
 .user-modal {
   position: fixed;
   top: 0;
@@ -84,305 +56,147 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1050;
+  padding: 1rem;
 }
 
-.modal-content {
+.user-modal .modal-content {
   background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 85vh;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.modal-header {
-  background: #3498db;
-  padding: 20px;
-  border-radius: 8px 8px 0 0;
-  text-align: center;
+.user-modal .modal-header {
+  background: #f8f9fa;
+  padding: 1.25rem 1.5rem;
+  border-radius: 15px 15px 0 0;
+  border-bottom: 1px solid #e9ecef;
 }
 
-.modal-title {
-  color: white;
-  font-size: 1.5rem;
+.user-modal .modal-title {
+  color: #2c3e50;
+  font-size: 1.35rem;
   font-weight: 600;
   margin: 0;
-}
-
-/* Formulario profesional */
-form {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #2c3e50;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.3s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.form-group input.ng-invalid.ng-touched {
-  border-color: #e74c3c;
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
-}
-
-.password-hint {
-  color: #7f8c8d;
-  font-size: 12px;
-  font-style: italic;
-}
-
-/* Botones del modal profesionales */
-.modal-actions {
   display: flex;
-  gap: 12px;
+  align-items: center;
+}
+
+.user-modal .modal-title i {
+  color: #212529;
+}
+
+.user-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.user-modal .modal-footer {
+  display: flex;
   justify-content: flex-end;
-  padding: 20px;
-  border-top: 1px solid #ecf0f1;
-}
-
-.save-btn {
-  background: #27ae60;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.save-btn:hover {
-  background: #229954;
-}
-
-.save-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-}
-
-.cancel-btn {
-  background: #95a5a6;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.cancel-btn:hover {
-  background: #7f8c8d;
-}
-
-/* Tabla profesional */
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  background: white;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.users-table th {
-  background: #34495e;
-  color: white;
-  padding: 15px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.users-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #ecf0f1;
-  font-size: 14px;
-}
-
-.users-table tr:hover td {
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e9ecef;
   background: #f8f9fa;
+  border-radius: 0 0 15px 15px;
 }
 
-.users-table tr:last-child td {
-  border-bottom: none;
+.user-modal .form-control,
+.user-modal .form-select {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.95rem;
+  border-radius: 8px;
 }
 
-/* Badges profesionales */
+/* Badges de rol */
 .role-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .role-gm {
-  background: #e74c3c;
-  color: white;
+  background: #fce8e8;
+  color: #c82333;
 }
 
 .role-admin {
-  background: #f39c12;
-  color: white;
+  background: #fff3cd;
+  color: #856404;
 }
 
 .role-user {
-  background: #3498db;
-  color: white;
+  background: #e2e8f0;
+  color: #2c3e50;
 }
 
+/* Badges de estado */
 .status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .status-active {
-  background: #27ae60;
-  color: white;
+  background: #d4edda;
+  color: #155724;
 }
 
 .status-inactive {
-  background: #e74c3c;
-  color: white;
+  background: #f8d7da;
+  color: #721c24;
 }
 
-.current-user-badge {
-  background: #9b59b6;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  margin-left: 6px;
+/* Botones de acción en tabla */
+.action-buttons {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
-/* Botones de acción profesionales */
-.action-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-right: 6px;
-  transition: background-color 0.3s ease;
+.action-buttons .btn-sm {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
 }
 
-.edit-btn {
-  background: #3498db;
-  color: white;
+/* Tabla - aprovechar más espacio */
+.users-table th,
+.users-table td {
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
 }
 
-.edit-btn:hover {
-  background: #2980b9;
+.users-table th {
+  font-size: 1rem;
 }
 
-.delete-btn {
-  background: #e74c3c;
-  color: white;
-}
-
-.delete-btn:hover {
-  background: #c0392b;
-}
-
-.delete-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-}
-
-/* Loading profesional */
-.loading-container {
-  text-align: center;
-  padding: 40px;
-}
-
-.loading-spinner {
-  border: 3px solid #ecf0f1;
-  border-top: 3px solid #3498db;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 15px;
-}
-
-.loading-container p {
-  color: #7f8c8d;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Estado vacío profesional */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #7f8c8d;
-  font-size: 16px;
-  font-weight: 500;
+/* Responsive filtros */
+@media (max-width: 992px) {
+  .filters-row {
+    flex-direction: column;
+  }
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .content-wrapper {
-    padding: 15px;
+  .user-modal .modal-content {
+    max-height: 95vh;
+    margin: 0.5rem;
   }
   
-  .page-title {
-    font-size: 1.5rem;
-  }
-  
-  .users-table {
-    font-size: 12px;
+  .user-modal .modal-body {
+    padding: 1rem;
   }
   
   .users-table th,
   .users-table td {
-    padding: 8px 6px;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
   }
-  
-  .modal-content {
-    width: 95%;
-    margin: 10px;
-  }
-  
-  .modal-actions {
-    flex-direction: column;
-  }
-} 
+}

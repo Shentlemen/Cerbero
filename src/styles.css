@@ -39,8 +39,8 @@ body {
 
 .pagination .page-item .page-link {
   color: #2c3e50 !important;
-  background-color: #d5e8f3 !important;
-  border-color: #a8d1e7 !important;
+  background-color: #fce8e8 !important;
+  border-color: #f5c6cb !important;
   font-family: 'Arial', sans-serif !important;
   font-weight: bold !important;
   padding: 6px 12px !important;
@@ -49,29 +49,29 @@ body {
 
 .pagination .page-item.active .page-link {
   color: #ffffff !important;
-  background-color: #85c1e9 !important;
-  border-color: #5a9bd5 !important;
+  background-color: #dc3545 !important;
+  border-color: #c82333 !important;
 }
 
 .pagination .page-item .page-link:hover,
 .pagination .page-item .page-link:focus {
   color: #ffffff !important;
-  background-color: #85c1e9 !important;
-  border-color: #5a9bd5 !important;
+  background-color: #dc3545 !important;
+  border-color: #c82333 !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3) !important;
 }
 
 /* Estilos específicos para botones de primera y última página */
 .pagination .page-item:first-child .page-link,
 .pagination .page-item:last-child .page-link {
-  background-color: #b3d9f0 !important;
-  color: #2c3e50 !important;
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
 }
 
 .pagination .page-item:first-child .page-link:hover,
 .pagination .page-item:last-child .page-link:hover {
-  background-color: #85c1e9 !important;
+  background-color: #dc3545 !important;
   color: #ffffff !important;
 }
 
@@ -159,8 +159,8 @@ body ngb-pagination.custom-pagination ul.pagination .page-item .page-link {
   justify-content: center !important;
   border-radius: 10px !important;
   border: 2px solid transparent !important;
-  background-color: #f0f4f8 !important;
-  color: #475569 !important;
+  background-color: #fce8e8 !important;
+  color: #721c24 !important;
   font-weight: 600 !important;
   font-size: 0.95rem !important;
   transition: all 0.2s ease !important;
@@ -173,20 +173,20 @@ body ngb-pagination.custom-pagination ul.pagination .page-item:last-child .page-
   width: auto !important;
   padding: 0 15px !important;
   font-size: 0.9rem !important;
-  background-color: #e8eef7 !important;
+  background-color: #f8d7da !important;
 }
 
 body ngb-pagination.custom-pagination ul.pagination .page-item .page-link:hover {
-  background-color: #e2e8f0 !important;
-  color: #3498db !important;
+  background-color: #dc3545 !important;
+  color: white !important;
   transform: translateY(-1px) !important;
 }
 
 body ngb-pagination.custom-pagination ul.pagination .page-item.active .page-link {
-  background-color: #3498db !important;
+  background-color: #dc3545 !important;
   color: white !important;
-  border-color: #3498db !important;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25) !important;
+  border-color: #dc3545 !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25) !important;
 }
 
 body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-link {
@@ -527,7 +527,7 @@ button.btn.btn-danger:active {
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
   opacity: 0.9;
 }
@@ -581,7 +581,7 @@ button.btn.btn-danger:active {
 }
 
 .generic-table th.active {
-  color: #3498db;
+  color: #212529;
 }
 
 .generic-table td {
@@ -673,7 +673,7 @@ button.btn.btn-danger:active {
 }
 
 .modal-title i {
-  color: #3498db;
+  color: #212529;
 }
 
 .modal-body {
@@ -721,7 +721,7 @@ button.btn.btn-danger:active {
 }
 
 .detail-label i {
-  color: #3498db;
+  color: #212529;
   width: 20px;
   font-size: 1.1rem;
 }
@@ -851,7 +851,7 @@ button.btn.btn-danger:active {
 
 .item-name i {
   font-size: 1.2rem;
-  color: #3498db;
+  color: #212529;
 }
 
 /* Estilos comunes para listas */
@@ -917,7 +917,7 @@ button.btn.btn-danger:active {
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
   opacity: 0.9;
 }
@@ -1056,22 +1056,22 @@ ngb-pagination.custom-pagination {
   border-radius: 8px;
   margin: 0 4px;
   border: none;
-  background: #f0f4f8;
-  color: var(--text-color);
+  background: #fce8e8;
+  color: #721c24;
   font-weight: 500;
   transition: var(--transition);
 }
 
 .custom-pagination .page-link:hover {
-  background: #e2e8f0;
-  color: #3498db;
+  background: #dc3545;
+  color: white;
   transform: translateY(-2px);
 }
 
 .custom-pagination .active .page-link {
-  background: #3498db;
+  background: #dc3545;
   color: white;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
 }
 
 /* Mejoras en los badges y pills */
@@ -1152,7 +1152,7 @@ ngb-pagination.custom-pagination {
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
   opacity: 0.9;
 }
@@ -1205,7 +1205,7 @@ ngb-pagination.custom-pagination {
 }
 
 .generic-table th.active {
-  color: #3498db;
+  color: #212529;
 }
 
 .generic-table td {
@@ -1314,7 +1314,7 @@ ngb-pagination.custom-pagination {
 }
 
 .modal-title i {
-  color: #3498db;
+  color: #212529;
 }
 
 .modal-body {
@@ -1378,7 +1378,7 @@ ngb-pagination.custom-pagination {
 }
 
 .stat-pill i {
-  color: #3498db;
+  color: #212529;
 }
 
 .stat-pill.total {
@@ -1401,7 +1401,7 @@ ngb-pagination.custom-pagination {
 }
 
 .item-name i {
-  color: #3498db;
+  color: #212529;
 }
 
 /* Estilos comunes para listas */
@@ -1792,6 +1792,17 @@ ngb-pagination.custom-pagination {
 /* Usamos zoom pero ajustamos las gráficas para que funcionen correctamente */
 body {
   zoom: 0.8;
+}
+
+/* Iconos rojos en modales de detalles de activo - estilo similar a items del almacén */
+.activo-details-modal .detail-label i {
+  color: #e74c3c;
+  margin-right: 0.5rem;
+  width: 18px;
+  text-align: center;
+}
+.activo-details-modal .modal-title i {
+  color: #e74c3c;
 }
 
 /* Estilos globales para el backdrop del modal - funciona con zoom */

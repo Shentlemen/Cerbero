@@ -17,11 +17,14 @@ import { NotificationContainerComponent } from '../components/notification-conta
 export class UserManagementComponent implements OnInit {
   users: User[] = [];
   userForm: FormGroup;
+  filterForm: FormGroup;
   loading = false;
   errorMessage = '';
   successMessage = '';
   showForm = false;
   editingUser: User | null = null;
+  filtroEstado: 'todos' | 'activo' | 'inactivo' = 'todos';
+  filtroRol: 'todos' | string = 'todos';
 
   roles = [
     { value: 'USER', label: 'Usuario' },
@@ -35,6 +38,9 @@ export class UserManagementComponent implements OnInit {
     private modalService: NgbModal,
     private notificationService: NotificationService
   ) {
+    this.filterForm = this.fb.group({
+      search: ['']
+    });
     this.userForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
@@ -228,6 +234,80 @@ export class UserManagementComponent implements OnInit {
   getRoleLabel(role: string): string {
     const roleObj = this.roles.find(r => r.value === role);
     return roleObj ? roleObj.label : role;
+  }
+
+  get usersFiltrados(): User[] {
+    const search = (this.filterForm.get('search')?.value || '').toLowerCase().trim();
+    return this.users.filter(user => {
+      const matchSearch = !search ||
+        (user.username?.toLowerCase().includes(search) ||
+         user.email?.toLowerCase().includes(search) ||
+         user.firstName?.toLowerCase().includes(search) ||
+         user.lastName?.toLowerCase().includes(search) ||
+         `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(search) ||
+         `${user.lastName || ''} ${user.firstName || ''}`.toLowerCase().includes(search));
+      const matchEstado = this.filtroEstado === 'todos' ||
+        (this.filtroEstado === 'activo' && user.enabled) ||
+        (this.filtroEstado === 'inactivo' && !user.enabled);
+      const matchRol = this.filtroRol === 'todos' || user.role === this.filtroRol;
+      return matchSearch && matchEstado && matchRol;
+    });
+  }
+
+  setFiltroEstado(estado: 'todos' | 'activo' | 'inactivo'): void {
+    this.filtroEstado = estado;
+  }
+
+  setFiltroRol(rol: 'todos' | string): void {
+    this.filtroRol = rol;
+  }
+
+  getActivosCount(): number {
+    return this.users.filter(u => u.enabled).length;
+  }
+
+  getInactivosCount(): number {
+    return this.users.filter(u => !u.enabled).length;
+  }
+
+  getRolCount(role: string): number {
+    return this.users.filter(u => u.role === role).length;
+  }
+
+  getRolColor(role: string): string {
+    const colors: Record<string, string> = {
+      GM: '#721c24',
+      ADMIN: '#856404',
+      USER: '#2c3e50'
+    };
+    return colors[role] || '#6c757d';
+  }
+
+  getRolBgColor(role: string): string {
+    const colors: Record<string, string> = {
+      GM: '#f8d7da',
+      ADMIN: '#fff3cd',
+      USER: '#e2e8f0'
+    };
+    return colors[role] || '#f8f9fa';
+  }
+
+  getRolBorderColor(role: string): string {
+    const colors: Record<string, string> = {
+      GM: '#f5c6cb',
+      ADMIN: '#ffeaa7',
+      USER: '#cbd5e1'
+    };
+    return colors[role] || '#dee2e6';
+  }
+
+  getRolIcon(role: string): string {
+    const icons: Record<string, string> = {
+      GM: 'fa-crown',
+      ADMIN: 'fa-user-shield',
+      USER: 'fa-user'
+    };
+    return icons[role] || 'fa-user';
   }
 
   isCurrentUser(user: User): boolean {

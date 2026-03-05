@@ -28,7 +28,7 @@
 }
 
 .title-wrapper h1 i {
-  color: #3498db;
+  color: #212529;
   font-size: 2rem;
 }
 
@@ -58,7 +58,7 @@
 
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   margin-top: 1.5rem;
 }
