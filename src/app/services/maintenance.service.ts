@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+/** Tiempo máximo (ms) para esperar confirmación del backend en activación optimista */
+const OPTIMISTIC_TIMEOUT_MS = 15000;
+
 export interface MaintenanceLog {
   timestamp: string;
   message: string;
@@ -35,6 +38,9 @@ export class MaintenanceService {
 
   private pollingSubscription: Subscription | null = null;
   private lastLogCount = 0;
+  /** True cuando el overlay se activó al hacer clic en "Verificar cambios" (backend puede no haber activado aún) */
+  private isOptimisticActivation = false;
+  private optimisticStartTime = 0;
 
   constructor(private http: HttpClient) {
     // Iniciar polling lento para detectar activación de mantenimiento
@@ -42,11 +48,11 @@ export class MaintenanceService {
   }
 
   /**
-   * Polling lento (cada 5 seg) cuando NO hay mantenimiento activo
+   * Polling (cada 2.5 seg) cuando NO hay mantenimiento activo - detecta más rápido
    */
   private startSlowPolling(): void {
     this.stopPolling();
-    this.pollingSubscription = interval(5000).subscribe(() => {
+    this.pollingSubscription = interval(2500).subscribe(() => {
       if (!this.maintenanceModeSubject.value) {
         this.checkForMaintenanceActivation();
       }
@@ -112,7 +118,18 @@ export class MaintenanceService {
     this.http.get<MaintenanceStatus>(`${environment.apiUrl}/maintenance/status`).subscribe({
       next: (status) => {
         if (!status.maintenance) {
-          // Mantenimiento terminó
+          // En activación optimista: el backend puede no haber activado aún
+          if (this.isOptimisticActivation) {
+            const elapsed = Date.now() - this.optimisticStartTime;
+            if (elapsed < OPTIMISTIC_TIMEOUT_MS) {
+              return; // Seguir esperando, no desactivar
+            }
+            // Timeout: la verificación falló (ej. 409)
+            console.log('⚠️ Activación optimista timeout - desactivando overlay');
+            this.cancelOptimisticActivation();
+            return;
+          }
+          // Mantenimiento terminó normalmente
           console.log('✅ Modo mantenimiento FINALIZADO - recargando página');
           this.maintenanceModeSubject.next(false);
           this.logsSubject.next([]);
@@ -120,6 +137,11 @@ export class MaintenanceService {
           this.startSlowPolling();
           window.location.reload();
           return;
+        }
+
+        // Backend confirmó mantenimiento - dejar de ser optimista
+        if (this.isOptimisticActivation) {
+          this.isOptimisticActivation = false;
         }
 
         // Actualizar minutos restantes
@@ -144,7 +166,56 @@ export class MaintenanceService {
   }
 
   /**
-   * Establece el estado de mantenimiento localmente
+   * Activa el overlay inmediatamente al hacer clic en "Verificar cambios".
+   * Inicia polling para obtener logs. Si el backend no activa en ~15s, se cancela (ej. error 409).
+   */
+  activateOptimistic(reason: string): void {
+    this.isOptimisticActivation = true;
+    this.optimisticStartTime = Date.now();
+    this.maintenanceModeSubject.next(true);
+    this.maintenanceReasonSubject.next(reason);
+    this.logsSubject.next([]);
+    this.lastLogCount = 0;
+    this.startFastPolling();
+  }
+
+  /**
+   * Cancela la activación optimista (ej. cuando la verificación falla con 409)
+   */
+  cancelOptimisticActivation(): void {
+    this.isOptimisticActivation = false;
+    this.maintenanceModeSubject.next(false);
+    this.maintenanceReasonSubject.next('');
+    this.logsSubject.next([]);
+    this.lastLogCount = 0;
+    this.startSlowPolling();
+  }
+
+  /**
+   * Llamado cuando se recibe 503 (otro usuario bloqueado). Obtiene logs e inicia polling.
+   */
+  onMaintenanceDetectedFrom503(reason: string): void {
+    this.maintenanceModeSubject.next(true);
+    this.maintenanceReasonSubject.next(reason);
+    this.isOptimisticActivation = false;
+    // Obtener estado completo (incl. logs) - /maintenance/status está permitido durante mantenimiento
+    this.http.get<MaintenanceStatus>(`${environment.apiUrl}/maintenance/status`).subscribe({
+      next: (status) => {
+        if (status.logs && status.logs.length > 0) {
+          this.logsSubject.next(status.logs);
+          this.lastLogCount = status.logs.length;
+        }
+        this.remainingMinutesSubject.next(status.remainingMinutes);
+        this.startFastPolling();
+      },
+      error: () => {
+        this.startFastPolling(); // Igual empezar polling para obtener logs después
+      }
+    });
+  }
+
+  /**
+   * Establece el estado de mantenimiento localmente (legacy, para compatibilidad)
    */
   setMaintenanceMode(isActive: boolean, reason: string = '', remainingMinutes: number = 0): void {
     this.maintenanceModeSubject.next(isActive);

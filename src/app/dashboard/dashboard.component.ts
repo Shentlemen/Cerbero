@@ -17,6 +17,7 @@ import { ConfigService } from '../services/config.service';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
 import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
+import { MaintenanceService } from '../services/maintenance.service';
 
 declare var bootstrap: any;
 
@@ -80,7 +81,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private configService: ConfigService,
     private http: HttpClient,
     private authService: AuthService,
-    private estadoDispositivoService: EstadoDispositivoService
+    private estadoDispositivoService: EstadoDispositivoService,
+    private maintenanceService: MaintenanceService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -812,6 +814,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const currentPage = this.page;
     
     this.isChecking = true;
+    // Activar overlay inmediatamente (evita delay de hasta 5 seg del polling)
+    this.maintenanceService.activateOptimistic('Verificación de cambios en progreso. Por favor espere...');
     // Forzar detección de cambios para asegurar que la animación se muestre
     this.cdr.detectChanges();
     
@@ -831,6 +835,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       },
       error: (error) => {
         console.error('Error al verificar cambios:', error);
+        // Cancelar overlay optimista (la verificación falló)
+        this.maintenanceService.cancelOptimisticActivation();
         
         // Mostrar mensaje específico para conflictos de concurrencia
         if (error.status === 409) {

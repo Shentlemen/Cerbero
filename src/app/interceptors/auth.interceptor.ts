@@ -45,7 +45,7 @@ export function AuthInterceptor(request: HttpRequest<unknown>, next: HttpHandler
       // Manejar modo mantenimiento (503 Service Unavailable)
       if (error.status === 503 && error.error?.error === 'MAINTENANCE_MODE') {
         console.log('🔧 Sistema en modo mantenimiento:', error.error.reason);
-        maintenanceService.setMaintenanceMode(true, error.error.reason);
+        maintenanceService.onMaintenanceDetectedFrom503(error.error.reason || 'Operación en progreso');
         return throwError(() => error);
       }
       
