@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Almacen3DComponent, CajaInfo, StockItem } from '../components/almacen-3d/almacen-3d.component';
@@ -26,7 +26,7 @@ import { forkJoin } from 'rxjs';
   templateUrl: './almacen-3d-demo.component.html',
   styleUrls: ['./almacen-3d-demo.component.css']
 })
-export class Almacen3DDemoComponent implements OnInit {
+export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   
   cajaSeleccionada: CajaInfo | null = null;
   mostrarModal: boolean = false;
@@ -52,6 +52,9 @@ export class Almacen3DDemoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Desactivar el zoom global mientras se muestra la demo 3D
+    document.body.classList.add('no-global-zoom');
+
     forkJoin({
       almacenes: this.almacenService.getAllAlmacenes(),
       configs: this.almacenConfigService.getAllConfigs()
@@ -77,6 +80,11 @@ export class Almacen3DDemoComponent implements OnInit {
         console.error('Error al cargar almacenes/config:', err);
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    // Restaurar el zoom global al salir del componente 3D
+    document.body.classList.remove('no-global-zoom');
   }
 
   compareAlmacenes(a: any, b: any): boolean {

@@ -1788,9 +1788,11 @@ ngb-pagination.custom-pagination {
   box-shadow: none !important;
 }
 
-/* Configuración global de zoom - Reducir tamaño del 20% */
+/* Configuración global de zoom - Reducir tamaño del 20%
+   Nota: no se aplica cuando el body tiene la clase .no-global-zoom
+   (por ejemplo, en la demo de almacén 3D). */
 /* Usamos zoom pero ajustamos las gráficas para que funcionen correctamente */
-body {
+body:not(.no-global-zoom) {
   zoom: 0.8;
 }
 
