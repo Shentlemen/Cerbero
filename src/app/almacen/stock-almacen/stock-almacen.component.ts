@@ -863,7 +863,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
    * Verifica si el usuario puede gestionar stock
    */
   canManageStock(): boolean {
-    return this.permissionsService.canManageAssets();
+    // En Stock por almacén, GM, Admin y Almacén pueden gestionar stock
+    return this.permissionsService.canManageWarehouseAssets();
   }
 
   /** Abre el modal de registrar stock sin cambiar de pantalla, con el almacén actual pre-seleccionado */

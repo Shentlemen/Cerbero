@@ -5,8 +5,6 @@
   min-height: 0;
   width: 100%;
   height: 100%;
-  /* Anular el zoom del body solo para este componente */
-  zoom: 1.25; /* 1 / 0.8 = 1.25 para compensar el zoom: 0.8 del body */
 }
 
 .demo-container {

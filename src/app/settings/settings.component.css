@@ -36,9 +36,10 @@
 
 .sync-controls {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1.25rem;
-  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
   padding: 1.5rem;
   background: #f8f9fa;
   border-radius: 12px;
@@ -85,7 +86,7 @@
   font-weight: 500;
   border-radius: 8px;
   transition: all 0.3s ease;
-  align-self: flex-start;
+  align-self: center;
 }
 
 .sync-button:hover:not(:disabled) {
@@ -277,6 +278,8 @@
   
   .sync-controls {
     padding: 1rem;
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .sync-button {

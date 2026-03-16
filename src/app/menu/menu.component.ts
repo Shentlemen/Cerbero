@@ -61,6 +61,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   private almacenRoutes = [
     '/menu/almacen/almacenes',
     '/menu/almacen/stock',
+    '/menu/almacen/3d-demo',
     '/menu/cementerio',
     '/menu/almacen-laboratorio'
   ];

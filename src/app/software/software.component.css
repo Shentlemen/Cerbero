@@ -258,6 +258,24 @@
   color: #3498db;
 }
 
+/* Badge de solo lectura / sin acciones */
+.read-only-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #e0f2fe;   /* azul clarito */
+  color: #0369a1;        /* azul más intenso */
+  border: 1px solid #7dd3fc;
+}
+
+.read-only-badge i {
+  font-size: 0.8rem;
+}
+
 .forbidden-toggle i {
   color: #e74c3c;
 }

@@ -51,6 +51,14 @@ export class PermissionsService {
     return this.currentUser?.role === 'USER';
   }
 
+  isAlmacen(): boolean {
+    return this.currentUser?.role === 'ALMACEN';
+  }
+
+  isInventario(): boolean {
+    return this.currentUser?.role === 'INVENTARIO';
+  }
+
   isGMOrAdmin(): boolean {
     return this.isGM() || this.isAdmin();
   }
@@ -70,6 +78,16 @@ export class PermissionsService {
 
   canManageAssets(): boolean {
     return this.isGMOrAdmin(); // GM and Admin can create/edit/delete assets
+  }
+
+  // Gestión completa de assets en módulos de almacén (stock, 3D, cementerio, lab)
+  canManageWarehouseAssets(): boolean {
+    return this.isGMOrAdmin() || this.isAlmacen();
+  }
+
+  // Eliminación de assets solo para GM/Admin
+  canDeleteAssets(): boolean {
+    return this.isGMOrAdmin();
   }
 
   canEditAssets(): boolean {

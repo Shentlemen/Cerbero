@@ -135,6 +135,37 @@
   color: #2c3e50;
 }
 
+/* Nuevos roles */
+.role-almacen {
+  background: #dbeafe;  /* mismo esquema que filtros */
+  color: #1d4ed8;
+}
+
+.role-inventario {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.role-compras {
+  background: #ffedd5;
+  color: #b45309;
+}
+
+.role-gestion_equip {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.role-impresion {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.role-garantia {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
 /* Badges de estado */
 .status-badge {
   padding: 0.35rem 0.65rem;

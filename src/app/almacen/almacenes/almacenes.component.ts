@@ -424,7 +424,8 @@ export class AlmacenesComponent implements OnInit {
 
 
   canManageAlmacenes(): boolean {
-    return this.permissionsService.canManageAssets();
+    // En gestión de almacenes, GM, Admin y Almacén pueden gestionar almacenes
+    return this.permissionsService.canManageWarehouseAssets();
   }
 
   verStockAlmacen(almacen: Almacen): void {

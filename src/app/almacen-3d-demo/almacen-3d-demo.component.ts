@@ -52,9 +52,6 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Desactivar el zoom global mientras se muestra la demo 3D
-    document.body.classList.add('no-global-zoom');
-
     forkJoin({
       almacenes: this.almacenService.getAllAlmacenes(),
       configs: this.almacenConfigService.getAllConfigs()
@@ -83,8 +80,6 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Restaurar el zoom global al salir del componente 3D
-    document.body.classList.remove('no-global-zoom');
   }
 
   compareAlmacenes(a: any, b: any): boolean {

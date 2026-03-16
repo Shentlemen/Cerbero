@@ -242,7 +242,7 @@
                 {{getNumeroCompra(asset.name)}}
               </span>
             </td>
-            <td *ngIf="canManageAssets()">
+            <td *ngIf="canManageAssets() || canManageAssetStates()">
               <div class="action-buttons">
                 <!-- Botones de cambio de estado solo si hay permisos -->
                 <ng-container *ngIf="canManageAssetStates()">
@@ -280,8 +280,9 @@
                   Requiere permisos de GM o Administrador
                 </small>
                 
-                <!-- Botón de eliminar (siempre disponible si puede gestionar assets) -->
+                <!-- Botón de eliminar (solo para GM/Admin) -->
                 <button 
+                  *ngIf="canDeleteAssets()"
                   class="btn btn-danger btn-sm delete-btn" 
                   (click)="eliminarAsset(asset); $event.stopPropagation()"
                   [disabled]="deletingAssetId === asset.id"

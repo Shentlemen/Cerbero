@@ -666,7 +666,8 @@ export class UbicacionesComponent implements OnInit {
   }
 
   canManageUbicaciones(): boolean {
-    return this.permissionsService.canManageAssets();
+    // En Stock de almacén, GM, Admin y Almacén pueden gestionar ubicaciones
+    return this.permissionsService.canManageWarehouseAssets();
   }
 
 

@@ -137,7 +137,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         // Configuración común para todas las gráficas
         const commonOptions = {
           animationEnabled: true,
-          exportEnabled: true,
+          // En las tarjetas pequeñas desactivamos export para que la gente use la versión ampliada
+          // (la exportación de CanvasJS usa el tamaño real del canvas, que en las tarjetas es pequeño).
+          exportEnabled: false,
           theme: "light2",
           title: {
             fontSize: this.getResponsiveFontSize(18), // Aumentado de 16 a 18
@@ -1108,6 +1110,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       // Crear una copia de las opciones con configuraciones optimizadas para el modal
       this.expandedChartOptions = {
         ...chartOptions,
+        // En la versión ampliada sí activamos la exportación para que siempre salga grande
+        exportEnabled: true,
         title: {
           ...chartOptions.title,
           fontSize: 24, // Título más grande para el modal

@@ -17,13 +17,6 @@
           Imprimir
         </button>
         
-        <!-- Mensaje informativo para usuarios sin permisos -->
-        <div *ngIf="!canUpdateDevices()" class="permission-info">
-          <i class="fas fa-info-circle" style="color: #6c757d;"></i>
-          <span style="color: #6c757d; font-size: 0.9rem; margin-left: 0.5rem;">
-            Solo administradores pueden actualizar dispositivos de red
-          </span>
-        </div>
       </div>
       
       <!-- Filtros por tipo de dispositivo -->

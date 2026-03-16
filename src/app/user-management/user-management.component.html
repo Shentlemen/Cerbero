@@ -263,6 +263,13 @@
                   <i class="fas fa-edit"></i>
                 </button>
                 <button 
+                  class="btn btn-outline-secondary btn-sm"
+                  (click)="toggleEstado(user)"
+                  [disabled]="isCurrentUser(user)"
+                  [title]="user.enabled ? 'Deshabilitar' : 'Habilitar'">
+                  <i class="fas" [ngClass]="user.enabled ? 'fa-user-slash' : 'fa-user-check'"></i>
+                </button>
+                <button 
                   class="btn btn-danger btn-sm"
                   (click)="deleteUser(user)"
                   [disabled]="isCurrentUser(user) || user.role === 'GM'"
@@ -288,6 +295,49 @@
       <i class="fas fa-filter fa-3x text-muted mb-3"></i>
       <h5 class="text-muted">No hay usuarios que coincidan con los filtros</h5>
       <p class="text-muted">Pruebe ajustar la búsqueda o los filtros</p>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación para eliminación de usuario -->
+<div *ngIf="showDeleteDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar al usuario <strong>{{ userToDelete?.username }}</strong>? Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelDeleteUser()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="confirmDeleteUser()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación para habilitar/deshabilitar usuario -->
+<div *ngIf="showEstadoDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog estado-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas" [ngClass]="userToToggle?.enabled ? 'fa-user-slash' : 'fa-user-check'"></i>
+      {{ userToToggle?.enabled ? 'Deshabilitar Usuario' : 'Habilitar Usuario' }}
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea {{ userToToggle?.enabled ? 'deshabilitar' : 'habilitar' }} al usuario
+      <strong>{{ userToToggle?.username }}</strong>?
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelToggleEstado()">
+        Cancelar
+      </button>
+      <button class="confirm-dialog-button confirm" (click)="confirmToggleEstado()">
+        {{ userToToggle?.enabled ? 'Deshabilitar' : 'Habilitar' }}
+      </button>
     </div>
   </div>
 </div>

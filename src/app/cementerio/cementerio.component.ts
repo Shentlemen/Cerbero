@@ -316,7 +316,8 @@ export class CementerioComponent implements OnInit {
   }
 
   canManageAssets(): boolean {
-    return this.permissionsService.canManageAssets();
+    // En Cementerio, GM, Admin y Almacén pueden gestionar items
+    return this.permissionsService.canManageWarehouseAssets();
   }
 
   formatFecha(fecha: string): string {

@@ -1501,12 +1501,12 @@ ngb-pagination.custom-pagination {
 }
 
 .confirm-dialog-button.cancel {
-  background: #6c757d;
-  color: white;
+  background: #1f2933; /* negro apagado / gris muy oscuro */
+  color: #ffffff;
 }
 
 .confirm-dialog-button.cancel:hover {
-  background: #5a6268;
+  background: #111827;
   transform: translateY(-2px);
 }
 
