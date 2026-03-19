@@ -703,61 +703,38 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     if (!name || name === 'Desconocido') return name;
     
     const nameUpper = name.toUpperCase().trim();
-    
-    // Mapeo de abreviaciones comunes para sistemas operativos
-    const abbreviations: { [key: string]: string } = {
-      'MICROSOFT WINDOWS 10 PRO': 'Windows 10 Pro',
-      'MICROSOFT WINDOWS 10 HOME': 'Windows 10 Home',
-      'MICROSOFT WINDOWS 10': 'Windows 10',
-      'MICROSOFT WINDOWS 11 PRO': 'Windows 11 Pro',
-      'MICROSOFT WINDOWS 11 HOME': 'Windows 11 Home',
-      'MICROSOFT WINDOWS 11': 'Windows 11',
-      'MICROSOFT WINDOWS 7 PROFESSIONAL': 'Windows 7 Pro',
-      'MICROSOFT WINDOWS 7 HOME': 'Windows 7 Home',
-      'MICROSOFT WINDOWS 7': 'Windows 7',
-      'MICROSOFT WINDOWS 8.1': 'Windows 8.1',
-      'MICROSOFT WINDOWS 8': 'Windows 8',
-      'MICROSOFT WINDOWS SERVER 2019': 'Windows Server 2019',
-      'MICROSOFT WINDOWS SERVER 2016': 'Windows Server 2016',
-      'MICROSOFT WINDOWS SERVER 2022': 'Windows Server 2022',
-      'UBUNTU 20.04 LTS': 'Ubuntu 20.04',
-      'UBUNTU 22.04 LTS': 'Ubuntu 22.04',
-      'UBUNTU 18.04 LTS': 'Ubuntu 18.04',
-      'UBUNTU': 'Ubuntu',
-      'DEBIAN': 'Debian',
-      'CENTOS': 'CentOS',
-      'RED HAT ENTERPRISE LINUX': 'RHEL',
-      'FEDORA': 'Fedora',
-      'MACOS MONTEREY': 'macOS Monterey',
-      'MACOS BIG SUR': 'macOS Big Sur',
-      'MACOS VENTURA': 'macOS Ventura',
-      'MACOS': 'macOS',
-      'MAC OS X': 'macOS'
-    };
-    
-    // Buscar coincidencia exacta
-    if (abbreviations[nameUpper]) {
-      return abbreviations[nameUpper];
+
+    // Reglas específicas para mostrar la parte útil del nombre en poco espacio.
+    // Objetivo: "Win 7", "Win 10", "Win XP", "Win Srv 2019", etc.
+    if (nameUpper.includes('WINDOWS SERVER')) {
+      const yearMatch = nameUpper.match(/(20\d{2})/);
+      return yearMatch ? `Win Srv ${yearMatch[1]}` : 'Win Srv';
     }
-    
-    // Si no hay coincidencia exacta, intentar abreviar nombres largos
-    if (name.length > 15) {
-      // Para nombres muy largos, tomar las primeras palabras importantes
-      const words = name.split(/\s+/);
-      if (words.length > 2) {
-        // Tomar las primeras 2-3 palabras más importantes
-        const importantWords = words.slice(0, 2);
-        const abbreviation = importantWords.join(' ');
-        if (abbreviation.length <= 15) {
-          return abbreviation;
-        }
-      }
-      
-      // Si no se puede abreviar por palabras, truncar
-      return name.substring(0, 12) + '...';
+
+    if (nameUpper.includes('WINDOWS')) {
+      if (nameUpper.includes('XP')) return 'Win XP';
+      if (nameUpper.includes('VISTA')) return 'Win Vista';
+      if (nameUpper.includes('8.1')) return 'Win 8.1';
+
+      const winVersionMatch = nameUpper.match(/\b(7|8|10|11)\b/);
+      if (winVersionMatch) return `Win ${winVersionMatch[1]}`;
+
+      return 'Windows';
     }
-    
-    return name;
+
+    if (nameUpper.includes('UBUNTU')) {
+      const versionMatch = nameUpper.match(/(\d{2}\.\d{2})/);
+      return versionMatch ? `Ubuntu ${versionMatch[1]}` : 'Ubuntu';
+    }
+
+    if (nameUpper.includes('DEBIAN')) return 'Debian';
+    if (nameUpper.includes('CENTOS')) return 'CentOS';
+    if (nameUpper.includes('RED HAT') || nameUpper.includes('RHEL')) return 'RHEL';
+    if (nameUpper.includes('FEDORA')) return 'Fedora';
+    if (nameUpper.includes('MAC OS') || nameUpper.includes('MACOS')) return 'macOS';
+
+    // Fallback genérico: recortar para evitar que la barra quede ilegible.
+    return name.length > 14 ? `${name.substring(0, 14)}...` : name;
   }
 
   private countByProperty(array: any[], prop: string): { [key: string]: number } {
@@ -1107,23 +1084,46 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     console.log('Título:', title);
 
     if (chartOptions) {
+      const isOSChart = chartType === 'sistema-operativo';
       // Crear una copia de las opciones con configuraciones optimizadas para el modal
       this.expandedChartOptions = {
         ...chartOptions,
         // En la versión ampliada sí activamos la exportación para que siempre salga grande
         exportEnabled: true,
+        axisX: isOSChart
+          ? {
+              ...chartOptions.axisX,
+              // Evitar truncado con "...": forzamos wrap y suficiente ancho para el modal
+              labelAutoFit: false,
+              labelMaxWidth: 240,
+              labelWrap: true
+            }
+          : chartOptions.axisX,
         title: {
           ...chartOptions.title,
           fontSize: 24, // Título más grande para el modal
           padding: 20,
           horizontalAlign: "center"
         },
-        data: chartOptions.data.map((dataSeries: any) => ({
-          ...dataSeries,
-          indexLabelFontSize: 16, // Etiquetas más grandes
-          indexLabelMaxWidth: 200, // Más espacio para etiquetas
-          toolTipContent: dataSeries.toolTipContent || "{label}: {y}"
-        }))
+        data: chartOptions.data.map((dataSeries: any) => {
+          const seriesCopy: any = {
+            ...dataSeries,
+            indexLabelFontSize: 16, // Etiquetas más grandes
+            indexLabelMaxWidth: 200, // Más espacio para etiquetas
+            toolTipContent: dataSeries.toolTipContent || "{label}: {y}"
+          };
+
+          // Para Sistema Operativo: en la vista chica usamos etiqueta abreviada.
+          // En el modal, mostramos el nombre completo para que no se corte.
+          if (isOSChart && Array.isArray(seriesCopy.dataPoints)) {
+            seriesCopy.dataPoints = seriesCopy.dataPoints.map((dp: any) => ({
+              ...dp,
+              label: dp.originalLabel || dp.label
+            }));
+          }
+
+          return seriesCopy;
+        })
       };
 
       this.expandedChartTitle = title;
