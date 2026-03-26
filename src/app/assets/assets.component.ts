@@ -540,8 +540,8 @@ export class AssetsComponent implements OnInit {
 
   // Verificar si el usuario puede gestionar estados de equipos
   canManageAssetStates(): boolean {
-    // GM, Admin, Almacén e Inventario pueden gestionar estados de equipos en activos
-    return this.permissionsService.canManageWarehouseAssets() || this.permissionsService.isInventario();
+    // GM, Admin, Almacén, Inventario y Gestión de Equipos
+    return this.permissionsService.canManageEquipmentStates() || this.permissionsService.isInventario();
   }
 
   canDeleteAssets(): boolean {

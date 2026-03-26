@@ -18,6 +18,7 @@ export interface DatosBaja {
 })
 export class FormularioBajaModalComponent implements OnInit {
   @Input() datos!: DatosBaja;
+  @Input() soloImpresion: boolean = false;
 
   // Campos del formulario (precargados con valores por defecto)
   fechaContable = { dia: '', mes: '', anio: '' };

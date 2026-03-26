@@ -59,6 +59,14 @@ export class PermissionsService {
     return this.currentUser?.role === 'INVENTARIO';
   }
 
+  isCompras(): boolean {
+    return this.currentUser?.role === 'COMPRAS';
+  }
+
+  isGestionEquip(): boolean {
+    return this.currentUser?.role === 'GESTION_EQUIP';
+  }
+
   isGMOrAdmin(): boolean {
     return this.isGM() || this.isAdmin();
   }
@@ -85,6 +93,11 @@ export class PermissionsService {
     return this.isGMOrAdmin() || this.isAlmacen();
   }
 
+  // Gestión de movimientos/estado de equipos (baja, almacén, transferir, reactivar)
+  canManageEquipmentStates(): boolean {
+    return this.isGMOrAdmin() || this.isAlmacen() || this.isGestionEquip();
+  }
+
   // Eliminación de assets solo para GM/Admin
   canDeleteAssets(): boolean {
     return this.isGMOrAdmin();
@@ -95,11 +108,11 @@ export class PermissionsService {
   }
 
   canManagePurchases(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can manage purchases
+    return this.isGMOrAdmin() || this.isCompras(); // GM, Admin y Compras pueden gestionar compras
   }
 
   canManageProviders(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can manage providers
+    return this.isGMOrAdmin() || this.isCompras(); // GM, Admin y Compras pueden gestionar proveedores
   }
 
   canManageSubnets(): boolean {

@@ -231,7 +231,7 @@
     <button type="button" class="fb-btn fb-btn-imprimir" (click)="imprimir()">
       <i class="fas fa-print"></i> Imprimir
     </button>
-    <button type="button" class="fb-btn fb-btn-confirmar" (click)="confirmarYCerrar()">
+    <button *ngIf="!soloImpresion" type="button" class="fb-btn fb-btn-confirmar" (click)="confirmarYCerrar()">
       <i class="fas fa-check"></i> Confirmar Baja
     </button>
   </div>

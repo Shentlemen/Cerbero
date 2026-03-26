@@ -15,6 +15,7 @@ import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { FormularioBajaModalComponent, DatosBaja } from '../components/formulario-baja-modal/formulario-baja-modal.component';
 import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -316,8 +317,8 @@ export class CementerioComponent implements OnInit {
   }
 
   canManageAssets(): boolean {
-    // En Cementerio, GM, Admin y Almacén pueden gestionar items
-    return this.permissionsService.canManageWarehouseAssets();
+    // En Cementerio, GM/Admin/Almacén/Gestión de Equipos pueden gestionar items
+    return this.permissionsService.canManageEquipmentStates();
   }
 
   formatFecha(fecha: string): string {
@@ -660,6 +661,33 @@ export class CementerioComponent implements OnInit {
       }
     }).catch(() => {
       // Usuario canceló el modal
+    });
+  }
+
+  imprimirFormularioBaja(item: any, event?: Event): void {
+    event?.stopPropagation();
+
+    if (item.tipo !== 'EQUIPO') {
+      return;
+    }
+
+    const modalRef = this.modalService.open(FormularioBajaModalComponent, {
+      size: 'xl',
+      backdrop: 'static',
+      centered: true
+    });
+
+    const datosBaja: DatosBaja = {
+      hardwareId: item.id,
+      nombreEquipo: item.name,
+      descripcion: item.type || item.deviceType || item.biosType
+    };
+
+    modalRef.componentInstance.datos = datosBaja;
+    modalRef.componentInstance.soloImpresion = true;
+
+    modalRef.result.catch(() => {
+      // Cierre normal del modal
     });
   }
 

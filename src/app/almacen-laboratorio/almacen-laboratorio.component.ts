@@ -354,8 +354,8 @@ export class AlmacenLaboratorioComponent implements OnInit {
   }
 
   canManageAssets(): boolean {
-    // En Almacén Lab, GM, Admin y Almacén pueden gestionar items
-    return this.permissionsService.canManageWarehouseAssets();
+    // En Almacén Lab, GM/Admin/Almacén/Gestión de Equipos pueden gestionar items
+    return this.permissionsService.canManageEquipmentStates();
   }
 
   formatFecha(fecha: string): string {
