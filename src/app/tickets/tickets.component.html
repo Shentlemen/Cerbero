@@ -1,7 +1,7 @@
 <app-notification-container></app-notification-container>
 
-<div class="generic-container tickets-container">
-  <div class="header-section">
+<div class="tickets-container">
+  <div class="header-section tickets-header">
     <div class="title-row">
       <div class="title-wrapper">
         <h1>
@@ -21,54 +21,245 @@
         [(ngModel)]="estadoFiltro"
         (change)="cargarTickets()">
         <option value="">Todos</option>
-        <option *ngFor="let estado of estados" [value]="estado">{{ getEstadoLabel(estado) }}</option>
+        <option *ngFor="let estado of estadosBandeja" [value]="estado">{{ getEstadoLabel(estado) }}</option>
       </select>
-      <button type="button" class="btn btn-secondary btn-sm" (click)="cargarTickets()">
+      <label class="tickets-filter-label">Área</label>
+      <select class="form-select form-select-sm tickets-filter-select" [(ngModel)]="filtroArea">
+        <option value="">Todas</option>
+        <option *ngFor="let area of areasTicket" [value]="area">{{ area }}</option>
+      </select>
+      <label class="tickets-filter-label">Código</label>
+      <input
+        type="search"
+        class="form-control form-control-sm tickets-filter-input"
+        [(ngModel)]="filtroCodigo"
+        placeholder="Ej. TCK-000042"
+        autocomplete="off" />
+      <button type="button" class="btn btn-secondary btn-sm" (click)="actualizarTodo()">
         <i class="fas fa-rotate-right"></i>
         Actualizar
       </button>
     </div>
   </div>
 
-  <div class="content-section">
-      <div *ngIf="loading" class="text-center py-4">
-        <div class="spinner-border text-primary"></div>
-      </div>
+  <div class="tickets-panels">
+    <section class="content-section tickets-panel tickets-panel--active" aria-labelledby="tickets-activos-heading">
+      <h2 id="tickets-activos-heading" class="tickets-panel-heading">
+        <i class="fas fa-inbox" aria-hidden="true"></i>
+        <span>Bandeja activa</span>
+      </h2>
 
-      <div *ngIf="!loading && tickets.length === 0" class="text-center text-muted py-4">
-        No hay tickets para mostrar.
-      </div>
+      <div class="tickets-panel-body">
+        <div *ngIf="loading" class="tickets-panel-state">
+          <div class="spinner-border text-primary"></div>
+        </div>
 
-      <div class="table-container" *ngIf="!loading && tickets.length > 0">
-        <table class="generic-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Título</th>
-              <th>Área</th>
-              <th>Estado</th>
-              <th>Prioridad</th>
-              <th>Actualizado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let ticket of tickets" class="generic-row">
-              <td><strong>{{ ticket.codigo }}</strong></td>
-              <td>{{ ticket.titulo }}</td>
-              <td>{{ ticket.areaActual }}</td>
-              <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
-              <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ ticket.prioridad }}</span></td>
-              <td>{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td class="text-end">
-                <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
-                  Abrir
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div *ngIf="!loading && tickets.length === 0" class="tickets-panel-state text-muted">
+          No hay tickets para mostrar.
+        </div>
+
+        <div *ngIf="!loading && tickets.length > 0 && ticketsVista.length === 0" class="tickets-panel-state text-muted">
+          Ningún ticket coincide con el área o el código indicados.
+        </div>
+
+        <div class="table-container" *ngIf="!loading && ticketsVista.length > 0">
+          <table class="generic-table tickets-table">
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('titulo')"
+                  (click)="toggleOrden('titulo')"
+                  (keydown)="onSortKeyDown($event, 'titulo')">
+                  <span class="tickets-th-inner">
+                    <span>Título</span>
+                    <i class="fas" [ngClass]="sortIconClass('titulo')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('areaActual')"
+                  (click)="toggleOrden('areaActual')"
+                  (keydown)="onSortKeyDown($event, 'areaActual')">
+                  <span class="tickets-th-inner">
+                    <span>Área</span>
+                    <i class="fas" [ngClass]="sortIconClass('areaActual')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('estado')"
+                  (click)="toggleOrden('estado')"
+                  (keydown)="onSortKeyDown($event, 'estado')">
+                  <span class="tickets-th-inner">
+                    <span>Estado</span>
+                    <i class="fas" [ngClass]="sortIconClass('estado')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('prioridad')"
+                  (click)="toggleOrden('prioridad')"
+                  (keydown)="onSortKeyDown($event, 'prioridad')">
+                  <span class="tickets-th-inner">
+                    <span>Prioridad</span>
+                    <i class="fas" [ngClass]="sortIconClass('prioridad')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('fechaActualizacion')"
+                  (click)="toggleOrden('fechaActualizacion')"
+                  (keydown)="onSortKeyDown($event, 'fechaActualizacion')">
+                  <span class="tickets-th-inner">
+                    <span>Actualizado</span>
+                    <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th scope="col" class="text-end"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ticket of ticketsVista" class="generic-row">
+                <td><strong>{{ ticket.codigo }}</strong></td>
+                <td>{{ ticket.titulo }}</td>
+                <td>
+                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ ticket.areaActual }}</span>
+                </td>
+                <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
+                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ ticket.prioridad }}</span></td>
+                <td>{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">
+                  <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
+                    Abrir
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
+    </section>
+
+    <section class="content-section tickets-panel tickets-panel--closed" aria-labelledby="tickets-cerrados-heading">
+      <h2 id="tickets-cerrados-heading" class="tickets-closed-heading">
+        <i class="fas fa-archive" aria-hidden="true"></i>
+        <span>Tickets cerrados</span>
+      </h2>
+
+      <div class="tickets-panel-body">
+        <div *ngIf="loadingCerrados" class="tickets-panel-state">
+          <div class="spinner-border text-primary"></div>
+        </div>
+
+        <div *ngIf="!loadingCerrados && ticketsCerrados.length === 0" class="tickets-panel-state text-muted">
+          No hay tickets cerrados.
+        </div>
+
+        <div *ngIf="!loadingCerrados && ticketsCerrados.length > 0 && ticketsCerradosVista.length === 0" class="tickets-panel-state text-muted">
+          Ningún ticket coincide con el área o el código indicados.
+        </div>
+
+        <div class="table-container" *ngIf="!loadingCerrados && ticketsCerradosVista.length > 0">
+          <table class="generic-table tickets-table">
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('titulo')"
+                  (click)="toggleOrden('titulo')"
+                  (keydown)="onSortKeyDown($event, 'titulo')">
+                  <span class="tickets-th-inner">
+                    <span>Título</span>
+                    <i class="fas" [ngClass]="sortIconClass('titulo')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('areaActual')"
+                  (click)="toggleOrden('areaActual')"
+                  (keydown)="onSortKeyDown($event, 'areaActual')">
+                  <span class="tickets-th-inner">
+                    <span>Área</span>
+                    <i class="fas" [ngClass]="sortIconClass('areaActual')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('estado')"
+                  (click)="toggleOrden('estado')"
+                  (keydown)="onSortKeyDown($event, 'estado')">
+                  <span class="tickets-th-inner">
+                    <span>Estado</span>
+                    <i class="fas" [ngClass]="sortIconClass('estado')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('prioridad')"
+                  (click)="toggleOrden('prioridad')"
+                  (keydown)="onSortKeyDown($event, 'prioridad')">
+                  <span class="tickets-th-inner">
+                    <span>Prioridad</span>
+                    <i class="fas" [ngClass]="sortIconClass('prioridad')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  class="tickets-sortable"
+                  tabindex="0"
+                  [attr.aria-sort]="ariaSortFor('fechaActualizacion')"
+                  (click)="toggleOrden('fechaActualizacion')"
+                  (keydown)="onSortKeyDown($event, 'fechaActualizacion')">
+                  <span class="tickets-th-inner">
+                    <span>Cerrado / actualizado</span>
+                    <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
+                  </span>
+                </th>
+                <th scope="col" class="text-end"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ticket of ticketsCerradosVista" class="generic-row">
+                <td><strong>{{ ticket.codigo }}</strong></td>
+                <td>{{ ticket.titulo }}</td>
+                <td>
+                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ ticket.areaActual }}</span>
+                </td>
+                <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
+                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ ticket.prioridad }}</span></td>
+                <td>{{ (ticket.fechaCierre || ticket.fechaActualizacion) | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">
+                  <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
+                    Abrir
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 

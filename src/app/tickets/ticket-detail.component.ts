@@ -154,6 +154,16 @@ export class TicketDetailComponent implements OnInit {
     return this.permissionsService.canProcessTicketsForArea(this.ticket.areaActual);
   }
 
+  /** Alineado con el backend: comentar solo creador, área actual o GM/Admin. */
+  canAddCommentOnTicket(): boolean {
+    if (!this.ticket) return false;
+    const u = this.permissionsService.getCurrentUser();
+    if (!u?.id) return false;
+    if (this.permissionsService.isGMOrAdmin()) return true;
+    if (this.permissionsService.isUser()) return this.ticket.creadoPorUserId === u.id;
+    return u.role === this.ticket.areaActual;
+  }
+
   getEstadoLabel(estado?: string | null): string {
     if (!estado) return '-';
     return estado

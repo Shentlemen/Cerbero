@@ -60,10 +60,13 @@
             <div class="small text-muted">{{ c.fechaComentario | date:'dd/MM/yyyy HH:mm' }} - {{ getComentarioUsuario(c) }}</div>
             <div>{{ c.comentario }}</div>
           </div>
-          <div class="mt-3">
+          <div class="mt-3" *ngIf="canAddCommentOnTicket()">
             <textarea class="form-control" rows="3" [(ngModel)]="comentario" placeholder="Agregar comentario"></textarea>
             <button class="btn btn-info mt-2" (click)="agregarComentario()">Comentar</button>
           </div>
+          <p *ngIf="!canAddCommentOnTicket()" class="text-muted small mb-0 mt-2">
+            Solo lectura: no podés agregar comentarios en este ticket.
+          </p>
         </div>
       </div>
     </div>

@@ -83,6 +83,11 @@ export class TicketsService {
     return this.http.get<ApiResponse<Ticket[]>>(this.apiUrl, { params });
   }
 
+  /** Todos los tickets en estado CERRADO (sin filtro por área; cualquier rol con acceso a tickets). */
+  listarCerrados(): Observable<ApiResponse<Ticket[]>> {
+    return this.http.get<ApiResponse<Ticket[]>>(`${this.apiUrl}/cerrados`);
+  }
+
   crear(payload: {
     titulo: string;
     descripcion: string;
