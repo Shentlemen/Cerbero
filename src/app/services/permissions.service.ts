@@ -127,6 +127,22 @@ export class PermissionsService {
     return this.isGMOrAdmin(); // GM and Admin can update network devices
   }
 
+  // Tickets / Reclamos
+  canAccessTickets(): boolean {
+    return this.isLoggedIn();
+  }
+
+  canCreateTickets(): boolean {
+    return this.isLoggedIn();
+  }
+
+  canProcessTicketsForArea(areaCodigo: string): boolean {
+    if (!this.currentUser || !areaCodigo) return false;
+    if (this.isGMOrAdmin()) return true;
+    if (this.isUser()) return false;
+    return this.currentUser.role === areaCodigo;
+  }
+
   // Helper method to check if user is logged in
   isLoggedIn(): boolean {
     return this.currentUser !== null;

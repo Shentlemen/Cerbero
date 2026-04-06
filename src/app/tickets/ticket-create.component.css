@@ -1,0 +1,92 @@
+.ticket-create-container .header-section {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.ticket-create-container .content-section {
+  max-width: 980px;
+}
+
+.ticket-create-container .title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ticket-create-container .title-wrapper h1 {
+  font-size: 1.5rem;
+}
+
+/* Misma línea visual que detalle de ticket */
+.ticket-create-container .ticket-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem 0;
+  padding: 0 0 0.65rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #2c3e50;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ticket-create-container .ticket-section-heading i {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #fff;
+  background: #3498db;
+  flex-shrink: 0;
+}
+
+.ticket-create-container .ticket-section-heading--accent i {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.ticket-create-container .ticket-section-body {
+  padding-top: 0.15rem;
+}
+
+.ticket-create-container .ticket-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #edf2f7;
+}
+
+/* Igual que “Nuevo ticket” / “Actualizar estado” */
+.ticket-create-container .btn-ticket-create-submit {
+  background: linear-gradient(135deg, #3498db, #2980b9) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.35);
+  font-weight: 600;
+}
+
+.ticket-create-container .btn-ticket-create-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2980b9, #1f6dad) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.45);
+}
+
+.ticket-create-container .btn-ticket-create-submit:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+.ticket-create-container .btn-ticket-create-submit:disabled {
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}

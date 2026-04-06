@@ -64,6 +64,9 @@ export const routes: Routes = [
       { path: 'almacen/stock/:id', component: StockAlmacenComponent },
       { path: 'almacen/stock', component: UbicacionesComponent },
       { path: 'almacen/config', loadComponent: () => import('./almacen/config-almacenes/config-almacenes.component').then(m => m.ConfigAlmacenesComponent) },
+      { path: 'tickets', loadComponent: () => import('./tickets/tickets.component').then(m => m.TicketsComponent) },
+      { path: 'tickets/nuevo', loadComponent: () => import('./tickets/ticket-create.component').then(m => m.TicketCreateComponent) },
+      { path: 'tickets/:id', loadComponent: () => import('./tickets/ticket-detail.component').then(m => m.TicketDetailComponent) },
       // Vista 3D del almacén (demo)
       { path: 'almacen/3d-demo', loadComponent: () => import('./almacen-3d-demo/almacen-3d-demo.component').then(m => m.Almacen3DDemoComponent) }
     ]

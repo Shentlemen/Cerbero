@@ -37,6 +37,11 @@
     <span>INVENTARIO</span>
   </a>
 
+  <a *ngIf="canAccessTickets()" routerLink="/menu/tickets" routerLinkActive="active">
+    <i class="fas fa-ticket-alt"></i>
+    <span>TICKETS</span>
+  </a>
+
   <!-- Menú expandible de Adquisiciones -->
   <div class="menu-item" [class.expanded]="isAdquisicionesExpanded">
     <div class="menu-header" (click)="toggleAdquisicionesMenu()">

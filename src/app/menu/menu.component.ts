@@ -58,6 +58,9 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/procurement/proveedores',
     // '/menu/procurement/servicios-garantia'
   ];
+  private ticketsRoutes = [
+    '/menu/tickets'
+  ];
   private almacenRoutes = [
     '/menu/almacen/almacenes',
     '/menu/almacen/stock',
@@ -83,6 +86,7 @@ export class MenuComponent implements OnInit, OnDestroy {
       const isAlmacenRoute = this.almacenRoutes.some(route => url.startsWith(route));
       const isAdminRoute = this.adminRoutes.some(route => url.startsWith(route));
       const isAdquisicionesRoute = this.adquisicionesRoutes.some(route => url.startsWith(route));
+      const isTicketsRoute = this.ticketsRoutes.some(route => url.startsWith(route));
 
       // Actualizar estados de los submenús
       if (isAssetsRoute) {
@@ -115,6 +119,12 @@ export class MenuComponent implements OnInit, OnDestroy {
         this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
         this.isAdminExpanded = false;
+      } else if (isTicketsRoute) {
+        this.isAssetsExpanded = false;
+        this.isConfigExpanded = false;
+        this.isAlmacenExpanded = false;
+        this.isAdminExpanded = false;
+        this.isAdquisicionesExpanded = false;
       } else {
         // Si no es ninguna de las rutas anteriores, cerrar todos los submenús
         this.isAssetsExpanded = false;
@@ -218,6 +228,10 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   canManageUsers(): boolean {
     return this.permissionsService.canManageUsers();
+  }
+
+  canAccessTickets(): boolean {
+    return this.permissionsService.canAccessTickets();
   }
 
   // Métodos para el user-header integrado
