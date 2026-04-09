@@ -290,6 +290,15 @@ export class CementerioComponent implements OnInit {
   confirmarReactivacion(): void {
     console.log('🔄 confirmarReactivacion llamado');
     console.log('🔄 itemToReactivar:', this.itemToReactivar);
+
+    if (!this.canTransferOrReactivate()) {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'No tiene permiso para reactivar equipos o dispositivos en el cementerio.'
+      );
+      this.cancelarReactivacion();
+      return;
+    }
     
     if (!this.itemToReactivar) {
       console.log('❌ No hay item para reactivar');
@@ -319,6 +328,11 @@ export class CementerioComponent implements OnInit {
   canManageAssets(): boolean {
     // En Cementerio, GM/Admin/Almacén/Gestión de Equipos pueden gestionar items
     return this.permissionsService.canManageEquipmentStates();
+  }
+
+  /** Transferir y reactivar: no rol ALMACEN en esta pantalla. */
+  canTransferOrReactivate(): boolean {
+    return this.permissionsService.canTransferOrReactivateInCemeteryOrLabWarehouse();
   }
 
   formatFecha(fecha: string): string {
@@ -441,6 +455,13 @@ export class CementerioComponent implements OnInit {
   }
 
   reactivarItem(item: any): void {
+    if (!this.canTransferOrReactivate()) {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'No tiene permiso para reactivar equipos o dispositivos en el cementerio.'
+      );
+      return;
+    }
     console.log('🔄 reactivarItem llamado con:', item);
     console.log('🔄 Tipo de item:', item.tipo);
     console.log('🔄 ID/MAC del item:', item.id || item.mac);
@@ -647,6 +668,13 @@ export class CementerioComponent implements OnInit {
       );
       return;
     }
+    if (!this.canTransferOrReactivate()) {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'No tiene permiso para transferir equipos desde el cementerio.'
+      );
+      return;
+    }
 
     const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
     modalRef.componentInstance.item = {
@@ -692,6 +720,13 @@ export class CementerioComponent implements OnInit {
   }
 
   private procesarTransferencia(item: any, transferData: any): void {
+    if (!this.canTransferOrReactivate()) {
+      this.notificationService.showError(
+        'Operación no permitida',
+        'No tiene permiso para transferir equipos desde el cementerio.'
+      );
+      return;
+    }
     this.transferiendoItemId = item.id;
 
     // Preparar datos para el backend

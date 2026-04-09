@@ -25,8 +25,11 @@ export class TicketCreateComponent implements OnInit {
     nota: ''
   };
 
-  readonly areas = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
+  private readonly areasBase = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
   readonly prioridades: TicketPrioridad[] = ['BAJA', 'MEDIA', 'ALTA', 'CRITICA'];
+
+  /** Incluye Laboratorio; la atienden GM/Admin, cualquier usuario puede abrir ticket hacia esa área. */
+  readonly areas: string[] = [...this.areasBase, 'LABORATORIO'];
 
   constructor(
     private ticketsService: TicketsService,

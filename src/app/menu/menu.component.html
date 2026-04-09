@@ -1,4 +1,7 @@
-<div class="sidenav">
+<div
+  class="sidenav"
+  [style.top.px]="layoutTopPx"
+  [style.height]="'calc(100% - ' + layoutTopPx + 'px)'">
   <div class="logo-container">
     <app-helper-dog></app-helper-dog>
   </div>
@@ -155,6 +158,9 @@
   </div>
 </div>
 <app-header></app-header>
-<div class="main-content">
+<div
+  class="main-content"
+  [style.margin-top.px]="layoutTopPx"
+  [style.height]="layoutContentHeightCalc">
   <router-outlet></router-outlet>
 </div>

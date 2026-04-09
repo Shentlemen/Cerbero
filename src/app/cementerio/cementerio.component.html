@@ -227,7 +227,7 @@
                   Imprimir baja
                 </button>
                 <button 
-                  *ngIf="item.tipo === 'EQUIPO'"
+                  *ngIf="item.tipo === 'EQUIPO' && canTransferOrReactivate()"
                   class="btn btn-sm transferir-btn" 
                   (click)="transferirEquipo(item); $event.stopPropagation()"
                   [disabled]="transferiendoItemId === item.id"
@@ -237,6 +237,7 @@
                   {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
                 </button>
                 <button 
+                  *ngIf="canTransferOrReactivate()"
                   class="btn btn-success btn-sm reactivar-btn" 
                   (click)="reactivarItem(item); $event.stopPropagation()"
                   [disabled]="reactivatingItemId === (item.id || item.mac)"

@@ -6,15 +6,26 @@
         <span class="app-name">Cerbero</span>
       </div>
     </div>
-    
+
     <div class="header-right" *ngIf="currentUser">
+      <div class="gm-view-as" *ngIf="isRealGm">
+        <label class="gm-view-as-label" for="gm-view-as-select">Ver como</label>
+        <select
+          id="gm-view-as-select"
+          class="form-select form-select-sm gm-view-as-select"
+          [(ngModel)]="viewAsSelectValue"
+          (ngModelChange)="onViewAsChange($event)">
+          <option *ngFor="let o of viewAsOptions" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+
       <div class="user-info">
         <div class="user-details">
           <span class="user-name" (click)="goToProfile()" title="Ver perfil">
             {{ currentUser.firstName }} {{ currentUser.lastName }}
           </span>
-          <span class="badge" [class]="getRoleClass(currentUser.role)">
-            {{ getRoleLabel(currentUser.role) }}
+          <span class="badge" [class]="getRoleClass(effectiveRole)" [title]="roleBadgeTitle">
+            {{ getRoleLabel(effectiveRole) }}
           </span>
         </div>
         <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
@@ -24,4 +35,15 @@
       </div>
     </div>
   </div>
-</header> 
+
+  <div class="gm-preview-bar" *ngIf="showPreviewBar">
+    <i class="fas fa-theater-masks gm-preview-bar-icon" aria-hidden="true"></i>
+    <span class="gm-preview-bar-text">
+      Vista previa como <strong>{{ getRoleLabel(previewRole) }}</strong>.
+      Tu sesión sigue siendo <strong>Game Master</strong>; el servidor aplica el rol real del token.
+    </span>
+    <button type="button" class="btn btn-sm gm-preview-bar-btn" (click)="clearPreview()">
+      Volver a GM
+    </button>
+  </div>
+</header>

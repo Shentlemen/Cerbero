@@ -1,9 +1,10 @@
 .app-header {
   position: fixed;
   top: 0;
-  left: 0; /* Cubre toda la pantalla desde la izquierda */
+  left: 0;
   right: 0;
-  height: 60px;
+  display: flex;
+  flex-direction: column;
   background-color: #1a1a1a;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
@@ -14,8 +15,74 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 100%;
+  min-height: 60px;
+  height: 60px;
   padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.gm-view-as {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.gm-view-as-label {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #95a5a6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.gm-view-as-select {
+  width: auto;
+  min-width: 9.5rem;
+  max-width: 11rem;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.5rem;
+  background-color: #2c3e50;
+  border-color: rgba(52, 152, 219, 0.35);
+  color: #ecf0f1;
+}
+
+.gm-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 20px 8px;
+  background: linear-gradient(90deg, rgba(155, 89, 182, 0.25), rgba(52, 152, 219, 0.15));
+  border-top: 1px solid rgba(155, 89, 182, 0.35);
+  font-size: 0.78rem;
+  color: #e8e8e8;
+}
+
+.gm-preview-bar-icon {
+  color: #9b59b6;
+  flex-shrink: 0;
+}
+
+.gm-preview-bar-text {
+  flex: 1;
+  min-width: 200px;
+  line-height: 1.35;
+}
+
+.gm-preview-bar-btn {
+  flex-shrink: 0;
+  background: rgba(46, 204, 113, 0.2);
+  border: 1px solid rgba(46, 204, 113, 0.6);
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+.gm-preview-bar-btn:hover {
+  background: rgba(46, 204, 113, 0.35);
+  color: #ecf0f1;
 }
 
 .header-left {
@@ -48,6 +115,9 @@
 .header-right {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 0;
 }
 
 .user-info {
@@ -118,15 +188,27 @@
 /* Responsive para pantallas pequeñas */
 @media (max-width: 768px) {
   .app-header {
-    left: 0; /* Siempre cubre toda la pantalla */
+    left: 0;
+  }
+
+  .gm-view-as {
+    order: 3;
+    width: 100%;
+    margin-right: 0;
+    margin-top: 4px;
+  }
+
+  .gm-view-as-select {
+    flex: 1;
+    max-width: none;
   }
   
   .app-name {
-    display: none; /* Ocultar nombre en pantallas pequeñas */
+    display: none;
   }
   
   .logout-text {
-    display: none; /* Ocultar texto del botón en pantallas pequeñas */
+    display: none;
   }
   
   .user-name {
@@ -136,6 +218,10 @@
   .badge {
     font-size: 0.6rem;
     padding: 3px 6px;
+  }
+
+  .gm-preview-bar-text strong {
+    display: inline;
   }
 }
 

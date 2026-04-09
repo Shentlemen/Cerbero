@@ -45,7 +45,10 @@ export class TicketDetailComponent implements OnInit {
     'CERRADO',
     'REABIERTO'
   ];
-  readonly areas = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
+  private readonly areasBase = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
+
+  /** Cualquier usuario puede derivar hacia Laboratorio (la atienden GM/Admin). */
+  readonly areasDerivacion: string[] = [...this.areasBase, 'LABORATORIO'];
 
   constructor(
     private route: ActivatedRoute,
@@ -154,19 +157,42 @@ export class TicketDetailComponent implements OnInit {
     return this.permissionsService.canProcessTicketsForArea(this.ticket.areaActual);
   }
 
-  /** Alineado con el backend: comentar solo creador, área actual o GM/Admin. */
+  /** Derivar: personal del área actual, GM/Admin o creador del ticket (alineado con backend). */
+  canDerivarTicket(): boolean {
+    if (!this.ticket) return false;
+    return this.canProcessCurrentTicket() || this.esCreadorDelTicket();
+  }
+
+  private esCreadorDelTicket(): boolean {
+    if (!this.ticket) return false;
+    const u = this.permissionsService.getCurrentUser();
+    return u?.id != null && this.ticket.creadoPorUserId === u.id;
+  }
+
+  /** Alineado con el backend: creador en cualquier área (incl. Laboratorio), área actual o GM/Admin. */
   canAddCommentOnTicket(): boolean {
     if (!this.ticket) return false;
     const u = this.permissionsService.getCurrentUser();
     if (!u?.id) return false;
     if (this.permissionsService.isGMOrAdmin()) return true;
-    if (this.permissionsService.isUser()) return this.ticket.creadoPorUserId === u.id;
+    if (this.ticket.creadoPorUserId === u.id) return true;
+    if (this.ticket.areaActual === 'LABORATORIO') return false;
+    if (this.permissionsService.isUser()) return false;
     return u.role === this.ticket.areaActual;
   }
 
   getEstadoLabel(estado?: string | null): string {
-    if (!estado) return '-';
-    return estado
+    return this.formatClaveLegible(estado);
+  }
+
+  /** CREACION, CAMBIO_ESTADO, etc. → texto sin guiones bajos. */
+  getTipoEventoLabel(tipo?: string | null): string {
+    return this.formatClaveLegible(tipo);
+  }
+
+  private formatClaveLegible(valor?: string | null): string {
+    if (!valor) return '-';
+    return valor
       .replaceAll('_', ' ')
       .toLowerCase()
       .replace(/(^|\s)\S/g, (m) => m.toUpperCase());

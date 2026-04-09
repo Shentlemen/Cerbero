@@ -165,6 +165,7 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('cerberoGmViewAsRole');
     
     // Limpiar sessionStorage
     sessionStorage.clear();

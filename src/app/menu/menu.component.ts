@@ -27,6 +27,11 @@ import { getVersionInfo } from '../version';
   styleUrls: ['./menu.component.css']
 })
 export class MenuComponent implements OnInit, OnDestroy {
+  /** Top del layout bajo el header (60px o 60px + franja vista previa GM). */
+  layoutTopPx = 60;
+  layoutContentHeightCalc = 'calc(100vh - 60px)';
+  private layoutSub?: Subscription;
+
   isAssetsExpanded: boolean = false;
   isConfigExpanded: boolean = false;
   isAlmacenExpanded: boolean = false;
@@ -142,16 +147,26 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Suscribirse al usuario actual
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      this.updateLayoutTop();
     });
+    this.layoutSub = this.permissionsService.viewAs$.subscribe(() => this.updateLayoutTop());
+    this.updateLayoutTop();
+  }
+
+  private updateLayoutTop(): void {
+    const mainRow = 60;
+    const previewStrip = this.permissionsService.isGmPreviewActive() ? 52 : 0;
+    this.layoutTopPx = mainRow + previewStrip;
+    this.layoutContentHeightCalc = `calc(100vh - ${this.layoutTopPx}px)`;
   }
 
   ngOnDestroy() {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
+    this.layoutSub?.unsubscribe();
   }
 
   toggleAssetsMenu(): void {
@@ -223,7 +238,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   canAccessAdministration(): boolean {
-    return this.permissionsService.canAccessConfiguration(); // Misma lógica que configuración
+    return this.permissionsService.canAccessAdministrationMenu();
   }
 
   canManageUsers(): boolean {

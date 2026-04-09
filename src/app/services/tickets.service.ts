@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { PermissionsService } from './permissions.service';
 
 export type TicketEstado =
   | 'NUEVO'
@@ -73,19 +74,33 @@ export interface ApiResponse<T> {
 export class TicketsService {
   private apiUrl = `${environment.apiUrl}/tickets`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private permissionsService: PermissionsService
+  ) {}
+
+  /** Solo GM real + «Ver como»: el backend aplica permisos del rol simulado. */
+  private withVistaComo(base?: HttpParams): HttpParams {
+    let p = base ?? new HttpParams();
+    const sim = this.permissionsService.getViewAsRole();
+    if (this.permissionsService.isRealGM() && sim) {
+      p = p.set('vistaComo', sim);
+    }
+    return p;
+  }
 
   listar(estado?: TicketEstado): Observable<ApiResponse<Ticket[]>> {
-    let params = new HttpParams();
+    let params = this.withVistaComo();
     if (estado) {
       params = params.set('estado', estado);
     }
     return this.http.get<ApiResponse<Ticket[]>>(this.apiUrl, { params });
   }
 
-  /** Todos los tickets en estado CERRADO (sin filtro por área; cualquier rol con acceso a tickets). */
   listarCerrados(): Observable<ApiResponse<Ticket[]>> {
-    return this.http.get<ApiResponse<Ticket[]>>(`${this.apiUrl}/cerrados`);
+    return this.http.get<ApiResponse<Ticket[]>>(`${this.apiUrl}/cerrados`, {
+      params: this.withVistaComo()
+    });
   }
 
   crear(payload: {
@@ -95,34 +110,47 @@ export class TicketsService {
     prioridad: TicketPrioridad;
     nota?: string;
   }): Observable<ApiResponse<Ticket>> {
-    return this.http.post<ApiResponse<Ticket>>(this.apiUrl, payload);
+    return this.http.post<ApiResponse<Ticket>>(this.apiUrl, payload, {
+      params: this.withVistaComo()
+    });
   }
 
   obtener(ticketId: number): Observable<ApiResponse<Ticket>> {
-    return this.http.get<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}`);
+    return this.http.get<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}`, {
+      params: this.withVistaComo()
+    });
   }
 
   cambiarEstado(ticketId: number, estado: TicketEstado, nota?: string): Observable<ApiResponse<Ticket>> {
-    return this.http.post<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}/estado`, { estado, nota });
+    return this.http.post<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}/estado`, { estado, nota }, {
+      params: this.withVistaComo()
+    });
   }
 
   cambiarArea(ticketId: number, areaDestino: string, nota?: string): Observable<ApiResponse<Ticket>> {
-    return this.http.post<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}/area`, { areaDestino, nota });
+    return this.http.post<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}/area`, { areaDestino, nota }, {
+      params: this.withVistaComo()
+    });
   }
 
   agregarComentario(ticketId: number, comentario: string, interno = false): Observable<ApiResponse<TicketComentario>> {
     return this.http.post<ApiResponse<TicketComentario>>(`${this.apiUrl}/${ticketId}/comentarios`, {
       comentario,
       interno
+    }, {
+      params: this.withVistaComo()
     });
   }
 
   historial(ticketId: number): Observable<ApiResponse<TicketMovimientoView[]>> {
-    return this.http.get<ApiResponse<TicketMovimientoView[]>>(`${this.apiUrl}/${ticketId}/historial`);
+    return this.http.get<ApiResponse<TicketMovimientoView[]>>(`${this.apiUrl}/${ticketId}/historial`, {
+      params: this.withVistaComo()
+    });
   }
 
   comentarios(ticketId: number): Observable<ApiResponse<TicketComentarioView[]>> {
-    return this.http.get<ApiResponse<TicketComentarioView[]>>(`${this.apiUrl}/${ticketId}/comentarios`);
+    return this.http.get<ApiResponse<TicketComentarioView[]>>(`${this.apiUrl}/${ticketId}/comentarios`, {
+      params: this.withVistaComo()
+    });
   }
 }
-

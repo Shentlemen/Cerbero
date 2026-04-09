@@ -39,7 +39,7 @@
           <div *ngFor="let mov of movimientos" class="timeline-item">
             <div class="timeline-date">{{ mov.fechaEvento | date:'dd/MM/yyyy HH:mm' }}</div>
             <div>
-              <strong>{{ mov.tipoEvento }}</strong>
+              <strong>{{ getTipoEventoLabel(mov.tipoEvento) }}</strong>
               <span> | Usuario: {{ getMovimientoUsuario(mov) }}</span>
               <span *ngIf="mov.areaAnterior || mov.areaNueva"> | Área: {{ mov.areaAnterior || '-' }} -> {{ mov.areaNueva || '-' }}</span>
               <span *ngIf="mov.estadoAnterior || mov.estadoNuevo"> | Estado: {{ getEstadoLabel(mov.estadoAnterior) }} -> {{ getEstadoLabel(mov.estadoNuevo) }}</span>
@@ -71,8 +71,8 @@
       </div>
     </div>
 
-    <div class="col-lg-4" *ngIf="canProcessCurrentTicket(); else soloLecturaTicket">
-      <div class="content-section mb-3">
+    <div class="col-lg-4">
+      <div class="content-section mb-3" *ngIf="canProcessCurrentTicket()">
         <h2 class="ticket-section-heading ticket-section-heading--accent">
           <i class="fas fa-tasks" aria-hidden="true"></i>
           <span>Cambiar estado</span>
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <div class="content-section">
+      <div class="content-section" *ngIf="canDerivarTicket()">
         <h2 class="ticket-section-heading ticket-section-heading--warn">
           <i class="fas fa-exchange-alt" aria-hidden="true"></i>
           <span>Derivar a otra área</span>
@@ -97,30 +97,26 @@
         <div class="ticket-section-body">
           <select class="form-select mb-2" [(ngModel)]="nuevaArea">
             <option value="">Seleccionar área...</option>
-            <option *ngFor="let area of areas" [value]="area">{{ area }}</option>
+            <option *ngFor="let area of areasDerivacion" [value]="area">{{ area }}</option>
           </select>
-          <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaArea" placeholder="Nota de derivación (opcional)"></textarea>
+          <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaArea" placeholder="Nota de derivación (obligatoria)"></textarea>
           <button type="button" class="btn btn-ticket-derive w-100" (click)="cambiarArea()">
             <i class="fas fa-share"></i>
             Derivar ticket
           </button>
         </div>
       </div>
-    </div>
 
-    <ng-template #soloLecturaTicket>
-      <div class="col-lg-4">
-        <div class="content-section">
-          <h2 class="ticket-section-heading ticket-section-heading--muted">
-            <i class="fas fa-info-circle" aria-hidden="true"></i>
-            <span>Acciones del ticket</span>
-          </h2>
-          <div class="ticket-section-body">
-            <p class="text-muted mb-0">Este ticket está en otra área. Tenés acceso de lectura y comentarios, pero no podés cambiar estado ni derivarlo.</p>
-          </div>
+      <div class="content-section" *ngIf="!canProcessCurrentTicket() && !canDerivarTicket()">
+        <h2 class="ticket-section-heading ticket-section-heading--muted">
+          <i class="fas fa-info-circle" aria-hidden="true"></i>
+          <span>Acciones del ticket</span>
+        </h2>
+        <div class="ticket-section-body">
+          <p class="text-muted mb-0">Tenés acceso de lectura y comentarios si corresponde. Para cambiar estado o derivar el ticket necesitás ser quien lo creó, pertenecer al área actual o ser administrador.</p>
         </div>
       </div>
-    </ng-template>
+    </div>
   </div>
 </div>
 

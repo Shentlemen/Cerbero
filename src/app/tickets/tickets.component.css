@@ -150,6 +150,12 @@
   border-color: rgba(6, 95, 70, 0.14);
 }
 
+.tickets-area--laboratorio {
+  background: linear-gradient(145deg, #f5f3ff, #c4b5fd);
+  color: #4c1d95;
+  border-color: rgba(76, 29, 149, 0.16);
+}
+
 .tickets-area--default {
   background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
   color: #475569;

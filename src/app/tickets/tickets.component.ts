@@ -30,13 +30,15 @@ export class TicketsComponent implements OnInit {
   ordenColumna: TicketsOrdenColumna | null = null;
   ordenAsc = true;
 
+  /** Áreas para filtro local (incl. Laboratorio: el creador puede tener tickets derivados allí). */
   readonly areasTicket: string[] = [
     'ALMACEN',
     'INVENTARIO',
     'COMPRAS',
     'GESTION_EQUIP',
     'IMPRESION',
-    'GARANTIA'
+    'GARANTIA',
+    'LABORATORIO'
   ];
 
   private readonly prioridadOrden: Record<string, number> = {
@@ -234,7 +236,8 @@ export class TicketsComponent implements OnInit {
       COMPRAS: 'tickets-area-pill tickets-area--compras',
       GESTION_EQUIP: 'tickets-area-pill tickets-area--gestion-equip',
       IMPRESION: 'tickets-area-pill tickets-area--impresion',
-      GARANTIA: 'tickets-area-pill tickets-area--garantia'
+      GARANTIA: 'tickets-area-pill tickets-area--garantia',
+      LABORATORIO: 'tickets-area-pill tickets-area--laboratorio'
     };
     return map[key] || 'tickets-area-pill tickets-area--default';
   }
