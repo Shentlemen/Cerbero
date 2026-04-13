@@ -376,29 +376,86 @@ html, body {
 .submenu {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  margin: 0 8px 0 16px;
+  padding-left: 10px;
+  border-left: none;
+  border-radius: 0;
+  background: transparent;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height 0.22s ease, opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
 }
 
 .submenu.show {
   max-height: 500px; /* Aumentado de 200px a 500px para mostrar todos los elementos */
-  transition: max-height 0.3s ease-in;
+  opacity: 1;
+  transform: translateY(0);
+  background: transparent;
 }
 
 .submenu-item {
-  padding: 12px 20px !important;
-  font-size: 11px !important;
-  background-color: rgba(45, 45, 45, 0.3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  position: relative;
+  padding: 10px 14px 10px 18px !important;
+  margin: 2px 0;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  font-size: 12px !important;
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  background-color: rgba(45, 45, 45, 0.35);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
   box-sizing: border-box;
+  align-items: flex-start;
+  transition: background-color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
+}
+
+.submenu-item span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.submenu-item::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(189, 195, 199, 0.8);
+  transform: translateY(-50%);
 }
 
 .submenu-item i {
-  font-size: 13px !important;
+  font-size: 12px !important;
   width: 20px;
   text-align: center;
   flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.submenu-item:hover {
+  background: rgba(52, 152, 219, 0.14);
+  border-left-color: rgba(52, 152, 219, 0.75);
+  transform: translateX(2px);
+}
+
+.submenu-item.active {
+  background: rgba(52, 152, 219, 0.22);
+  border-left-color: #3498db;
+  box-shadow: inset 0 0 0 1px rgba(52, 152, 219, 0.25);
+}
+
+.submenu-item.active::before {
+  background: #3498db;
+}
+
+.menu-item.expanded > .menu-header {
+  background-color: #262f38;
+  border-left: 4px solid rgba(52, 152, 219, 0.9);
 }
 
 .submenu-item.disabled {

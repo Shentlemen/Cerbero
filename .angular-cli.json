@@ -34,7 +34,6 @@
               "src/assets/css/bootstrap.min.css",
               "src/assets/css/all.min.css",
               "src/assets/css/roboto-fonts.css",
-              "src/assets/css/open-sans.css",
               "src/assets/css/material-icons.css",
               "node_modules/leaflet/dist/leaflet.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.css",

@@ -7,6 +7,9 @@ export interface Alerta {
   disk: boolean;
   ip: boolean;
   video: boolean;
+  monitor: boolean;
+  storageHw: boolean;
+  softwareForbidden: boolean;
   confirmada: boolean;
   valorAnterior?: string;
   valorNuevo?: string;

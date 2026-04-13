@@ -20,6 +20,13 @@ export interface StockItem {
   [key: string]: any;
 }
 
+export interface EstanteriaLayout {
+  estanteriaId: string;
+  offsetX: number;
+  offsetZ: number;
+  rotationY: number;
+}
+
 @Component({
   selector: 'app-almacen-3d',
   standalone: true,
@@ -37,8 +44,10 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   @Input() cajasporNivel: number = 4;
   @Input() config: AlmacenConfig | null = null; // Si null → vista "sin estructura"
   @Input() stockData: StockItem[] = []; // Datos de stock para filtrar cajas
+  @Input() estanteriasLayout: EstanteriaLayout[] = [];
   
   @Output() cajaSeleccionada = new EventEmitter<CajaInfo>();
+  @Output() estanteriasLayoutChange = new EventEmitter<EstanteriaLayout[]>();
   
   private engine!: BABYLON.Engine;
   private scene!: BABYLON.Scene;
@@ -71,9 +80,10 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     const configChanged = changes['config'] && !changes['config'].firstChange;
     const almacenIdChanged = changes['almacenId'] && !changes['almacenId'].firstChange;
     const stockDataChanged = changes['stockData'] && !changes['stockData'].firstChange;
+    const layoutChanged = changes['estanteriasLayout'] && !changes['estanteriasLayout'].firstChange;
 
     // Si cambia config o almacenId → reconstruir escena completa
-    if ((configChanged || almacenIdChanged) && this.engine) {
+    if ((configChanged || almacenIdChanged || layoutChanged) && this.engine) {
       this.destroyScene();
       setTimeout(() => this.initBabylon(), 0);
       return;
@@ -222,14 +232,18 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     const offsetInicialZ = -profTotal / 2 + profundidadEstanteria / 2;
 
     this.layoutEstanterias = [];
+    const layoutMap = new Map((this.estanteriasLayout || []).map(l => [l.estanteriaId, l]));
     let idx = 0;
     for (let fila = 0; fila < numFilas && idx < numEstanterias; fila++) {
       const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
       for (let col = 0; col < numCols && idx < numEstanterias; col++) {
         const offsetZ = offsetInicialZ + col * (profundidadEstanteria + espacioEntreEstanterias);
         const estanteriaId = `E${idx + 1}`;
-        this.layoutEstanterias.push({ offsetX, offsetZ, estanteriaId });
-        this.crearEstanteria(offsetX, offsetZ, estanteriaId);
+        const custom = layoutMap.get(estanteriaId);
+        const finalX = custom?.offsetX ?? offsetX;
+        const finalZ = custom?.offsetZ ?? offsetZ;
+        this.layoutEstanterias.push({ offsetX: finalX, offsetZ: finalZ, estanteriaId });
+        this.crearEstanteria(finalX, finalZ, estanteriaId, custom?.rotationY ?? 0);
         idx++;
       }
     }
@@ -537,7 +551,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     ground.position.y = 0;
   }
 
-  private crearEstanteria(offsetX: number = 0, offsetZ: number = 0, estanteriaId: string = 'E1'): void {
+  private crearEstanteria(offsetX: number = 0, offsetZ: number = 0, estanteriaId: string = 'E1', rotationY: number = 0): void {
     // Material metálico para la estructura
     const metalMaterial = new BABYLON.StandardMaterial(`metalMat_${offsetX}_${offsetZ}`, this.scene);
     metalMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.45);
@@ -581,7 +595,9 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         height: alturaTotal,
         depth: grosorTubo
       }, this.scene);
-      poste.position = new BABYLON.Vector3(pos[0] + offsetX, alturaTotal/2, pos[1] + offsetZ);
+      const rotatedX = pos[0] * Math.cos(rotationY) - pos[1] * Math.sin(rotationY);
+      const rotatedZ = pos[0] * Math.sin(rotationY) + pos[1] * Math.cos(rotationY);
+      poste.position = new BABYLON.Vector3(rotatedX + offsetX, alturaTotal/2, rotatedZ + offsetZ);
       poste.material = metalMaterial;
     });
 
@@ -593,6 +609,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         depth: profundidadEstanteria
       }, this.scene);
       estante.position = new BABYLON.Vector3(offsetX, nivel * alturaNivel, offsetZ);
+      estante.rotation.y = rotationY;
       estante.material = metalMaterial;
 
       // Barras laterales
@@ -602,6 +619,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         depth: grosorTubo
       }, this.scene);
       barraFrontal.position = new BABYLON.Vector3(offsetX, nivel * alturaNivel, offsetZ - profundidadEstanteria/2);
+      barraFrontal.rotation.y = rotationY;
       barraFrontal.material = metalMaterial;
 
       const barraTrasera = BABYLON.MeshBuilder.CreateBox(`barraTrasera_${offsetX}_${offsetZ}_${nivel}`, {
@@ -610,6 +628,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         depth: grosorTubo
       }, this.scene);
       barraTrasera.position = new BABYLON.Vector3(offsetX, nivel * alturaNivel, offsetZ + profundidadEstanteria/2);
+      barraTrasera.rotation.y = rotationY;
       barraTrasera.material = metalMaterial;
     }
 
@@ -618,7 +637,13 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     const anchoSeccion = anchoEstanteria / secciones;
     
     for (let i = 1; i < secciones; i++) {
-      const xPos = offsetX + (-anchoEstanteria/2 + i * anchoSeccion);
+      const localX = -anchoEstanteria/2 + i * anchoSeccion;
+      const localFrontZ = -profundidadEstanteria/2;
+      const localBackZ = profundidadEstanteria/2;
+      const frontX = localX * Math.cos(rotationY) - localFrontZ * Math.sin(rotationY);
+      const frontZ = localX * Math.sin(rotationY) + localFrontZ * Math.cos(rotationY);
+      const backX = localX * Math.cos(rotationY) - localBackZ * Math.sin(rotationY);
+      const backZ = localX * Math.sin(rotationY) + localBackZ * Math.cos(rotationY);
       
       // Barra vertical frontal
       const barraDivisoriaFrontal = BABYLON.MeshBuilder.CreateBox(`barraDivisoriaFrontal_${offsetX}_${offsetZ}_${i}`, {
@@ -626,7 +651,8 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         height: alturaTotal,
         depth: grosorTubo
       }, this.scene);
-      barraDivisoriaFrontal.position = new BABYLON.Vector3(xPos, alturaTotal/2, offsetZ - profundidadEstanteria/2);
+      barraDivisoriaFrontal.position = new BABYLON.Vector3(frontX + offsetX, alturaTotal/2, frontZ + offsetZ);
+      barraDivisoriaFrontal.rotation.y = rotationY;
       barraDivisoriaFrontal.material = metalMaterial;
       
       // Barra vertical trasera
@@ -635,7 +661,8 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         height: alturaTotal,
         depth: grosorTubo
       }, this.scene);
-      barraDivisoriaTrasera.position = new BABYLON.Vector3(xPos, alturaTotal/2, offsetZ + profundidadEstanteria/2);
+      barraDivisoriaTrasera.position = new BABYLON.Vector3(backX + offsetX, alturaTotal/2, backZ + offsetZ);
+      barraDivisoriaTrasera.rotation.y = rotationY;
       barraDivisoriaTrasera.material = metalMaterial;
       
       // Conectar frontal y trasera con barras horizontales en cada nivel
@@ -645,7 +672,10 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
           height: grosorTubo,
           depth: profundidadEstanteria
         }, this.scene);
-        barraConexion.position = new BABYLON.Vector3(xPos, nivel * alturaNivel, offsetZ);
+        const connX = localX * Math.cos(rotationY) - 0 * Math.sin(rotationY);
+        const connZ = localX * Math.sin(rotationY) + 0 * Math.cos(rotationY);
+        barraConexion.position = new BABYLON.Vector3(connX + offsetX, nivel * alturaNivel, connZ + offsetZ);
+        barraConexion.rotation.y = rotationY;
         barraConexion.material = metalMaterial;
       }
     }
@@ -654,7 +684,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     this.crearEtiquetaEstanteria(offsetX, offsetZ, estanteriaId, alturaTotal);
     
     // Crear las cajas para esta estantería
-    this.crearCajas(offsetX, offsetZ, estanteriaId);
+    this.crearCajas(offsetX, offsetZ, estanteriaId, rotationY);
   }
 
   /** Recrea solo las cajas según layoutEstanterias (cuando stockData cambia) */
@@ -712,7 +742,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     this.etiquetasEstanterias.set(estanteriaId, labelPlane);
   }
 
-  private crearCajas(offsetX: number = 0, offsetZ: number = 0, estanteriaId: string = 'E1'): void {
+  private crearCajas(offsetX: number = 0, offsetZ: number = 0, estanteriaId: string = 'E1', rotationY: number = 0): void {
     const anchoEstanteria = 18;
     const profundidadEstanteria = 1.5;
     const alturaTotal = 5;
@@ -756,7 +786,10 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
             depth: profundoCaja
           }, this.scene);
 
-          caja.position = new BABYLON.Vector3(xPosEnSeccion + offsetX, yPos, offsetZ);
+          const rotX = xPosEnSeccion * Math.cos(rotationY) - 0 * Math.sin(rotationY);
+          const rotZ = xPosEnSeccion * Math.sin(rotationY) + 0 * Math.cos(rotationY);
+          caja.position = new BABYLON.Vector3(rotX + offsetX, yPos, rotZ + offsetZ);
+          caja.rotation.y = rotationY;
 
           // Material de caja de cartón
           const cajaMaterial = new BABYLON.StandardMaterial(`cajaMat_${offsetX}_${offsetZ}_${nivel}_${seccion}_${posEnSeccion}`, this.scene);

@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Almacen3DComponent, CajaInfo, StockItem } from '../components/almacen-3d/almacen-3d.component';
+import { Almacen3DComponent, CajaInfo, StockItem, EstanteriaLayout } from '../components/almacen-3d/almacen-3d.component';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { StockAlmacenService } from '../services/stock-almacen.service';
 import { AlmacenService } from '../services/almacen.service';
@@ -18,6 +18,8 @@ import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { AlmacenConfig } from '../interfaces/almacen-config.interface';
 import { forkJoin } from 'rxjs';
+import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-almacen-3d-demo',
@@ -37,6 +39,15 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   configSeleccionada: AlmacenConfig | null = null;
   almacenConfigsMap: Map<number, AlmacenConfig> = new Map();
   almacenIdParaModal: number = 2;
+  editLayoutMode: boolean = false;
+  /** Layout persistido (localStorage) y usado fuera del modo edición. */
+  estanteriasLayout: EstanteriaLayout[] = [];
+  /** Borrador editable en el panel; no se envía al 3D hasta "Aplicar al 3D" o "Guardar". */
+  estanteriasLayoutDraft: EstanteriaLayout[] = [];
+  /** Lo que recibe app-almacen-3d (evita reconstruir la escena en cada tecla). */
+  estanteriasLayoutFor3d: EstanteriaLayout[] = [];
+  transferiendoItemId: string | number | null = null;
+  reactivandoItemId: string | number | null = null;
 
   constructor(
     private modalService: NgbModal,
@@ -48,7 +59,8 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
     private estadoDispositivoService: EstadoDispositivoService,
     private hardwareService: HardwareService,
     private biosService: BiosService,
-    private networkInfoService: NetworkInfoService
+    private networkInfoService: NetworkInfoService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -70,6 +82,7 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
         if (defaultAlmacen) {
           this.almacenSeleccionado = defaultAlmacen;
           this.configSeleccionada = this.almacenConfigsMap.get(defaultAlmacen.id) || null;
+          this.cargarLayoutGuardado(defaultAlmacen.id);
           this.cargarStockParaAlmacen(defaultAlmacen);
         }
       },
@@ -89,7 +102,99 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   onAlmacenCambio(): void {
     if (!this.almacenSeleccionado) return;
     this.configSeleccionada = this.almacenConfigsMap.get(this.almacenSeleccionado.id) || null;
+    this.editLayoutMode = false;
+    this.cargarLayoutGuardado(this.almacenSeleccionado.id);
     this.cargarStockParaAlmacen(this.almacenSeleccionado);
+  }
+
+  private getLayoutStorageKey(almacenId: number): string {
+    return `almacen-layout-${almacenId}`;
+  }
+
+  private cargarLayoutGuardado(almacenId: number): void {
+    try {
+      const raw = localStorage.getItem(this.getLayoutStorageKey(almacenId));
+      const parsed = raw ? JSON.parse(raw) : [];
+      this.estanteriasLayout = Array.isArray(parsed) ? parsed : [];
+      this.estanteriasLayoutDraft = this.cloneLayout(this.estanteriasLayout);
+      this.estanteriasLayoutFor3d = this.cloneLayout(this.estanteriasLayout);
+    } catch {
+      this.estanteriasLayout = [];
+      this.estanteriasLayoutDraft = [];
+      this.estanteriasLayoutFor3d = [];
+    }
+  }
+
+  private cloneLayout(layout: EstanteriaLayout[]): EstanteriaLayout[] {
+    return layout.map(e => ({ ...e }));
+  }
+
+  toggleEditLayoutMode(): void {
+    if (this.editLayoutMode) {
+      this.editLayoutMode = false;
+      this.estanteriasLayoutFor3d = this.cloneLayout(this.estanteriasLayout);
+      this.estanteriasLayoutDraft = this.cloneLayout(this.estanteriasLayout);
+      return;
+    }
+    this.editLayoutMode = true;
+    this.estanteriasLayoutDraft = this.cloneLayout(this.estanteriasLayout);
+    if (this.estanteriasLayoutDraft.length === 0 && this.configSeleccionada) {
+      this.estanteriasLayoutDraft = this.generarLayoutBase(this.configSeleccionada.cantidadEstanterias);
+    }
+    this.estanteriasLayoutFor3d = this.cloneLayout(this.estanteriasLayoutDraft);
+  }
+
+  /** Actualiza la escena 3D con los valores del borrador (un solo rebuild). */
+  aplicarLayoutAl3d(): void {
+    this.estanteriasLayoutFor3d = this.cloneLayout(this.estanteriasLayoutDraft);
+  }
+
+  guardarLayout(): void {
+    if (!this.almacenSeleccionado?.id) return;
+    this.estanteriasLayout = this.cloneLayout(this.estanteriasLayoutDraft);
+    localStorage.setItem(this.getLayoutStorageKey(this.almacenSeleccionado.id), JSON.stringify(this.estanteriasLayout));
+    this.estanteriasLayoutFor3d = this.cloneLayout(this.estanteriasLayout);
+    this.notificationService.showSuccessMessage('Layout del almacén guardado correctamente.');
+    this.editLayoutMode = false;
+  }
+
+  resetLayout(): void {
+    if (!this.almacenSeleccionado?.id || !this.configSeleccionada) return;
+    localStorage.removeItem(this.getLayoutStorageKey(this.almacenSeleccionado.id));
+    this.estanteriasLayout = [];
+    this.estanteriasLayoutDraft = this.generarLayoutBase(this.configSeleccionada.cantidadEstanterias);
+    this.estanteriasLayoutFor3d = [];
+    this.notificationService.showSuccessMessage('Layout restablecido al modo automático.');
+  }
+
+  private generarLayoutBase(cantidadEstanterias: number): EstanteriaLayout[] {
+    const espacioEntreEstanterias = 7;
+    const espacioEntreFilas = 8;
+    const profundidadEstanteria = 1.5;
+    const anchoEstanteria = 18;
+    const numCols = Math.ceil(Math.sqrt(cantidadEstanterias));
+    const numFilas = Math.ceil(cantidadEstanterias / numCols);
+    const anchoTotal = numFilas * anchoEstanteria + (numFilas - 1) * espacioEntreFilas;
+    const profTotal = numCols * profundidadEstanteria + (numCols - 1) * espacioEntreEstanterias;
+    const offsetInicialX = -anchoTotal / 2 + anchoEstanteria / 2;
+    const offsetInicialZ = -profTotal / 2 + profundidadEstanteria / 2;
+
+    const output: EstanteriaLayout[] = [];
+    let idx = 0;
+    for (let fila = 0; fila < numFilas && idx < cantidadEstanterias; fila++) {
+      const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
+      for (let col = 0; col < numCols && idx < cantidadEstanterias; col++) {
+        const offsetZ = offsetInicialZ + col * (profundidadEstanteria + espacioEntreEstanterias);
+        output.push({
+          estanteriaId: `E${idx + 1}`,
+          offsetX,
+          offsetZ,
+          rotationY: 0
+        });
+        idx++;
+      }
+    }
+    return output;
   }
 
   esCementerio(almacen: any): boolean {
@@ -190,6 +295,11 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
         estante: estante || null,
         seccion: seccion || null,
         cantidad: 1,
+        esEquipoEspecial: true,
+        tipoEquipo: 'EQUIPO',
+        itemId: estado.hardwareId,
+        numero: hw.name || `Equipo ${estado.hardwareId}`,
+        estadoInfo: estado,
         item: {
           nombreItem: hw.name || `Equipo ${estado.hardwareId}`,
           descripcion: `${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`
@@ -228,6 +338,10 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
         estante: estante || null,
         seccion: seccion || null,
         cantidad: 1,
+        esEquipoEspecial: true,
+        tipoEquipo: 'DISPOSITIVO',
+        numero: estado.mac || device.mac,
+        estadoInfo: estado,
         item: {
           nombreItem: device.name || device.mac,
           descripcion: `${device.type || 'N/A'} | ${device.description || 'Sin descripción'}`
@@ -290,6 +404,11 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
             estante: estante || null,
             seccion: seccion || null,
             cantidad: 1,
+            esEquipoEspecial: true,
+            tipoEquipo: 'EQUIPO',
+            itemId: estado.hardwareId,
+            numero: hw.name || `Equipo ${estado.hardwareId}`,
+            estadoInfo: estado,
             item: {
               nombreItem: hw.name || `Equipo ${estado.hardwareId}`,
               descripcion: `${biosData?.type || 'N/A'} | ${hw.osName || 'N/A'}`
@@ -312,6 +431,10 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
             estante: estante || null,
             seccion: seccion || null,
             cantidad: 1,
+            esEquipoEspecial: true,
+            tipoEquipo: 'DISPOSITIVO',
+            numero: estado.mac || (device as any).mac,
+            estadoInfo: estado,
             item: {
               nombreItem: (device as any).name || estado.mac,
               descripcion: `${(device as any).type || 'N/A'} | ${(device as any).description || 'Sin descripción'}`
@@ -477,7 +600,139 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   }
 
   transferirItem(item: any): void {
-    this.notificationService.showInfo('Transferir', 'Funcionalidad de transferencia disponible en la vista principal de stock.');
+    if (!this.esEquipoEspecial(item)) return;
+
+    const tipo = this.getTipoEquipo(item);
+    if (tipo === 'EQUIPO') {
+      const hardwareId = item.itemId || item.estadoInfo?.hardwareId;
+      if (!hardwareId) {
+        this.notificationService.showError('Error', 'No se pudo identificar el equipo a transferir.');
+        return;
+      }
+
+      const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+      modalRef.componentInstance.item = { tipo: 'EQUIPO', name: item.numero || item.item?.nombreItem || 'Equipo' };
+
+      modalRef.result.then((transferData: any) => {
+        if (!transferData) return;
+        this.transferiendoItemId = item.itemId || item.numero;
+        const requestData = {
+          ...transferData,
+          usuario: this.authService.getUsuarioParaAuditoria()
+        };
+        this.estadoEquipoService.transferirEquipo(hardwareId, requestData).subscribe({
+          next: (response: any) => {
+            if (response?.success) {
+              this.notificationService.showSuccessMessage('Equipo transferido exitosamente.');
+              this.cargarStockParaAlmacen(this.almacenSeleccionado, () => this.actualizarContenidoCajaModal(), true);
+            } else {
+              this.notificationService.showError('Error al transferir', response?.message || 'No se pudo transferir el equipo.');
+            }
+          },
+          error: () => this.notificationService.showError('Error al transferir', 'No se pudo transferir el equipo.'),
+          complete: () => this.transferiendoItemId = null
+        });
+      }).catch(() => {});
+      return;
+    }
+
+    const mac = item.numero || item.estadoInfo?.mac || item.item?.nombreItem;
+    if (!mac) {
+      this.notificationService.showError('Error', 'No se pudo identificar el dispositivo a transferir.');
+      return;
+    }
+
+    const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+    modalRef.componentInstance.item = { tipo: 'DISPOSITIVO', name: item.item?.nombreItem || mac, mac };
+    modalRef.result.then((transferData: any) => {
+      if (!transferData) return;
+      this.transferiendoItemId = item.numero || mac;
+      const requestData = {
+        ...transferData,
+        usuario: this.authService.getUsuarioParaAuditoria()
+      };
+      this.estadoDispositivoService.transferirDispositivo(mac, requestData).subscribe({
+        next: (response: any) => {
+          if (response?.success) {
+            this.notificationService.showSuccessMessage('Dispositivo transferido exitosamente.');
+            this.cargarStockParaAlmacen(this.almacenSeleccionado, () => this.actualizarContenidoCajaModal(), true);
+          } else {
+            this.notificationService.showError('Error al transferir', response?.message || 'No se pudo transferir el dispositivo.');
+          }
+        },
+        error: () => this.notificationService.showError('Error al transferir', 'No se pudo transferir el dispositivo.'),
+        complete: () => this.transferiendoItemId = null
+      });
+    }).catch(() => {});
+  }
+
+  reactivarItem(item: any): void {
+    if (!this.esEquipoEspecial(item)) return;
+
+    const tipo = this.getTipoEquipo(item);
+    if (tipo === 'EQUIPO') {
+      const hardwareId = item.itemId || item.estadoInfo?.hardwareId;
+      if (!hardwareId) {
+        this.notificationService.showError('Error', 'No se pudo identificar el equipo a reactivar.');
+        return;
+      }
+      this.reactivandoItemId = item.itemId || item.numero;
+      const request = {
+        observaciones: 'Reactivado desde almacén 3D',
+        usuario: this.authService.getUsuarioParaAuditoria()
+      };
+      this.estadoEquipoService.reactivarEquipo(hardwareId, request).subscribe({
+        next: (response: any) => {
+          if (response?.success) {
+            this.notificationService.showSuccessMessage('Equipo reactivado exitosamente.');
+            this.cargarStockParaAlmacen(this.almacenSeleccionado, () => this.actualizarContenidoCajaModal(), true);
+          } else {
+            this.notificationService.showError('Error al reactivar', response?.message || 'No se pudo reactivar el equipo.');
+          }
+        },
+        error: () => this.notificationService.showError('Error al reactivar', 'No se pudo reactivar el equipo.'),
+        complete: () => this.reactivandoItemId = null
+      });
+      return;
+    }
+
+    const mac = item.numero || item.estadoInfo?.mac || item.item?.nombreItem;
+    if (!mac) {
+      this.notificationService.showError('Error', 'No se pudo identificar el dispositivo a reactivar.');
+      return;
+    }
+    this.reactivandoItemId = item.numero || mac;
+    const request = {
+      observaciones: 'Reactivado desde almacén 3D',
+      usuario: this.authService.getUsuarioParaAuditoria()
+    };
+    this.estadoDispositivoService.reactivarDispositivo(mac, request).subscribe({
+      next: (response: any) => {
+        if (response?.success) {
+          this.notificationService.showSuccessMessage('Dispositivo reactivado exitosamente.');
+          this.cargarStockParaAlmacen(this.almacenSeleccionado, () => this.actualizarContenidoCajaModal(), true);
+        } else {
+          this.notificationService.showError('Error al reactivar', response?.message || 'No se pudo reactivar el dispositivo.');
+        }
+      },
+      error: () => this.notificationService.showError('Error al reactivar', 'No se pudo reactivar el dispositivo.'),
+      complete: () => this.reactivandoItemId = null
+    });
+  }
+
+  esEquipoEspecial(item: any): boolean {
+    return item?.esEquipoEspecial === true || (!item?.id && !!item?.tipoEquipo);
+  }
+
+  getTipoEquipo(item: any): 'EQUIPO' | 'DISPOSITIVO' | '' {
+    const tipo = (item?.tipoEquipo || '').toString().toUpperCase();
+    return (tipo === 'EQUIPO' || tipo === 'DISPOSITIVO') ? tipo : '';
+  }
+
+  onItemClick(item: any): void {
+    if (item?.id) {
+      this.abrirModalCantidad(item);
+    }
   }
 }
 

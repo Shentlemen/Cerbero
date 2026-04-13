@@ -972,6 +972,20 @@
   border: 1px solid #e1bee7;
 }
 
+.alert-tag-container.monitor .alert-tag-description,
+.alert-tag-container.monitor .alert-tag-value {
+  background-color: #e0f7fa;
+  color: #00838f;
+  border: 1px solid #b2ebf2;
+}
+
+.alert-tag-container.storage-hw .alert-tag-description,
+.alert-tag-container.storage-hw .alert-tag-value {
+  background-color: #ede7f6;
+  color: #5e35b1;
+  border: 1px solid #d1c4e9;
+}
+
 .alert-tag-container.new-hardware .alert-tag-description,
 .alert-tag-container.new-hardware .alert-tag-value {
   background-color: #e8f5e9;

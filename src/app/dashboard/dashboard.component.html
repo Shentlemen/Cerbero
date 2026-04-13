@@ -166,6 +166,30 @@
         </button>
         <button 
           class="btn-filter" 
+          [class.active]="currentFilter === 'monitor'"
+          [style.--device-color]="'#00838f'"
+          [style.--device-bg-color]="'#e0f7fa'"
+          [style.--device-border-color]="'#b2ebf2'"
+          (click)="filterAlerts('monitor')"
+          title="Mostrar solo alertas de cambios en monitores">
+          <i class="fas fa-desktop" style="color: #00838f;"></i>
+          <span>Monitores</span>
+          <span class="count">({{getFilterCount('monitor')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
+          [class.active]="currentFilter === 'storage_hw'"
+          [style.--device-color]="'#5e35b1'"
+          [style.--device-bg-color]="'#ede7f6'"
+          [style.--device-border-color]="'#d1c4e9'"
+          (click)="filterAlerts('storage_hw')"
+          title="Mostrar solo alertas de cambios en discos físicos (almacenamiento)">
+          <i class="fas fa-database" style="color: #5e35b1;"></i>
+          <span>Almacenamiento</span>
+          <span class="count">({{getFilterCount('storage_hw')}})</span>
+        </button>
+        <button 
+          class="btn-filter" 
           [class.active]="currentFilter === 'software_forbidden'"
           [style.--device-color]="'#e74c3c'"
           [style.--device-bg-color]="'#fff5f5'"
@@ -229,6 +253,24 @@
                 <span class="alert-tag-description">
                   <i class="fas fa-video"></i> 
                   Cambio en tarjeta de video
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+                </span>
+              </div>
+              <div *ngIf="alert.monitor" class="alert-tag-container monitor">
+                <span class="alert-tag-description">
+                  <i class="fas fa-desktop"></i> 
+                  Cambio en monitores
+                </span>
+                <span class="alert-tag-value">
+                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
+                </span>
+              </div>
+              <div *ngIf="alert.storageHw" class="alert-tag-container storage-hw">
+                <span class="alert-tag-description">
+                  <i class="fas fa-database"></i> 
+                  Cambio en almacenamiento físico
                 </span>
                 <span class="alert-tag-value">
                   {{ alert.valorAnterior }} → {{ alert.valorNuevo }}

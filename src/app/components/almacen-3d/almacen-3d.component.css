@@ -62,6 +62,7 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+  zoom: 1.25; /* Compensa el zoom global del body (0.8) para alinear picking */
 }
 
 .render-canvas {

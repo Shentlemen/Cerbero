@@ -6,7 +6,8 @@ import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { NgbPaginationModule, NgbModalModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
-import { AlertService, Alerta } from '../services/alert.service';
+import { AlertService } from '../services/alert.service';
+import { Alerta } from '../models/alerta.model';
 import { finalize, catchError } from 'rxjs/operators';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
@@ -461,6 +462,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             return alert.ip === true;
           case 'video':
             return alert.video === true;
+          case 'monitor':
+            return alert.monitor === true;
+          case 'storage_hw':
+            return alert.storageHw === true;
           case 'software_forbidden':
             return alert.softwareForbidden === true;
           default:
@@ -1175,6 +1180,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           return alert.ip === true;
         case 'video':
           return alert.video === true;
+        case 'monitor':
+          return alert.monitor === true;
+        case 'storage_hw':
+          return alert.storageHw === true;
         case 'software_forbidden':
           return alert.softwareForbidden === true;
         default:

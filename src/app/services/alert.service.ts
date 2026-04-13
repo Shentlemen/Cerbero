@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { ConfigService } from './config.service';
 import { catchError, map, tap } from 'rxjs/operators';
+import type { Alerta } from '../models/alerta.model';
 
 @Injectable({
   providedIn: 'root'
@@ -23,30 +24,29 @@ export class AlertService {
 
   getAlertas(): Observable<Alerta[]> {
     return this.http.get<any[]>(this.apiUrl).pipe(
-      map(alertas => alertas.map(alerta => {
-
-        
-        return {
-          ...alerta,
-          memory: Boolean(alerta.memory),
-          disk: Boolean(alerta.disk),
-          ip: Boolean(alerta.ip),
-          video: Boolean(alerta.video),
-          softwareForbidden: Boolean(alerta.softwareForbidden),
-          confirmada: Boolean(alerta.confirmada),
-          // ✅ CORREGIDO: Convertir boolean a number para new_hardware
-          new_hardware: alerta.newHardware ? 1 : 0,
-          // ✅ CORREGIDO: Usar el campo pcName que viene del backend
-          pcName: alerta.pcName || 'Desconocido',
-          // ✅ CORREGIDO: Usar el campo created_at si existe, sino fecha actual
-          fecha: alerta.created_at || new Date().toISOString()
-        };
-      })),
-      catchError(error => {
+      map((alertas) => alertas.map((alerta) => this.mapApiAlerta(alerta))),
+      catchError((error) => {
         console.error('Error en getAlertas:', error);
         throw error;
       })
     );
+  }
+
+  private mapApiAlerta(alerta: any): Alerta {
+    return {
+      ...alerta,
+      memory: Boolean(alerta.memory),
+      disk: Boolean(alerta.disk),
+      ip: Boolean(alerta.ip),
+      video: Boolean(alerta.video),
+      monitor: Boolean(alerta.monitor),
+      storageHw: Boolean(alerta.storageHw),
+      softwareForbidden: Boolean(alerta.softwareForbidden),
+      confirmada: Boolean(alerta.confirmada),
+      new_hardware: alerta.newHardware ? 1 : 0,
+      pcName: alerta.pcName || 'Desconocido',
+      fecha: alerta.created_at || new Date().toISOString()
+    };
   }
 
   confirmarAlerta(alertaId: number): Observable<any> {
@@ -98,27 +98,10 @@ export class AlertService {
 
   eliminarAlerta(alertaId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${alertaId}`).pipe(
-      catchError(error => {
+      catchError((error) => {
         console.error('Error al eliminar alerta:', error);
         return throwError(() => error);
       })
     );
   }
 }
-
-export interface Alerta {
-  id: number;
-  hardwareId: number;
-  pcName: string;
-  fecha: string;
-  memory: boolean;
-  disk: boolean;
-  ip: boolean;
-  video: boolean;
-  softwareForbidden: boolean;
-  confirmada: boolean;
-  valorAnterior?: string;
-  valorNuevo?: string;
-  new_hardware: number;
-}
-
