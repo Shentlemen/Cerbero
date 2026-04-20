@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, HostListener, ElementRef, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -38,7 +38,17 @@ import autoTable from 'jspdf-autotable';
   templateUrl: './stock-almacen.component.html',
   styleUrls: ['./stock-almacen.component.css']
 })
-export class StockAlmacenComponent implements OnInit, OnDestroy {
+export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
+  /**
+   * Cuando true, el ID viene de `embeddedAlmacenId` (p. ej. embebido en Almacenes) y no de la ruta.
+   */
+  @Input() embedStock = false;
+  @Input() embeddedAlmacenId: number | null = null;
+  /** Título de la pantalla: ancla para subir “hasta arriba del todo” al paginar. */
+  @ViewChild('stockPaginaInicio', { read: ElementRef }) stockPaginaInicioRef?: ElementRef<HTMLElement>;
+  /** Área con scroll interno de la tabla; la ventana suele quedar en 0 mientras esto sí hace scroll. */
+  @ViewChild('listadoTableScroll', { read: ElementRef }) listadoTableScrollRef?: ElementRef<HTMLElement>;
+
   stock: StockAlmacen[] = [];
   almacenes: Almacen[] = [];
   almacenSeleccionado: Almacen | null = null;
@@ -69,6 +79,19 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   // Buscador con resaltado (no filtra, solo resalta)
   searchTerm: string = '';
 
+  // Estado de selección para layout híbrido (izquierda árbol, derecha listado)
+  selectedAlmacenKey: string | null = null;
+  selectedEstanteriaKey: string | null = null;
+  selectedEstanteKey: string | null = null;
+
+  /** Listado derecho ordenado (se recalcula al cambiar búsqueda, selección o datos; evita reordenar 300+ filas en cada CD) */
+  private itemsListadoOrdenados: any[] = [];
+
+  /** Paginación del listado (mejora rendimiento con muchos equipos) */
+  listadoPage = 1;
+  /** Filas por página en la tabla (menos DOM = scroll más fluido) */
+  listadoPageSize = 25;
+
   // Datos de stock para el componente 3D (solo para ALM03)
   stockData3D: StockItem[] = [];
 
@@ -93,12 +116,28 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Suscribirse a los parámetros de la ruta para obtener el ID del almacén
+    if (this.embedStock) {
+      return;
+    }
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       this.almacenId = id ? parseInt(id, 10) : null;
       this.cargarDatos();
     });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.embedStock) {
+      return;
+    }
+    if (!changes['embeddedAlmacenId']) {
+      return;
+    }
+    const id = this.embeddedAlmacenId;
+    this.almacenId = id != null ? Number(id) : null;
+    if (this.almacenId != null) {
+      this.cargarDatos();
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -589,9 +628,249 @@ export class StockAlmacenComponent implements OnInit, OnDestroy {
     });
 
     this.stockOrganizado = grupos;
+    this.ensureSelectedHierarchy();
     
     // Preparar datos para el componente 3D si estamos viendo ALM03
     this.prepararStockData3D(stock);
+  }
+
+  onSearchTermChange(): void {
+    this.ensureSelectedHierarchy();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.ensureSelectedHierarchy();
+  }
+
+  getAlmacenActivoKey(): string | null {
+    const almacenes = this.getAlmacenes();
+    if (almacenes.length === 0) return null;
+    if (this.selectedAlmacenKey && almacenes.includes(this.selectedAlmacenKey)) {
+      return this.selectedAlmacenKey;
+    }
+    return almacenes[0];
+  }
+
+  seleccionarEstanteria(estanteria: string): void {
+    const almacenKey = this.getAlmacenActivoKey();
+    if (!almacenKey) return;
+    this.selectedAlmacenKey = almacenKey;
+    this.selectedEstanteriaKey = estanteria;
+    this.selectedEstanteKey = null;
+    this.syncListadoOrdenado(true);
+  }
+
+  seleccionarEstante(estanteria: string, estante: string): void {
+    const almacenKey = this.getAlmacenActivoKey();
+    if (!almacenKey) return;
+    this.selectedAlmacenKey = almacenKey;
+    this.selectedEstanteriaKey = estanteria;
+    this.selectedEstanteKey = estante;
+    this.syncListadoOrdenado(true);
+  }
+
+  limpiarSeleccionUbicacion(): void {
+    this.selectedEstanteriaKey = null;
+    this.selectedEstanteKey = null;
+    this.syncListadoOrdenado(true);
+  }
+
+  /**
+   * Recalcula el listado ordenado y opcionalmente vuelve a la página 1.
+   * Llamar al cambiar datos, búsqueda o selección de ubicación.
+   */
+  private syncListadoOrdenado(resetPage: boolean): void {
+    const almacenKey = this.getAlmacenActivoKey();
+    if (!almacenKey) {
+      this.itemsListadoOrdenados = [];
+      if (resetPage) this.listadoPage = 1;
+      return;
+    }
+
+    let items: any[] = [];
+    if (this.selectedEstanteriaKey && this.selectedEstanteKey) {
+      items = this.getItemsPorEstante(almacenKey, this.selectedEstanteriaKey, this.selectedEstanteKey);
+    } else if (this.selectedEstanteriaKey) {
+      items = this.getItemsPorEstanteria(almacenKey, this.selectedEstanteriaKey);
+    } else {
+      const estanterias = this.getEstanterias(almacenKey);
+      items = estanterias.flatMap(est => this.getItemsPorEstanteria(almacenKey, est));
+    }
+
+    this.itemsListadoOrdenados = [...items].sort((a, b) => {
+      const estA = this.normalizarClaveOrden(a?.estanteria);
+      const estB = this.normalizarClaveOrden(b?.estanteria);
+      if (estA !== estB) return estA.localeCompare(estB, undefined, { numeric: true });
+
+      const estanteA = this.normalizarClaveOrden(a?.estante);
+      const estanteB = this.normalizarClaveOrden(b?.estante);
+      if (estanteA !== estanteB) return estanteA.localeCompare(estanteB, undefined, { numeric: true });
+
+      const nombreA = this.normalizarClaveOrden(a?.item?.nombreItem || a?.numero);
+      const nombreB = this.normalizarClaveOrden(b?.item?.nombreItem || b?.numero);
+      return nombreA.localeCompare(nombreB, undefined, { numeric: true });
+    });
+
+    if (resetPage) {
+      this.listadoPage = 1;
+    }
+    this.clampListadoPage();
+  }
+
+  private clampListadoPage(): void {
+    const total = this.itemsListadoOrdenados.length;
+    const maxPage = Math.max(1, Math.ceil(total / this.listadoPageSize) || 1);
+    if (this.listadoPage > maxPage) {
+      this.listadoPage = maxPage;
+    }
+  }
+
+  /** Total de filas del listado actual (sin paginar) */
+  getItemsVistaActual(): any[] {
+    return this.itemsListadoOrdenados;
+  }
+
+  /** Filas visibles en la página actual del listado */
+  getPagedListadoItems(): any[] {
+    const start = (this.listadoPage - 1) * this.listadoPageSize;
+    return this.itemsListadoOrdenados.slice(start, start + this.listadoPageSize);
+  }
+
+  getListadoCollectionSize(): number {
+    return this.itemsListadoOrdenados.length;
+  }
+
+  /** Primera fila visible en la página actual (1-based), 0 si no hay ítems */
+  getListadoMostrandoDesde(): number {
+    const total = this.getListadoCollectionSize();
+    if (total === 0) return 0;
+    return (this.listadoPage - 1) * this.listadoPageSize + 1;
+  }
+
+  /** Última fila visible en la página actual */
+  getListadoMostrandoHasta(): number {
+    const total = this.getListadoCollectionSize();
+    if (total === 0) return 0;
+    return Math.min(this.listadoPage * this.listadoPageSize, total);
+  }
+
+  /**
+   * Al paginar: poner a cero tabla interna, cadena de padres, main, documento y ventana;
+   * luego `scrollIntoView` en el título (con scroll-margin por el header fijo del menú).
+   */
+  onListadoPageChange(_page: number): void {
+    const scrollTodoAlInicio = (): void => {
+      const tableWrap = this.listadoTableScrollRef?.nativeElement;
+      if (tableWrap) {
+        tableWrap.scrollTop = 0;
+      }
+
+      let node: HTMLElement | null = this.stockPaginaInicioRef?.nativeElement ?? null;
+      while (node) {
+        if (node.scrollTop) {
+          node.scrollTop = 0;
+        }
+        node = node.parentElement;
+      }
+
+      const main = document.querySelector('.main-content') as HTMLElement | null;
+      if (main) {
+        main.scrollTop = 0;
+      }
+
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+
+      this.stockPaginaInicioRef?.nativeElement?.scrollIntoView({
+        behavior: 'auto',
+        block: 'start',
+        inline: 'nearest'
+      });
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollTodoAlInicio();
+        requestAnimationFrame(scrollTodoAlInicio);
+      });
+    });
+  }
+
+  trackByListadoItem(_index: number, item: any): string | number {
+    if (item?.id != null) return item.id;
+    const num = item?.numero ?? '';
+    const est = `${item?.estanteria ?? ''}|${item?.estante ?? ''}|${item?.seccion ?? ''}`;
+    return `${est}:${num}`;
+  }
+
+  getTotalUnidadesVistaActual(): number {
+    return this.getItemsVistaActual().reduce((acc, item) => acc + Number(item?.cantidad || 1), 0);
+  }
+
+  getTotalEstanteriasVisibles(): number {
+    const almacenKey = this.getAlmacenActivoKey();
+    return almacenKey ? this.getEstanterias(almacenKey).length : 0;
+  }
+
+  getTotalEstantesVisibles(): number {
+    const almacenKey = this.getAlmacenActivoKey();
+    if (!almacenKey) return 0;
+    return this.getEstanterias(almacenKey)
+      .reduce((acc, estanteriaKey) => acc + this.getEstantesPorEstanteria(almacenKey, estanteriaKey).length, 0);
+  }
+
+  getEtiquetaSeleccionActual(): string {
+    if (this.selectedEstanteriaKey && this.selectedEstanteKey) {
+      return `${this.selectedEstanteriaKey} / Estante ${this.selectedEstanteKey}`;
+    }
+    if (this.selectedEstanteriaKey) {
+      return `${this.selectedEstanteriaKey} (todos los estantes)`;
+    }
+    return 'Todas las ubicaciones';
+  }
+
+  private ensureSelectedHierarchy(): void {
+    const almacenes = this.getAlmacenes();
+    if (almacenes.length === 0) {
+      this.selectedAlmacenKey = null;
+      this.selectedEstanteriaKey = null;
+      this.selectedEstanteKey = null;
+      this.syncListadoOrdenado(true);
+      return;
+    }
+
+    if (!this.selectedAlmacenKey || !almacenes.includes(this.selectedAlmacenKey)) {
+      this.selectedAlmacenKey = almacenes[0];
+      this.selectedEstanteriaKey = null;
+      this.selectedEstanteKey = null;
+      this.syncListadoOrdenado(true);
+      return;
+    }
+
+    if (this.selectedEstanteriaKey) {
+      const estanterias = this.getEstanterias(this.selectedAlmacenKey);
+      if (!estanterias.includes(this.selectedEstanteriaKey)) {
+        this.selectedEstanteriaKey = null;
+        this.selectedEstanteKey = null;
+        this.syncListadoOrdenado(true);
+        return;
+      }
+    }
+
+    if (this.selectedEstanteriaKey && this.selectedEstanteKey) {
+      const estantes = this.getEstantesPorEstanteria(this.selectedAlmacenKey, this.selectedEstanteriaKey);
+      if (!estantes.includes(this.selectedEstanteKey)) {
+        this.selectedEstanteKey = null;
+      }
+    }
+
+    this.syncListadoOrdenado(true);
+  }
+
+  private normalizarClaveOrden(value: any): string {
+    return String(value ?? '').trim().toLowerCase();
   }
 
   /**

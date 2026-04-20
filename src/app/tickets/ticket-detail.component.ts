@@ -35,6 +35,8 @@ export class TicketDetailComponent implements OnInit {
   notaEstado = '';
   notaArea = '';
   comentario = '';
+  /** Nota opcional al cerrar o reabrir como creador (estado RESUELTO). */
+  notaCierreCreador = '';
 
   readonly estados: TicketEstado[] = [
     'NUEVO',
@@ -167,6 +169,47 @@ export class TicketDetailComponent implements OnInit {
     if (!this.ticket) return false;
     const u = this.permissionsService.getCurrentUser();
     return u?.id != null && this.ticket.creadoPorUserId === u.id;
+  }
+
+  /** Tras RESUELTO por el área, el creador puede cerrar o reabrir. */
+  puedeCreadorCerrarOReabrirResuelto(): boolean {
+    return !!this.ticket && this.esCreadorDelTicket() && this.ticket.estado === 'RESUELTO';
+  }
+
+  cerrarTicketComoCreador(): void {
+    if (!this.ticket || !this.puedeCreadorCerrarOReabrirResuelto()) return;
+    this.ticketsService.cambiarEstado(this.ticket.id, 'CERRADO', this.notaCierreCreador.trim() || undefined).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.showSuccessMessage('Ticket cerrado.');
+          this.notaCierreCreador = '';
+          this.cargarTodo();
+        } else {
+          this.notificationService.showError('Error', response.message || 'No se pudo cerrar el ticket.');
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError('Error', error?.error?.message || 'No se pudo cerrar el ticket.');
+      }
+    });
+  }
+
+  reabrirTicketComoCreador(): void {
+    if (!this.ticket || !this.puedeCreadorCerrarOReabrirResuelto()) return;
+    this.ticketsService.cambiarEstado(this.ticket.id, 'REABIERTO', this.notaCierreCreador.trim() || undefined).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.showSuccessMessage('Ticket reabierto.');
+          this.notaCierreCreador = '';
+          this.cargarTodo();
+        } else {
+          this.notificationService.showError('Error', response.message || 'No se pudo reabrir el ticket.');
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError('Error', error?.error?.message || 'No se pudo reabrir el ticket.');
+      }
+    });
   }
 
   /** Alineado con el backend: creador en cualquier área (incl. Laboratorio), área actual o GM/Admin. */

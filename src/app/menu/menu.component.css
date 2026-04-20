@@ -1,11 +1,3 @@
-/* Asegura que el cuerpo de la página ocupe toda la altura */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto', Arial, sans-serif;
-}
-
 /* Estilo para la barra lateral */
 .sidenav {
   width: 220px;
@@ -191,8 +183,9 @@ html, body {
   margin-left: 220px;
   margin-top: 60px; /* Espacio para el header superior */
   padding: 15px;
-  min-height: 100vh; /* Asegura que el contenido principal ocupe al menos la altura completa de la ventana */
-  height: calc(100vh - 60px); /* Altura exacta para que flex funcione */
+  /* Al menos el alto visible bajo el header; sin height fijo para que el fondo gris crezca con el scroll */
+  min-height: calc(100vh - 60px);
+  min-height: calc(100dvh - 60px);
   background-color: #ecf0f1;
   position: relative;
   z-index: 1; /* Mantenemos un z-index bajo para el contenido principal */

@@ -504,4 +504,16 @@
   }
 }
 
+/* Stock embebido debajo de las tarjetas */
+.stock-inline-panel {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.almacen-card--stock-abierto {
+  border-color: #3498db !important;
+  box-shadow: 0 4px 18px rgba(52, 152, 219, 0.2) !important;
+}
+
 /* Estilos para el modal de confirmación */

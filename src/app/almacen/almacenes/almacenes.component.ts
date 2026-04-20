@@ -2,12 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { Router } from '@angular/router';
 import { StockAlmacenService } from '../../services/stock-almacen.service';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
+import { StockAlmacenComponent } from '../stock-almacen/stock-almacen.component';
 import { EstadoEquipoService } from '../../services/estado-equipo.service';
 import { EstadoDispositivoService } from '../../services/estado-dispositivo.service';
 import { HardwareService } from '../../services/hardware.service';
@@ -23,7 +23,8 @@ import { forkJoin } from 'rxjs';
     FormsModule,
     ReactiveFormsModule,
     NgbModule,
-    NotificationContainerComponent
+    NotificationContainerComponent,
+    StockAlmacenComponent
   ],
   templateUrl: './almacenes.component.html',
   styleUrls: ['./almacenes.component.css']
@@ -59,12 +60,17 @@ export class AlmacenesComponent implements OnInit {
   // Propiedades para el diálogo de confirmación
   showConfirmDialog: boolean = false;
 
+  /** Almacén cuyo stock se muestra incrustado debajo de las tarjetas */
+  almacenStockInline: Almacen | null = null;
+
+  /** Si el usuario cerró el panel, no volver a abrir solo el almacén 1 al refrescar datos. */
+  private omitirAbrirStockPorDefecto = false;
+
   constructor(
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
     private modalService: NgbModal,
     private fb: FormBuilder,
-    private router: Router,
     public permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private estadoEquipoService: EstadoEquipoService,
@@ -81,6 +87,7 @@ export class AlmacenesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.omitirAbrirStockPorDefecto = false;
     this.cargarDatos();
   }
 
@@ -238,11 +245,13 @@ export class AlmacenesComponent implements OnInit {
         // Combinar con el stock normal, evitando duplicados por número
         // (cuando se transfiere un equipo, existe en stock_almacen Y en equiposEnAlmacen)
         this.stock = this.mergeSinDuplicadosPorNumero(this.stock, items);
+        this.intentarAbrirStockAlmacen1PorDefecto();
         this.loading = false;
       },
       error: (error) => {
         console.error('Error al cargar equipos especiales:', error);
         // Si falla, al menos mostrar el stock normal
+        this.intentarAbrirStockAlmacen1PorDefecto();
         this.loading = false;
       }
     });
@@ -429,8 +438,31 @@ export class AlmacenesComponent implements OnInit {
   }
 
   verStockAlmacen(almacen: Almacen): void {
-    // Navegar al componente stock-almacen con el ID del almacén
-    this.router.navigate(['/menu/almacen/stock', almacen.id]);
+    if (this.almacenStockInline?.id === almacen.id) {
+      this.cerrarStockVistaInline();
+      return;
+    }
+    this.almacenStockInline = almacen;
+  }
+
+  cerrarStockVistaInline(): void {
+    this.omitirAbrirStockPorDefecto = true;
+    this.almacenStockInline = null;
+    this.cargarDatos();
+  }
+
+  /** Tras cargar datos: mostrar stock del almacén con id 1 si existe y no hay otra preferencia. */
+  private intentarAbrirStockAlmacen1PorDefecto(): void {
+    if (this.omitirAbrirStockPorDefecto) {
+      return;
+    }
+    if (this.almacenStockInline != null) {
+      return;
+    }
+    const alm1 = this.almacenes.find((a) => Number(a.id) === 1);
+    if (alm1) {
+      this.almacenStockInline = alm1;
+    }
   }
 
   /**

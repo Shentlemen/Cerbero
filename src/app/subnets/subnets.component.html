@@ -1,36 +1,43 @@
-<div class="container-fluid">
-  <div class="card shadow-lg">
-    <div class="card-header title-bar">
-      <h2 class="mb-0 text-center">
-        <i class="fas fa-network-wired me-2"></i>SUB REDES
-      </h2>
+<div class="generic-container subnets-page">
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-network-wired"></i>
+        Subredes
+      </h1>
+      <p class="subnets-lead text-muted mb-0">
+        Gestión de subredes y coordenadas para el mapa.
+      </p>
     </div>
-    <div class="card-body">
-      <!-- Mensaje de error -->
-      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-circle me-2"></i>
-        {{ errorMessage }}
-        <button type="button" class="btn-close" (click)="errorMessage = null" aria-label="Close"></button>
+  </div>
+
+  <div class="content-section">
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      {{ errorMessage }}
+      <button type="button" class="btn-close" (click)="errorMessage = null" aria-label="Cerrar"></button>
+    </div>
+
+    <div *ngIf="loading" class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2 text-muted small">Cargando datos...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div class="subnets-toolbar">
+        <span class="subnets-count">
+          <strong>{{ collectionSize }}</strong>
+          <span class="text-muted">subredes</span>
+        </span>
       </div>
 
-      <!-- Indicador de carga -->
-      <div *ngIf="loading" class="text-center my-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-2">Cargando datos...</p>
-      </div>
-
-      <!-- Tabla de subredes -->
-      <div *ngIf="!loading" class="table-responsive mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="text-muted">{{collectionSize}} Total</span>
-        </div>
-        
-        <table class="table table-hover">
+      <div class="table-container subnets-table-container">
+        <table class="table table-sm table-hover align-middle generic-table subnets-table">
           <thead>
             <tr>
-              <th (click)="sortData('name')" [class.active]="sortColumn === 'name'">
+              <th (click)="sortData('name')" [class.active]="sortColumn === 'name'" class="sortable-header">
                 <div class="th-content">
                   <span>Nombre</span>
                   <i class="fas" [ngClass]="{
@@ -40,7 +47,7 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('id')" [class.active]="sortColumn === 'id'">
+              <th (click)="sortData('id')" [class.active]="sortColumn === 'id'" class="sortable-header">
                 <div class="th-content">
                   <span>ID</span>
                   <i class="fas" [ngClass]="{
@@ -50,7 +57,7 @@
                   }"></i>
                 </div>
               </th>
-              <th (click)="sortData('netId')" [class.active]="sortColumn === 'netId'">
+              <th (click)="sortData('netId')" [class.active]="sortColumn === 'netId'" class="sortable-header">
                 <div class="th-content">
                   <span>Net ID</span>
                   <i class="fas" [ngClass]="{
@@ -60,101 +67,109 @@
                   }"></i>
                 </div>
               </th>
-              <th>Latitud</th>
-              <th>Longitud</th>
-              <th>Acciones</th>
+              <th>
+                <div class="th-content"><span>Latitud</span></div>
+              </th>
+              <th>
+                <div class="th-content"><span>Longitud</span></div>
+              </th>
+              <th class="subnets-th-actions">
+                <div class="th-content"><span>Acciones</span></div>
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let subnet of pagedSubnets">
-              <td>{{subnet.name}}</td>
-              <td>{{subnet.id}}</td>
-              <td>{{subnet.netId}}</td>
-              <td>
-                <input 
-                  type="number" 
+              <td class="subnet-name-cell">{{ subnet.name }}</td>
+              <td class="mono-cell">{{ subnet.id }}</td>
+              <td class="mono-cell">{{ subnet.netId }}</td>
+              <td class="coord-cell">
+                <input
+                  type="number"
                   class="form-control form-control-sm coordinate-input"
-                  [(ngModel)]="subnet.latitud" 
-                  placeholder="Ej: -34.9011"
+                  [(ngModel)]="subnet.latitud"
+                  placeholder="-34.90"
                   [disabled]="subnet.hasCoordinates && !subnet.editing || !canManageSubnets()"
                   step="0.0001"
                   min="-90"
                   max="90">
               </td>
-              <td>
-                <input 
-                  type="number" 
+              <td class="coord-cell">
+                <input
+                  type="number"
                   class="form-control form-control-sm coordinate-input"
-                  [(ngModel)]="subnet.longitud" 
-                  placeholder="Ej: -56.1645"
+                  [(ngModel)]="subnet.longitud"
+                  placeholder="-56.16"
                   [disabled]="subnet.hasCoordinates && !subnet.editing || !canManageSubnets()"
                   step="0.0001"
                   min="-180"
                   max="180">
               </td>
-              <td>
-                <div *ngIf="canManageSubnets()">
-                  <button 
+              <td class="subnets-actions-cell">
+                <div *ngIf="canManageSubnets()" class="subnets-actions">
+                  <button
                     *ngIf="!subnet.hasCoordinates"
-                    class="btn btn-sm btn-primary me-2"
+                    type="button"
+                    class="btn btn-primary btn-sm"
                     (click)="saveCoordinates(subnet)"
                     [disabled]="!isValidCoordinates(subnet) || loading">
                     <i class="fas fa-save"></i> Guardar
                   </button>
-                  <button 
+                  <button
                     *ngIf="subnet.hasCoordinates && !subnet.editing"
-                    class="btn btn-sm btn-warning me-2"
+                    type="button"
+                    class="btn btn-warning btn-sm text-white"
                     (click)="editCoordinates(subnet)"
                     [disabled]="loading">
                     <i class="fas fa-edit"></i> Editar
                   </button>
-                  <button 
+                  <button
                     *ngIf="subnet.hasCoordinates && subnet.editing"
-                    class="btn btn-sm btn-success me-2"
+                    type="button"
+                    class="btn btn-success btn-sm"
                     (click)="updateCoordinates(subnet)"
                     [disabled]="!isValidCoordinates(subnet) || loading">
                     <i class="fas fa-check"></i> Actualizar
                   </button>
-                  <button 
+                  <button
                     *ngIf="subnet.editing"
-                    class="btn btn-sm btn-secondary"
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
                     (click)="cancelEdit(subnet)"
                     [disabled]="loading">
                     <i class="fas fa-times"></i> Cancelar
                   </button>
                 </div>
-                <div *ngIf="!canManageSubnets()">
-                  <span class="read-only-badge">
-                    <i class="fas fa-eye"></i>
-                    Solo lectura
-                  </span>
-                </div>
+                <span *ngIf="!canManageSubnets()" class="read-only-badge">
+                  <i class="fas fa-eye"></i> Solo lectura
+                </span>
               </td>
             </tr>
           </tbody>
         </table>
-        
-        <!-- Paginación -->
-        <div *ngIf="!loading && !errorMessage && collectionSize > pageSize" class="pagination-container">
-          <ngb-pagination
-            [(page)]="page"
-            [pageSize]="pageSize"
-            [collectionSize]="collectionSize"
-            [boundaryLinks]="true"
-            [maxSize]="5"
-            [rotate]="true"
-            [ellipses]="false"
-            class="custom-pagination">
-          </ngb-pagination>
-        </div>
       </div>
 
-      <h3 class="text-center mb-3">
+      <div *ngIf="!errorMessage && collectionSize > pageSize" class="pagination-container">
+        <ngb-pagination
+          [(page)]="page"
+          [pageSize]="pageSize"
+          [collectionSize]="collectionSize"
+          [boundaryLinks]="true"
+          [maxSize]="5"
+          [rotate]="true"
+          [ellipses]="false"
+          class="custom-pagination">
+        </ngb-pagination>
+      </div>
+    </ng-container>
+
+    <!-- Siempre en el DOM: Leaflet se inicializa al cargar y no debe perder el contenedor al poner loading=true -->
+    <div class="subnets-map-block" [class.subnets-map-block--dimmed]="loading">
+      <h2 class="subnets-map-title">
         <i class="fas fa-map-marked-alt me-2"></i>
-        Mapa de Subredes
-      </h3>
-      
-      <div id="map" style="height: 500px;"></div>
+        Mapa de subredes
+      </h2>
+      <div id="map" class="subnets-map"></div>
     </div>
   </div>
-</div> 
+</div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubnetService, SubnetDTO, SubnetCoordinatesDTO } from '../services/subnet.service';
@@ -43,7 +43,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   
   // Propiedades para paginación
   public page: number = 1;
-  public pageSize: number = 5;
+  /** Filas por página en la lista de subredes. */
+  public pageSize: number = 10;
   public collectionSize: number = 0;
 
   private montevideoCenter = {
@@ -67,7 +68,22 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Ya no necesitamos inicializar aquí
+    // Tras aplicar altura responsive del contenedor, Leaflet debe recalcular tiles
+    setTimeout(() => this.scheduleMapResize(), 150);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.scheduleMapResize();
+  }
+
+  /** Recalcula el tamaño del mapa cuando cambia el layout o el viewport. */
+  private scheduleMapResize(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.map?.invalidateSize();
+      });
+    });
   }
 
   private loadSubnets(): void {
@@ -262,6 +278,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
       this.markerClusterGroup = L.markerClusterGroup();
       this.map.addLayer(this.markerClusterGroup);
       console.log('Mapa creado correctamente');
+      this.scheduleMapResize();
     }
   }
 
@@ -303,6 +320,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
       }).addTo(this.map!);
       this.lines.push(line);
     }
+
+    this.scheduleMapResize();
   }
 
   sortData(column: string): void {

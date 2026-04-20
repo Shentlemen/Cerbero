@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { NotificationService } from '../services/notification.service';
 import { PermissionsService } from '../services/permissions.service';
 import { Ticket, TicketEstado, TicketsService } from '../services/tickets.service';
+import { forkJoin, Subscription } from 'rxjs';
 
 type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'fechaActualizacion';
 
@@ -16,8 +17,11 @@ type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'f
   templateUrl: './tickets.component.html',
   styleUrls: ['./tickets.component.css']
 })
-export class TicketsComponent implements OnInit {
-  tickets: Ticket[] = [];
+export class TicketsComponent implements OnInit, OnDestroy {
+  /** Tickets en el área del rol (o todos para GM/Admin). */
+  ticketsArea: Ticket[] = [];
+  /** Tickets abiertos por el usuario (seguimiento hasta cierre). */
+  ticketsMisCreados: Ticket[] = [];
   ticketsCerrados: Ticket[] = [];
   loading = false;
   loadingCerrados = false;
@@ -57,6 +61,8 @@ export class TicketsComponent implements OnInit {
     'RESUELTO',
     'REABIERTO'
   ];
+  private viewAsSub?: Subscription;
+  private lastViewAsRole: string | null = null;
 
   constructor(
     private ticketsService: TicketsService,
@@ -65,7 +71,19 @@ export class TicketsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.lastViewAsRole = this.permissionsService.getViewAsRole();
     this.actualizarTodo();
+    this.viewAsSub = this.permissionsService.viewAs$.subscribe((nextRole) => {
+      if (nextRole === this.lastViewAsRole) {
+        return;
+      }
+      this.lastViewAsRole = nextRole;
+      this.actualizarTodo();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.viewAsSub?.unsubscribe();
   }
 
   actualizarTodo(): void {
@@ -76,15 +94,27 @@ export class TicketsComponent implements OnInit {
   cargarTickets(): void {
     this.loading = true;
     const estado = this.estadoFiltro || undefined;
-    this.ticketsService.listar(estado).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.tickets = response.data || [];
+    forkJoin({
+      area: this.ticketsService.listar(estado, 'area'),
+      creados: this.ticketsService.listar(estado, 'creados')
+    }).subscribe({
+      next: (res) => {
+        if (res.area.success) {
+          this.ticketsArea = res.area.data || [];
         } else {
-          this.notificationService.showError('Error', response.message || 'No se pudieron cargar tickets');
+          this.ticketsArea = [];
+          this.notificationService.showError('Error', res.area.message || 'No se pudo cargar la bandeja del área.');
+        }
+        if (res.creados.success) {
+          this.ticketsMisCreados = res.creados.data || [];
+        } else {
+          this.ticketsMisCreados = [];
+          this.notificationService.showError('Error', res.creados.message || 'No se pudieron cargar tus tickets.');
         }
       },
       error: (error) => {
+        this.ticketsArea = [];
+        this.ticketsMisCreados = [];
         this.notificationService.showError('Error', error?.error?.message || 'No se pudieron cargar tickets');
       },
       complete: () => {
@@ -112,9 +142,14 @@ export class TicketsComponent implements OnInit {
     });
   }
 
-  /** Bandeja activa filtrada y ordenada (solo vista). */
-  get ticketsVista(): Ticket[] {
-    return this.ordenarLista(this.filtrarLista(this.tickets), false);
+  /** Bandeja del área: filtrada y ordenada (solo vista). */
+  get ticketsAreaVista(): Ticket[] {
+    return this.ordenarLista(this.filtrarLista(this.ticketsArea), false);
+  }
+
+  /** Mis tickets: filtrada y ordenada (solo vista). */
+  get ticketsMisCreadosVista(): Ticket[] {
+    return this.ordenarLista(this.filtrarLista(this.ticketsMisCreados), false);
   }
 
   /** Cerrados filtrados y ordenados (solo vista). */
@@ -244,6 +279,10 @@ export class TicketsComponent implements OnInit {
 
   canCreateTickets(): boolean {
     return this.permissionsService.canCreateTickets();
+  }
+
+  esUsuarioRolGeneral(): boolean {
+    return this.permissionsService.isUser();
   }
 
   getEstadoLabel(estado: TicketEstado): string {

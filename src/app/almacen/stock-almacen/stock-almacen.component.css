@@ -1,54 +1,146 @@
+:host {
+  display: block;
+}
+
 .stock-almacen-container {
   padding: 2rem;
   background: #f8f9fa;
-  min-height: 100vh;
+  box-sizing: border-box;
+  /* Compensa el zoom global 0.8 para evitar el "corte" visual inferior */
+  min-height: calc(100vh / 0.8);
+}
+
+/* Dentro de Almacenes: no forzar altura de página completa ni duplicar fondo */
+.stock-almacen-container.embed-stock {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.stock-almacen-container.embed-stock .header-section {
+  margin-top: 0;
+  scroll-margin-top: 0;
 }
 
 .header-section {
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-}
-
-.title-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 1rem;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+  /* Header del menú ~60px fijo: al hacer scrollIntoView el título queda justo debajo, no tapado */
+  scroll-margin-top: 72px;
 }
 
 .title-wrapper h1 {
-  font-size: 1.75rem;
-  color: #2c3e50;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  text-align: left;
-  justify-content: flex-start;
+  gap: 0.75rem;
+  font-size: 1.6rem;
+  color: #1f2937;
 }
 
 .title-wrapper h1 i {
   color: #212529;
-  font-size: 2rem;
 }
 
-/* Botón de imprimir almacén - Forzar color rojo */
-.print-btn,
-.btn.print-btn,
-.btn.btn-danger.print-btn,
-button.print-btn,
-button.btn.print-btn,
-button.btn.btn-danger.print-btn {
-  margin-left: auto;
+.stock-content {
+  /* Evita la tercera capa de fondo: dejamos que el fondo base lo aporte el container */
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-highlight-section {
+  flex: 1;
+  max-width: 520px;
+}
+
+.search-input-wrapper {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.search-input {
+  padding-left: 2.25rem;
+  padding-right: 2.25rem;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+}
+
+.search-input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.search-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.toolbar-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.toolbar-actions .btn {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Registrar stock: mismo criterio que antes en esta pantalla (negro sólido) */
+.registrar-stock-btn,
+.btn.registrar-stock-btn {
+  background: #000 !important;
+  background-color: #000 !important;
+  border: 1px solid #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
   padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  white-space: nowrap;
+  font-weight: 600;
+}
+
+.registrar-stock-btn:hover,
+.btn.registrar-stock-btn:hover {
+  background: #212529 !important;
+  background-color: #212529 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Imprimir almacén: igual que almacén laboratorio / cementerio (rojo sólido) */
+.print-btn,
+.btn.print-btn,
+.btn.btn-danger.print-btn,
+.btn.btn-sm.print-btn,
+button.print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
   background: #dc3545 !important;
   background-color: #dc3545 !important;
   border: 1px solid #dc3545 !important;
@@ -63,1128 +155,428 @@ button.print-btn:hover:not(:disabled) {
   background: #c82333 !important;
   background-color: #c82333 !important;
   border-color: #bd2130 !important;
+  color: #fff !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-  color: #fff !important;
 }
 
 .print-btn:disabled,
 .btn.print-btn:disabled,
 button.print-btn:disabled {
-  background: #dc3545 !important;
-  background-color: #dc3545 !important;
-  border-color: #dc3545 !important;
-  color: #fff !important;
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .print-btn i {
   font-size: 1rem;
 }
 
-/* Botón de imprimir estantería - Forzar color rojo */
-.print-estanteria-btn,
-.btn.print-estanteria-btn,
-.btn.btn-danger.print-estanteria-btn,
-.btn.btn-sm.print-estanteria-btn,
-button.print-estanteria-btn,
-button.btn.print-estanteria-btn,
-button.btn.btn-danger.print-estanteria-btn {
-  background: #dc3545 !important;
-  background-color: #dc3545 !important;
-  border: 1px solid #dc3545 !important;
-  border-color: #dc3545 !important;
-  color: #fff !important;
-  transition: all 0.3s ease;
-}
-
-.print-estanteria-btn:hover:not(:disabled),
-.btn.print-estanteria-btn:hover:not(:disabled),
-button.print-estanteria-btn:hover:not(:disabled) {
-  background: #c82333 !important;
-  background-color: #c82333 !important;
-  border-color: #bd2130 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-  color: #fff !important;
-}
-
-.print-estanteria-btn:disabled,
-.btn.print-estanteria-btn:disabled,
-button.print-estanteria-btn:disabled {
-  background: #dc3545 !important;
-  background-color: #dc3545 !important;
-  border-color: #dc3545 !important;
-  color: #fff !important;
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.print-estanteria-btn i,
-.btn.print-estanteria-btn i,
-button.print-estanteria-btn i {
-  font-size: 0.9rem;
-}
-
-.stock-content {
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-}
-
-/* Resumen del stock */
-.summary-card {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.summary-icon {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 15px;
-  border: 1px solid #e9ecef;
-}
-
-.summary-icon i {
-  font-size: 2.5rem;
-  color: #3498db;
-}
-
-.summary-info h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.summary-info p {
-  margin: 0;
-  color: #6c757d;
-  opacity: 0.9;
-}
-
-/* Card principal del almacén */
-.almacen-main-card {
-  background: white;
-  border-radius: 15px;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  border: 1px solid #e9ecef;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.almacen-main-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-/* Header del almacén */
-.almacen-card-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 1.5rem;
-  border-bottom: 1px solid #dee2e6;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.almacen-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.almacen-header-actions .print-btn {
-  margin-left: 0;
-}
-
-/* Botón Registrar Stock - mismo estilo que Imprimir para coherencia visual */
-.registrar-stock-btn,
-.btn.registrar-stock-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  background: #000 !important;
-  background-color: #000 !important;
-  border: 1px solid #000 !important;
-  border-color: #000 !important;
-  color: #fff !important;
-  transition: all 0.3s ease;
-}
-
-.registrar-stock-btn:hover,
-.btn.registrar-stock-btn:hover {
-  background: #212529 !important;
-  background-color: #212529 !important;
-  border-color: #000 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  color: #fff !important;
-}
-
-.registrar-stock-btn i,
-.btn.registrar-stock-btn i {
-  font-size: 1rem;
-}
-
-.almacen-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.almacen-icon {
-  background: white;
-  padding: 0.75rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.almacen-icon i {
-  font-size: 1.5rem;
-  color: #212529;
-}
-
-.almacen-details h2 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.almacen-summary {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #6c757d;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.permission-info {
-  background: #fff3cd;
-  color: #856404;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  border: 1px solid #ffeaa7;
-  margin-left: 0.5rem;
-}
-
-.permission-info i {
-  color: #856404;
-}
-
-.separator {
-  margin: 0 0.25rem;
-  color: #6c757d;
-}
-
-/* Grid de estanterías: 3 columnas (3 arriba, 3 abajo) para aprovechar espacio horizontal */
-.estanterias-grid {
-  padding: 1.5rem;
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-/* Cementerio/Laboratorio: 1 columna, card a tamaño completo */
-.estanterias-grid-full {
-  grid-template-columns: 1fr;
-  padding: 1rem;
-}
-
-.estanteria-main-card-full {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 280px);
-}
-
-.estanteria-main-card-full .items-container-directo {
-  flex: 1;
-  min-height: 200px;
-  max-height: none;
-  /* Cards más anchas: min 280px para que no se vean apretadas */
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-/* Botón Acciones a la derecha y alineación consistente en cementerio/laboratorio */
-.items-container-directo .item-content {
-  flex-wrap: nowrap;
-  align-items: flex-start;
-}
-
-.items-container-directo .item-acciones-wrapper {
-  margin-left: auto;
-  flex-shrink: 0;
-  align-self: center;
-}
-
-/* Nombre/número del equipo siempre arriba para alineación consistente en grid */
-.items-container-directo .item-details {
+.kpi-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.layout-hibrido {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
   min-height: 0;
 }
 
-/* Card de estantería - borde izquierdo negro para identificar claramente */
-.estanteria-main-card {
-  background: #ffffff;
+.panel-ubicaciones,
+.panel-listado {
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
-  border: 2px solid #d0d7de;
-  border-left: 5px solid #212529;
+  background: #fff;
+}
+
+.panel-ubicaciones {
+  padding: 0.9rem;
+}
+
+.panel-listado {
+  padding: 0.9rem;
   overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.estanteria-main-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 18px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.08);
-  border-color: #495057;
-  border-left-color: #212529;
-}
-
-/* Header de estantería - fondo diferenciado */
-.estanteria-card-header {
-  background: linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%);
-  padding: 1rem 1.5rem;
-  border-bottom: 2px solid #212529;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-
-.estanteria-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.estanteria-icon {
-  background: white;
-  padding: 0.5rem;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
-
-.estanteria-icon i {
-  font-size: 1.1rem;
-  color: #212529;
-}
-
-.estanteria-info h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.estanteria-summary {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-/* Botón de imprimir estantería */
-.print-estanteria-btn {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: white;
-  border: none;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
-  flex-shrink: 0;
-}
-
-.print-estanteria-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-  background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
-}
-
-.print-estanteria-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
-}
-
-.print-estanteria-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: #95a5a6;
-  box-shadow: none;
-}
-
-.print-estanteria-btn i {
-  font-size: 0.9rem;
-}
-
-/* Grid de estantes: uno debajo del otro (columna única) */
-.estantes-grid {
-  padding: 1rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-/* Card de estante - contraste con estantería: borde negro y fondo distinto */
-.estante-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  border: 2px solid #adb5bd;
-  border-left: 4px solid #212529;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-}
-
-.estante-card:hover {
-  border-color: #495057;
-  border-left-color: #212529;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-}
-
-/* Header del estante - fondo que contrasta con el área de items */
-.estante-header {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-  padding: 0.75rem;
-  border-bottom: 2px solid #212529;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.estante-icon {
-  background: #f8f9fa;
-  padding: 0.4rem;
-  border-radius: 4px;
-}
-
-.estante-icon i {
-  font-size: 0.9rem;
-  color: #e74c3c;
-}
-
-.estante-info h5 {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #2c3e50;
-  flex: 1;
-}
-
-.estante-count {
-  font-size: 0.8rem;
-  color: #6c757d;
-  background: #e9ecef;
-  padding: 0.2rem 0.5rem;
-  border-radius: 10px;
-}
-
-/* Contenedor de items: grid 2 columnas para mostrar 2 items por renglón */
-.items-container {
-  padding: 1rem;
-  max-height: 500px;
-  min-height: 150px;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  align-content: start;
-}
-
-/* Cementerio (ALM01) y Laboratorio (ALM05): 1 estantería/estante, items en fila horizontal cuantos entren */
-.items-container.items-horizontal {
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-}
-
-/* Estante vacío - ocupa todo el ancho del grid */
-.estante-vacio {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-  color: #95a5a6;
-  text-align: center;
-  min-height: 150px;
-  grid-column: 1 / -1; /* Abarca todas las columnas del grid */
+  min-height: calc((100vh / 0.8) - 260px);
 }
 
-.estante-vacio i {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-.estante-vacio span {
-  font-size: 0.9rem;
-  font-weight: 500;
-  opacity: 0.7;
-}
-
-.items-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.items-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 2px;
-}
-
-.items-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 2px;
-}
-
-/* Card de item */
-.item-card {
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-  transition: all 0.3s ease;
-  min-width: 0; /* Evita overflow en grid */
-}
-
-.item-card:hover {
-  border-color: #3498db;
-  transform: translateX(2px);
-}
-
-.item-card[style*="pointer"] {
-  cursor: pointer;
-}
-
-.item-card[style*="pointer"]:hover {
-  background: #f8f9fa;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.15);
-}
-
-.item-card[style*="pointer"]:active {
-  transform: translateX(0);
-  background: #e9ecef;
-}
-
-/* Items clickeables (con permisos) */
-.item-card.clickable {
-  cursor: pointer;
-}
-
-.item-card.clickable:hover {
-  background: #f8f9fa;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.15);
-}
-
-.item-card.clickable:active {
-  transform: translateX(0);
-  background: #e9ecef;
-}
-
-/* Items de solo lectura (sin permisos) */
-.item-card.read-only {
-  cursor: default;
-  background: #f8f9fa;
-  border-color: #dee2e6;
-}
-
-/* Equipos especiales (cementerio y almacén laboratorio) */
-.item-card.equipo-especial {
-  border-left: 4px solid #6c757d;
-  background: white;
-}
-
-.item-card.equipo-especial .item-content {
-  opacity: 1;
-}
-
-.item-card.equipo-cementerio {
-  border-left: 4px solid #dc3545;
-  background: white;
-}
-
-.item-card.equipo-cementerio:hover {
-  background: #fff5f5;
-  border-color: #dc3545;
-}
-
-.item-card.equipo-cementerio .item-content {
-  opacity: 1;
-}
-
-.item-card.equipo-laboratorio {
-  border-left: 4px solid #17a2b8;
-  background: white;
-}
-
-.item-card.equipo-laboratorio:hover {
-  background: #f0f9ff;
-  border-color: #17a2b8;
-}
-
-.item-card.equipo-laboratorio .item-content {
-  opacity: 1;
-}
-
-.item-card.equipo-almacen-regular {
-  border-left: 4px solid #6c757d;
-  background: white;
-}
-
-.item-card.equipo-almacen-regular:hover {
-  background: #f8f9fa;
-  border-color: #6c757d;
-}
-
-.item-card.equipo-almacen-regular .item-content {
-  opacity: 1;
-}
-
-/* Botón Acciones de equipos: azul que combina con el rojo de la página */
-.btn-acciones-equipo {
-  font-size: 0.8rem;
-  padding: 0.35rem 0.6rem;
-  gap: 0.25rem;
-  color: #1e5a8e;
-  background-color: #fff;
-  border: 1px solid #1e5a8e;
-  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
-}
-.btn-acciones-equipo:hover:not(:disabled) {
-  color: #fff;
-  background-color: #1e5a8e;
-  border-color: #1e5a8e;
-}
-.btn-acciones-equipo:disabled {
-  color: #999;
-  background-color: #f5f5f5;
-  border-color: #dee2e6;
-}
-.btn-acciones-equipo .fa-chevron-down {
-  margin-left: 0.35rem;
-}
-
-/* Resaltado de búsqueda - elementos que coinciden */
-.item-card.search-match {
-  background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%) !important;
-  border: 2px solid #ffc107 !important;
-  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.3), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
-}
-
-.item-card.search-match:hover {
-  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.5), 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-/* Sección del buscador con resaltado */
-.search-highlight-section {
-  background: white;
-  border-radius: 10px;
-  padding: 1rem 1.25rem;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.search-input-wrapper {
-  position: relative;
+.panel-header {
   display: flex;
   align-items: center;
-  max-width: 450px;
-}
-
-.search-input-wrapper .search-icon {
-  position: absolute;
-  left: 1rem;
-  color: #6c757d;
-  font-size: 1rem;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.search-input-wrapper .search-input {
-  padding-left: 2.5rem;
-  padding-right: 2.5rem;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-}
-
-.search-input-wrapper .search-input:focus {
-  border-color: #ffc107;
-  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
-}
-
-.search-input-wrapper .search-clear-btn {
-  position: absolute;
-  right: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  color: #6c757d;
-  text-decoration: none;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.search-input-wrapper .search-clear-btn:hover {
-  color: #495057;
-}
-
-.item-card.read-only:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: #dee2e6;
-}
-
-.item-card.read-only:not(.equipo-especial) .item-content {
-  opacity: 0.9;
-}
-
-.item-card.read-only:not(.equipo-especial) .item-icon {
-  opacity: 0.7;
-}
-
-.item-content {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.item-icon {
-  background: #f8f9fa;
-  padding: 0.5rem;
-  border-radius: 4px;
-  color: #e74c3c;
-  flex-shrink: 0;
-}
-
-.item-icon i {
-  font-size: 0.9rem;
-}
-
-.item-details {
-  flex: 1;
-  min-width: 0;
-}
-
-.item-name {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #2c3e50;
-  word-wrap: break-word;
-}
-
-.item-metadata {
-  display: flex;
+  justify-content: space-between;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
 }
 
-.cantidad-badge {
-  background: #ecf0f1;
-  color: #2c3e50;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+.panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+/* Ver todo: sin fondo gris de outline-secondary; solo borde sutil */
+.stock-almacen-container .btn-ver-todo {
+  background: #fff !important;
+  color: #2c3e50 !important;
+  border: 1px solid #dee2e6 !important;
   font-weight: 500;
+  box-shadow: none !important;
 }
 
-.numero-badge {
-  background: #e8f4fd;
-  color: #2c3e50;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
+.stock-almacen-container .btn-ver-todo:hover {
+  background: #fff !important;
+  color: #3498db !important;
+  border-color: #3498db !important;
 }
 
-.readonly-badge {
-  background: #f8f9fa;
-  color: #6c757d;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid #dee2e6;
+.stock-almacen-container .btn-ver-todo:focus-visible {
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25) !important;
 }
 
-.readonly-badge i {
-  font-size: 0.7rem;
+.almacen-activo {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+  border-bottom: 1px dashed #d1d5db;
+  padding-bottom: 0.6rem;
 }
 
-/* Badge con icono de almacén */
-.badge-icono-almacen {
-  display: inline-flex;
+.tree-list {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0.25rem;
+}
+
+.tree-node {
+  margin-bottom: 0.55rem;
+}
+
+.tree-button {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.badge-icono-almacen i {
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
   font-size: 0.9rem;
+  text-align: left;
 }
 
-/* Estado vacío del estante */
-.estante-empty {
-  padding: 1.5rem;
-  text-align: center;
-  color: #6c757d;
+.tree-button:hover {
   background: #f8f9fa;
 }
 
-.estante-empty i {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
+.tree-button i {
+  color: #212529;
+  width: 1.1rem;
+  text-align: center;
 }
 
-.estante-empty span {
-  display: block;
-  font-style: italic;
+.tree-button.active {
+  border-color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+  color: #2c3e50;
+}
+
+.tree-button.estante {
+  margin-top: 0.35rem;
+  margin-left: 1rem;
+  width: calc(100% - 1rem);
   font-size: 0.85rem;
 }
 
-/* Estado vacío general */
-.no-stock {
-  text-align: center;
-  padding: 3rem;
-  color: #6c757d;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-}
-
-.no-stock i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: #dee2e6;
-}
-
-.no-stock h3 {
-  margin-bottom: 0.5rem;
-  color: #6c757d;
-}
-
-.no-stock p {
-  margin: 0;
-  color: #6c757d;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .stock-almacen-container {
-    padding: 1rem;
-  }
-
-  .header-section {
-    padding: 1rem;
-  }
-
-  .stock-content {
-    padding: 1rem;
-  }
-
-  .title-wrapper {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .title-wrapper h1 {
-    font-size: 1.5rem;
-    text-align: center;
-  }
-
-  .summary-card {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-
-  .almacen-info {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-
-  .estanterias-grid {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
-
-  .estantes-grid {
-    grid-template-columns: 1fr;
-    padding: 0.75rem;
-  }
-
-  .item-content {
-    padding: 0.5rem;
-  }
-
-  .items-container {
-    max-height: 150px;
-    grid-template-columns: 1fr; /* 1 item por fila en móvil */
-  }
-}
-
-/* Tablet: 2 estanterías por fila, 2 items por fila */
-@media (max-width: 1200px) {
-  .estanterias-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .estanterias-grid-full {
-    grid-template-columns: 1fr; /* cementerio/laboratorio: siempre full */
-  }
-} 
-
-/* Estilos para el modal de cantidad */
-.modal-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-bottom: 2px solid #dee2e6;
-}
-
-.modal-title {
+.tree-count {
+  background: #ecf0f1;
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.75rem;
   color: #2c3e50;
   font-weight: 600;
 }
 
-.modal-title i {
+.panel-header.listado {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.6rem;
+}
+
+.seleccion-actual {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.stock-table {
+  margin-bottom: 0;
+}
+
+.table-responsive {
+  flex: 1;
+  overflow: auto;
+}
+
+.stock-table thead th {
+  white-space: nowrap;
+  background: #f9fafb;
+  color: #374151;
+  border-bottom-width: 1px;
+}
+
+.item-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 220px;
+}
+
+.item-cell i {
   color: #212529;
 }
 
-/* Card de información del item en el modal */
-.item-info-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e9ecef;
+/* Badges tipo stock: alineados con paleta de la app (texto #2c3e50, acento #3498db) */
+.badge-stock-tipo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35em 0.65em;
+  border-radius: 6px;
 }
 
-.item-info-header {
+.badge-stock-item {
+  background: #3498db;
+  color: #fff;
+}
+
+/* Tipo Equipo / Dispositivo: mismos estilos que cementerio y almacén laboratorio */
+.tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.tipo-badge.equipo {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-color: #bbdefb;
+}
+
+.tipo-badge.dispositivo {
+  background: #ffebee;
+  color: #d32f2f;
+  border-color: #ffcdd2;
+}
+
+.descripcion-col {
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acciones-col {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.item-icon-large {
-  background: white;
-  padding: 1rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.2);
-  flex-shrink: 0;
-}
-
-.item-icon-large i {
-  font-size: 1.5rem;
-  color: #3498db;
-}
-
-.item-info-details {
-  flex: 1;
-}
-
-.item-name-modal {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.item-location {
-  display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
 
-/* Controles de cantidad */
-.cantidad-controls {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 10px;
-  border: 1px solid #e9ecef;
-}
-
-.cantidad-controls .form-label {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.cantidad-input {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-  background: #f8f9fa;
-  border-left: none;
-  border-right: none;
+/* Botones de acciones especiales: mismo estilo que cementerio/almacén laboratorio */
+.transferir-btn {
+  background: #212529;
+  border: 1px solid #212529;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  min-width: 80px;
   text-align: center;
 }
 
-.cantidad-input:focus {
-  background: #f8f9fa;
-  box-shadow: none;
-  border-color: #3498db;
+.transferir-btn:hover:not(:disabled) {
+  background: #343a40;
+  border-color: #343a40;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.input-group-lg .btn {
-  padding: 0.75rem 1rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 8px;
-  min-width: 50px;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-danger:hover {
-  background: #e74c3c;
-  border-color: #e74c3c;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(231,76,60,0.3);
-}
-
-.btn-outline-success:hover {
-  background: #27ae60;
-  border-color: #27ae60;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(39,174,96,0.3);
-}
-
-.btn-outline-danger:disabled,
-.btn-outline-success:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Alert de confirmación */
-.alert-warning {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  border: 1px solid #f39c12;
-  border-radius: 8px;
-}
-
-.alert-warning .fas {
-  color: #f39c12;
-  font-size: 1.2rem;
-}
-
-.alert-warning strong {
-  color: #d68910;
-}
-
-.alert-warning small {
-  color: #85680e;
-}
-
-/* Botones del modal */
-.modal-footer .btn {
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.modal-footer .btn-secondary {
+.transferir-btn:disabled {
   background: #6c757d;
   border-color: #6c757d;
-}
-
-.modal-footer .btn-secondary:hover {
-  background: #5a6268;
-  border-color: #545b62;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108,117,125,0.3);
-}
-
-.modal-footer .btn-primary {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  border: none;
-}
-
-.modal-footer .btn-primary:hover {
-  background: linear-gradient(135deg, #2980b9 0%, #1f5f8b 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(52,152,219,0.3);
-}
-
-.modal-footer .btn-danger {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  border: none;
-}
-
-.modal-footer .btn-danger:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(231,76,60,0.3);
-}
-
-.modal-footer .btn:disabled {
-  opacity: 0.6;
+  color: #fff;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Responsive para el modal */
-@media (max-width: 768px) {
-  .item-info-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
+.transferir-btn i {
+  margin-right: 0.2rem;
+}
+
+.reactivar-btn {
+  background: #27ae60;
+  border: 1px solid #27ae60;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  text-align: center;
+}
+
+.reactivar-btn:hover:not(:disabled) {
+  background: #229954;
+  border-color: #1e8449;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+}
+
+.reactivar-btn:disabled {
+  background: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.reactivar-btn i {
+  margin-right: 0.2rem;
+}
+
+.empty-state {
+  background: #f8f9fa;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+}
+
+@media (max-width: 1200px) {
+  .layout-hibrido {
+    grid-template-columns: 270px 1fr;
   }
 
-  .item-location {
-    justify-content: center;
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .cantidad-controls {
+@media (max-width: 900px) {
+  .stock-almacen-container {
     padding: 1rem;
+    min-height: auto;
   }
 
-  .input-group-lg .btn {
-    padding: 0.5rem 0.75rem;
-    min-width: 45px;
-  }
-
-  .cantidad-input {
-    font-size: 1.25rem;
-  }
-
-  .modal-footer {
+  .toolbar {
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: stretch;
   }
 
-  .modal-footer .btn {
-    width: 100%;
+  .search-highlight-section {
+    max-width: none;
   }
-} 
+
+  .toolbar-actions {
+    justify-content: flex-end;
+  }
+
+  .layout-hibrido {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .panel-listado {
+    min-height: auto;
+  }
+
+  .reactivar-btn,
+  .transferir-btn {
+    min-width: 70px;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+.listado-pagina-resumen {
+  margin: 0 0 0.25rem;
+}
+
+/* Paginación del listado (misma línea visual que stock general) */
+.listado-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+}
+
+.custom-pagination ::ng-deep .page-link {
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 0.5rem 0.75rem;
+  margin: 0 2px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.custom-pagination ::ng-deep .page-link:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.custom-pagination ::ng-deep .page-item.active .page-link {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.custom-pagination ::ng-deep .page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+.custom-pagination ::ng-deep .page-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}

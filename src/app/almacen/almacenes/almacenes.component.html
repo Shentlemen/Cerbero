@@ -44,8 +44,9 @@
 
       <!-- Grid de cards -->
       <div class="almacenes-grid">
-        <div *ngFor="let almacen of almacenesFiltrados" class="almacen-card" 
+        <div *ngFor="let almacen of almacenesFiltrados" class="almacen-card"
              [class.clickable]="true"
+             [class.almacen-card--stock-abierto]="almacenStockInline?.id === almacen.id"
              (click)="verStockAlmacen(almacen)">
           <div class="card-header">
             <div class="almacen-numero">
@@ -98,7 +99,10 @@
         </div>
       </div>
     </div>
-    
+
+    <section *ngIf="almacenStockInline" class="stock-inline-panel">
+      <app-stock-almacen [embedStock]="true" [embeddedAlmacenId]="almacenStockInline.id"></app-stock-almacen>
+    </section>
 
   </div>
 </div>

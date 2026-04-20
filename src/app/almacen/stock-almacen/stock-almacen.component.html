@@ -1,8 +1,8 @@
-<div class="stock-almacen-container">
-  <!-- Contenedor de notificaciones -->
-  <app-notification-container></app-notification-container>
+<div class="stock-almacen-container" [class.embed-stock]="embedStock">
+  <!-- Contenedor de notificaciones (el padre ya tiene uno en vista embebida) -->
+  <app-notification-container *ngIf="!embedStock"></app-notification-container>
   
-  <div class="header-section">
+  <div #stockPaginaInicio class="header-section">
     <div class="title-wrapper">
       <h1>
         <i class="fas fa-boxes"></i> 
@@ -33,271 +33,208 @@
 
     <!-- Contenido del stock -->
     <div *ngIf="!loading && !error" class="stock-organizado">
-      <!-- Buscador con resaltado -->
-      <div class="search-highlight-section mb-4">
-        <div class="search-input-wrapper">
-          <i class="fas fa-search search-icon"></i>
-          <input 
-            type="text" 
-            class="form-control search-input" 
-            [(ngModel)]="searchTerm" 
-            placeholder="Buscar por nombre, número, descripción... (filtra y resalta)"
-            autocomplete="off">
-          <button 
-            *ngIf="searchTerm" 
-            type="button" 
-            class="btn btn-link search-clear-btn" 
-            (click)="searchTerm = ''"
-            title="Limpiar búsqueda">
-            <i class="fas fa-times"></i>
+      <div class="toolbar">
+        <div class="search-highlight-section">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por item, numero, descripcion, estanteria..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar-actions" *ngIf="getAlmacenActivoKey() as almacenKey">
+          <button
+            *ngIf="canManageStock() && almacenSeleccionado"
+            type="button"
+            class="btn registrar-stock-btn"
+            (click)="irARegistrarStock()">
+            <i class="fas fa-box me-2"></i>
+            Registrar Stock
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger btn-sm print-btn"
+            (click)="exportarPDFAlmacen(almacenKey)"
+            [disabled]="loading || isExporting"
+            title="Exportar almacén a PDF">
+            <i class="fas me-2" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
+            {{ isExporting ? 'Generando...' : 'Imprimir almacén' }}
           </button>
         </div>
       </div>
 
-      <!-- Almacenes con stock -->
-      <div *ngIf="getAlmacenes().length > 0; else noStock" class="almacenes-container">
-        <div *ngFor="let almacenKey of getAlmacenes()" class="almacen-main-card">
-          <!-- Header principal del almacén -->
-          <div class="almacen-card-header">
-            <div class="almacen-info">
-              <div class="almacen-icon">
-                <i class="fas fa-warehouse"></i>
-              </div>
-              <div class="almacen-details">
-                <h2 class="almacen-name">{{ almacenKey }}</h2>
-                <p class="almacen-summary">
-                  <i class="fas fa-boxes me-2"></i>
-                  {{ getTotalStockPorAlmacen(almacenKey) }} items en stock
-                  <span class="separator">•</span>
-                  <i class="fas fa-layer-group me-2"></i>
-                  {{ getEstanterias(almacenKey).length }} estanterías
-                  <span *ngIf="!canManageStock()" class="permission-info">
-                    <i class="fas fa-eye me-1"></i>
-                    Solo visualización
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div class="almacen-header-actions">
-              <button
-                *ngIf="canManageStock() && almacenSeleccionado"
-                class="btn registrar-stock-btn"
-                (click)="irARegistrarStock()"
-                title="Registrar stock en este almacén">
-                <i class="fas fa-box"></i>
-                Registrar Stock
-              </button>
-              <button
-                class="btn btn-danger print-btn"
-                (click)="exportarPDFAlmacen(almacenKey)"
-                [disabled]="loading || isExporting"
-                title="Exportar almacén a PDF"
-                data-help="📄 Exporta todo el contenido del almacén a un archivo PDF">
-                <i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
-                {{ isExporting ? 'Generando PDF...' : 'Imprimir Almacén' }}
-              </button>
-            </div>
+      <div *ngIf="getAlmacenes().length > 0; else noStock">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Unidades visibles</span>
+            <span class="kpi-value">{{ getTotalUnidadesVistaActual() }}</span>
           </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Items visibles</span>
+            <span class="kpi-value">{{ getListadoCollectionSize() }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Estanterias</span>
+            <span class="kpi-value">{{ getTotalEstanteriasVisibles() }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Estantes</span>
+            <span class="kpi-value">{{ getTotalEstantesVisibles() }}</span>
+          </div>
+        </div>
 
-          <!-- Estanterías del almacén -->
-          <div class="estanterias-grid" [class.estanterias-grid-full]="usarLayoutSimplificado(almacenKey)">
-            <div *ngFor="let estanteriaKey of getEstanterias(almacenKey)" 
-                 class="estanteria-main-card" 
-                 [class.estanteria-main-card-full]="usarLayoutSimplificado(almacenKey)">
-              <!-- Header de la estantería -->
-              <div class="estanteria-card-header">
-                <div class="estanteria-icon">
-                  <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="estanteria-info">
-                  <h4 class="estanteria-name">Estantería {{ estanteriaKey }}</h4>
-                  <p class="estanteria-summary">
-                    {{ getTotalStockPorEstanteria(almacenKey, estanteriaKey) }} items
-                    <span *ngIf="!usarLayoutSimplificado(almacenKey)" class="separator">•</span>
-                    <span *ngIf="!usarLayoutSimplificado(almacenKey)">{{ getEstantesPorEstanteria(almacenKey, estanteriaKey).length }} estantes</span>
-                  </p>
-                </div>
+        <div class="layout-hibrido">
+          <aside class="panel-ubicaciones" *ngIf="getAlmacenActivoKey() as almacenKey">
+            <div class="panel-header">
+              <h3>Ubicaciones</h3>
+              <button type="button" class="btn btn-sm btn-ver-todo" (click)="limpiarSeleccionUbicacion()">
+                Ver todo
+              </button>
+            </div>
+            <p class="almacen-activo">{{ almacenKey }}</p>
+
+            <div class="tree-list">
+              <div *ngFor="let estanteriaKey of getEstanterias(almacenKey)" class="tree-node">
                 <button
-                  class="btn btn-sm btn-danger print-estanteria-btn"
-                  (click)="exportarPDFEstanteria(almacenKey, estanteriaKey); $event.stopPropagation()"
-                  [disabled]="loading || isExportingEstanteriaKey(almacenKey, estanteriaKey) || getTotalStockPorEstanteria(almacenKey, estanteriaKey) === 0"
-                  title="Exportar estantería a PDF"
-                  data-help="📄 Exporta el contenido de esta estantería a un archivo PDF">
-                  <i class="fas" [ngClass]="isExportingEstanteriaKey(almacenKey, estanteriaKey) ? 'fa-spinner fa-spin' : 'fa-print'"></i>
-                  {{ isExportingEstanteriaKey(almacenKey, estanteriaKey) ? 'Generando...' : 'Imprimir' }}
+                  type="button"
+                  class="tree-button estanteria"
+                  [class.active]="selectedEstanteriaKey === estanteriaKey && !selectedEstanteKey"
+                  (click)="seleccionarEstanteria(estanteriaKey)">
+                  <span><i class="fas fa-layer-group me-2"></i>{{ estanteriaKey }}</span>
+                  <span class="tree-count">{{ getItemsPorEstanteria(almacenKey, estanteriaKey).length }}</span>
                 </button>
-              </div>
 
-              <!-- Contenido: sin estantes (sin config) o con estantes (con AlmacenConfig) -->
-              <ng-container *ngIf="usarLayoutSimplificado(almacenKey); else conEstantes">
-                <!-- Items directamente en la estantería (cementerio/laboratorio) -->
-                <div class="items-container items-horizontal items-container-directo">
-                  <div *ngIf="getItemsPorEstanteria(almacenKey, estanteriaKey).length === 0" class="estante-vacio">
-                    <i class="fas fa-inbox"></i>
-                    <span>Sin items</span>
-                  </div>
-                  <div *ngFor="let item of getItemsPorEstanteria(almacenKey, estanteriaKey)" 
-                       class="item-card"
-                       [ngClass]="{
-                         'clickable': canManageStock() && !esEquipoEspecial(item),
-                         'read-only': !canManageStock() || esEquipoEspecial(item),
-                         'equipo-especial': esEquipoEspecial(item),
-                         'equipo-cementerio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'cementerio',
-                         'equipo-laboratorio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'laboratorio',
-                         'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular',
-                         'search-match': itemCoincideConBusqueda(item)
-                       }"
-                       (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item) : null"
-                       [style.cursor]="canManageStock() && !esEquipoEspecial(item) ? 'pointer' : 'default'"
-                       [title]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'Equipo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular') : 'Dispositivo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular')) : (canManageStock() ? 'Click para modificar cantidad' : 'Solo visualización')">
-                    <div class="item-content">
-                      <div class="item-icon">
-                        <i class="fas" [ngClass]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired') : 'fa-box'"></i>
-                      </div>
-                      <div class="item-details">
-                        <h6 *ngIf="!esEquipoEspecial(item)" class="item-name">{{ item.item.nombreItem }}</h6>
-                        <h6 *ngIf="esEquipoEspecial(item) && item.numero" class="item-name item-numero-equipo">{{ item.numero }}</h6>
-                        <div class="item-metadata">
-                          <span *ngIf="!esEquipoEspecial(item)" class="cantidad-badge">{{ item.cantidad }} unidades</span>
-                          <span *ngIf="item.numero && !esEquipoEspecial(item)" class="numero-badge">{{ item.numero }}</span>
-                          <span *ngIf="!canManageStock() && !esEquipoEspecial(item)" class="readonly-badge" title="Solo visualización">
-                            <i class="fas fa-eye"></i>
-                          </span>
-                        </div>
-                      </div>
-                      <div *ngIf="esEquipoEspecial(item) && (getTipoEquipo(item) === 'EQUIPO' || getTipoEquipo(item) === 'DISPOSITIVO') && canManageStock()" class="item-acciones-wrapper position-relative">
-                        <button 
-                          type="button"
-                          class="btn btn-sm btn-acciones-equipo" 
-                          [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
-                          (click)="toggleDropdown(item, $event)">
-                          <i class="fas me-2" [ngClass]="(transferiendoItemId === item.id || reactivandoItemId === item.id) ? 'fa-spinner fa-spin' : 'fa-cog'"></i>
-                          <span *ngIf="transferiendoItemId === item.id">Transferiendo...</span>
-                          <span *ngIf="reactivandoItemId === item.id">Reactivando...</span>
-                          <span *ngIf="transferiendoItemId !== item.id && reactivandoItemId !== item.id">Acciones</span>
-                          <i class="fas fa-chevron-down ms-2" style="font-size: 0.6rem;"></i>
-                        </button>
-                        <div *ngIf="dropdownAbiertoId === item.id" 
-                             class="dropdown-menu show" 
-                             style="position: absolute; top: 100%; right: 0; left: auto; z-index: 1000; min-width: 150px; margin-top: 2px;">
-                          <button 
-                            type="button"
-                            class="dropdown-item" 
-                            (click)="transferirEquipo(item, $event)"
-                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
-                            <i class="fas fa-exchange-alt me-2"></i>
-                            Transferir
-                          </button>
-                          <button 
-                            type="button"
-                            class="dropdown-item" 
-                            (click)="reactivarEquipo(item, $event)"
-                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
-                            <i class="fas fa-undo me-2"></i>
-                            Reactivar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ng-container>
-
-              <ng-template #conEstantes>
-              <!-- Estantes de la estantería (almacenes regulares) -->
-              <div class="estantes-grid">
-                <div *ngFor="let estanteKey of getEstantesPorEstanteria(almacenKey, estanteriaKey)" class="estante-card">
-                  <!-- Header del estante -->
-                  <div class="estante-header">
-                    <div class="estante-icon">
-                      <i class="fas fa-cubes"></i>
-                    </div>
-                    <div class="estante-info">
-                      <h5 class="estante-name">Estante {{ estanteKey }}</h5>
-                      <span class="estante-count">{{ getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length }} items</span>
-                    </div>
-                  </div>
-
-                  <!-- Items en este estante -->
-                  <div class="items-container">
-                    <!-- Mensaje cuando el estante está vacío -->
-                    <div *ngIf="estaEstanteVacio(almacenKey, estanteriaKey, estanteKey)" 
-                         class="estante-vacio">
-                      <i class="fas fa-inbox"></i>
-                      <span>Estante vacío</span>
-                    </div>
-                    
-                    <!-- Items del estante -->
-                    <div *ngFor="let item of getItemsPorEstante(almacenKey, estanteriaKey, estanteKey)"
-                         class="item-card"
-                         [ngClass]="{
-                           'clickable': canManageStock() && !esEquipoEspecial(item),
-                           'read-only': !canManageStock() || esEquipoEspecial(item),
-                           'equipo-especial': esEquipoEspecial(item),
-                           'equipo-cementerio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'cementerio',
-                           'equipo-laboratorio': esEquipoEspecial(item) && getTipoAlmacen(item) === 'laboratorio',
-                           'equipo-almacen-regular': esEquipoEspecial(item) && getTipoAlmacen(item) === 'regular',
-                           'search-match': itemCoincideConBusqueda(item)
-                         }"
-                         (click)="canManageStock() && !esEquipoEspecial(item) ? abrirModalCantidad(item) : null"
-                         [style.cursor]="canManageStock() && !esEquipoEspecial(item) ? 'pointer' : 'default'"
-                         [title]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'Equipo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular') : 'Dispositivo en ' + (getTipoAlmacen(item) === 'cementerio' ? 'cementerio' : getTipoAlmacen(item) === 'laboratorio' ? 'almacén laboratorio' : 'almacén regular')) : (canManageStock() ? 'Click para modificar cantidad' : 'Solo visualización')">
-                      <div class="item-content">
-                        <div class="item-icon">
-                          <i class="fas" [ngClass]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired') : 'fa-box'"></i>
-                        </div>
-                        <div class="item-details">
-                          <h6 *ngIf="!esEquipoEspecial(item)" class="item-name">{{ item.item.nombreItem }}</h6>
-                          <h6 *ngIf="esEquipoEspecial(item) && item.numero" class="item-name item-numero-equipo">{{ item.numero }}</h6>
-                          <div class="item-metadata">
-                            <span *ngIf="!esEquipoEspecial(item)" class="cantidad-badge">{{ item.cantidad }} unidades</span>
-                            <span *ngIf="item.numero && !esEquipoEspecial(item)" class="numero-badge">{{ item.numero }}</span>
-                            <span *ngIf="!canManageStock() && !esEquipoEspecial(item)" class="readonly-badge" title="Solo visualización">
-                              <i class="fas fa-eye"></i>
-                            </span>
-                          </div>
-                          <div *ngIf="esEquipoEspecial(item) && (getTipoEquipo(item) === 'EQUIPO' || getTipoEquipo(item) === 'DISPOSITIVO') && canManageStock()" class="mt-2 position-relative">
-                            <button 
-                              type="button"
-                              class="btn btn-sm btn-acciones-equipo" 
-                              [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
-                              (click)="toggleDropdown(item, $event)">
-                              <i class="fas me-2" [ngClass]="(transferiendoItemId === item.id || reactivandoItemId === item.id) ? 'fa-spinner fa-spin' : 'fa-cog'"></i>
-                              <span *ngIf="transferiendoItemId === item.id">Transferiendo...</span>
-                              <span *ngIf="reactivandoItemId === item.id">Reactivando...</span>
-                              <span *ngIf="transferiendoItemId !== item.id && reactivandoItemId !== item.id">Acciones</span>
-                              <i class="fas fa-chevron-down ms-2" style="font-size: 0.6rem;"></i>
-                            </button>
-                            <div *ngIf="dropdownAbiertoId === item.id" 
-                                 class="dropdown-menu show" 
-                                 style="position: absolute; top: 100%; left: 0; z-index: 1000; min-width: 150px; margin-top: 2px;">
-                              <button 
-                                type="button"
-                                class="dropdown-item" 
-                                (click)="transferirEquipo(item, $event)"
-                                [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
-                                <i class="fas fa-exchange-alt me-2"></i>
-                                Transferir
-                              </button>
-                              <button 
-                                type="button"
-                                class="dropdown-item" 
-                                (click)="reactivarEquipo(item, $event)"
-                                [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id">
-                                <i class="fas fa-undo me-2"></i>
-                                Reactivar
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="tree-children">
+                  <button
+                    *ngFor="let estanteKey of getEstantesPorEstanteria(almacenKey, estanteriaKey)"
+                    type="button"
+                    class="tree-button estante"
+                    [class.active]="selectedEstanteriaKey === estanteriaKey && selectedEstanteKey === estanteKey"
+                    (click)="seleccionarEstante(estanteriaKey, estanteKey)">
+                    <span><i class="fas fa-cube me-2"></i>Estante {{ estanteKey }}</span>
+                    <span class="tree-count">{{ getItemsPorEstante(almacenKey, estanteriaKey, estanteKey).length }}</span>
+                  </button>
                 </div>
               </div>
-              </ng-template>
             </div>
-          </div>
+          </aside>
+
+          <section class="panel-listado">
+            <div class="panel-header listado">
+              <h3>Listado de stock</h3>
+              <span class="seleccion-actual">{{ getEtiquetaSeleccionActual() }}</span>
+            </div>
+
+            <p *ngIf="getListadoCollectionSize() > 0" class="listado-pagina-resumen text-muted small mb-2">
+              Mostrando {{ getListadoMostrandoDesde() }}–{{ getListadoMostrandoHasta() }} de
+              {{ getListadoCollectionSize() }} ítems ({{ listadoPageSize }} por página).
+            </p>
+
+            <div #listadoTableScroll class="table-responsive">
+              <table class="table table-hover align-middle stock-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Cantidad</th>
+                    <th>Ubicacion</th>
+                    <th>Numero</th>
+                    <th>Descripcion</th>
+                    <th>Tipo</th>
+                    <th *ngIf="canManageStock()">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of getPagedListadoItems(); trackBy: trackByListadoItem">
+                    <td>
+                      <div class="item-cell">
+                        <i class="fas" [ngClass]="esEquipoEspecial(item) ? (getTipoEquipo(item) === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired') : 'fa-box'"></i>
+                        <span>{{ item?.item?.nombreItem || item?.numero || 'Sin nombre' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark">{{ item?.cantidad || 1 }}</span>
+                    </td>
+                    <td>
+                      {{ item?.estanteria || '-' }} / {{ item?.estante || '-' }}<span *ngIf="item?.seccion"> / {{ item?.seccion }}</span>
+                    </td>
+                    <td>{{ item?.numero || '-' }}</td>
+                    <td class="descripcion-col">{{ item?.descripcion || item?.item?.descripcion || '-' }}</td>
+                    <td>
+                      <span
+                        *ngIf="esEquipoEspecial(item)"
+                        class="tipo-badge"
+                        [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'dispositivo' : 'equipo'">
+                        <i class="fas me-1" [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'fa-network-wired' : 'fa-desktop'"></i>
+                        {{ getTipoEquipo(item) === 'DISPOSITIVO' ? 'Dispositivo' : 'Equipo' }}
+                      </span>
+                      <span *ngIf="!esEquipoEspecial(item)" class="badge badge-stock-tipo badge-stock-item">Ítem</span>
+                    </td>
+                    <td *ngIf="canManageStock()">
+                      <div class="acciones-col">
+                        <button
+                          *ngIf="!esEquipoEspecial(item)"
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          (click)="abrirModalCantidad(item)">
+                          Editar cantidad
+                        </button>
+                        <ng-container *ngIf="esEquipoEspecial(item)">
+                          <button
+                            type="button"
+                            class="btn btn-sm transferir-btn"
+                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
+                            (click)="transferirEquipo(item, $event)">
+                            <i class="fas" [ngClass]="transferiendoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+                            {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-sm reactivar-btn"
+                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
+                            (click)="reactivarEquipo(item, $event)">
+                            <i class="fas" [ngClass]="reactivandoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+                            {{ reactivandoItemId === item.id ? 'Reactivando...' : 'Reactivar' }}
+                          </button>
+                        </ng-container>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="getListadoCollectionSize() === 0">
+                    <td [attr.colspan]="canManageStock() ? 7 : 6" class="text-center text-muted py-4">
+                      No hay items para la selección actual.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div *ngIf="getListadoCollectionSize() > listadoPageSize" class="listado-pagination">
+              <ngb-pagination
+                [(page)]="listadoPage"
+                [pageSize]="listadoPageSize"
+                [collectionSize]="getListadoCollectionSize()"
+                [boundaryLinks]="true"
+                [maxSize]="5"
+                [rotate]="true"
+                [ellipses]="false"
+                class="custom-pagination"
+                (pageChange)="onListadoPageChange($event)">
+              </ngb-pagination>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -310,7 +247,7 @@
           <h5 class="text-muted" *ngIf="!searchTerm?.trim()">No hay stock disponible</h5>
           <p class="text-muted" *ngIf="searchTerm?.trim()">
             No hay items que coincidan con "{{ searchTerm }}". Prueba con otro término o
-            <button type="button" class="btn btn-link p-0 align-baseline" (click)="searchTerm = ''">limpiar la búsqueda</button>.
+            <button type="button" class="btn btn-link p-0 align-baseline" (click)="clearSearch()">limpiar la búsqueda</button>.
           </p>
           <p class="text-muted" *ngIf="!searchTerm?.trim()">
             No se encontró stock en ningún almacén del sistema.

@@ -89,10 +89,16 @@ export class TicketsService {
     return p;
   }
 
-  listar(estado?: TicketEstado): Observable<ApiResponse<Ticket[]>> {
+  /**
+   * @param bandeja `area` = tickets en la bandeja del rol (vacío para USER); `creados` = creados por el usuario.
+   */
+  listar(estado?: TicketEstado, bandeja?: 'area' | 'creados'): Observable<ApiResponse<Ticket[]>> {
     let params = this.withVistaComo();
     if (estado) {
       params = params.set('estado', estado);
+    }
+    if (bandeja) {
+      params = params.set('bandeja', bandeja);
     }
     return this.http.get<ApiResponse<Ticket[]>>(this.apiUrl, { params });
   }
