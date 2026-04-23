@@ -51,6 +51,7 @@ interface Asset {
   description: string;
   winCompany: string;
   winOwner: string;
+  userid?: string;
   winProdId: string;
   winProdKey: string;
   lastDate: Date;
@@ -125,7 +126,6 @@ export class AssetdetailsComponent implements OnInit {
               result.lastDate = result.lastDate ? new Date(result.lastDate) : null;
               result.lastCome = result.lastCome ? new Date(result.lastCome) : null;
               this.asset = result as Asset;
-              console.log('Asset obtenido:', this.asset);
               
               // Pre-cargar datos de todas las pestañas
               ['bios', 'cpu', 'drive', 'memory', 'monitor', 'storage', 'video'].forEach(tab => {
@@ -209,7 +209,6 @@ export class AssetdetailsComponent implements OnInit {
             // Para otros componentes, mantener el comportamiento actual
             this.componentData[component] = Array.isArray(data) ? data : [data];
           }
-          console.log(`Datos de ${component} cargados:`, this.componentData[component]);
           
 
         },
@@ -226,7 +225,6 @@ export class AssetdetailsComponent implements OnInit {
   exportarAPdf(): void {
     // Verificar que todos los datos estén cargados
     if (!this.asset) {
-      console.log('No hay datos del asset disponibles');
       return;
     }
 
@@ -406,11 +404,11 @@ export class AssetdetailsComponent implements OnInit {
       ['Tipo', this.asset?.type?.toString() ?? 'N/A'],
       ['Descripción', this.asset?.description ?? 'N/A'],
       ['Compañía Windows', this.asset?.winCompany ?? 'N/A'],
-      ['Propietario Windows', this.asset?.winOwner ?? 'N/A'],
+      ['Último usuario conectado', this.asset?.userid ?? 'N/A'],
       ['ID de Producto Windows', this.asset?.winProdId ?? 'N/A'],
       ['Clave de Producto Windows', this.asset?.winProdKey ?? 'N/A'],
-      ['Último escaneo', this.asset?.lastDate ? new Date(this.asset.lastDate).toLocaleString() : 'N/A'],
-      ['Primer inventariado', this.asset?.lastCome ? new Date(this.asset.lastCome).toLocaleString() : 'N/A'],
+      ['Último inventario procesado', this.asset?.lastDate ? new Date(this.asset.lastDate).toLocaleString() : 'N/A'],
+      ['Último contacto del agente', this.asset?.lastCome ? new Date(this.asset.lastCome).toLocaleString() : 'N/A'],
     ];
   }
 
@@ -462,7 +460,6 @@ export class AssetdetailsComponent implements OnInit {
       ['Socket', cpu.socket || 'N/A']
     ];
 
-    console.log('Datos de CPU preparados para PDF:', data);
     return data;
   }
 
@@ -599,10 +596,8 @@ export class AssetdetailsComponent implements OnInit {
     modalRef.result.then((result) => {
       if (result) {
         this.asset = result;
-        console.log('Asset actualizado:', this.asset);
       }
     }, (reason) => {
-      console.log('Modal cerrado sin guardar cambios');
     });
   }
 
@@ -643,11 +638,8 @@ export class AssetdetailsComponent implements OnInit {
           tipo: 'EQUIPO' as const
         };
 
-        console.log('Datos a enviar para actualización:', ubicacionData);
-
         this.ubicacionesService.actualizarUbicacionEquipo(this.asset.id, ubicacionData).subscribe({
           next: (response) => {
-            console.log('Ubicación actualizada:', response);
             this.cargarUbicacion();
             this.loading = false;
           },
@@ -665,11 +657,8 @@ export class AssetdetailsComponent implements OnInit {
           tipo: 'EQUIPO' as const
         };
 
-        console.log('Datos a enviar para creación:', ubicacionData);
-
         this.ubicacionesService.crearUbicacionEquipo(ubicacionData).subscribe({
           next: (response) => {
-            console.log('Ubicación creada:', response);
             this.cargarUbicacion();
             this.loading = false;
           },
@@ -722,14 +711,10 @@ export class AssetdetailsComponent implements OnInit {
                 macaddr: null
               };
 
-              // Logs de depuración
-              console.log('Ubicación seleccionada:', this.ubicacionActual);
-
               this.actualizarUbicacion();
             }
           },
           () => {
-            console.log('Modal cerrado sin selección');
             this.loading = false;
           }
         ).catch(error => {
@@ -759,13 +744,11 @@ export class AssetdetailsComponent implements OnInit {
     modalRef.result.then(
       (result) => {
         if (result) {
-          console.log('Ubicación asignada:', result);
           this.ubicacionActual = result;
           this.cargarUbicacion();
         }
       },
       (reason) => {
-        console.log('Modal cerrado por:', reason);
       }
     );
   }

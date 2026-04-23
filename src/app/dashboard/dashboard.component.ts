@@ -132,7 +132,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           // Filtrar dispositivos que NO están en almacenes o cementerio
           networkData = networkData.filter(device => !macsInactivasSet.has(device.mac));
           
-          console.log(`📊 [Dashboard] Dispositivos de red total: ${network.data?.length || 0}, Inactivos (baja/almacén): ${macsInactivasList.length}, Activos: ${networkData.length}`);
         }
 
         // Configuración común para todas las gráficas
@@ -373,7 +372,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         
         // Verificar si es un error de autenticación (posible reseteo de base de datos)
         if (error.status === 401) {
-          console.log('Error 401 detectado - posible reseteo de base de datos');
           this.authService.handleDatabaseReset();
         }
       }
@@ -395,7 +393,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Esto compensa el zoom: 0.8 del body (1/0.8 = 1.25)
     // 
     // Se mantiene esta función vacía por compatibilidad pero ya no es necesaria.
-    console.log('📊 Corrección de coordenadas del mouse para gráficas aplicada via CSS');
   }
 
   loadAlertas(): void {
@@ -410,7 +407,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         
         // Verificar si es un error de autenticación (posible reseteo de base de datos)
         if (error.status === 401) {
-          console.log('Error 401 en loadAlertas - posible reseteo de base de datos');
           this.authService.handleDatabaseReset();
         }
       }
@@ -483,8 +479,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     
     this.alertService.confirmarAlerta(alerta.id).subscribe({
       next: (response) => {
-        console.log('Alerta confirmada exitosamente:', response);
-        
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage('Alerta confirmada exitosamente');
         
@@ -534,8 +528,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     
     this.alertService.eliminarAlerta(alerta.id).subscribe({
       next: (response) => {
-        console.log('Alerta eliminada exitosamente:', response);
-        
         // Mostrar notificación de éxito
         this.notificationService.showSuccessMessage('Alerta eliminada exitosamente');
         
@@ -931,9 +923,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   navigateToAssetDetails(hardwareId: number): void {
     this.router.navigate(['/menu/asset-details', hardwareId])
-      .then(() => {
-        console.log('Navegación completada');
-      })
       .catch(err => {
         console.error('Error en la navegación:', err);
       });
@@ -1058,8 +1047,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   expandChart(chartType: string): void {
-    console.log('expandChart llamado con:', chartType);
-    
     let chartOptions: any = null;
     let title: string = '';
 
@@ -1081,12 +1068,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         title = 'Dispositivos de Red';
         break;
       default:
-        console.log('Tipo de gráfica no reconocido:', chartType);
         return;
     }
-
-    console.log('ChartOptions encontradas:', !!chartOptions);
-    console.log('Título:', title);
 
     if (chartOptions) {
       const isOSChart = chartType === 'sistema-operativo';
@@ -1133,8 +1116,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
       this.expandedChartTitle = title;
 
-      console.log('Intentando abrir modal...');
-      
       // Mostrar el modal usando NgbModal
       this.activeModalRef = this.modalService.open(this.chartModal, {
         size: 'xl',
@@ -1150,9 +1131,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.cdr.detectChanges();
       }, 200);
       
-      console.log('Modal abierto exitosamente');
     } else {
-      console.log('No se encontraron opciones de gráfica para:', chartType);
     }
   }
 
@@ -1195,11 +1174,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private normalizeHardwareType(type: string): string {
     // Normalizar el tipo de hardware para que coincida con los filtros del componente assets
     const normalizedType = type.trim().toUpperCase();
-    
-    // Log para debugging de normalización
-    if (type !== normalizedType) {
-      console.log(`Normalizando: "${type}" -> "${normalizedType}"`);
-    }
     
     switch (normalizedType) {
       case 'DESKTOP':

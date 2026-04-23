@@ -11,4 +11,12 @@ import { SoftwareDTO } from '../services/software.service';
 })
 export class SoftwareDetailsComponent {
   @Input() softwareData: SoftwareDTO[] = [];
+
+  get softwareDataSorted(): SoftwareDTO[] {
+    return [...(this.softwareData || [])].sort((a, b) =>
+      (a?.nombre || '').localeCompare(b?.nombre || '', 'es', {
+        sensitivity: 'base'
+      })
+    );
+  }
 } 

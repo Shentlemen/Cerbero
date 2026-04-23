@@ -60,8 +60,6 @@ export class HardwareService {
             // Filtrar hardware activo: mostrar todos EXCEPTO los inactivos
             const activeHardware = hardwareList.filter(hardware => !idsToExclude.has(hardware.id));
             
-            console.log(`📊 [Dashboard] Hardware total: ${hardwareList?.length || 0}, Inactivos (baja/almacén): ${idsInactivos.length}, Activos: ${activeHardware.length}`);
-            
             return activeHardware;
           })
         );
