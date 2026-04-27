@@ -10,7 +10,8 @@ import { AppHeaderComponent } from '../components/app-header/app-header.componen
 import { AuthService } from '../services/auth.service';
 import { User } from '../interfaces/auth.interface';
 import { PermissionsService } from '../services/permissions.service';
-import { getVersionInfo } from '../version';
+import { getDefaultVersionInfo } from '../version';
+import { VersionService } from '../services/version.service';
 
 @Component({
   selector: 'app-menu',
@@ -41,7 +42,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   showHelperMessage = false;
   currentHelperTip?: HelpTip;
   currentUser: User | null = null;
-  versionInfo = getVersionInfo();
+  versionInfo = getDefaultVersionInfo();
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección
@@ -78,7 +79,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     private router: Router,
     private helperService: HelperService,
     private authService: AuthService,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private versionService: VersionService
   ) {
     this.routerSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -147,6 +149,10 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.versionService.getVersionInfo().subscribe((versionInfo) => {
+      this.versionInfo = versionInfo;
+    });
+
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.updateLayoutTop();

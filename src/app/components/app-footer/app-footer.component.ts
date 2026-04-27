@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { getVersionInfo } from '../../version';
+import { getDefaultVersionInfo } from '../../version';
+import { VersionService } from '../../services/version.service';
 
 @Component({
   selector: 'app-footer',
@@ -89,12 +90,12 @@ import { getVersionInfo } from '../../version';
   `]
 })
 export class AppFooterComponent implements OnInit, OnDestroy {
-  versionInfo = getVersionInfo();
+  versionInfo = getDefaultVersionInfo();
   isVisible = false;
   private lastScrollY = 0;
   private scrollThreshold = 100; // Píxeles de scroll para activar el comportamiento inteligente
 
-  constructor() {
+  constructor(private versionService: VersionService) {
     console.log('🔍 Footer Component - Versión cargada:', this.versionInfo);
     console.log('📋 Versión actual:', this.versionInfo.displayVersion);
     console.log('🏗️ Build:', this.versionInfo.buildInfo);
@@ -102,6 +103,10 @@ export class AppFooterComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.versionService.getVersionInfo().subscribe((versionInfo) => {
+      this.versionInfo = versionInfo;
+    });
+
     // Mostrar el footer después de un pequeño delay para que la página cargue
     setTimeout(() => {
       this.checkScrollPosition();

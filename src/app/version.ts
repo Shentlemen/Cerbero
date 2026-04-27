@@ -1,18 +1,30 @@
-export const APP_VERSION = {
-  version: '0.9.0-beta',
-  buildNumber: '2025.08.691',
-  releaseDate: '2025-08-27',
-  codename: 'Cerbero Beta',
-  company: 'Cerbero Development Team',
-  copyright: '© 2024 Cerbero'
+export interface AppVersionData {
+  version: string;
+  buildNumber: string;
+}
+
+export interface VersionInfo extends AppVersionData {
+  fullVersion: string;
+  displayVersion: string;
+  buildInfo: string;
+  codename: string;
+}
+
+const DEFAULT_VERSION: AppVersionData = {
+  version: '0.9.0',
+  buildNumber: '1250'
 };
 
-export const getVersionInfo = () => {
-  return {
-    fullVersion: `${APP_VERSION.version} (${APP_VERSION.buildNumber})`,
-    displayVersion: `v${APP_VERSION.version}`,
-    buildInfo: `Build ${APP_VERSION.buildNumber}`,
-    releaseInfo: `Released ${APP_VERSION.releaseDate}`,
-    ...APP_VERSION
-  };
-}; 
+const VERSION_METADATA = {
+  codename: 'Cerbero'
+};
+
+export const buildVersionInfo = (data: AppVersionData): VersionInfo => ({
+  ...data,
+  codename: VERSION_METADATA.codename,
+  fullVersion: `${data.version} (${data.buildNumber})`,
+  displayVersion: `v${data.version}`,
+  buildInfo: `Build ${data.buildNumber}`
+});
+
+export const getDefaultVersionInfo = (): VersionInfo => buildVersionInfo(DEFAULT_VERSION);
