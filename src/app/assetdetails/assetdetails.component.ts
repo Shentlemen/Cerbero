@@ -22,6 +22,11 @@ import { LocationSelectorModalComponent } from '../components/location-selector-
 import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
 import { PermissionsService } from '../services/permissions.service';
+import {
+  SubnetDTO,
+  SubnetService,
+  resolveSubnetDisplayNameForIpv4
+} from '../services/subnet.service';
 import { CpuDetailsComponent } from '../cpu-details/cpu-details.component';
 import { DriveDetailsComponent } from '../drive-details/drive-details.component';
 import { MemoryDetailsComponent } from '../memory-details/memory-details.component';
@@ -90,6 +95,9 @@ interface Asset {
 })
 export class AssetdetailsComponent implements OnInit {
   asset: Asset | null = null;
+  /** Lista de subnets cargada desde la API para resolver nombre por IP. */
+  subnets: SubnetDTO[] = [];
+  subnetsLoaded = false;
   activeTab: string = 'general';
   componentData: any = {};
   ubicacionActual?: UbicacionDTO;
@@ -112,8 +120,15 @@ export class AssetdetailsComponent implements OnInit {
     private modalService: NgbModal,
     private softwareByHardwareService: SoftwareByHardwareService,
     private ubicacionesService: UbicacionesService,
+    private subnetService: SubnetService,
     public permissionsService: PermissionsService
   ) { }
+
+  /** Nombre de subred (`subnet.NAME`) obtenido emparejando `asset.ipAddr` con NETID/MASK de Cerbero. */
+  get nombreSubredDesdeIp(): string {
+    if (!this.subnetsLoaded) return 'Cargando…';
+    return resolveSubnetDisplayNameForIpv4(this.asset?.ipAddr, this.subnets);
+  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -126,6 +141,18 @@ export class AssetdetailsComponent implements OnInit {
               result.lastDate = result.lastDate ? new Date(result.lastDate) : null;
               result.lastCome = result.lastCome ? new Date(result.lastCome) : null;
               this.asset = result as Asset;
+
+              this.subnetsLoaded = false;
+              this.subnetService.getSubnets().subscribe({
+                next: (subs) => {
+                  this.subnets = subs;
+                  this.subnetsLoaded = true;
+                },
+                error: () => {
+                  this.subnets = [];
+                  this.subnetsLoaded = true;
+                }
+              });
               
               // Pre-cargar datos de todas las pestañas
               ['bios', 'cpu', 'drive', 'memory', 'monitor', 'storage', 'video'].forEach(tab => {
@@ -384,6 +411,9 @@ export class AssetdetailsComponent implements OnInit {
   }
 
   prepareGeneralData(): any[][] {
+    const subredPdf = !this.subnetsLoaded
+      ? 'Cargando…'
+      : resolveSubnetDisplayNameForIpv4(this.asset?.ipAddr, this.subnets);
     return [
       ['ID', this.asset?.id?.toString() ?? 'N/A'],
       ['Device ID', this.asset?.deviceId ?? 'N/A'],
@@ -401,7 +431,7 @@ export class AssetdetailsComponent implements OnInit {
       ['IP Source', this.asset?.ipSrc ?? 'N/A'],
       ['DNS', this.asset?.dns ?? 'N/A'],
       ['Gateway por defecto', this.asset?.defaultGateway ?? 'N/A'],
-      ['Tipo', this.asset?.type?.toString() ?? 'N/A'],
+      ['Subred (según IP)', subredPdf],
       ['Descripción', this.asset?.description ?? 'N/A'],
       ['Compañía Windows', this.asset?.winCompany ?? 'N/A'],
       ['Último usuario conectado', this.asset?.userid ?? 'N/A'],

@@ -141,6 +141,63 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/*
+ * Mismo criterio que locations.component / tipos-activo: borde con el color del “relleno” al hover,
+ * fondo transparente. Con ViewEncapsulation.None hay que superar styles.css global (.action-buttons .btn-*)
+ * usando un scope propio (.usuarios-page …) con mayor especificidad.
+ */
+.usuarios-page .action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.usuarios-page .action-buttons .btn-info {
+  background: transparent !important;
+  border: 1px solid #0ea5e9 !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.usuarios-page .action-buttons .btn-info:hover,
+.usuarios-page .action-buttons .btn-info:focus-visible {
+  background: #0284c7 !important;
+  border: 1px solid #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(14, 165, 233, 0.35) !important;
+}
+
+.usuarios-page .action-buttons .btn-warning {
+  background: transparent !important;
+  border: 1px solid #f59e0b !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.usuarios-page .action-buttons .btn-warning:hover,
+.usuarios-page .action-buttons .btn-warning:focus-visible {
+  background: #d97706 !important;
+  border: 1px solid #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.35) !important;
+}
+
+.usuarios-page .action-buttons .btn-danger {
+  background: transparent !important;
+  border: 1px solid #dc3545 !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.usuarios-page .action-buttons .btn-danger:hover,
+.usuarios-page .action-buttons .btn-danger:focus-visible {
+  background: #c82333 !important;
+  border: 1px solid #bd2130 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.35) !important;
+}
+
 /* Estilos para el modal */
 .modal-header {
   background: #f8f9fa;
@@ -198,7 +255,7 @@
     padding: 1rem;
   }
 
-  .action-buttons {
+  .usuarios-page .action-buttons {
     flex-direction: column;
   }
 } 

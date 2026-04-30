@@ -40,6 +40,17 @@ export class AuthService {
       );
   }
 
+  /**
+   * Registro público: el backend crea el usuario como USER deshabilitado (pendiente de aprobación).
+   * No almacena token en el cliente hasta que un administrador habilite la cuenta.
+   */
+  registerPublic(payload: CreateUserRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, {
+      ...payload,
+      role: payload.role || 'USER'
+    });
+  }
+
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');

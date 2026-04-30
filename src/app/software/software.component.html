@@ -101,7 +101,7 @@
               (click)="updateMultipleSoftware('licenciado', !hasAnyLicenciadoSoftware())"
               [disabled]="isUpdatingMultiple"
               [title]="hasAnyLicenciadoSoftware() ? 'Desmarcar como licenciado' : 'Marcar como licenciado'">
-        <i class="fas" [ngClass]="hasAnyLicenciadoSoftware() ? 'fa-unlock' : 'fa-key'"></i>
+        <i class="fas fa-key"></i>
         {{ hasAnyLicenciadoSoftware() ? 'Desmarcar Licenciado' : 'Marcar Licenciado' }}
       </button>
       <button class="action-btn delete" 
@@ -248,7 +248,7 @@
                         [title]="software.licenciado ? 'Desmarcar como licenciado' : 'Marcar como licenciado'"
                         [disabled]="loading"
                         [class.licenciado]="software.licenciado">
-                  <i class="fas" [ngClass]="software.licenciado ? 'fa-key' : 'fa-unlock'"></i>
+                  <i class="fas fa-key"></i>
                 </button>
                 <button class="delete-button" 
                         (click)="deleteSoftware(software, $event)"
@@ -259,7 +259,7 @@
               </div>
               <div class="action-buttons" *ngIf="!canManageSoftware()">
                 <span class="read-only-badge">
-                  <i class="fas fa-lock"></i>
+                  <i class="fas fa-key"></i>
                   Sin permisos
                 </span>
               </div>

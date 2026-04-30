@@ -21,6 +21,73 @@ export interface SubnetCoordinatesDTO {
   longitud: number;
 }
 
+/** Convierte una IPv4 a entero sin signo (32 bits). Devuelve null si no es válida. */
+function ipv4ToUint32(ip: string): number | null {
+  const trimmed = ip?.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split('.');
+  if (parts.length !== 4) return null;
+  const octets = parts.map((p) => parseInt(p, 10));
+  if (octets.some((x) => Number.isNaN(x) || x < 0 || x > 255)) return null;
+  return ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
+}
+
+function maskBitsOrder(subnetMask: number): number {
+  let n = subnetMask >>> 0;
+  let count = 0;
+  while (n) {
+    count++;
+    n &= n - 1;
+  }
+  return count;
+}
+
+/**
+ * Coincide IPv4 con la subred usando NETID (red base) y MASK (subnet mask en puntos).
+ * Sin máscara válida no hay coincidencia.
+ */
+export function ipv4MatchesSubnet(ip: string, subnet: SubnetDTO): boolean {
+  const host = ipv4ToUint32(ip);
+  const net = ipv4ToUint32(subnet.netId);
+  const maskRaw = subnet.mask?.trim();
+  const maskBits = maskRaw ? ipv4ToUint32(maskRaw) : null;
+  if (host === null || net === null || maskBits === null) return false;
+  return (host & maskBits) === (net & maskBits);
+}
+
+/**
+ * De la lista de subnets, devuelve la que corresponde a la IP y es la más específica
+ * si hubiera más de una (mayor número de bits en máscara).
+ */
+export function findSubnetForIpv4(ip: string | undefined | null, subnets: SubnetDTO[]): SubnetDTO | null {
+  if (!ip?.trim()) return null;
+  const trimmed = ip.trim();
+  let best: SubnetDTO | null = null;
+  let bestOrder = -1;
+  for (const s of subnets) {
+    if (!ipv4MatchesSubnet(trimmed, s)) continue;
+    const m = s.mask?.trim();
+    const maskNum = m ? ipv4ToUint32(m) : null;
+    if (maskNum === null) continue;
+    const ord = maskBitsOrder(maskNum);
+    if (ord > bestOrder) {
+      bestOrder = ord;
+      best = s;
+    }
+  }
+  return best;
+}
+
+/** Texto a mostrar: NAME de la tabla subnet, o etiqueta cuando no hay match / IP inválida. */
+export function resolveSubnetDisplayNameForIpv4(ip: string | undefined | null, subnets: SubnetDTO[]): string {
+  const trimmed = ip?.trim();
+  if (!trimmed) return 'N/A';
+  const found = findSubnetForIpv4(trimmed, subnets ?? []);
+  if (!found) return 'Sin coincidencia con subredes';
+  const name = found.name?.trim();
+  return name || found.id?.trim() || 'Sin nombre';
+}
+
 @Injectable({
   providedIn: 'root'
 })

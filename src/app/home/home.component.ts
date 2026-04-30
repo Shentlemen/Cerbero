@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgxParticlesModule, NgParticlesService } from '@tsparticles/angular';
 import { loadSlim } from '@tsparticles/slim';
 import { IOptions, RecursivePartial } from '@tsparticles/engine';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { loadPolygonShape } from '@tsparticles/shape-polygon';
 import { NgIf } from '@angular/common';
 import { AuthService } from '../services/auth.service';
@@ -12,19 +13,22 @@ import { LoginRequest } from '../interfaces/auth.interface';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [NgxParticlesModule, FormsModule, NgIf],
+  imports: [NgxParticlesModule, FormsModule, NgIf, RouterLink],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   username: string = '';
   password: string = '';
   loginError: boolean = false;
   loading: boolean = false;
   errorMessage: string = '';
+  /** Aviso tras registro exitoso (cuenta esperando habilitación). */
+  registrationNotice = false;
 
   constructor(
-    private router: Router, 
+    private router: Router,
+    private route: ActivatedRoute,
     private readonly ngParticlesService: NgParticlesService,
     private authService: AuthService
   ) {}
@@ -101,6 +105,16 @@ export class HomeComponent {
   };
 
   ngOnInit(): void {
+    const pendiente = this.route.snapshot.queryParamMap.get('cuentaPendiente');
+    if (pendiente === '1') {
+      this.registrationNotice = true;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true
+      });
+    }
+
     this.ngParticlesService.init(async (engine) => {
       await loadSlim(engine);
       await loadPolygonShape(engine);
@@ -113,6 +127,7 @@ export class HomeComponent {
       this.loading = true;
       this.loginError = false;
       this.errorMessage = '';
+      this.registrationNotice = false;
 
       const loginRequest: LoginRequest = {
         username: this.username,
@@ -127,7 +142,10 @@ export class HomeComponent {
         error: (error) => {
           this.loading = false;
           this.loginError = true;
-          this.errorMessage = error.error?.message || 'Usuario o contraseña incorrectos';
+          this.errorMessage =
+            error?.error?.message ||
+            error?.message ||
+            'Usuario o contraseña incorrectos';
         }
       });
     } else {

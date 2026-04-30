@@ -489,6 +489,43 @@
   opacity: 0.8;
 }
 
+/* Botones de acciones en la tabla (evitar hover negro global) */
+.action-buttons .btn-info {
+  background: #0ea5e9 !important;
+  border-color: #0ea5e9 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-info:hover {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-danger {
+  background: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-danger:hover {
+  background: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .ver-contactos-btn {
+  background: transparent !important;
+  border-color: #000000 !important;
+  color: #000000 !important;
+}
+
+.action-buttons .ver-contactos-btn:hover {
+  background: #15803d !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+}
+
 @media (max-width: 768px) {
   .filters-container {
     gap: 0.5rem;

@@ -510,7 +510,11 @@ export class DevicesComponent implements OnInit {
       event.stopPropagation();
     }
 
-    const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+    const modalRef = this.modalService.open(TransferirEquipoModalComponent, {
+      size: 'lg',
+      centered: true,
+      backdrop: 'static'
+    });
     modalRef.componentInstance.item = {
       ...device,
       tipo: 'DISPOSITIVO',

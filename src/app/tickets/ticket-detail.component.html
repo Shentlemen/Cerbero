@@ -72,7 +72,7 @@
     </div>
 
     <div class="col-lg-4">
-      <div class="content-section mb-3" *ngIf="puedeCreadorCerrarOReabrirResuelto() && !canProcessCurrentTicket()">
+      <div class="content-section mb-3" *ngIf="canCreatorCloseOrReopenResolvedTicket() && !canProcessCurrentTicket()">
         <h2 class="ticket-section-heading ticket-section-heading--accent">
           <i class="fas fa-user-check" aria-hidden="true"></i>
           <span>Resolución del área</span>
@@ -82,11 +82,11 @@
             El área marcó este ticket como <strong>resuelto</strong>. Podés cerrarlo si aceptás la solución, o reabrirlo si sigue pendiente.
           </p>
           <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaCierreCreador" placeholder="Comentario (opcional)"></textarea>
-          <button type="button" class="btn btn-success w-100 mb-2" (click)="cerrarTicketComoCreador()">
+          <button type="button" class="btn btn-success w-100 mb-2" (click)="closeTicketAsCreator()">
             <i class="fas fa-check-circle"></i>
             Cerrar ticket (aceptar solución)
           </button>
-          <button type="button" class="btn btn-outline-warning w-100" (click)="reabrirTicketComoCreador()">
+          <button type="button" class="btn btn-outline-warning w-100" (click)="reopenTicketAsCreator()">
             <i class="fas fa-redo"></i>
             Reabrir ticket
           </button>

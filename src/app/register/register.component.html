@@ -1,0 +1,35 @@
+<div class="particles-zoom-wrapper">
+  <ngx-particles [options]="particlesOptions"></ngx-particles>
+</div>
+<div class="home-container"></div>
+<div class="content-container">
+  <img src="assets/logo4.png" alt="Cerbero Logo" class="logo">
+  <form class="login-form register-form" (ngSubmit)="onSubmit()">
+    <h2 class="register-title">Crear cuenta</h2>
+    <p class="register-sub">
+      Se registrará como usuario estándar. Un administrador debe habilitar la cuenta antes de que pueda iniciar sesión.
+    </p>
+
+    <input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required autocomplete="username">
+    <input type="email" placeholder="Correo electrónico" [(ngModel)]="email" name="email" required autocomplete="email">
+    <input type="text" placeholder="Nombre" [(ngModel)]="firstName" name="firstName" required autocomplete="given-name">
+    <input type="text" placeholder="Apellido" [(ngModel)]="lastName" name="lastName" required autocomplete="family-name">
+    <input type="password" placeholder="Contraseña (mín. 6 caracteres)" [(ngModel)]="password" name="password" required
+      autocomplete="new-password">
+    <input type="password" placeholder="Confirmar contraseña" [(ngModel)]="confirmPassword" name="confirmPassword"
+      required autocomplete="new-password">
+
+    <button type="submit" [disabled]="submitting">
+      <span *ngIf="submitting">Enviando...</span>
+      <span *ngIf="!submitting">Registrarse</span>
+    </button>
+
+    <div *ngIf="errorMessage" class="login-error">
+      {{ errorMessage }}
+    </div>
+
+    <p class="login-register-row">
+      <a routerLink="/login" class="login-register-link">¿Ya tiene cuenta? Iniciar sesión</a>
+    </p>
+  </form>
+</div>

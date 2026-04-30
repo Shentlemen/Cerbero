@@ -159,25 +159,13 @@ export class TicketDetailComponent implements OnInit {
     return this.permissionsService.canProcessTicketsForArea(this.ticket.areaActual);
   }
 
-  /** Derivar: personal del área actual, GM/Admin o creador del ticket (alineado con backend). */
-  canDerivarTicket(): boolean {
-    if (!this.ticket) return false;
-    return this.canProcessCurrentTicket() || this.esCreadorDelTicket();
-  }
-
-  private esCreadorDelTicket(): boolean {
-    if (!this.ticket) return false;
-    const u = this.permissionsService.getCurrentUser();
-    return u?.id != null && this.ticket.creadoPorUserId === u.id;
-  }
-
   /** Tras RESUELTO por el área, el creador puede cerrar o reabrir. */
-  puedeCreadorCerrarOReabrirResuelto(): boolean {
+  canCreatorCloseOrReopenResolvedTicket(): boolean {
     return !!this.ticket && this.esCreadorDelTicket() && this.ticket.estado === 'RESUELTO';
   }
 
-  cerrarTicketComoCreador(): void {
-    if (!this.ticket || !this.puedeCreadorCerrarOReabrirResuelto()) return;
+  closeTicketAsCreator(): void {
+    if (!this.ticket || !this.canCreatorCloseOrReopenResolvedTicket()) return;
     this.ticketsService.cambiarEstado(this.ticket.id, 'CERRADO', this.notaCierreCreador.trim() || undefined).subscribe({
       next: (response) => {
         if (response.success) {
@@ -194,8 +182,8 @@ export class TicketDetailComponent implements OnInit {
     });
   }
 
-  reabrirTicketComoCreador(): void {
-    if (!this.ticket || !this.puedeCreadorCerrarOReabrirResuelto()) return;
+  reopenTicketAsCreator(): void {
+    if (!this.ticket || !this.canCreatorCloseOrReopenResolvedTicket()) return;
     this.ticketsService.cambiarEstado(this.ticket.id, 'REABIERTO', this.notaCierreCreador.trim() || undefined).subscribe({
       next: (response) => {
         if (response.success) {
@@ -210,6 +198,18 @@ export class TicketDetailComponent implements OnInit {
         this.notificationService.showError('Error', error?.error?.message || 'No se pudo reabrir el ticket.');
       }
     });
+  }
+
+  /** Derivar: personal del área actual, GM/Admin o creador del ticket (alineado con backend). */
+  canDerivarTicket(): boolean {
+    if (!this.ticket) return false;
+    return this.canProcessCurrentTicket() || this.esCreadorDelTicket();
+  }
+
+  private esCreadorDelTicket(): boolean {
+    if (!this.ticket) return false;
+    const u = this.permissionsService.getCurrentUser();
+    return u?.id != null && this.ticket.creadoPorUserId === u.id;
   }
 
   /** Alineado con el backend: creador en cualquier área (incl. Laboratorio), área actual o GM/Admin. */

@@ -784,7 +784,11 @@ export class AssetsComponent implements OnInit {
 
   // Método para transferir equipo
   transferirEquipo(asset: any): void {
-    const modalRef = this.modalService.open(TransferirEquipoModalComponent, { size: 'lg' });
+    const modalRef = this.modalService.open(TransferirEquipoModalComponent, {
+      size: 'lg',
+      centered: true,
+      backdrop: 'static'
+    });
     modalRef.componentInstance.item = {
       ...asset,
       tipo: 'EQUIPO',

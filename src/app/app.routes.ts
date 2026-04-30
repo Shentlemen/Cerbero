@@ -22,6 +22,11 @@ export const routes: Routes = [
     component: HomeComponent
   },
   {
+    path: 'register',
+    loadComponent: () =>
+      import('./register/register.component').then((m) => m.RegisterComponent)
+  },
+  {
     path: 'notification-demo',
     loadComponent: () => import('./components/notification-demo/notification-demo.component').then(m => m.NotificationDemoComponent)
   },

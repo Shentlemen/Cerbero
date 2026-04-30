@@ -258,10 +258,17 @@
 <div *ngIf="showEstadoDialog" class="confirm-dialog-overlay">
   <div class="confirm-dialog estado-dialog">
     <div class="confirm-dialog-title">
-      <i class="fas" [ngClass]="estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive'"></i>
-      {{ estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén' }}
+      <div class="estado-title-content">
+        <i class="fas" [ngClass]="estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive'"></i>
+        {{ estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén' }}
+      </div>
+      <button type="button" class="btn-close" (click)="cancelarCambioEstado()"></button>
     </div>
     <div class="confirm-dialog-message">
+      <div class="equipo-info">
+        <h6 class="mb-1"><strong>{{ deviceToChangeState?.name }}</strong></h6>
+        <small class="text-muted">Dispositivo seleccionado para cambio de estado</small>
+      </div>
       <p>¿Está seguro que desea {{ getEstadoActionText() }} el dispositivo <strong>{{ deviceToChangeState?.name }}</strong>?</p>
       <div class="observaciones-container">
         <label for="observaciones">Observaciones (opcional):</label>

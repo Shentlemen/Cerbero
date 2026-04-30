@@ -1,0 +1,41 @@
+.register-form {
+  width: 360px;
+  max-width: 92vw;
+}
+
+.register-form input {
+  width: 300px;
+  max-width: 100%;
+}
+
+.register-title {
+  color: #f4e4d8;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+  text-align: center;
+}
+
+.register-sub {
+  color: #bdbdbd;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: center;
+  margin: 0 0 16px;
+  max-width: 320px;
+}
+
+.login-register-row {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.login-register-link {
+  color: #f4e4d8;
+  font-size: 0.95rem;
+  text-decoration: underline;
+}
+
+.login-register-link:hover {
+  color: #ffffff;
+}

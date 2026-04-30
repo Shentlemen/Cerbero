@@ -5,6 +5,10 @@
 <div class="home-container"></div> <!-- Este div solo se usa para el fondo negro -->
 <div class="content-container">
     <img src="assets/logo4.png" alt="Cerbero Logo" class="logo">
+    <div *ngIf="registrationNotice" class="login-info-notice">
+      Su cuenta fue registrada correctamente. Debe esperar a que un administrador del sistema habilite su usuario
+      antes de poder iniciar sesión.
+    </div>
     <form class="login-form" (ngSubmit)="onSubmit()">
         <input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required>
         <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required>
@@ -16,5 +20,8 @@
             {{ errorMessage }}
         </div>
     </form>
+    <p class="login-register-row">
+      <a routerLink="/register" class="login-register-link">¿No tiene cuenta? Registrarse</a>
+    </p>
 </div>
 <!-- La línea de la imagen de Running Wolf ha sido eliminada -->

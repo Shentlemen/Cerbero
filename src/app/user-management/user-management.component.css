@@ -184,16 +184,70 @@
   color: #721c24;
 }
 
-/* Botones de acción en tabla */
-.action-buttons {
+/*
+ * Botones de acción: mismo criterio que locations / usuarios (borde con color en reposo).
+ * Supera styles.css global que fuerza borde negro en .action-buttons .btn-*.
+ */
+.user-management-page .action-buttons {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-.action-buttons .btn-sm {
+.user-management-page .action-buttons .btn-sm {
   padding: 0.4rem 0.6rem;
   font-size: 0.85rem;
+}
+
+.user-management-page .action-buttons .btn-warning {
+  background: transparent !important;
+  border: 1px solid #f59e0b !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.user-management-page .action-buttons .btn-warning:hover:not(:disabled),
+.user-management-page .action-buttons .btn-warning:focus-visible:not(:disabled) {
+  background: #d97706 !important;
+  border: 1px solid #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.35) !important;
+}
+
+.user-management-page .action-buttons .btn-outline-secondary:not(:disabled) {
+  background: transparent !important;
+  border: 1px solid #64748b !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.user-management-page .action-buttons .btn-outline-secondary:hover:not(:disabled),
+.user-management-page .action-buttons .btn-outline-secondary:focus-visible:not(:disabled) {
+  background: #475569 !important;
+  border: 1px solid #475569 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(71, 85, 105, 0.35) !important;
+}
+
+.user-management-page .action-buttons .btn-danger {
+  background: transparent !important;
+  border: 1px solid #dc3545 !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.user-management-page .action-buttons .btn-danger:hover:not(:disabled),
+.user-management-page .action-buttons .btn-danger:focus-visible:not(:disabled) {
+  background: #c82333 !important;
+  border: 1px solid #bd2130 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.35) !important;
+}
+
+.user-management-page .action-buttons .btn-danger:disabled,
+.user-management-page .action-buttons .btn-outline-secondary:disabled {
+  opacity: 0.45;
 }
 
 /* Tabla - aprovechar más espacio */

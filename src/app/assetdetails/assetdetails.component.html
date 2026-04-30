@@ -5,64 +5,83 @@
         <h2 class="mb-0">
           <i class="fas fa-desktop me-2"></i>DETALLES DEL ACTIVO
         </h2>
-        <span class="asset-name" *ngIf="asset">
-          <i class="fas fa-laptop me-2"></i>{{ asset.name }}
-        </span>
+        <div class="header-actions" *ngIf="asset">
+          <span class="asset-name">
+            <i class="fas fa-laptop me-2"></i>{{ asset.name }}
+          </span>
+          <button class="btn btn-primary btn-sm print-btn" (click)="exportarAPdf()">
+            <i class="fas fa-file-pdf"></i>
+            Exportar a PDF
+          </button>
+        </div>
       </div>
     </div>
     <div class="card-body">
-      <ul class="nav nav-tabs mb-3">
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'general'" (click)="changeTab('general')" style="cursor: pointer;">
-            <i class="fas fa-info-circle me-2"></i>General
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'bios'" (click)="changeTab('bios')" style="cursor: pointer;">
-            <i class="fas fa-microchip me-2"></i>BIOS
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')" style="cursor: pointer;">
-            <i class="fas fa-microchip me-2"></i>CPU
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'drive'" (click)="changeTab('drive')" style="cursor: pointer;">
-            <i class="fas fa-database me-2"></i>Unidades
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'memory'" (click)="changeTab('memory')" style="cursor: pointer;">
-            <i class="fas fa-memory me-2"></i>Memoria
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'monitor'" (click)="changeTab('monitor')" style="cursor: pointer;">
-            <i class="fas fa-tv me-2"></i>Monitor
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'storage'" (click)="changeTab('storage')" style="cursor: pointer;">
-            <i class="fas fa-hard-drive me-2"></i>Almacenamiento
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'video'" (click)="changeTab('video')" style="cursor: pointer;">
-            <i class="fas fa-film me-2"></i>Video
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'ubicacion'" (click)="changeTab('ubicacion')" style="cursor: pointer;">
-            <i class="fas fa-map-marker-alt me-2"></i>Ubicación
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'software'" (click)="changeTab('software')" style="cursor: pointer;">
-            <i class="fas fa-cube me-2"></i>Software
-          </a>
-        </li>
-      </ul>
+      <!-- Misma filosofía visual que los filtros de alertas (dashboard.component) -->
+      <div class="asset-tab-filters">
+        <ul class="asset-tab-strip">
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'general'" (click)="changeTab('general')">
+              <i class="fas fa-info-circle" aria-hidden="true"></i><span>General</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'bios'" (click)="changeTab('bios')">
+              <i class="fas fa-microchip" aria-hidden="true"></i><span>BIOS</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')">
+              <i class="fas fa-microchip" aria-hidden="true"></i><span>CPU</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'drive'" (click)="changeTab('drive')">
+              <i class="fas fa-database" aria-hidden="true"></i><span>Unidades</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'memory'" (click)="changeTab('memory')">
+              <i class="fas fa-memory" aria-hidden="true"></i><span>Memoria</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'monitor'" (click)="changeTab('monitor')">
+              <i class="fas fa-tv" aria-hidden="true"></i><span>Monitor</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'storage'" (click)="changeTab('storage')">
+              <i class="fas fa-hard-drive" aria-hidden="true"></i><span>Almacenamiento</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'video'" (click)="changeTab('video')">
+              <i class="fas fa-film" aria-hidden="true"></i><span>Video</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'ubicacion'" (click)="changeTab('ubicacion')">
+              <i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>Ubicación</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="asset-tab-btn"
+              [class.active]="activeTab === 'software'" (click)="changeTab('software')">
+              <i class="fas fa-cube" aria-hidden="true"></i><span>Software</span>
+            </button>
+          </li>
+        </ul>
+      </div>
       <!-- Contenido de las pestañas -->
       <div class="tab-content" [ngSwitch]="activeTab">
         <div *ngSwitchCase="'general'">
@@ -74,7 +93,7 @@
                 <li class="list-group-item"><i class="fas fa-desktop me-2"></i><strong>Nombre:</strong> {{ asset.name }}</li>
                 <li class="list-group-item"><i class="fas fa-users me-2"></i><strong>Grupo de trabajo:</strong> {{ asset.workgroup }}</li>
                 <li class="list-group-item"><i class="fas fa-network-wired me-2"></i><strong>Dirección IP:</strong> {{ asset.ipAddr }}</li>
-                <li class="list-group-item"><i class="fas fa-info-circle me-2"></i><strong>Tipo:</strong> {{ asset.type }}</li>
+                <li class="list-group-item"><i class="fas fa-network-wired me-2"></i><strong>Subred:</strong> {{ nombreSubredDesdeIp }}</li>
                 <li class="list-group-item"><i class="fas fa-comment me-2"></i><strong>Descripción:</strong> {{ asset.description }}</li>
               </ul>
               <h4 class="text-secondary mt-3">Información de Red</h4>
@@ -308,12 +327,7 @@
       <button class="btn btn-secondary mb-2 mb-md-0" (click)="volver()">
         <i class="fas fa-arrow-left me-2"></i>Volver
       </button>
-      <div>
-        <button class="btn btn-export me-2 mb-2 mb-md-0" (click)="exportarAPdf()">
-          <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
-        </button>
-        <!-- El botón "Editar" ha sido eliminado -->
-      </div>
+      <!-- El botón "Editar" ha sido eliminado -->
     </div>
   </div>
 </div>

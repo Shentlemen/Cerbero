@@ -256,6 +256,43 @@ button,
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Botones de acciones en la tabla (evitar hover negro global) */
+.action-buttons .btn-info {
+  background: #0ea5e9 !important;
+  border-color: #0ea5e9 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-info:hover {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-warning {
+  background: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-warning:hover {
+  background: #d97706 !important;
+  border-color: #d97706 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-danger {
+  background: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.action-buttons .btn-danger:hover {
+  background: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: #ffffff !important;
+}
+
 /* Badge de solo lectura / sin permisos (mismo estilo que software) */
 .read-only-badge {
   display: inline-flex;

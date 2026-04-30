@@ -11,14 +11,15 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
-    <div class="modal-header bg-light">
-      <h4 class="modal-title d-flex align-items-center gap-2">
-        <i class="fas fa-exchange-alt text-dark"></i>
-        Transferir Equipo
-      </h4>
-      <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
-    </div>
-    <div class="modal-body">
+    <div class="modal-body transferir-modal-body">
+      <div class="transferir-box-header">
+        <h4 class="modal-title d-flex align-items-center gap-2 mb-0">
+          <i class="fas fa-exchange-alt text-dark"></i>
+          Transferir Equipo
+        </h4>
+        <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+      </div>
+
       <div class="equipo-info mb-3 p-3 bg-light rounded">
         <h6 class="mb-1"><strong>{{ item?.name || item?.item?.nombreItem || 'Equipo' }}</strong></h6>
         <small class="text-muted">{{ getTipoEquipo() }}</small>
@@ -152,9 +153,41 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
     </div>
   `,
   styles: [`
-    .modal-header {
+    :host ::ng-deep .modal-content {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .transferir-modal-body {
+      padding: 1.25rem;
+      background: #fff;
+      border-radius: 12px;
+    }
+    .transferir-box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       background: #f8f9fa;
-      border-bottom: 1px solid #dee2e6;
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .btn-close {
+      background-color: #ffffff;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      padding: 0.35rem;
+      opacity: 0.5;
+      box-shadow: none;
+    }
+    .btn-close:hover {
+      border-color: #adb5bd;
+      opacity: 0.75;
+    }
+    .btn-close:focus,
+    .btn-close:focus-visible {
+      box-shadow: none;
+      outline: none;
     }
     .modal-title {
       color: #2c3e50;
