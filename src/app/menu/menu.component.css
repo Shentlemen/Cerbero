@@ -178,6 +178,30 @@
   flex-shrink: 0;
 }
 
+/* Menú principal: quitar focus rings azules en links/headers e hijos */
+.sidenav a,
+.menu-header,
+.sidenav a *,
+.menu-header * {
+  outline: none !important;
+}
+
+.sidenav a:focus,
+.sidenav a:focus-visible,
+.sidenav a:active,
+.menu-header:focus,
+.menu-header:focus-visible,
+.menu-header:active,
+.sidenav a *:focus,
+.sidenav a *:focus-visible,
+.sidenav a *:active,
+.menu-header *:focus,
+.menu-header *:focus-visible,
+.menu-header *:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
   margin-left: 220px;

@@ -106,63 +106,78 @@
   align-items: center;
   justify-content: center;
   padding: 0.32rem 0.72rem;
-  border-radius: 10px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
   white-space: nowrap;
-  border: 1px solid transparent;
+  border: 1px solid #dee2e6;
+  background: transparent;
+  color: #2c3e50;
   line-height: 1.2;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: none;
 }
 
 .tickets-area--almacen {
-  background: linear-gradient(145deg, #fef3c7, #fde68a);
-  color: #78350f;
-  border-color: rgba(120, 53, 15, 0.15);
+  border-color: #d97706;
 }
 
 .tickets-area--inventario {
-  background: linear-gradient(145deg, #cffafe, #a5f3fc);
-  color: #0e7490;
-  border-color: rgba(14, 116, 144, 0.18);
+  border-color: #0ea5e9;
 }
 
 .tickets-area--compras {
-  background: linear-gradient(145deg, #ffedd5, #fdba74);
-  color: #9a3412;
-  border-color: rgba(154, 52, 18, 0.14);
+  border-color: #f59e0b;
 }
 
 .tickets-area--gestion-equip {
-  background: linear-gradient(145deg, #ede9fe, #ddd6fe);
-  color: #5b21b6;
-  border-color: rgba(91, 33, 182, 0.14);
+  border-color: #7c3aed;
 }
 
 .tickets-area--impresion {
-  background: linear-gradient(145deg, #dbeafe, #93c5fd);
-  color: #1e40af;
-  border-color: rgba(30, 64, 175, 0.14);
+  border-color: #2563eb;
 }
 
 .tickets-area--garantia {
-  background: linear-gradient(145deg, #d1fae5, #6ee7b7);
-  color: #065f46;
-  border-color: rgba(6, 95, 70, 0.14);
+  border-color: #10b981;
 }
 
 .tickets-area--laboratorio {
-  background: linear-gradient(145deg, #f5f3ff, #c4b5fd);
-  color: #4c1d95;
-  border-color: rgba(76, 29, 149, 0.16);
+  border-color: #8b5cf6;
 }
 
 .tickets-area--default {
-  background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
-  color: #475569;
-  border-color: rgba(71, 85, 105, 0.12);
+  border-color: #94a3b8;
 }
+
+/* Estado / Prioridad: estilo sobrio como activos (texto neutro + borde por categoría) */
+.tickets-estado-badge,
+.tickets-prioridad-badge {
+  display: inline-block;
+  padding: 0.32rem 0.72rem;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: none;
+  background: transparent;
+  color: #2c3e50;
+  border: 1px solid #dee2e6;
+}
+
+.tickets-estado--nuevo { border-color: #6c757d; }
+.tickets-estado--en-revision { border-color: #0ea5e9; }
+.tickets-estado--en-gestion { border-color: #2563eb; }
+.tickets-estado--derivado { border-color: #f59e0b; }
+.tickets-estado--resuelto { border-color: #16a34a; }
+.tickets-estado--cerrado { border-color: #343a40; }
+.tickets-estado--reabierto { border-color: #dc2626; }
+
+.tickets-prioridad--baja { border-color: #94a3b8; }
+.tickets-prioridad--media { border-color: #0ea5e9; }
+.tickets-prioridad--alta { border-color: #f59e0b; }
+.tickets-prioridad--critica { border-color: #dc2626; }
+.tickets-prioridad--default { border-color: #6c757d; }
 
 /* Paneles: siempre en columna (una bandeja por fila); sin tope de alto ni scroll interno (paginación más adelante). */
 .tickets-panels {

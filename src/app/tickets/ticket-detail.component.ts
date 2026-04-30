@@ -200,10 +200,10 @@ export class TicketDetailComponent implements OnInit {
     });
   }
 
-  /** Derivar: personal del área actual, GM/Admin o creador del ticket (alineado con backend). */
+  /** Derivar: solo personal del área actual o GM/Admin. */
   canDerivarTicket(): boolean {
     if (!this.ticket) return false;
-    return this.canProcessCurrentTicket() || this.esCreadorDelTicket();
+    return this.canProcessCurrentTicket();
   }
 
   private esCreadorDelTicket(): boolean {

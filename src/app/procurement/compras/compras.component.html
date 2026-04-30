@@ -41,7 +41,7 @@
         </div>
       </div>
       <div class="actions d-flex justify-content-end align-items-center" style="gap: 1rem;" *ngIf="canManagePurchases()">
-        <button class="btn btn-export" (click)="abrirModal(compraModal)">
+        <button type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(compraModal)">
           <i class="fas fa-plus me-2"></i>
           Nueva Compra
         </button>
@@ -226,7 +226,7 @@
 
 <!-- Modal para crear/editar compra -->
 <ng-template #compraModal let-modal>
-  <div class="modal-header">
+  <div class="modal-header compra-form-modal-header">
     <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nueva'}} Compra</h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
@@ -789,7 +789,7 @@
     <div [ngbNavOutlet]="nav"></div>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
     <button type="button" class="btn btn-success btn-sm" (click)="guardarCompra()" [disabled]="!compraForm.get('idTipoCompra')?.valid || !compraForm.get('numeroCompra')?.valid || !compraForm.get('ano')?.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>

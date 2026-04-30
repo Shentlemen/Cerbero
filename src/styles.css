@@ -1015,6 +1015,43 @@ button.btn.btn-danger:active {
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
 }
 
+/* Botón "Nuevo …" en cabecera: transparente + borde negro; hover = misma familia que btn-export (--primary-color) */
+.actions .btn.btn-export.btn-agregar-nuevo {
+  background: transparent !important;
+  color: #212529 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.actions .btn.btn-export.btn-agregar-nuevo:hover,
+.actions .btn.btn-export.btn-agregar-nuevo:hover:focus,
+.actions .btn.btn-export.btn-agregar-nuevo:hover:focus-visible {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
+}
+
+.actions .btn.btn-export.btn-agregar-nuevo:active,
+.actions .btn.btn-export.btn-agregar-nuevo:active:focus,
+.actions .btn.btn-export.btn-agregar-nuevo:active:focus-visible {
+  background: #111111 !important;
+  border-color: #111111 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28) !important;
+  outline: none !important;
+}
+
+/* Sin anillo azul Bootstrap; :not(:hover) evita que el foco pise el estilo al pasar el mouse */
+.actions .btn.btn-export.btn-agregar-nuevo:focus:not(:hover),
+.actions .btn.btn-export.btn-agregar-nuevo:focus-visible:not(:hover) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Mejoras en los formularios */
 .form-control {
   padding: 0.75rem 1rem;

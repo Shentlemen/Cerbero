@@ -46,8 +46,6 @@
   margin-top: 0.5rem;
 }
 
-
-
 .proveedores-content {
   background: white;
   border-radius: 15px;
@@ -406,6 +404,21 @@
 .btn-secondary:hover {
   background: #cbd5e0;
   transform: translateY(-2px);
+}
+
+/* Botón Cerrar del modal de contactos: mismo esquema que el resto de la app */
+.contactos-modal-close-btn {
+  background: transparent !important;
+  border-color: #64748b !important;
+  color: #111827 !important;
+}
+
+.contactos-modal-close-btn:hover,
+.contactos-modal-close-btn:focus-visible {
+  background: #475569 !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(71, 85, 105, 0.35) !important;
 }
 
 /* Personalización de pestañas ngbNav */

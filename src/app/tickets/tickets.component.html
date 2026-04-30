@@ -143,10 +143,10 @@
                 <td><strong>{{ ticket.codigo }}</strong></td>
                 <td>{{ ticket.titulo }}</td>
                 <td>
-                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ ticket.areaActual }}</span>
+                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </td>
                 <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
-                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ ticket.prioridad }}</span></td>
+                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ getPrioridadLabel(ticket.prioridad) }}</span></td>
                 <td>{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td class="text-end">
                   <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
@@ -251,10 +251,10 @@
                 <td><strong>{{ ticket.codigo }}</strong></td>
                 <td>{{ ticket.titulo }}</td>
                 <td>
-                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ ticket.areaActual }}</span>
+                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </td>
                 <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
-                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ ticket.prioridad }}</span></td>
+                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ getPrioridadLabel(ticket.prioridad) }}</span></td>
                 <td>{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td class="text-end">
                   <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
@@ -361,10 +361,10 @@
                 <td><strong>{{ ticket.codigo }}</strong></td>
                 <td>{{ ticket.titulo }}</td>
                 <td>
-                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ ticket.areaActual }}</span>
+                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </td>
                 <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
-                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ ticket.prioridad }}</span></td>
+                <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ getPrioridadLabel(ticket.prioridad) }}</span></td>
                 <td>{{ (ticket.fechaCierre || ticket.fechaActualizacion) | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td class="text-end">
                   <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">

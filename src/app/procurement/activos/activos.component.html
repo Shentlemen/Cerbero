@@ -16,8 +16,12 @@
         </div>
         <div class="filters-container">
           <button 
+            type="button"
             class="filter-btn" 
             [class.active]="currentFilter === ''"
+            [style.--device-color]="'#3498db'"
+            [style.--device-bg-color]="'#f8f9fa'"
+            [style.--device-border-color]="'#dee2e6'"
             (click)="filterByCriticidad('')">
             <i class="fas fa-th-large"></i>
             <span>Todos</span>
@@ -109,7 +113,7 @@
               </th>
               <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
                 <div class="th-content">
-                  <span>Usuario</span>
+                  <span>Responsable</span>
                   <i class="fas" [ngClass]="{
                     'fa-sort-up': sortColumn === 'idUsuario' && sortDirection === 'asc',
                     'fa-sort-down': sortColumn === 'idUsuario' && sortDirection === 'desc',
@@ -442,21 +446,21 @@
               </div>
             </div>
 
-            <!-- Quinta fila: Usuario y ID Secundario -->
+            <!-- Quinta fila: Responsable y ID Secundario -->
             <div class="row mb-3">
               <div class="col-md-6">
-                <label class="form-label">Usuario</label>
+                <label class="form-label">Responsable</label>
                 <select class="form-select" formControlName="idUsuario" [class.disabled-field]="isUsuarioDisabled()">
-                  <option value="">Seleccione un usuario</option>
+                  <option value="">Seleccione un responsable</option>
                   <option *ngFor="let usuario of usuarios | keyvalue" [value]="usuario.key">
                     {{usuario.value.nombre}} {{usuario.value.apellido}}
                   </option>
                 </select>
                 <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched && shouldShowValidationErrors">
-                  El usuario es requerido.
+                  El responsable es requerido.
                 </div>
                 <small class="text-muted" *ngIf="isUsuarioDisabled()">
-                  El usuario se asigna automáticamente según el tipo de activo seleccionado
+                  El responsable se asigna automáticamente según el tipo de activo seleccionado
                 </small>
               </div>
               <div class="col-md-6">
@@ -568,7 +572,7 @@
           </li>
           <li *ngIf="activoForm.get('idUsuario')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
-            Usuario es requerido
+            Responsable es requerido
           </li>
           <li *ngIf="activoForm.get('idSecundario')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>

@@ -5,7 +5,7 @@
         <h1><i class="fas fa-industry"></i> Gestión de Proveedores</h1>
       </div>
       <div class="actions" *ngIf="canManageProviders()">
-        <button class="btn btn-export" (click)="abrirModal(proveedorModal)">
+        <button type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(proveedorModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo Proveedor
         </button>
@@ -376,7 +376,7 @@
     <div [ngbNavOutlet]="nav"></div>
   </div>
       <div class="modal-footer">
-      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm contactos-modal-close-btn" (click)="modal.dismiss()">Cancelar</button>
       <button type="button" class="btn btn-success btn-sm" (click)="guardarProveedor()">
         {{modoEdicion ? 'Actualizar' : 'Guardar'}}
       </button>
@@ -440,7 +440,7 @@
     </ng-template>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cerrar</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm contactos-modal-close-btn" (click)="modal.dismiss()">Cerrar</button>
   </div>
 </ng-template>
 

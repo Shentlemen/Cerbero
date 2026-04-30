@@ -6,29 +6,65 @@
     <div class="header-content">
       <div class="title-wrapper">
         <h1><i class="fas fa-code"></i> Software Instalado</h1>
-        <div class="stats-pills">
-          <div class="stat-pill total" [class.active-filter]="activeTab === 'total'" (click)="showTotalSoftware()" style="cursor:pointer;">
-            <i class="fas fa-boxes"></i>
-            <span>{{totalSoftware}} Total</span>
+        <div class="stats-pills filters-container">
+          <div
+            class="filter-btn software-filter-btn"
+            [class.active]="activeTab === 'total'"
+            [style.--device-color]="'#0ea5e9'"
+            [style.--device-bg-color]="'#e0f2fe'"
+            [style.--device-border-color]="'#bae6fd'"
+            (click)="showTotalSoftware()"
+            style="cursor:pointer;">
+            <i class="fas fa-boxes" style="color: #0ea5e9;"></i>
+            <span>Total</span>
+            <span class="count">({{totalSoftware}})</span>
           </div>
-          <button class="visibility-toggle" [class.active-filter]="activeTab === 'hidden'" (click)="showOnlyHiddenSoftware()">
-            <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye'"></i>
-            Ocultos
+          <button
+            type="button"
+            class="filter-btn software-filter-btn"
+            [class.active]="activeTab === 'hidden'"
+            [style.--device-color]="'#6366f1'"
+            [style.--device-bg-color]="'#eef2ff'"
+            [style.--device-border-color]="'#c7d2fe'"
+            (click)="showOnlyHiddenSoftware()">
+            <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye'" style="color: #6366f1;"></i>
+            <span>Ocultos</span>
             <span class="count">({{hiddenSoftwareCount}})</span>
           </button>
-          <button class="forbidden-toggle" [class.active-filter]="activeTab === 'forbidden'" (click)="showOnlyForbiddenSoftware()">
-            <i class="fas fa-ban"></i>
-            Prohibidos
+          <button
+            type="button"
+            class="filter-btn software-filter-btn"
+            [class.active]="activeTab === 'forbidden'"
+            [style.--device-color]="'#dc2626'"
+            [style.--device-bg-color]="'#fee2e2'"
+            [style.--device-border-color]="'#fecaca'"
+            (click)="showOnlyForbiddenSoftware()">
+            <i class="fas fa-ban" style="color: #dc2626;"></i>
+            <span>Prohibidos</span>
             <span class="count">({{forbiddenSoftwareCount}})</span>
           </button>
-          <button class="driver-toggle" [class.active-filter]="activeTab === 'driver'" (click)="showOnlyDriverSoftware()">
-            <i class="fas fa-cog"></i>
-            Drivers
+          <button
+            type="button"
+            class="filter-btn software-filter-btn"
+            [class.active]="activeTab === 'driver'"
+            [style.--device-color]="'#7c3aed'"
+            [style.--device-bg-color]="'#f3e8ff'"
+            [style.--device-border-color]="'#e9d5ff'"
+            (click)="showOnlyDriverSoftware()">
+            <i class="fas fa-cog" style="color: #7c3aed;"></i>
+            <span>Drivers</span>
             <span class="count">({{driverSoftwareCount}})</span>
           </button>
-          <button class="licenciado-toggle" [class.active-filter]="activeTab === 'licenciado'" (click)="showOnlyLicenciadoSoftware()">
-            <i class="fas fa-key"></i>
-            Licenciados
+          <button
+            type="button"
+            class="filter-btn software-filter-btn"
+            [class.active]="activeTab === 'licenciado'"
+            [style.--device-color]="'#059669'"
+            [style.--device-bg-color]="'#ecfdf5'"
+            [style.--device-border-color]="'#a7f3d0'"
+            (click)="showOnlyLicenciadoSoftware()">
+            <i class="fas fa-key" style="color: #059669;"></i>
+            <span>Licenciados</span>
             <span class="count">({{licenciadoSoftwareCount}})</span>
           </button>
         </div>

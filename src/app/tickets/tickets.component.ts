@@ -241,25 +241,29 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   getEstadoClass(estado: TicketEstado): string {
     const map: Record<TicketEstado, string> = {
-      NUEVO: 'badge bg-secondary',
-      EN_REVISION: 'badge bg-info text-dark',
-      EN_GESTION: 'badge bg-primary',
-      DERIVADO: 'badge bg-warning text-dark',
-      RESUELTO: 'badge bg-success',
-      CERRADO: 'badge bg-dark',
-      REABIERTO: 'badge bg-danger'
+      NUEVO: 'tickets-estado-badge tickets-estado--nuevo',
+      EN_REVISION: 'tickets-estado-badge tickets-estado--en-revision',
+      EN_GESTION: 'tickets-estado-badge tickets-estado--en-gestion',
+      DERIVADO: 'tickets-estado-badge tickets-estado--derivado',
+      RESUELTO: 'tickets-estado-badge tickets-estado--resuelto',
+      CERRADO: 'tickets-estado-badge tickets-estado--cerrado',
+      REABIERTO: 'tickets-estado-badge tickets-estado--reabierto'
     };
     return map[estado];
   }
 
   getPrioridadClass(prioridad: string): string {
     const map: Record<string, string> = {
-      BAJA: 'badge bg-light text-dark border',
-      MEDIA: 'badge bg-info text-dark',
-      ALTA: 'badge bg-warning text-dark',
-      CRITICA: 'badge bg-danger'
+      BAJA: 'tickets-prioridad-badge tickets-prioridad--baja',
+      MEDIA: 'tickets-prioridad-badge tickets-prioridad--media',
+      ALTA: 'tickets-prioridad-badge tickets-prioridad--alta',
+      CRITICA: 'tickets-prioridad-badge tickets-prioridad--critica'
     };
-    return map[prioridad] || 'badge bg-secondary';
+    return map[prioridad] || 'tickets-prioridad-badge tickets-prioridad--default';
+  }
+
+  getPrioridadLabel(prioridad: string): string {
+    return this.formatBadgeLabel(prioridad);
   }
 
   /** Pastilla de color por área (lista de tickets). */
@@ -277,6 +281,10 @@ export class TicketsComponent implements OnInit, OnDestroy {
     return map[key] || 'tickets-area-pill tickets-area--default';
   }
 
+  getAreaLabel(area: string): string {
+    return this.formatBadgeLabel(area);
+  }
+
   canCreateTickets(): boolean {
     return this.permissionsService.canCreateTickets();
   }
@@ -286,7 +294,11 @@ export class TicketsComponent implements OnInit, OnDestroy {
   }
 
   getEstadoLabel(estado: TicketEstado): string {
-    return estado
+    return this.formatBadgeLabel(estado);
+  }
+
+  private formatBadgeLabel(value: string): string {
+    return (value || '')
       .replaceAll('_', ' ')
       .toLowerCase()
       .replace(/(^|\s)\S/g, (m) => m.toUpperCase());

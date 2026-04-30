@@ -627,6 +627,23 @@ button,
   align-items: center;
 }
 
+/* Cerrar modal crear/editar: mismo tono que el X del modal "Ver" (cabecera detalles) */
+.details-header .header-actions > .btn-close,
+.compra-form-modal-header .btn-close {
+  opacity: 1;
+  filter: none;
+  background: transparent
+    url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23374151'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e")
+    center/1em auto no-repeat;
+}
+
+.details-header .header-actions > .btn-close:hover,
+.compra-form-modal-header .btn-close:hover {
+  opacity: 1;
+  filter: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231f2937'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e");
+}
+
 /* Modal XL más ancho */
 .modal-xl .modal-dialog {
   max-width: 95vw;
@@ -735,7 +752,8 @@ button,
 }
 
 .view-toggle-btn:focus {
-  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25);
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 /* Botón de exportar PDF */
@@ -744,21 +762,22 @@ button,
   font-size: 0.85rem;
   padding: 0.375rem 0.75rem;
   transition: all 0.2s ease;
-  border: 1px solid #28a745;
-  color: #28a745;
+  border: 1px solid #dc3545;
+  color: #dc3545;
   background: transparent;
   margin-left: 0.5rem;
 }
 
 .export-pdf-btn:hover {
-  background-color: #28a745;
+  background-color: #dc3545;
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.25);
 }
 
 .export-pdf-btn:focus {
-  box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .export-pdf-btn:disabled {
@@ -770,7 +789,31 @@ button,
 
 .export-pdf-btn:disabled:hover {
   background-color: transparent;
-  color: #28a745;
+  color: #dc3545;
+}
+
+/* Quitar recuadro azul (focus ring) en botones y contenido del header de detalles */
+.header-actions .view-toggle-btn,
+.header-actions .export-pdf-btn,
+.header-actions .view-toggle-btn *,
+.header-actions .export-pdf-btn * {
+  outline: none !important;
+}
+
+.header-actions .view-toggle-btn:focus,
+.header-actions .view-toggle-btn:focus-visible,
+.header-actions .view-toggle-btn:active,
+.header-actions .export-pdf-btn:focus,
+.header-actions .export-pdf-btn:focus-visible,
+.header-actions .export-pdf-btn:active,
+.header-actions .view-toggle-btn *:focus,
+.header-actions .view-toggle-btn *:focus-visible,
+.header-actions .view-toggle-btn *:active,
+.header-actions .export-pdf-btn *:focus,
+.header-actions .export-pdf-btn *:focus-visible,
+.header-actions .export-pdf-btn *:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .details-body {
