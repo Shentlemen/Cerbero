@@ -32,8 +32,8 @@ export interface StockAlmacenCreate {
 
 // Nueva interfaz para crear stock con información del ítem directamente
 export interface StockAlmacenCreateWithItem {
-    compraId: number; // ID de la compra
-    itemId: number;   // ID del ítem específico de esa compra
+    compraId?: number; // ID de la compra (opcional)
+    itemId?: number;   // ID del ítem específico de esa compra (opcional)
     almacenId: number;
     estanteria: string;
     estante: string;

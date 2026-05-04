@@ -4,7 +4,11 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
-import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
+import {
+  AlmacenConfig,
+  defEstanteria,
+  estanteriasOrdenadas,
+} from '../../interfaces/almacen-config.interface';
 
 @Component({
   selector: 'app-transferir-equipo-modal',
@@ -68,7 +72,8 @@ import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
               <label class="form-label">Estantería *</label>
               <select 
                 class="form-select" 
-                formControlName="estanteria">
+                formControlName="estanteria"
+                (change)="onEstanteriaUbicacionChange()">
                 <option value="">Seleccione estantería...</option>
                 <option *ngFor="let estanteria of estanteriasDisponibles" [value]="estanteria">
                   {{ estanteria }}
@@ -342,30 +347,12 @@ export class TransferirEquipoModalComponent implements OnInit {
         this.cargandoConfig = false;
         if (config) {
           this.almacenConfig = config;
-          
-          // Estanterías desde config (E1, E2, ...)
-          this.estanteriasDisponibles = [];
-          for (let i = 1; i <= config.cantidadEstanterias; i++) {
-            this.estanteriasDisponibles.push(`E${i}`);
-          }
-          
-          // Estantes desde config (1, 2, 3, ...)
-          this.estantesDisponibles = [];
-          for (let i = 1; i <= config.cantidadEstantesPorEstanteria; i++) {
-            this.estantesDisponibles.push(i.toString());
-          }
-          
-          // Secciones desde config (divisionesEstante); si vacío, no hay sección
-          this.seccionesDisponibles = [];
-          if (config.divisionesEstante && config.divisionesEstante.trim()) {
-            this.seccionesDisponibles = config.divisionesEstante.split(',').map(d => d.trim()).filter(d => d);
-          }
-          
+
+          this.estanteriasDisponibles = estanteriasOrdenadas(config).map((d) => d.codigo);
+
           this.transferForm.get('seccion')?.clearValidators();
-          if (this.seccionesDisponibles.length > 0) {
-            this.transferForm.get('seccion')?.setValidators([Validators.required]);
-          }
-          // Requerir estantería y estante cuando hay config
+          this.aplicarEstantesySeccionSegunEstanteria();
+
           this.transferForm.get('estanteria')?.setValidators([Validators.required]);
           this.transferForm.get('estante')?.setValidators([Validators.required]);
         } else {
@@ -400,6 +387,43 @@ export class TransferirEquipoModalComponent implements OnInit {
         this.transferForm.get('seccion')?.updateValueAndValidity();
       }
     });
+  }
+
+  /** Estantes y sectores según la estantería elegida */
+  aplicarEstantesySeccionSegunEstanteria(): void {
+    this.estantesDisponibles = [];
+    this.seccionesDisponibles = [];
+    if (!this.almacenConfig) {
+      return;
+    }
+    const codSel = this.transferForm.get('estanteria')?.value;
+    if (!codSel) {
+      this.transferForm.get('seccion')?.clearValidators();
+      return;
+    }
+    const def = defEstanteria(this.almacenConfig, String(codSel));
+    if (!def) {
+      this.transferForm.get('seccion')?.clearValidators();
+      return;
+    }
+    for (let i = 1; i <= def.cantidadEstantes; i++) {
+      this.estantesDisponibles.push(String(i));
+    }
+    this.seccionesDisponibles = (def.divisionesEstante || '')
+      .split(',')
+      .map((d) => d.trim())
+      .filter((d) => d);
+    this.transferForm.get('seccion')?.clearValidators();
+    if (this.seccionesDisponibles.length > 0) {
+      this.transferForm.get('seccion')?.setValidators([Validators.required]);
+    }
+  }
+
+  onEstanteriaUbicacionChange(): void {
+    this.transferForm.patchValue({ estante: '', seccion: '' }, { emitEvent: false });
+    this.aplicarEstantesySeccionSegunEstanteria();
+    this.transferForm.get('estante')?.updateValueAndValidity();
+    this.transferForm.get('seccion')?.updateValueAndValidity();
   }
 
   esAlmacenRegular(): boolean {

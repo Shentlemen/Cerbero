@@ -33,8 +33,8 @@ export interface StockAlmacen {
 }
 
 export interface StockAlmacenCreate {
-  idCompra: number;
-  itemId: number;
+  idCompra?: number;
+  itemId?: number;
   almacenId: number;
   estanteria: string;
   estante: string;
@@ -158,8 +158,8 @@ export class StockAlmacenService extends BaseRestService {
   createStockWithItem(stock: StockAlmacenCreateWithItem): Observable<StockAlmacen> {
     // Convertir a StockAlmacenCreate para el backend
     const stockCreate: StockAlmacenCreate = {
-      idCompra: stock.compraId, // Mapear compraId a idCompra
-      itemId: stock.itemId, // El itemId ya viene correcto del frontend
+      idCompra: stock.compraId, // Mapear compraId a idCompra (opcional)
+      itemId: stock.itemId, // item opcional
       almacenId: stock.almacenId,
       estanteria: stock.estanteria,
       estante: stock.estante,

@@ -11,12 +11,17 @@ import { NotificationContainerComponent } from '../../components/notification-co
 import { TransferirEquipoModalComponent } from '../../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { RegistrarStockModalComponent } from '../../components/registrar-stock-modal/registrar-stock-modal.component';
 import { ModificarCantidadModalComponent } from '../../components/modificar-cantidad-modal/modificar-cantidad-modal.component';
+import { EditarRegistroStockModalComponent } from '../../components/editar-registro-stock-modal/editar-registro-stock-modal.component';
 import { Almacen3DComponent, StockItem } from '../../components/almacen-3d/almacen-3d.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../../services/estado-dispositivo.service';
 import { AuthService } from '../../services/auth.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
-import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
+import {
+  AlmacenConfig,
+  defEstanteria,
+  estanteriasOrdenadas,
+} from '../../interfaces/almacen-config.interface';
 import { HardwareService } from '../../services/hardware.service';
 import { BiosService } from '../../services/bios.service';
 import { NetworkInfoService } from '../../services/network-info.service';
@@ -33,7 +38,8 @@ import autoTable from 'jspdf-autotable';
     ReactiveFormsModule,
     NgbModule,
     NotificationContainerComponent,
-    Almacen3DComponent
+    Almacen3DComponent,
+    EditarRegistroStockModalComponent
   ],
   templateUrl: './stock-almacen.component.html',
   styleUrls: ['./stock-almacen.component.css']
@@ -309,8 +315,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Enriquece items de stock que son equipos/dispositivos transferidos (item_id null)
-   * para habilitar Transferir/Reactivar. Usa hardware y networkInfo para resolver hardwareId/mac.
+   * Para filas sin ítem de catálogo (item_id null): marca como equipo/dispositivo solo si el `numero`
+   * coincide con inventario (hardware o red) o si la fila ya viene de APIs de equipos con `estadoInfo`.
+   * El resto (insumos manuales, etc.) queda como ítem y no muestra Transferir/Reactivar.
    */
   enriquecerStockConEquipos(stock: any[], hardware: any[], networkInfoData: any[]): any[] {
     const networkByMac = new Map<string, any>(networkInfoData.map((d: any) => [d.mac, d]));
@@ -354,12 +361,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         };
       }
 
-      // Equipo/dispositivo sin match en hardware/networkInfo - marcar como equipo para mostrar UI
-      return {
-        ...item,
-        esEquipoEspecial: true,
-        tipoEquipo: 'EQUIPO'
-      };
+      // Sin coincidencia en hardware/red: solo "PC transferido" si ya viene de APIs de equipos/estado
+      if (item.esEquipoEspecial === true && item.estadoInfo != null) {
+        return item;
+      }
+
+      // Stock manual (p. ej. insumos sin compra) u homónimo no inventariado → columna Tipo: Ítem; botones editar
+      return item;
     });
   }
 
@@ -619,8 +627,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         k.includes(almacen.numero || '') && k.includes(almacen.nombre || '')
       );
       if (!almacenKey) return;
-      for (let i = 1; i <= config.cantidadEstanterias; i++) {
-        const estanteria = `E${i}`;
+      for (const d of estanteriasOrdenadas(config)) {
+        const estanteria = d.codigo;
         if (!grupos[almacenKey][estanteria]) {
           grupos[almacenKey][estanteria] = [];
         }
@@ -1072,11 +1080,11 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       almacen.includes(a.numero || '') && almacen.includes(a.nombre || '')
     );
     const config = almacenMatch ? this.almacenConfigs.get(almacenMatch.id) : null;
-    const estanteriasDesdeConfig = config ? Array.from({ length: config.cantidadEstanterias }, (_, i) => `E${i + 1}`) : [];
-    const esEstanteriaValida = config && estanteriasDesdeConfig.includes(estanteria.toUpperCase());
+    const definicion = config ? defEstanteria(config, estanteria) : undefined;
+    const esEstanteriaValida = !!definicion;
 
-    if (!this.searchTerm?.trim() && config && esEstanteriaValida) {
-      for (let i = 1; i <= config.cantidadEstantesPorEstanteria; i++) {
+    if (!this.searchTerm?.trim() && config && esEstanteriaValida && definicion) {
+      for (let i = 1; i <= definicion.cantidadEstantes; i++) {
         estantes.add(i.toString());
       }
     }
@@ -1114,6 +1122,40 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * Abre el modal para modificar la cantidad de un item
    */
+  /**
+   * Edita ubicación y datos del registro en stock_almacen (ítems de compra / insumos registrados).
+   * No aplica a equipos/dispositivos transferidos (esEquipoEspecial).
+   */
+  abrirModalEditarRegistro(item: any): void {
+    if (item?.esEquipoEspecial) {
+      return;
+    }
+    if (!this.canManageStock()) {
+      this.notificationService.showError('Permisos insuficientes', 'No tienes permisos para modificar el stock.');
+      return;
+    }
+    const raw = item?.id;
+    const stockId =
+      raw == null ? NaN : typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    if (!Number.isFinite(stockId) || stockId <= 0) {
+      this.notificationService.showError(
+        'No editable',
+        'Este ítem no tiene un registro de stock válido para editar (p. ej. filas solo de visualización).'
+      );
+      return;
+    }
+
+    const modalRef = this.modalService.open(EditarRegistroStockModalComponent, { size: 'lg', backdrop: true });
+    modalRef.componentInstance.item = item;
+    modalRef.result
+      .then((result: { success?: boolean }) => {
+        if (result?.success) {
+          this.cargarDatos();
+        }
+      })
+      .catch(() => {});
+  }
+
   abrirModalCantidad(item: any, _modal?: any): void {
     if (item.esEquipoEspecial) {
       this.notificationService.showError(

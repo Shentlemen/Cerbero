@@ -175,9 +175,8 @@
                     <td>
                       <span
                         *ngIf="esEquipoEspecial(item)"
-                        class="tipo-badge"
-                        [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'dispositivo' : 'equipo'">
-                        <i class="fas me-1" [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'fa-network-wired' : 'fa-desktop'"></i>
+                        class="badge badge-stock-tipo badge-stock-item d-inline-flex align-items-center gap-1">
+                        <i class="fas" [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'fa-network-wired' : 'fa-desktop'"></i>
                         {{ getTipoEquipo(item) === 'DISPOSITIVO' ? 'Dispositivo' : 'Equipo' }}
                       </span>
                       <span *ngIf="!esEquipoEspecial(item)" class="badge badge-stock-tipo badge-stock-item">Ítem</span>
@@ -187,7 +186,14 @@
                         <button
                           *ngIf="!esEquipoEspecial(item)"
                           type="button"
-                          class="btn btn-sm btn-outline-secondary"
+                          class="btn btn-sm editar-datos-btn"
+                          (click)="abrirModalEditarRegistro(item)">
+                          Editar datos
+                        </button>
+                        <button
+                          *ngIf="!esEquipoEspecial(item)"
+                          type="button"
+                          class="btn btn-sm editar-cantidad-btn"
                           (click)="abrirModalCantidad(item)">
                           Editar cantidad
                         </button>

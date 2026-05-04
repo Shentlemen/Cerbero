@@ -228,6 +228,7 @@
               <div class="action-buttons">
                 <button 
                   *ngIf="item.tipo === 'EQUIPO' && canTransferOrReactivate()"
+                  type="button"
                   class="btn btn-sm transferir-btn" 
                   (click)="transferirEquipo(item); $event.stopPropagation()"
                   [disabled]="transferiendoItemId === item.id"
@@ -238,7 +239,8 @@
                 </button>
                 <button 
                   *ngIf="canTransferOrReactivate()"
-                  class="btn btn-success btn-sm reactivar-btn" 
+                  type="button"
+                  class="btn btn-sm reactivar-btn" 
                   (click)="reactivarItem(item); $event.stopPropagation()"
                   [disabled]="reactivatingItemId === (item.id || item.mac)"
                   [title]="'Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')"

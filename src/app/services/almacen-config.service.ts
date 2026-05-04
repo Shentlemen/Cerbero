@@ -42,13 +42,10 @@ export class AlmacenConfigService extends BaseRestService {
   }
 
   createConfig(config: AlmacenConfigCreate): Observable<AlmacenConfig> {
-    // Convertir a formato que espera el backend
     const requestBody = {
       almacen: { id: config.almacenId },
       nombre: config.nombre,
-      cantidadEstanterias: config.cantidadEstanterias,
-      cantidadEstantesPorEstanteria: config.cantidadEstantesPorEstanteria,
-      divisionesEstante: config.divisionesEstante
+      estanterias: config.estanterias,
     };
 
     return this.http.post<{success: boolean, data: AlmacenConfig, message: string}>(this.apiUrl, requestBody)
@@ -64,9 +61,7 @@ export class AlmacenConfigService extends BaseRestService {
     const requestBody = {
       almacen: { id: config.almacenId },
       nombre: config.nombre,
-      cantidadEstanterias: config.cantidadEstanterias,
-      cantidadEstantesPorEstanteria: config.cantidadEstantesPorEstanteria,
-      divisionesEstante: config.divisionesEstante
+      estanterias: config.estanterias,
     };
 
     return this.http.put<{success: boolean, data: AlmacenConfig, message: string}>(`${this.apiUrl}/${id}`, requestBody)
@@ -97,4 +92,3 @@ export class AlmacenConfigService extends BaseRestService {
     return divisionesEstante.split(',').map(d => d.trim()).filter(d => d.length > 0);
   }
 }
-

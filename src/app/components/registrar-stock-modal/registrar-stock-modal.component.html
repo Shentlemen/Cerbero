@@ -18,7 +18,7 @@
       <div class="form-card-body">
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label for="compraId" class="form-label">Compra *</label>
+            <label for="compraId" class="form-label">Compra (Opcional)</label>
             <div class="position-relative">
               <input type="text" class="form-control" id="compraSearch"
                 placeholder="Escriba para buscar compras por número..."
@@ -36,16 +36,13 @@
                 <div class="item-option disabled"><i class="fas fa-search me-2"></i>No se encontraron compras</div>
               </div>
             </div>
-            <div *ngIf="stockForm.get('compraId')?.invalid && stockForm.get('compraId')?.touched" class="text-danger mt-1">
-              <small *ngIf="stockForm.get('compraId')?.errors?.['required']">La compra es requerida</small>
-            </div>
           </div>
           
           <div class="col-md-6 mb-3">
-            <label for="itemId" class="form-label">Ítem de la Compra *</label>
+            <label for="itemId" class="form-label">Ítem de la Compra (Opcional)</label>
             <div class="position-relative">
               <input type="text" class="form-control" id="itemSearch"
-                placeholder="Primero seleccione una compra..."
+                placeholder="Opcional: seleccione compra para elegir ítem..."
                 [ngModel]="getItemInputDisplayValue()" (ngModelChange)="onItemInputChange($event)" [ngModelOptions]="{standalone: true}"
                 (focus)="mostrarDropdownItems = true; filtrarItems()" (blur)="onItemBlur()" autocomplete="off"
                 [disabled]="!stockForm.get('compraId')?.value">
@@ -63,9 +60,6 @@
                 <small><i class="fas fa-info-circle me-1"></i>Primero seleccione una compra</small>
               </div>
             </div>
-            <div *ngIf="stockForm.get('itemId')?.invalid && stockForm.get('itemId')?.touched" class="text-danger mt-1">
-              <small *ngIf="stockForm.get('itemId')?.errors?.['required']">El ítem es requerido</small>
-            </div>
           </div>
         </div>
       </div>
@@ -80,7 +74,7 @@
       </div>
       <div class="form-card-body">
         <div class="row">
-          <div class="col-md-4 mb-3">
+          <div class="col-md-7 mb-3">
             <label for="almacenId" class="form-label">Almacén *</label>
             <select class="form-select" id="almacenId" formControlName="almacenId">
               <option value="">Sin selección</option>
@@ -90,7 +84,7 @@
               <small *ngIf="stockForm.get('almacenId')?.errors?.['required']">El almacén es requerido</small>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
+          <div class="col-md-5 mb-3">
             <label for="estanteria" class="form-label">Estantería *</label>
             <select class="form-select" id="estanteria" formControlName="estanteria">
               <option value="">Sin selección</option>
@@ -101,7 +95,9 @@
               <small *ngIf="stockForm.get('estanteria')?.errors?.['invalidEstanteria']">Seleccione una estantería válida</small>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
             <label for="estante" class="form-label">Estante *</label>
             <select class="form-select" id="estante" formControlName="estante">
               <option value="">Sin selección</option>
@@ -112,7 +108,7 @@
               <small *ngIf="stockForm.get('estante')?.errors?.['invalidEstante']">Seleccione un estante válido</small>
             </div>
           </div>
-          <div class="col-md-3 mb-3" *ngIf="divisionesDisponibles.length > 0">
+          <div class="col-md-6 mb-3">
             <label for="division" class="form-label">Sección</label>
             <select class="form-select" id="division" formControlName="division">
               <option value="">Sin sección</option>
@@ -137,7 +133,7 @@
             <label for="cantidad" class="form-label">Cantidad *</label>
             <input type="number" class="form-control" id="cantidad" formControlName="cantidad" min="1" placeholder="1" required>
           </div>
-          <div class="col-md-4 mb-3">
+          <div class="col-md-8 mb-3">
             <label for="numero" class="form-label">Número</label>
             <input type="text" class="form-control" id="numero" formControlName="numero" placeholder="Número identificador (opcional)" maxlength="50">
             <div *ngIf="stockForm.get('numero')?.invalid && stockForm.get('numero')?.touched" class="text-danger mt-1">

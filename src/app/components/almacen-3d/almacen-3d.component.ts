@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, Vie
 import { CommonModule } from '@angular/common';
 import * as BABYLON from '@babylonjs/core';
 import '@babylonjs/loaders';
-import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
+import { AlmacenConfig, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
 
 export interface CajaInfo {
   estanteria: string;
@@ -59,6 +59,8 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   private layoutEstanterias: { offsetX: number; offsetZ: number; estanteriaId: string }[] = [];
   private sinEstructura: boolean = false;
   private seccionesNombres: string[] = ['a', 'b', 'c'];
+  /** Por estantería: niveles y sectores (config heterogénea) */
+  private specPorEstanteria = new Map<string, { niveles: number; seccionesNombres: string[] }>();
   private sceneReady: boolean = false;
   
   // Colores para los niveles
@@ -108,6 +110,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     this.cajasMap.forEach((_, mesh) => mesh.dispose());
     this.cajasMap.clear();
     this.layoutEstanterias = [];
+    this.specPorEstanteria.clear();
     if (this.scene) {
       this.scene.dispose();
     }
@@ -213,11 +216,25 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   /** Estructura dinámica según AlmacenConfig */
   private crearEstructuraDesdeConfig(): void {
     const cfg = this.config!;
-    const numEstanterias = cfg.cantidadEstanterias || 6;
-    const niveles = cfg.cantidadEstantesPorEstanteria || 3;
-    this.seccionesNombres = (cfg.divisionesEstante || 'A,B,C').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-    if (this.seccionesNombres.length === 0) this.seccionesNombres = ['a', 'b', 'c'];
-    this.niveles = niveles;
+    const defs = estanteriasOrdenadas(cfg);
+    this.specPorEstanteria.clear();
+
+    let maxNiveles = 3;
+    defs.forEach((d) => {
+      const raw = (d.divisionesEstante || 'A,B,C').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+      const sec = raw.length > 0 ? raw : ['a', 'b', 'c'];
+      const niv = d.cantidadEstantes >= 1 ? d.cantidadEstantes : 3;
+      this.specPorEstanteria.set(d.codigo, { niveles: niv, seccionesNombres: sec });
+      maxNiveles = Math.max(maxNiveles, niv);
+    });
+    const numEstanterias = defs.length > 0 ? defs.length : (cfg.cantidadEstanterias || 6);
+    this.niveles = defs.length > 0 ? maxNiveles : (cfg.cantidadEstantesPorEstanteria || 3);
+
+    const secDefault = (cfg.divisionesEstante || 'A,B,C')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    this.seccionesNombres = secDefault.length > 0 ? secDefault : ['a', 'b', 'c'];
 
     const espacioEntreEstanterias = 7;
     const espacioEntreFilas = 8;
@@ -238,7 +255,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
       const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
       for (let col = 0; col < numCols && idx < numEstanterias; col++) {
         const offsetZ = offsetInicialZ + col * (profundidadEstanteria + espacioEntreEstanterias);
-        const estanteriaId = `E${idx + 1}`;
+        const estanteriaId = defs[idx] ? defs[idx].codigo : `E${idx + 1}`;
         const custom = layoutMap.get(estanteriaId);
         const finalX = custom?.offsetX ?? offsetX;
         const finalZ = custom?.offsetZ ?? offsetZ;
@@ -552,6 +569,13 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private crearEstanteria(offsetX: number = 0, offsetZ: number = 0, estanteriaId: string = 'E1', rotationY: number = 0): void {
+    const spec = this.specPorEstanteria.get(estanteriaId) ?? {
+      niveles: this.niveles > 0 ? this.niveles : 3,
+      seccionesNombres: this.seccionesNombres.length ? this.seccionesNombres : ['a', 'b', 'c'],
+    };
+    const nivelesLocal = Math.max(1, spec.niveles);
+    const seccionesNombresLocal = spec.seccionesNombres;
+
     // Material metálico para la estructura
     const metalMaterial = new BABYLON.StandardMaterial(`metalMat_${offsetX}_${offsetZ}`, this.scene);
     metalMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.45);
@@ -578,7 +602,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     const anchoEstanteria = 18;
     const profundidadEstanteria = 1.5;
     const alturaTotal = 5;
-    const alturaNivel = alturaTotal / this.niveles;
+    const alturaNivel = alturaTotal / nivelesLocal;
     const grosorTubo = 0.08;
 
     // Postes verticales (4 esquinas)
@@ -602,7 +626,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     });
 
     // Estantes (superficies horizontales)
-    for (let nivel = 0; nivel <= this.niveles; nivel++) {
+    for (let nivel = 0; nivel <= nivelesLocal; nivel++) {
       const estante = BABYLON.MeshBuilder.CreateBox(`estante_${offsetX}_${offsetZ}_${nivel}`, {
         width: anchoEstanteria,
         height: 0.05,
@@ -633,7 +657,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     // Barras verticales divisorias (según secciones de config)
-    const secciones = Math.max(1, this.seccionesNombres.length);
+    const secciones = Math.max(1, seccionesNombresLocal.length);
     const anchoSeccion = anchoEstanteria / secciones;
     
     for (let i = 1; i < secciones; i++) {
@@ -666,7 +690,7 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
       barraDivisoriaTrasera.material = metalMaterial;
       
       // Conectar frontal y trasera con barras horizontales en cada nivel
-      for (let nivel = 0; nivel <= this.niveles; nivel++) {
+      for (let nivel = 0; nivel <= nivelesLocal; nivel++) {
         const barraConexion = BABYLON.MeshBuilder.CreateBox(`barraConexion_${offsetX}_${offsetZ}_${i}_${nivel}`, {
           width: grosorTubo,
           height: grosorTubo,
@@ -743,12 +767,19 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private crearCajas(offsetX: number = 0, offsetZ: number = 0, estanteriaId: string = 'E1', rotationY: number = 0): void {
+    const spec = this.specPorEstanteria.get(estanteriaId) ?? {
+      niveles: this.niveles > 0 ? this.niveles : 3,
+      seccionesNombres: this.seccionesNombres.length ? this.seccionesNombres : ['a', 'b', 'c'],
+    };
+    const nivelesLocal = Math.max(1, spec.niveles);
+    const seccionesNombresLocal = spec.seccionesNombres;
+
     const anchoEstanteria = 18;
     const profundidadEstanteria = 1.5;
     const alturaTotal = 5;
-    const alturaNivel = alturaTotal / this.niveles;
+    const alturaNivel = alturaTotal / nivelesLocal;
     
-    const secciones = Math.max(1, this.seccionesNombres.length);
+    const secciones = Math.max(1, seccionesNombresLocal.length);
     const cajasPorSeccion = 2;
     const anchoSeccion = anchoEstanteria / secciones;
     const margenSeccion = 0.15; // Margen en cada lado de la sección
@@ -758,10 +789,10 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     const altoCaja = alturaNivel * 0.7;
     const profundoCaja = profundidadEstanteria * 0.8;
 
-    for (let nivel = 0; nivel < this.niveles; nivel++) {
+    for (let nivel = 0; nivel < nivelesLocal; nivel++) {
       const estanteNum = nivel + 1; // Estante 1, 2, 3
       for (let seccion = 0; seccion < secciones; seccion++) {
-        const seccionNombre = this.seccionesNombres[seccion];
+        const seccionNombre = seccionesNombresLocal[seccion];
         
         // Verificar si hay stock en esta estantería/estante/sección
         const tieneStock = this.tieneStockEnUbicacion(estanteriaId, estanteNum.toString(), seccionNombre);

@@ -16,7 +16,7 @@ import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
-import { AlmacenConfig } from '../interfaces/almacen-config.interface';
+import { AlmacenConfig, estanteriasOrdenadas } from '../interfaces/almacen-config.interface';
 import { forkJoin } from 'rxjs';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { AuthService } from '../services/auth.service';
@@ -139,7 +139,7 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
     this.editLayoutMode = true;
     this.estanteriasLayoutDraft = this.cloneLayout(this.estanteriasLayout);
     if (this.estanteriasLayoutDraft.length === 0 && this.configSeleccionada) {
-      this.estanteriasLayoutDraft = this.generarLayoutBase(this.configSeleccionada.cantidadEstanterias);
+      this.estanteriasLayoutDraft = this.generarLayoutBase(this.configSeleccionada);
     }
     this.estanteriasLayoutFor3d = this.cloneLayout(this.estanteriasLayoutDraft);
   }
@@ -162,12 +162,15 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
     if (!this.almacenSeleccionado?.id || !this.configSeleccionada) return;
     localStorage.removeItem(this.getLayoutStorageKey(this.almacenSeleccionado.id));
     this.estanteriasLayout = [];
-    this.estanteriasLayoutDraft = this.generarLayoutBase(this.configSeleccionada.cantidadEstanterias);
+    this.estanteriasLayoutDraft = this.generarLayoutBase(this.configSeleccionada);
     this.estanteriasLayoutFor3d = [];
     this.notificationService.showSuccessMessage('Layout restablecido al modo automático.');
   }
 
-  private generarLayoutBase(cantidadEstanterias: number): EstanteriaLayout[] {
+  private generarLayoutBase(cfg: AlmacenConfig): EstanteriaLayout[] {
+    const defs = estanteriasOrdenadas(cfg);
+    const cantidadEstanterias = defs.length > 0 ? defs.length : (cfg.cantidadEstanterias || 1);
+
     const espacioEntreEstanterias = 7;
     const espacioEntreFilas = 8;
     const profundidadEstanteria = 1.5;
@@ -185,8 +188,9 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
       const offsetX = offsetInicialX + fila * (anchoEstanteria + espacioEntreFilas);
       for (let col = 0; col < numCols && idx < cantidadEstanterias; col++) {
         const offsetZ = offsetInicialZ + col * (profundidadEstanteria + espacioEntreEstanterias);
+        const estanteriaId = defs[idx] ? defs[idx].codigo : `E${idx + 1}`;
         output.push({
-          estanteriaId: `E${idx + 1}`,
+          estanteriaId,
           offsetX,
           offsetZ,
           rotationY: 0

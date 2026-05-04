@@ -1,5 +1,4 @@
 <div class="config-almacenes-container">
-  <!-- Contenedor de notificaciones -->
   <app-notification-container></app-notification-container>
   
   <div class="page-header">
@@ -7,7 +6,7 @@
       <i class="fas fa-cogs me-2"></i>
       Almacén Config
     </h2>
-    <p class="text-muted">Configure la estructura física de cada almacén (estanterías, estantes y secciones)</p>
+    <p class="text-muted">Configure cada estantería (niveles y sectores pueden variar entre estanterías).</p>
   </div>
   
   <div class="controls-section mb-4">
@@ -20,7 +19,6 @@
     </button>
   </div>
 
-  <!-- Lista de configuraciones -->
   <div *ngIf="loadingConfigs" class="text-center py-5">
     <i class="fas fa-spinner fa-spin fa-2x me-2"></i>
     <p>Cargando configuraciones...</p>
@@ -56,25 +54,32 @@
         <div class="card-body">
           <div *ngIf="getConfigForAlmacen(almacen.id) as config; else sinConfig">
             <div class="config-details">
-              <div class="row">
-                <div class="col-md-3">
-                  <strong>Nombre:</strong><br>
-                  <span>{{config.nombre || almacen.nombre}}</span>
+              <div class="row mb-3">
+                <div class="col-md-12">
+                  <strong>Nombre:</strong>
+                  <span class="ms-1">{{config.nombre || almacen.nombre}}</span>
+                  <span class="text-muted small ms-2">({{ listaEstanteriasResumen(config).length }} estanterías)</span>
                 </div>
-                <div class="col-md-3">
-                  <strong>Estanterías:</strong><br>
-                  <span class="badge bg-primary">{{config.cantidadEstanterias}}</span>
-                </div>
-                <div class="col-md-3">
-                  <strong>Estantes por Estantería:</strong><br>
-                  <span class="badge bg-info">{{config.cantidadEstantesPorEstanteria}}</span>
-                </div>
-                <div class="col-md-3">
-                  <strong>Divisiones:</strong><br>
-                  <span *ngFor="let div of getDivisionesArray(config.divisionesEstante)" class="badge bg-secondary me-1">
-                    {{div}}
-                  </span>
-                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Estantes</th>
+                      <th>Sectores</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let d of listaEstanteriasResumen(config); trackBy: trackByEstanteria">
+                      <td><span class="badge bg-primary">{{ d.codigo }}</span></td>
+                      <td>{{ d.cantidadEstantes }}</td>
+                      <td>
+                        <span *ngFor="let div of getDivisionesArray(d.divisionesEstante)" class="badge bg-secondary me-1">{{ div }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               <div class="mt-3">
                 <button 
@@ -102,7 +107,6 @@
     No hay almacenes disponibles. Cree almacenes primero antes de configurarlos.
   </div>
 
-  <!-- Modal para crear/editar configuración -->
   <ng-template #configModal let-modal>
     <div class="modal-header">
       <h4 class="modal-title">
@@ -141,45 +145,65 @@
           <small class="form-text text-muted">Si se deja vacío, se usará el nombre del almacén</small>
         </div>
 
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="cantidadEstanterias" class="form-label">Cantidad de Estanterías <span class="text-danger">*</span></label>
-            <input 
-              type="number" 
-              id="cantidadEstanterias" 
-              class="form-control" 
-              formControlName="cantidadEstanterias"
-              min="1">
-            <div *ngIf="almacenConfigForm.get('cantidadEstanterias')?.invalid && almacenConfigForm.get('cantidadEstanterias')?.touched" class="text-danger">
-              Debe ser al menos 1
-            </div>
-          </div>
+        <hr>
+        <h6 class="mb-2"><i class="fas fa-layer-group me-2"></i>Estanterías</h6>
+        <p class="small text-muted">Una fila por estantería. Puede repetir configuración con «Agregar varias iguales».</p>
 
-          <div class="col-md-6 mb-3">
-            <label for="cantidadEstantesPorEstanteria" class="form-label">Estantes por Estantería <span class="text-danger">*</span></label>
-            <input 
-              type="number" 
-              id="cantidadEstantesPorEstanteria" 
-              class="form-control" 
-              formControlName="cantidadEstantesPorEstanteria"
-              min="1">
-            <div *ngIf="almacenConfigForm.get('cantidadEstantesPorEstanteria')?.invalid && almacenConfigForm.get('cantidadEstantesPorEstanteria')?.touched" class="text-danger">
-              Debe ser al menos 1
+        <div formArrayName="estanteriasRows">
+          <div *ngFor="let grp of estanteriasRows.controls; let i = index" [formGroupName]="i" class="row g-2 align-items-end mb-2 border rounded p-2 bg-light">
+            <div class="col-md-3">
+              <label class="form-label small mb-0">Código</label>
+              <input type="text" class="form-control form-control-sm" formControlName="codigo" placeholder="E1">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-0">Estantes</label>
+              <input type="number" class="form-control form-control-sm" formControlName="cantidadEstantes" min="1">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small mb-0">Sectores</label>
+              <input type="text" class="form-control form-control-sm" formControlName="divisionesEstante" placeholder="A,B,C">
+            </div>
+            <div class="col-md-2 text-end">
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="eliminarFilaEstanteria(i)" title="Quitar">
+                <i class="fas fa-times"></i>
+              </button>
             </div>
           </div>
         </div>
 
-        <div class="mb-3">
-          <label for="divisionesEstante" class="form-label">Divisiones de Estante <span class="text-danger">*</span></label>
-          <input 
-            type="text" 
-            id="divisionesEstante" 
-            class="form-control" 
-            formControlName="divisionesEstante"
-            placeholder="A,B,C">
-          <small class="form-text text-muted">Separe las divisiones por comas (ej: A,B,C o 1,2,3)</small>
-          <div *ngIf="almacenConfigForm.get('divisionesEstante')?.invalid && almacenConfigForm.get('divisionesEstante')?.touched" class="text-danger">
-            Debe especificar al menos una división
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="agregarFilaEstanteria()">
+            <i class="fas fa-plus me-1"></i> Fila
+          </button>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body py-2">
+            <div class="small fw-semibold mb-2">Agregar varias con la misma configuración</div>
+            <div class="row g-2 align-items-end">
+              <div class="col-6 col-md-2">
+                <label class="form-label small mb-0">Cantidad</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="variasCantidad" [ngModelOptions]="{standalone: true}" min="1" max="200">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label small mb-0">Nº inicial</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="variasNumeroInicial" [ngModelOptions]="{standalone: true}" min="1">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label small mb-0">Estantes c/u</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="variasEstantes" [ngModelOptions]="{standalone: true}" min="1">
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-0">Sectores</label>
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="variasDivisiones" [ngModelOptions]="{standalone: true}" placeholder="A,B,C">
+              </div>
+              <div class="col-12 col-md-2">
+                <button type="button" class="btn btn-outline-primary btn-sm w-100" (click)="agregarVariasEstanteriasIguales()">
+                  Añadir
+                </button>
+              </div>
+            </div>
+            <small class="text-muted d-block mt-2">Ej: cantidad 3, nº inicial 10 → se crean E10, E11, E12.</small>
           </div>
         </div>
       </form>
@@ -200,4 +224,3 @@
     </div>
   </ng-template>
 </div>
-

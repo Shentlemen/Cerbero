@@ -12,7 +12,7 @@ import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
-import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
+import { AlmacenConfig, defEstanteria, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -122,6 +122,21 @@ export class UbicacionesComponent implements OnInit {
         this.limpiarConfiguracionAlmacen();
       }
     });
+    this.stockForm.get('estanteria')?.valueChanges.subscribe(() => {
+      this.actualizarOpcionesPorEstanteriaSeleccionada();
+    });
+  }
+
+  private actualizarOpcionesPorEstanteriaSeleccionada(): void {
+    this.estantesDisponibles = [];
+    this.divisionesDisponibles = [];
+    if (!this.configAlmacenActual) return;
+    const cod = String(this.stockForm.get('estanteria')?.value ?? '').trim();
+    if (!cod) return;
+    const def = defEstanteria(this.configAlmacenActual, cod);
+    if (!def) return;
+    this.estantesDisponibles = Array.from({ length: def.cantidadEstantes }, (_, i) => `${i + 1}`);
+    this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(def.divisionesEstante);
   }
 
   cargarConfiguracionAlmacen(almacenId: number): void {
@@ -129,10 +144,8 @@ export class UbicacionesComponent implements OnInit {
       next: (config) => {
         if (config) {
           this.configAlmacenActual = config;
-          // Mismas opciones que el modal de transferir equipo: E1, E2... / 1, 2, 3 / A, B, C
-          this.estanteriasDisponibles = Array.from({ length: config.cantidadEstanterias }, (_, i) => `E${i + 1}`);
-          this.estantesDisponibles = Array.from({ length: config.cantidadEstantesPorEstanteria }, (_, i) => `${i + 1}`);
-          this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(config.divisionesEstante);
+          this.estanteriasDisponibles = estanteriasOrdenadas(config).map((d) => d.codigo);
+          this.actualizarOpcionesPorEstanteriaSeleccionada();
           this.updateFormValidation();
         } else {
           // Sin configuración: usar mismos valores por defecto que transferir equipo

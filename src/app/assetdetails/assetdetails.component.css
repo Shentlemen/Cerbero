@@ -119,13 +119,38 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   min-width: 110px;
   justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sin recuadro azul de foco/hover del navegador o Bootstrap sobre el botón o el icono */
+.asset-tab-btn:focus,
+.asset-tab-btn:focus-visible,
+.asset-tab-btn:active,
+.asset-tab-btn:hover {
+  outline: none !important;
+}
+
+.asset-tab-btn:focus-visible {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.asset-tab-btn:hover:focus-visible {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.asset-tab-btn i,
+.asset-tab-btn span {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .asset-tab-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
   border-color: var(--device-color, #3498db);
   color: var(--device-color, #3498db);
+  /* Fondo hover distinto del activo (--device-bg-color) y único por pestaña (--device-bg-hover) */
+  background: var(--device-bg-hover, #f5f7fa);
 }
 
 .asset-tab-btn:hover i {
@@ -139,73 +164,95 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.asset-tab-btn.active:focus,
+.asset-tab-btn.active:focus-visible,
+.asset-tab-btn.active:active {
+  outline: none !important;
+}
+
+.asset-tab-btn.active:focus-visible {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
 .asset-tab-btn.active i {
   color: var(--device-color, #1976d2);
 }
 
 .asset-tab-btn i {
+  pointer-events: none;
   font-size: 0.85rem;
   color: inherit;
   transition: color 0.2s ease;
 }
 
+/* Una paleta distinta por pestaña (orden: General, BIOS, CPU, Unidades, Memoria, Monitor, Almacenamiento, Video, Ubicación, Software) */
 .asset-tab-strip li:nth-child(1) .asset-tab-btn {
   --device-color: #1976d2;
   --device-bg-color: #e3f2fd;
+  --device-bg-hover: #eef6fc;
   --device-border-color: #bbdefb;
 }
 
 .asset-tab-strip li:nth-child(2) .asset-tab-btn {
-  --device-color: #5e35b1;
-  --device-bg-color: #ede7f6;
-  --device-border-color: #d1c4e9;
+  --device-color: #6a1b9a;
+  --device-bg-color: #f3e5f5;
+  --device-bg-hover: #faf2fc;
+  --device-border-color: #e1bee7;
 }
 
 .asset-tab-strip li:nth-child(3) .asset-tab-btn {
-  --device-color: #1565c0;
-  --device-bg-color: #e3f2fd;
-  --device-border-color: #bbdefb;
+  --device-color: #303f9f;
+  --device-bg-color: #e8eaf6;
+  --device-bg-hover: #f0f2fa;
+  --device-border-color: #c5cae9;
 }
 
 .asset-tab-strip li:nth-child(4) .asset-tab-btn {
-  --device-color: #f57c00;
+  --device-color: #ef6c00;
   --device-bg-color: #fff3e0;
+  --device-bg-hover: #fffaf3;
   --device-border-color: #ffe0b2;
 }
 
 .asset-tab-strip li:nth-child(5) .asset-tab-btn {
-  --device-color: #1976d2;
-  --device-bg-color: #e3f2fd;
-  --device-border-color: #bbdefb;
+  --device-color: #00695c;
+  --device-bg-color: #e0f2f1;
+  --device-bg-hover: #ecf8f6;
+  --device-border-color: #b2dfdb;
 }
 
 .asset-tab-strip li:nth-child(6) .asset-tab-btn {
-  --device-color: #00838f;
+  --device-color: #0097a7;
   --device-bg-color: #e0f7fa;
+  --device-bg-hover: #ecf9fb;
   --device-border-color: #b2ebf2;
 }
 
 .asset-tab-strip li:nth-child(7) .asset-tab-btn {
-  --device-color: #5e35b1;
-  --device-bg-color: #f3e5f5;
-  --device-border-color: #e1bee7;
+  --device-color: #455a64;
+  --device-bg-color: #eceff1;
+  --device-bg-hover: #f5f6f8;
+  --device-border-color: #cfd8dc;
 }
 
 .asset-tab-strip li:nth-child(8) .asset-tab-btn {
-  --device-color: #7b1fa2;
-  --device-bg-color: #f3e5f5;
-  --device-border-color: #e1bee7;
+  --device-color: #ad1457;
+  --device-bg-color: #fce4ec;
+  --device-bg-hover: #fff5f9;
+  --device-border-color: #f8bbd9;
 }
 
 .asset-tab-strip li:nth-child(9) .asset-tab-btn {
-  --device-color: #388e3c;
+  --device-color: #2e7d32;
   --device-bg-color: #e8f5e9;
+  --device-bg-hover: #f1faf2;
   --device-border-color: #c8e6c9;
 }
 
 .asset-tab-strip li:nth-child(10) .asset-tab-btn {
   --device-color: #c62828;
   --device-bg-color: #ffebee;
+  --device-bg-hover: #fdf2f3;
   --device-border-color: #ffcdd2;
 }
 

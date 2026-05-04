@@ -9,7 +9,7 @@ import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { ComprasService } from '../../services/compras.service';
 import { NotificationService } from '../../services/notification.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
-import { AlmacenConfig } from '../../interfaces/almacen-config.interface';
+import { AlmacenConfig, defEstanteria, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
 
 @Component({
   selector: 'app-registrar-stock-modal',
@@ -51,8 +51,8 @@ export class RegistrarStockModalComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.stockForm = this.fb.group({
-      compraId: ['', Validators.required],
-      itemId: ['', Validators.required],
+      compraId: [''],
+      itemId: [''],
       almacenId: ['', Validators.required],
       estanteria: ['', [Validators.required, Validators.maxLength(50)]],
       estante: ['', [Validators.required, Validators.maxLength(50)]],
@@ -94,6 +94,9 @@ export class RegistrarStockModalComponent implements OnInit {
           this.limpiarConfiguracionAlmacen();
         }
       });
+      this.stockForm.get('estanteria')?.valueChanges.subscribe(() => {
+        this.actualizarOpcionesPorEstanteriaSeleccionada();
+      });
       this.updateFormValidation();
     } catch (e) {
       console.error('Error cargando datos:', e);
@@ -129,15 +132,15 @@ export class RegistrarStockModalComponent implements OnInit {
       next: (config) => {
         if (config) {
           this.configAlmacenActual = config;
-          this.estanteriasDisponibles = Array.from({ length: config.cantidadEstanterias }, (_, i) => `E${i + 1}`);
-          this.estantesDisponibles = Array.from({ length: config.cantidadEstantesPorEstanteria }, (_, i) => `${i + 1}`);
-          this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(config.divisionesEstante);
+          this.estanteriasDisponibles = estanteriasOrdenadas(config).map((d) => d.codigo);
+          this.actualizarOpcionesPorEstanteriaSeleccionada();
           if (this.ubicacionPreseleccionada) {
             this.stockForm.patchValue({
               estanteria: this.ubicacionPreseleccionada.estanteria,
               estante: this.ubicacionPreseleccionada.estante,
               division: this.ubicacionPreseleccionada.division
             }, { emitEvent: false });
+            this.actualizarOpcionesPorEstanteriaSeleccionada();
           }
         } else {
           this.configAlmacenActual = null;
@@ -162,6 +165,24 @@ export class RegistrarStockModalComponent implements OnInit {
         this.updateFormValidation();
       }
     });
+  }
+
+  private actualizarOpcionesPorEstanteriaSeleccionada(): void {
+    this.estantesDisponibles = [];
+    this.divisionesDisponibles = [];
+    if (!this.configAlmacenActual) {
+      return;
+    }
+    const cod = String(this.stockForm.get('estanteria')?.value ?? '').trim();
+    if (!cod) {
+      return;
+    }
+    const def = defEstanteria(this.configAlmacenActual, cod);
+    if (!def) {
+      return;
+    }
+    this.estantesDisponibles = Array.from({ length: def.cantidadEstantes }, (_, i) => `${i + 1}`);
+    this.divisionesDisponibles = this.almacenConfigService.getDivisionesArray(def.divisionesEstante);
   }
 
   limpiarConfiguracionAlmacen(): void {
@@ -277,8 +298,8 @@ export class RegistrarStockModalComponent implements OnInit {
     const seccionFinal = fd.division && String(fd.division).trim() ? String(fd.division).trim() : undefined;
 
     const nuevoStock: StockAlmacenCreateWithItem = {
-      compraId: fd.compraId,
-      itemId: fd.itemId,
+      compraId: fd.compraId ? Number(fd.compraId) : undefined,
+      itemId: fd.itemId ? Number(fd.itemId) : undefined,
       almacenId: fd.almacenId,
       estanteria: fd.estanteria ? String(fd.estanteria) : '',
       estante: estanteFinal,

@@ -1,0 +1,92 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="fas fa-edit me-2"></i>
+    Editar registro de stock
+  </h4>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+<div class="modal-body">
+  <p class="text-muted small mb-3" *ngIf="textoCompraItem">
+    <i class="fas fa-link me-1"></i>{{ textoCompraItem }}
+  </p>
+
+  <form [formGroup]="stockForm" (ngSubmit)="guardar()">
+    <div class="form-card mb-3">
+      <div class="form-card-header">
+        <h6 class="form-card-title">
+          <i class="fas fa-map-marker-alt me-2"></i>
+          Ubicación
+        </h6>
+      </div>
+      <div class="form-card-body">
+        <div class="row">
+          <div class="col-md-7 mb-3">
+            <label class="form-label" for="edit-almacenId">Almacén *</label>
+            <select class="form-select" id="edit-almacenId" formControlName="almacenId">
+              <option value="">Seleccione…</option>
+              <option *ngFor="let almacen of almacenes" [value]="almacen.id">
+                {{ almacen.numero }} - {{ almacen.nombre }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-5 mb-3">
+            <label class="form-label" for="edit-estanteria">Estantería *</label>
+            <select class="form-select" id="edit-estanteria" formControlName="estanteria">
+              <option value="">Seleccione…</option>
+              <option *ngFor="let est of estanteriasDisponibles" [value]="est">{{ est }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="edit-estante">Estante *</label>
+            <select class="form-select" id="edit-estante" formControlName="estante">
+              <option value="">Seleccione…</option>
+              <option *ngFor="let e of estantesDisponibles" [value]="e">Estante {{ e }}</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="edit-division">Sección</label>
+            <select class="form-select" id="edit-division" formControlName="division">
+              <option value="">Sin sección</option>
+              <option *ngFor="let div of divisionesDisponibles" [value]="div">{{ div }}</option>
+            </select>
+            <small class="form-text text-muted">Opcional</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-header">
+        <h6 class="form-card-title">
+          <i class="fas fa-info-circle me-2"></i>
+          Detalle
+        </h6>
+      </div>
+      <div class="form-card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="edit-cantidad">Cantidad *</label>
+            <input type="number" class="form-control" id="edit-cantidad" formControlName="cantidad" min="1" />
+          </div>
+          <div class="col-md-8 mb-3">
+            <label class="form-label" for="edit-numero">Número</label>
+            <input type="text" class="form-control" id="edit-numero" formControlName="numero" maxlength="50" />
+          </div>
+          <div class="col-12 mb-0">
+            <label class="form-label" for="edit-descripcion">Descripción</label>
+            <textarea class="form-control" id="edit-descripcion" formControlName="descripcion" rows="3" maxlength="255"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">Cancelar</button>
+  <button type="button" class="btn btn-dark" [disabled]="stockForm.invalid || guardando" (click)="guardar()">
+    <i class="fas" [ngClass]="guardando ? 'fa-spinner fa-spin' : 'fa-save'" class="me-1"></i>
+    {{ guardando ? 'Guardando…' : 'Guardar' }}
+  </button>
+</div>
