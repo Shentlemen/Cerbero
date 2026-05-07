@@ -1,24 +1,70 @@
-import { Component, OnInit, ViewEncapsulation, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewEncapsulation, ViewChild, ChangeDetectorRef, Inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
-import { NgbModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbActiveModal,
+  NgbModal,
+  NgbModalOptions,
+  NgbModule,
+  NgbNavModule
+} from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
 import { UbicacionesService } from '../../services/ubicaciones.service';
 import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
 import { ComprasService, CompraDTO } from '../../services/compras.service';
 import { HardwareService } from '../../services/hardware.service';
+import { BiosService } from '../../services/bios.service';
+import { CpuService } from '../../services/cpu.service';
+import { DriveService } from '../../services/drive.service';
+import { MemoryService } from '../../services/memory.service';
+import { MonitorService } from '../../services/monitor.service';
+import { StorageService } from '../../services/storage.service';
+import { VideoService } from '../../services/video.service';
+import { SoftwareByHardwareService } from '../../services/software-by-hardware.service';
+import { SoftwareDTO } from '../../services/software.service';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
 import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
-import { firstValueFrom } from 'rxjs';
-import { importProvidersFrom } from '@angular/core';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError, take } from 'rxjs/operators';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
+
+type PdfHardwareRemoteDep =
+  | 'bios'
+  | 'cpu'
+  | 'drive'
+  | 'memory'
+  | 'monitor'
+  | 'storage'
+  | 'video'
+  | 'software';
+
+interface HwPdfBundle {
+  bios?: unknown | null;
+  cpu?: unknown | null;
+  drive?: unknown[] | null;
+  memory?: unknown[] | null;
+  monitor?: unknown[] | null;
+  storage?: unknown[] | null;
+  video?: unknown[] | null;
+  software?: SoftwareDTO[] | null;
+}
+
+interface PdfExportSection {
+  id: string;
+  title: string;
+  hint?: string;
+  cols: ReadonlyArray<{ key: string; label: string }>;
+}
 
 @Component({
   selector: 'app-activos',
@@ -36,7 +82,37 @@ import { NotificationContainerComponent } from '../../components/notification-co
   encapsulation: ViewEncapsulation.None
 })
 export class ActivosComponent implements OnInit {
+  private static readonly PDF_KEY_REMOTE_DEP: Partial<
+    Record<string, PdfHardwareRemoteDep>
+  > = {
+    biosSmanufacturer: 'bios',
+    biosSmodel: 'bios',
+    biosSsn: 'bios',
+    biosAssettag: 'bios',
+    biosType: 'bios',
+    biosBmanufacturer: 'bios',
+    biosBversion: 'bios',
+    biosBdate: 'bios',
+    cpuManufacturer: 'cpu',
+    cpuType: 'cpu',
+    cpuSerial: 'cpu',
+    cpuSpeed: 'cpu',
+    cpuCores: 'cpu',
+    cpuSocket: 'cpu',
+    cpuArch: 'cpu',
+    cpuLogicalCpus: 'cpu',
+    cpuVoltage: 'cpu',
+    drivesSummary: 'drive',
+    memorySummary: 'memory',
+    monitorsSummary: 'monitor',
+    storageSummary: 'storage',
+    videosSummary: 'video',
+    softwareSummary: 'software'
+  };
+
   @ViewChild('modalActivo') modalActivo: any;
+  /** Referencia del template del modal alta/edición (para suspender zoom y layout). */
+  @ViewChild('activoModal') activoModalTemplate!: TemplateRef<unknown>;
   activos: ActivoDTO[] = [];
   activosFiltrados: ActivoDTO[] = [];
   loading: boolean = false;
@@ -50,6 +126,8 @@ export class ActivosComponent implements OnInit {
   usuarios: Map<number, UsuarioDTO> = new Map();
   compras: Map<number, CompraDTO> = new Map();
   hardwareMap: Map<number, any> = new Map();
+  /** Nombre de equipo → registro de inventario Cerbero (`getHardware()`). */
+  private hardwareByName: Map<string, any> = new Map();
   
   // Paginación
   page = 1;
@@ -62,17 +140,54 @@ export class ActivosComponent implements OnInit {
   
   // Filtrado
   currentFilter: string = '';
+  /** Filtro por columna estado (valor '' = todos). */
+  currentEstadoFilter: string = '';
   altaCount: number = 0;
   mediaCount: number = 0;
   bajaCount: number = 0;
+  estadoActivoCount: number = 0;
+  estadoInactivoCount: number = 0;
+  estadoMantenimientoCount: number = 0;
   totalActivos: number = 0;
 
   // Control de búsqueda
   numeroCompraControl: FormControl = new FormControl('');
 
+  /**
+   * Búsqueda de compra en el modal activo — mismo patrón que Registrar Stock (`stock.component`):
+   * un input + lista absoluta `.items-dropdown` (sin segundo control ni Popper).
+   */
+  compraModalSearchTerm = '';
+  comprasModalFiltradas: CompraDTO[] = [];
+  mostrarDropdownComprasModal = false;
+
+  /**
+   * Búsqueda de ubicación en el modal activo — mismo patrón que Compra / Registrar Stock:
+   * input + `.items-dropdown` (sin typeahead en body).
+   */
+  ubicacionModalSearchTerm = '';
+  ubicacionesModalFiltradas: UbicacionDTO[] = [];
+  mostrarDropdownUbicacionesModal = false;
+
+  /**
+   * Servicio de garantía en el modal — mismo patrón que Compra / Ubicación.
+   */
+  servicioGarantiaModalSearchTerm = '';
+  serviciosGarantiaModalFiltrados: ServicioGarantiaDTO[] = [];
+  mostrarDropdownServiciosGarantiaModal = false;
+
+  /**
+   * Agregar activos relacionados — mismo patrón de búsqueda; filtra por número de equipo, ID e ID secundario.
+   */
+  relacionadosModalSearchTerm = '';
+  activosRelacionadosModalFiltrados: ActivoDTO[] = [];
+  mostrarDropdownRelacionadosModal = false;
+
   // Listas para los dropdowns
   hardwareList: any[] = [];
   comprasList: CompraDTO[] = [];
+  /** Orden estable para listar / filtrar compras en el modal. */
+  comprasListOrdenadasModal: CompraDTO[] = [];
   lotesList: LoteDTO[] = [];
   lotesFiltrados: LoteDTO[] = []; // Nueva propiedad para lotes filtrados por compra
   entregasList: EntregaDTO[] = [];
@@ -82,7 +197,6 @@ export class ActivosComponent implements OnInit {
   tiposActivoList: TipoDeActivoDTO[] = [];
   tiposCompraList: TipoDeCompraDTO[] = [];
 
-  selectedAssetId: number | null = null;
   selectedRelatedAssets: number[] = [];
 
   successMessage: string | null = null;
@@ -138,12 +252,180 @@ export class ActivosComponent implements OnInit {
   // Propiedad para controlar cuándo mostrar errores de validación
   shouldShowValidationErrors: boolean = false;
 
+  /**
+   * Secciones del modal de PDF (gestión del activo + datos de inventario almacenados en Cerbero).
+   * El orden de las secciones define el orden de columnas en el documento.
+   */
+  readonly pdfExportSections: ReadonlyArray<PdfExportSection> = [
+    {
+      id: 'identidad',
+      title: 'Identificación del activo (gestión)',
+      cols: [
+        { key: 'idActivo', label: 'ID activo' },
+        { key: 'numeroActivo', label: 'Número de equipo' },
+        { key: 'tipoActivo', label: 'Tipo de activo' },
+        { key: 'idSecundario', label: 'ID secundario' }
+      ]
+    },
+    {
+      id: 'compra',
+      title: 'Compra y referencias',
+      cols: [
+        { key: 'compra', label: 'Compra' },
+        { key: 'itemLote', label: 'Ítem / lote' }
+      ]
+    },
+    {
+      id: 'asignacion',
+      title: 'Asignación (detalle activo)',
+      cols: [
+        { key: 'responsable', label: 'Responsable' },
+        { key: 'ubicacion', label: 'Ubicación (gerencia/oficina)' },
+        { key: 'entrega', label: 'Entrega' }
+      ]
+    },
+    {
+      id: 'garantia',
+      title: 'Garantía',
+      cols: [
+        { key: 'servicioGarantia', label: 'Servicio de garantía' },
+        { key: 'fechaFinGarantia', label: 'Fin garantía' }
+      ]
+    },
+    {
+      id: 'estado_clas',
+      title: 'Clasificación y estado',
+      cols: [
+        { key: 'clasificacion', label: 'Clasificación de información' },
+        { key: 'criticidad', label: 'Criticidad' },
+        { key: 'estado', label: 'Estado' }
+      ]
+    },
+    {
+      id: 'ocs_general',
+      title: 'Inventario Cerbero — General',
+      hint: 'Como la pestaña General del detalle del equipo. El nombre del activo debe coincidir con un equipo en inventario Cerbero.',
+      cols: [
+        { key: 'hwIdInventario', label: 'ID equipo (inventario)' },
+        { key: 'hwWorkgroup', label: 'Grupo de trabajo' },
+        { key: 'hwIpAddr', label: 'IP' },
+        { key: 'hwIpSrc', label: 'IP source' },
+        { key: 'hwDns', label: 'DNS' },
+        { key: 'hwDefaultGateway', label: 'Gateway' },
+        { key: 'hwOsName', label: 'Nombre SO' },
+        { key: 'hwOsVersion', label: 'Versión SO' },
+        { key: 'hwOsComments', label: 'Comentarios SO' },
+        { key: 'hwDescription', label: 'Descripción' },
+        { key: 'hwProcessorsLabel', label: 'Procesadores (etiqueta)' },
+        { key: 'hwProcessorType', label: 'Tipo de procesador' },
+        { key: 'hwProcessorCores', label: 'Núcleos' },
+        { key: 'hwMemoryMb', label: 'Memoria (MB)' },
+        { key: 'hwSwapMb', label: 'Swap (MB)' },
+        { key: 'hwWinCompany', label: 'Windows — compañía' },
+        { key: 'hwWinUser', label: 'Último usuario (Windows)' },
+        { key: 'hwLastDate', label: 'Último inventario' },
+        { key: 'hwLastCome', label: 'Último contacto agente' }
+      ]
+    },
+    {
+      id: 'ocs_bios',
+      title: 'Inventario Cerbero — BIOS',
+      hint: 'Datos guardados en Cerbero por equipo; con muchas filas la exportación puede tardar.',
+      cols: [
+        { key: 'biosSmanufacturer', label: 'Fabricante del sistema' },
+        { key: 'biosSmodel', label: 'Modelo del sistema' },
+        { key: 'biosSsn', label: 'Nº serie del sistema' },
+        { key: 'biosAssettag', label: 'Etiqueta de activo' },
+        { key: 'biosType', label: 'Tipo de BIOS' },
+        { key: 'biosBmanufacturer', label: 'Fabricante del BIOS' },
+        { key: 'biosBversion', label: 'Versión del BIOS' },
+        { key: 'biosBdate', label: 'Fecha del BIOS' }
+      ]
+    },
+    {
+      id: 'ocs_cpu',
+      title: 'Inventario Cerbero — CPU',
+      cols: [
+        { key: 'cpuManufacturer', label: 'Fabricante CPU' },
+        { key: 'cpuType', label: 'Tipo / modelo CPU' },
+        { key: 'cpuSerial', label: 'Nº serie CPU' },
+        { key: 'cpuSpeed', label: 'Velocidad' },
+        { key: 'cpuCores', label: 'Núcleos' },
+        { key: 'cpuSocket', label: 'Socket' },
+        { key: 'cpuArch', label: 'Arquitectura' },
+        { key: 'cpuLogicalCpus', label: 'CPUs lógicas' },
+        { key: 'cpuVoltage', label: 'Voltaje' }
+      ]
+    },
+    {
+      id: 'ocs_volumes',
+      title: 'Inventario Cerbero — Unidades (volúmenes)',
+      cols: [{ key: 'drivesSummary', label: 'Resumen de volúmenes' }]
+    },
+    {
+      id: 'ocs_mem',
+      title: 'Inventario Cerbero — Memoria (módulos)',
+      cols: [{ key: 'memorySummary', label: 'Resumen de módulos' }]
+    },
+    {
+      id: 'ocs_mon',
+      title: 'Inventario Cerbero — Monitor',
+      cols: [{ key: 'monitorsSummary', label: 'Resumen de monitores' }]
+    },
+    {
+      id: 'ocs_disk',
+      title: 'Inventario Cerbero — Almacenamiento (discos físicos)',
+      cols: [{ key: 'storageSummary', label: 'Resumen de discos' }]
+    },
+    {
+      id: 'ocs_vid',
+      title: 'Inventario Cerbero — Video',
+      cols: [{ key: 'videosSummary', label: 'Resumen de placas / video' }]
+    },
+    {
+      id: 'ocs_sw',
+      title: 'Inventario Cerbero — Software',
+      cols: [{ key: 'softwareSummary', label: 'Resumen de software instalado' }]
+    }
+  ];
+
+  /** Selección por clave (ngModel en el modal). */
+  pdfColumnSelected: Record<string, boolean> = {};
+
+  /** Columnas marcadas por defecto (botón «Por defecto» / al cargar la vista). */
+  private readonly pdfDefaultOnKeys = new Set([
+    'numeroActivo',
+    'compra',
+    'responsable',
+    'ubicacion',
+    'criticidad',
+    'estado'
+  ]);
+
+  pdfGenerando = false;
+
+  /** Mientras hay modal de alta/edición abierto suspendemos zoom global (`body:not(.no-global-zoom)`) para que Popper/ngb-typeahead calcule bien. */
+  private activoModalBodyZoomSuspendCount = 0;
+
+  /** Columnas en orden de exportación (aplanadas desde `pdfExportSections`). */
+  get pdfColumnsFlat(): ReadonlyArray<{ key: string; label: string }> {
+    return this.pdfExportSections.flatMap((s) => [...s.cols]);
+  }
+
   constructor(
     private activosService: ActivosService,
     private ubicacionesService: UbicacionesService,
     private usuariosService: UsuariosService,
     private comprasService: ComprasService,
     private hardwareService: HardwareService,
+    private biosService: BiosService,
+    private cpuService: CpuService,
+    private driveService: DriveService,
+    private memoryService: MemoryService,
+    private monitorService: MonitorService,
+    private storageService: StorageService,
+    private videoService: VideoService,
+    private softwareByHardwareService: SoftwareByHardwareService,
     private lotesService: LotesService,
     private entregasService: EntregasService,
     private serviciosGarantiaService: ServiciosGarantiaService,
@@ -154,7 +436,8 @@ export class ActivosComponent implements OnInit {
     private router: Router,
     private changeDetectorRef: ChangeDetectorRef,
     public permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    @Inject(DOCUMENT) private documentRef: Document
   ) {
     this.activoForm = this.fb.group({
       name: ['', Validators.required],
@@ -174,6 +457,8 @@ export class ActivosComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.reiniciarSeleccionPdfColumnas();
+
     this.cargarUbicaciones();
     this.cargarUsuarios();
     this.cargarCompras();
@@ -191,8 +476,8 @@ export class ActivosComponent implements OnInit {
     });
 
     // Suscribirse a cambios en la compra seleccionada
-    this.activoForm.get('idNumeroCompra')?.valueChanges.subscribe((idCompra) => {
-      this.onCompraChange(idCompra);
+    this.activoForm.get('idNumeroCompra')?.valueChanges.subscribe((raw) => {
+      this.onCompraChange(raw);
     });
 
     // Suscribirse a cambios en el item seleccionado
@@ -277,16 +562,20 @@ export class ActivosComponent implements OnInit {
     return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'No asignado';
   }
 
+  private setUbicacionesDesdeApi(ubicaciones: UbicacionDTO[]): void {
+    this.ubicaciones.clear();
+    this.ubicacionesList = ubicaciones;
+    ubicaciones.forEach((ubicacion) => {
+      if (ubicacion.id) {
+        this.ubicaciones.set(ubicacion.id, ubicacion);
+      }
+    });
+  }
+
   cargarUbicaciones() {
     this.ubicacionesService.getUbicaciones().subscribe({
       next: (ubicaciones: UbicacionDTO[]) => {
-        this.ubicaciones.clear();
-        this.ubicacionesList = ubicaciones;
-        ubicaciones.forEach(ubicacion => {
-          if (ubicacion.id) {
-            this.ubicaciones.set(ubicacion.id, ubicacion);
-          }
-        });
+        this.setUbicacionesDesdeApi(ubicaciones);
       },
       error: (error: any) => {
         console.error('Error al cargar ubicaciones:', error);
@@ -322,6 +611,15 @@ export class ActivosComponent implements OnInit {
     this.comprasService.getCompras().subscribe({
       next: (compras) => {
         this.comprasList = compras;
+        const ay = (c: CompraDTO) => c.ano ?? 0;
+        const num = (c: CompraDTO) => (c.numeroCompra || '').trim();
+        this.comprasListOrdenadasModal = [...compras].sort((a, b) => {
+          const yd = ay(b) - ay(a);
+          if (yd !== 0) return yd;
+          const cmpNum = num(a).localeCompare(num(b), undefined, { numeric: true });
+          if (cmpNum !== 0) return cmpNum;
+          return (a.descripcion || '').localeCompare(b.descripcion || '', undefined, { sensitivity: 'base' });
+        });
         compras.forEach(compra => {
           if (compra.idCompra) {
             this.compras.set(compra.idCompra, compra);
@@ -332,6 +630,383 @@ export class ActivosComponent implements OnInit {
         console.error('Error al cargar compras:', error);
       }
     });
+  }
+
+  etiquetaCompraModal(compra: CompraDTO | null): string {
+    if (!compra) {
+      return '';
+    }
+    const n = compra.numeroCompra ?? '';
+    const d = compra.descripcion?.trim();
+    return d ? `${n} — ${d}` : n;
+  }
+
+  filtrarComprasModal(): void {
+    const base = this.comprasListOrdenadasModal;
+    const limiteListaInicial = 200;
+    if (!this.compraModalSearchTerm.trim()) {
+      this.comprasModalFiltradas = base.slice(0, limiteListaInicial);
+      return;
+    }
+    const searchTerm = this.compraModalSearchTerm.toLowerCase().trim();
+    this.comprasModalFiltradas = base.filter((compra) => {
+      const numero = String(compra.numeroCompra || '').toLowerCase();
+      const desc = String(compra.descripcion || '').toLowerCase();
+      const idC = String(compra.idCompra || '').toLowerCase();
+      return (
+        numero.includes(searchTerm) || desc.includes(searchTerm) || idC.includes(searchTerm)
+      );
+    });
+  }
+
+  onCompraModalSearchFocus(): void {
+    this.mostrarDropdownComprasModal = true;
+    this.filtrarComprasModal();
+  }
+
+  onCompraModalBlur(): void {
+    setTimeout(() => {
+      this.mostrarDropdownComprasModal = false;
+      this.changeDetectorRef.markForCheck();
+    }, 200);
+  }
+
+  seleccionarCompraModal(compra: CompraDTO): void {
+    if (compra?.idCompra == null) {
+      return;
+    }
+    this.activoForm.patchValue({ idNumeroCompra: compra.idCompra }, { emitEvent: true });
+    this.compraModalSearchTerm = String(compra.numeroCompra ?? '');
+    this.mostrarDropdownComprasModal = false;
+    this.comprasModalFiltradas = [];
+  }
+
+  esCompraSeleccionadaEnModal(compra: CompraDTO): boolean {
+    const raw = this.activoForm.get('idNumeroCompra')?.value as string | number | null | undefined;
+    if (raw === '' || raw === null || raw === undefined) {
+      return false;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    return Number.isFinite(id) && Number(compra.idCompra) === id;
+  }
+
+  limpiarSeleccionCompraModal(): void {
+    this.compraModalSearchTerm = '';
+    this.comprasModalFiltradas = [];
+    this.mostrarDropdownComprasModal = false;
+    this.activoForm.patchValue({ idNumeroCompra: '' }, { emitEvent: true });
+  }
+
+  private syncCompraModalSearchFromForm(): void {
+    const raw = this.activoForm.get('idNumeroCompra')?.value as string | number | null | undefined;
+    if (raw === '' || raw === null || raw === undefined) {
+      this.compraModalSearchTerm = '';
+      this.comprasModalFiltradas = [];
+      return;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isFinite(id)) {
+      this.compraModalSearchTerm = '';
+      this.comprasModalFiltradas = [];
+      return;
+    }
+    const compra = this.comprasList.find((c) => Number(c.idCompra) === id) ?? null;
+    this.compraModalSearchTerm = compra ? String(compra.numeroCompra ?? '') : '';
+    this.filtrarComprasModal();
+  }
+
+  etiquetaUbicacionModal(u: UbicacionDTO | null): string {
+    if (!u) {
+      return '';
+    }
+    const ger = (u.nombreGerencia || '').trim();
+    const ofi = (u.nombreOficina || '').trim();
+    const ciu = (u.ciudad || '').trim();
+    const base = [ger, ofi].filter(Boolean).join(' — ');
+    if (base && ciu) {
+      return `${base} (${ciu})`;
+    }
+    if (base) {
+      return base;
+    }
+    if (ciu) {
+      return ciu;
+    }
+    return `#${u.id}`;
+  }
+
+  filtrarUbicacionesParaModal(term: string): UbicacionDTO[] {
+    const t = term.trim().toLowerCase();
+    const n = (s: string | null | undefined) => (s || '').toLowerCase();
+    const lista = !t.length
+      ? this.ubicacionesList
+      : this.ubicacionesList.filter(
+          (u) =>
+            n(u.nombreGerencia).includes(t) ||
+            n(u.nombreOficina).includes(t) ||
+            n(u.ciudad).includes(t) ||
+            n(u.departamento).includes(t) ||
+            String(u.id ?? '').includes(t)
+        );
+    return lista.slice(0, 200);
+  }
+
+  filtrarUbicacionesModal(): void {
+    this.ubicacionesModalFiltradas = this.filtrarUbicacionesParaModal(this.ubicacionModalSearchTerm);
+  }
+
+  onUbicacionModalSearchFocus(): void {
+    this.mostrarDropdownUbicacionesModal = true;
+    this.filtrarUbicacionesModal();
+  }
+
+  onUbicacionModalBlur(): void {
+    setTimeout(() => {
+      this.mostrarDropdownUbicacionesModal = false;
+      this.changeDetectorRef.markForCheck();
+    }, 200);
+  }
+
+  seleccionarUbicacionModal(u: UbicacionDTO): void {
+    if (u?.id == null) {
+      return;
+    }
+    this.activoForm.patchValue({ idUbicacion: String(u.id) }, { emitEvent: true });
+    this.ubicacionModalSearchTerm = this.etiquetaUbicacionModal(u);
+    this.mostrarDropdownUbicacionesModal = false;
+    this.ubicacionesModalFiltradas = [];
+  }
+
+  esUbicacionSeleccionadaEnModal(u: UbicacionDTO): boolean {
+    const raw = this.activoForm.get('idUbicacion')?.value as string | number | null | undefined;
+    if (raw === '' || raw === null || raw === undefined) {
+      return false;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    return Number.isFinite(id) && Number(u.id) === id;
+  }
+
+  limpiarSeleccionUbicacionModal(): void {
+    this.ubicacionModalSearchTerm = '';
+    this.ubicacionesModalFiltradas = [];
+    this.mostrarDropdownUbicacionesModal = false;
+    this.activoForm.patchValue({ idUbicacion: '' }, { emitEvent: true });
+  }
+
+  private syncUbicacionModalSearchFromForm(): void {
+    const raw = this.activoForm.get('idUbicacion')?.value as string | number | null | undefined;
+    if (raw === '' || raw === null || raw === undefined) {
+      this.ubicacionModalSearchTerm = '';
+      this.ubicacionesModalFiltradas = [];
+      return;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isFinite(id)) {
+      this.ubicacionModalSearchTerm = '';
+      this.ubicacionesModalFiltradas = [];
+      return;
+    }
+    const ubicacion = this.ubicacionesList.find((u) => Number(u.id) === id) ?? null;
+    this.ubicacionModalSearchTerm = ubicacion ? this.etiquetaUbicacionModal(ubicacion) : '';
+    this.filtrarUbicacionesModal();
+  }
+
+  etiquetaServicioGarantiaModal(sg: ServicioGarantiaDTO | null): string {
+    if (!sg) {
+      return '';
+    }
+    const com = (sg.nombreComercial || '').trim();
+    if (com) {
+      return com;
+    }
+    const nom = (sg.nombre || '').trim();
+    if (nom) {
+      return nom;
+    }
+    return `#${sg.idServicioGarantia}`;
+  }
+
+  filtrarServiciosGarantiaParaModal(term: string): ServicioGarantiaDTO[] {
+    const t = term.trim().toLowerCase();
+    const n = (s: string | null | undefined) => (s || '').toLowerCase();
+    const lista = !t.length
+      ? this.serviciosGarantiaList
+      : this.serviciosGarantiaList.filter(
+          (sg) =>
+            n(sg.nombreComercial).includes(t) ||
+            n(sg.nombre).includes(t) ||
+            n(sg.ruc).includes(t) ||
+            n(sg.correoDeContacto).includes(t) ||
+            n(sg.telefonoDeContacto).includes(t) ||
+            String(sg.idServicioGarantia ?? '').includes(t)
+        );
+    return lista.slice(0, 200);
+  }
+
+  filtrarServiciosGarantiaModal(): void {
+    this.serviciosGarantiaModalFiltrados = this.filtrarServiciosGarantiaParaModal(this.servicioGarantiaModalSearchTerm);
+  }
+
+  onServicioGarantiaModalSearchFocus(): void {
+    this.mostrarDropdownServiciosGarantiaModal = true;
+    this.filtrarServiciosGarantiaModal();
+  }
+
+  onServicioGarantiaModalBlur(): void {
+    setTimeout(() => {
+      this.mostrarDropdownServiciosGarantiaModal = false;
+      this.changeDetectorRef.markForCheck();
+    }, 200);
+  }
+
+  seleccionarServicioGarantiaModal(sg: ServicioGarantiaDTO): void {
+    if (sg?.idServicioGarantia == null) {
+      return;
+    }
+    this.activoForm.patchValue({ idServicioGarantia: String(sg.idServicioGarantia) }, { emitEvent: true });
+    this.servicioGarantiaModalSearchTerm = this.etiquetaServicioGarantiaModal(sg);
+    this.mostrarDropdownServiciosGarantiaModal = false;
+    this.serviciosGarantiaModalFiltrados = [];
+  }
+
+  esServicioGarantiaSeleccionadoEnModal(sg: ServicioGarantiaDTO): boolean {
+    const raw = this.activoForm.get('idServicioGarantia')?.value as string | number | null | undefined;
+    if (raw === '' || raw === null || raw === undefined) {
+      return false;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    return Number.isFinite(id) && Number(sg.idServicioGarantia) === id;
+  }
+
+  limpiarSeleccionServicioGarantiaModal(): void {
+    this.servicioGarantiaModalSearchTerm = '';
+    this.serviciosGarantiaModalFiltrados = [];
+    this.mostrarDropdownServiciosGarantiaModal = false;
+    this.activoForm.patchValue({ idServicioGarantia: '' }, { emitEvent: true });
+  }
+
+  private syncServicioGarantiaModalSearchFromForm(): void {
+    const raw = this.activoForm.get('idServicioGarantia')?.value as string | number | null | undefined;
+    if (raw === '' || raw === null || raw === undefined) {
+      this.servicioGarantiaModalSearchTerm = '';
+      this.serviciosGarantiaModalFiltrados = [];
+      return;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isFinite(id)) {
+      this.servicioGarantiaModalSearchTerm = '';
+      this.serviciosGarantiaModalFiltrados = [];
+      return;
+    }
+    const sg =
+      this.serviciosGarantiaList.find((s) => Number(s.idServicioGarantia) === id) ?? null;
+    this.servicioGarantiaModalSearchTerm = sg ? this.etiquetaServicioGarantiaModal(sg) : '';
+    this.filtrarServiciosGarantiaModal();
+  }
+
+  private activosElegiblesParaRelacionModal(): ActivoDTO[] {
+    const selfId =
+      this.modoEdicion && this.activoSeleccionado?.idActivo != null
+        ? this.activoSeleccionado.idActivo
+        : null;
+    return this.activos
+      .filter(
+        (a) =>
+          !this.selectedRelatedAssets.includes(a.idActivo) &&
+          (selfId == null || a.idActivo !== selfId)
+      )
+      .sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', 'es', { numeric: true, sensitivity: 'base' })
+      );
+  }
+
+  filtrarActivosRelacionadosParaModal(term: string): ActivoDTO[] {
+    const base = this.activosElegiblesParaRelacionModal();
+    const t = term.trim().toLowerCase();
+    const n = (s: string | null | undefined) => (s || '').toLowerCase();
+    const lista = !t.length
+      ? base
+      : base.filter(
+          (a) =>
+            n(a.name).includes(t) ||
+            String(a.idActivo).includes(t) ||
+            n(a.idSecundario).includes(t)
+        );
+    return lista.slice(0, 200);
+  }
+
+  filtrarActivosRelacionadosModal(): void {
+    this.activosRelacionadosModalFiltrados = this.filtrarActivosRelacionadosParaModal(
+      this.relacionadosModalSearchTerm
+    );
+  }
+
+  onRelacionadosModalSearchFocus(): void {
+    this.mostrarDropdownRelacionadosModal = true;
+    this.filtrarActivosRelacionadosModal();
+  }
+
+  onRelacionadosModalBlur(): void {
+    setTimeout(() => {
+      this.mostrarDropdownRelacionadosModal = false;
+      this.changeDetectorRef.markForCheck();
+    }, 200);
+  }
+
+  seleccionarActivoRelacionadoModal(activo: ActivoDTO): void {
+    if (activo?.idActivo == null) {
+      return;
+    }
+    this.addRelatedAsset(activo.idActivo);
+    this.relacionadosModalSearchTerm = '';
+    this.activosRelacionadosModalFiltrados = [];
+    this.mostrarDropdownRelacionadosModal = false;
+  }
+
+  private resolverIdTipoActivoDesktop(): number | null {
+    for (const tipo of this.tiposActivoList) {
+      const desc = (tipo.descripcion || '').toLowerCase();
+      const nom = (tipo.nombre || '').toLowerCase();
+      if (/\bdesktop\b/i.test(desc) || /\bdesktop\b/i.test(nom)) {
+        return tipo.idActivo;
+      }
+    }
+    return null;
+  }
+
+  private resolverIdUsuarioCarlosMorey(): number | null {
+    for (const u of this.usuarios.values()) {
+      const nom = (u.nombre || '').toLowerCase().trim();
+      const ape = (u.apellido || '').toLowerCase().trim();
+      if (nom.includes('carlos') && ape.includes('morey')) {
+        return u.idUsuario;
+      }
+    }
+    return null;
+  }
+
+  /** Solo creación nueva: valores sugeridos (el usuario puede cambiarlos). */
+  private aplicarValoresPorDefectoNuevoActivo(): void {
+    this.activoForm.patchValue(
+      {
+        clasificacionDeINFO: 'NO CONFIDENCIAL',
+        criticidad: 'MEDIA',
+        estado: 'INACTIVO',
+        idSecundario: '0'
+      },
+      { emitEvent: false }
+    );
+
+    const idDesktop = this.resolverIdTipoActivoDesktop();
+    if (idDesktop != null) {
+      this.activoForm.patchValue({ idTipoActivo: idDesktop }, { emitEvent: true });
+    }
+
+    const idCarlos = this.resolverIdUsuarioCarlosMorey();
+    if (idCarlos != null) {
+      this.activoForm.patchValue({ idUsuario: idCarlos }, { emitEvent: true });
+      this.activoForm.get('idUsuario')?.enable();
+    }
   }
 
   verDetallesCompra(idCompra: number, compraModal: any) {
@@ -414,8 +1089,7 @@ export class ActivosComponent implements OnInit {
       next: (activos) => {
         console.log('Activos cargados:', activos);
         this.activos = activos;
-        this.activosFiltrados = [...this.activos];
-        this.collectionSize = this.activosFiltrados.length;
+        this.aplicarFiltroBusqueda();
         this.updateSummary();
         this.loading = false;
       },
@@ -463,9 +1137,13 @@ export class ActivosComponent implements OnInit {
 
   async abrirModal(modal: any, activo?: any) {
     try {
-      // Asegurarse de que las ubicaciones estén cargadas
       if (this.ubicacionesList.length === 0) {
-        await firstValueFrom(this.ubicacionesService.getUbicaciones());
+        try {
+          const ubicaciones = await firstValueFrom(this.ubicacionesService.getUbicaciones());
+          this.setUbicacionesDesdeApi(ubicaciones ?? []);
+        } catch (e) {
+          console.error('Error al cargar ubicaciones:', e);
+        }
       }
 
       this.modoEdicion = !!activo;
@@ -531,6 +1209,10 @@ export class ActivosComponent implements OnInit {
 
         console.log('Valores del formulario después de patchValue:', this.activoForm.value);
 
+        this.syncCompraModalSearchFromForm();
+        this.syncUbicacionModalSearchFromForm();
+        this.syncServicioGarantiaModalSearchFromForm();
+
         // Forzar la detección de cambios
         this.changeDetectorRef.detectChanges();
 
@@ -547,20 +1229,57 @@ export class ActivosComponent implements OnInit {
         }
       } else {
         this.activoForm.reset();
+        this.compraModalSearchTerm = '';
+        this.comprasModalFiltradas = [];
+        this.mostrarDropdownComprasModal = false;
+        this.ubicacionModalSearchTerm = '';
+        this.ubicacionesModalFiltradas = [];
+        this.mostrarDropdownUbicacionesModal = false;
+        this.servicioGarantiaModalSearchTerm = '';
+        this.serviciosGarantiaModalFiltrados = [];
+        this.mostrarDropdownServiciosGarantiaModal = false;
+        this.relacionadosModalSearchTerm = '';
+        this.activosRelacionadosModalFiltrados = [];
+        this.mostrarDropdownRelacionadosModal = false;
         this.selectedRelatedAssets = [];
         // Habilitar el campo de usuario al crear un nuevo activo
         this.activoForm.get('idUsuario')?.enable();
         // Deshabilitar campos dependientes al inicio
         this.activoForm.get('idItem')?.disable();
         this.activoForm.get('idEntrega')?.disable();
+        this.aplicarValoresPorDefectoNuevoActivo();
       }
 
-      const modalRef = this.modalService.open(modal, { 
+      const esModalActivo = modal === this.activoModalTemplate;
+
+      if (esModalActivo) {
+        if (this.activoModalBodyZoomSuspendCount++ === 0) {
+          this.documentRef.body.classList.add('no-global-zoom');
+        }
+      }
+
+      const modalOpts: NgbModalOptions = {
         size: 'xl',
         backdrop: true,
-        keyboard: false
-      });
-      
+        keyboard: false,
+        centered: false
+      };
+      if (esModalActivo) {
+        modalOpts.modalDialogClass = 'activo-form-modal-dialog-layout';
+        modalOpts.windowClass = 'activo-form-modal-window';
+        modalOpts.scrollable = true;
+      }
+      const modalRef = this.modalService.open(modal, modalOpts);
+
+      if (esModalActivo) {
+        modalRef.hidden.pipe(take(1)).subscribe(() => {
+          this.activoModalBodyZoomSuspendCount = Math.max(0, this.activoModalBodyZoomSuspendCount - 1);
+          if (this.activoModalBodyZoomSuspendCount === 0) {
+            this.documentRef.body.classList.remove('no-global-zoom');
+          }
+        });
+      }
+
       modalRef.result.then(() => {
         // Modal cerrado exitosamente
         this.shouldShowValidationErrors = false;
@@ -613,16 +1332,11 @@ export class ActivosComponent implements OnInit {
 
     if (!this.selectedRelatedAssets.includes(idActivo)) {
       this.selectedRelatedAssets.push(idActivo);
-      this.selectedAssetId = null;
     }
   }
 
   removeRelatedAsset(idActivo: number) {
     this.selectedRelatedAssets = this.selectedRelatedAssets.filter(id => id !== idActivo);
-  }
-
-  isAssetRelated(idActivo: number): boolean {
-    return this.selectedRelatedAssets.includes(idActivo);
   }
 
   getAssetDescription(idActivo: number): string {
@@ -831,14 +1545,6 @@ export class ActivosComponent implements OnInit {
       return;
     }
 
-    if (rangeInfo.count > 1000) {
-      console.log('Rango demasiado grande:', rangeInfo.count);
-      this.errorMessage = 'El rango es demasiado grande. Máximo 1000 activos por operación.';
-      setTimeout(() => this.errorMessage = null, 5000);
-      this.loading = false;
-      return;
-    }
-
     if (!this.activoForm.valid) {
       console.log('Formulario inválido');
       this.errorMessage = 'Por favor complete todos los campos requeridos.';
@@ -970,6 +1676,12 @@ export class ActivosComponent implements OnInit {
     this.hardwareService.getHardware().subscribe({
       next: (hardware) => {
         this.hardwareList = hardware;
+        this.hardwareByName.clear();
+        for (const h of hardware) {
+          if (h?.name != null && String(h.name).trim() !== '') {
+            this.hardwareByName.set(String(h.name).trim(), h);
+          }
+        }
       },
       error: (error) => {
         console.error('Error al cargar hardware:', error);
@@ -990,10 +1702,16 @@ export class ActivosComponent implements OnInit {
     });
   }
 
-  onCompraChange(idCompra: number) {
-    if (idCompra) {
+  onCompraChange(idCompra: number | string | null | undefined) {
+    const id =
+      idCompra === '' || idCompra === null || idCompra === undefined
+        ? 0
+        : typeof idCompra === 'number'
+          ? idCompra
+          : Number.parseInt(String(idCompra), 10);
+    if (id && Number.isFinite(id)) {
       // Cargar lotes específicos de la compra seleccionada
-      this.lotesService.getLotesByCompra(idCompra).subscribe({
+      this.lotesService.getLotesByCompra(id).subscribe({
         next: (lotes) => {
           this.lotesFiltrados = lotes;
           // Limpiar el campo de item si no está en la nueva lista
@@ -1141,20 +1859,66 @@ export class ActivosComponent implements OnInit {
     this.altaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'ALTA').length;
     this.mediaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'MEDIA').length;
     this.bajaCount = this.activos.filter(a => a.criticidad?.trim().toUpperCase() === 'BAJA').length;
+    this.estadoActivoCount = this.activos.filter(
+      a => a.estado?.trim().toUpperCase() === 'ACTIVO'
+    ).length;
+    this.estadoInactivoCount = this.activos.filter(
+      a => a.estado?.trim().toUpperCase() === 'INACTIVO'
+    ).length;
+    this.estadoMantenimientoCount = this.activos.filter(
+      a => a.estado?.trim().toUpperCase() === 'MANTENIMIENTO'
+    ).length;
   }
 
   filterByCriticidad(criticidad: string): void {
     this.currentFilter = criticidad;
-    if (criticidad === '') {
-      this.activosFiltrados = [...this.activos];
-    } else {
-      this.activosFiltrados = this.activos.filter(activo =>
-        activo.criticidad?.trim().toUpperCase() === criticidad.trim().toUpperCase()
+    this.aplicarTodosLosFiltros();
+    this.updateSummary();
+  }
+
+  filterByEstado(estado: string): void {
+    this.currentEstadoFilter = estado;
+    this.aplicarTodosLosFiltros();
+    this.updateSummary();
+  }
+
+  /**
+   * Criticidad + estado + texto de búsqueda aplicados en cadena sobre `activos`.
+   */
+  aplicarTodosLosFiltros(): void {
+    let lista = [...this.activos];
+
+    if (this.currentFilter?.trim()) {
+      const cr = this.currentFilter.trim().toUpperCase();
+      lista = lista.filter(
+        (a) => (a.criticidad?.trim().toUpperCase() ?? '') === cr
       );
     }
-    this.collectionSize = this.activosFiltrados.length;
+
+    if (this.currentEstadoFilter?.trim()) {
+      const es = this.currentEstadoFilter.trim().toUpperCase();
+      lista = lista.filter((a) => (a.estado?.trim().toUpperCase() ?? '') === es);
+    }
+
+    const raw = this.numeroCompraControl.value;
+    const valorBusqueda = raw != null ? String(raw).toLowerCase().trim() : '';
+
+    if (valorBusqueda) {
+      lista = lista.filter((activo) => {
+        const nombreCompra = this.getNombreCompraFormateado(activo.idNumeroCompra).toLowerCase();
+        const nombreActivo = (activo.name || '').toLowerCase();
+        const coincideCompra = nombreCompra.includes(valorBusqueda);
+        const coincideActivo = nombreActivo.includes(valorBusqueda);
+        const soloDigitos = /^\d+$/.test(valorBusqueda);
+        const coincideIdActivo =
+          soloDigitos && String(activo.idActivo).includes(valorBusqueda);
+        return coincideCompra || coincideActivo || coincideIdActivo;
+      });
+    }
+
+    this.activosFiltrados = lista;
+    this.collectionSize = lista.length;
     this.page = 1;
-    this.updateSummary();
   }
 
   sortData(column: string): void {
@@ -1221,6 +1985,558 @@ export class ActivosComponent implements OnInit {
     return compra && compra.numeroCompra ? compra.numeroCompra : 'No asignado';
   }
 
+  reiniciarSeleccionPdfColumnas(): void {
+    for (const col of this.pdfColumnsFlat) {
+      this.pdfColumnSelected[col.key] = this.pdfDefaultOnKeys.has(col.key);
+    }
+  }
+
+  pdfToggleSection(sectionId: string, value: boolean): void {
+    const sec = this.pdfExportSections.find((s) => s.id === sectionId);
+    if (!sec) return;
+    for (const c of sec.cols) {
+      this.pdfColumnSelected[c.key] = value;
+    }
+  }
+
+  pdfSeleccionSoloTabla(): void {
+    const solo = new Set([
+      'compra',
+      'numeroActivo',
+      'responsable',
+      'ubicacion',
+      'criticidad',
+      'estado'
+    ]);
+    for (const col of this.pdfColumnsFlat) {
+      this.pdfColumnSelected[col.key] = solo.has(col.key);
+    }
+  }
+
+  pdfSeleccionTodasLasColumnas(): void {
+    for (const col of this.pdfColumnsFlat) {
+      this.pdfColumnSelected[col.key] = true;
+    }
+  }
+
+  pdfSeleccionNingunaColumna(): void {
+    for (const col of this.pdfColumnsFlat) {
+      this.pdfColumnSelected[col.key] = false;
+    }
+  }
+
+  abrirModalPdfActivos(contenido: TemplateRef<unknown>): void {
+    if (this.loading) {
+      return;
+    }
+    if (this.activosFiltrados.length === 0) {
+      this.notificationService.showError(
+        'No hay datos para exportar',
+        'No hay activos en la lista filtrada para exportar.'
+      );
+      return;
+    }
+    for (const col of this.pdfColumnsFlat) {
+      if (this.pdfColumnSelected[col.key] === undefined) {
+        this.pdfColumnSelected[col.key] = false;
+      }
+    }
+    this.modalService.open(contenido, { size: 'xl', centered: true, backdrop: true });
+  }
+
+  async generarPdfActivosListado(modal: NgbActiveModal): Promise<void> {
+    if (this.pdfGenerando) return;
+    const keys = this.pdfColumnsFlat
+      .filter((c) => this.pdfColumnSelected[c.key])
+      .map((c) => c.key);
+    if (keys.length === 0) {
+      this.notificationService.showWarning('Columnas', 'Elegí al menos una columna para el PDF.');
+      return;
+    }
+
+    this.pdfGenerando = true;
+    try {
+      const remoteDeps = this.gatherRemoteDeps(keys);
+      let bundleCache = new Map<number, HwPdfBundle>();
+      if (remoteDeps.size > 0) {
+        bundleCache = await this.prefetchHwBundlesForPdf(keys);
+      }
+
+      const doc = new jsPDF('landscape');
+      doc.setFontSize(18);
+      doc.text('Gestión de activos', 14, 18);
+
+      doc.setFontSize(10);
+      const descFiltros: string[] = [];
+      if (this.currentFilter?.trim()) {
+        descFiltros.push(`Criticidad: ${this.currentFilter.trim()}`);
+      }
+      if (this.currentEstadoFilter?.trim()) {
+        descFiltros.push(`Estado: ${this.currentEstadoFilter.trim()}`);
+      }
+      const q = this.numeroCompraControl.value?.toString().trim();
+      if (q) {
+        descFiltros.push('Búsqueda activa');
+      }
+      const filtroTxt = descFiltros.length ? descFiltros.join(' | ') : 'Todos';
+      doc.text(filtroTxt, 14, 26);
+      const fecha = new Date().toLocaleString('es-ES');
+      doc.text(`Generado: ${fecha}`, 14, 32);
+      doc.text(`Total activos: ${this.activosFiltrados.length}`, 14, 38);
+
+      const head = [keys.map((k) => this.pdfLabelForKey(k))];
+      const body = this.activosFiltrados.map((a) => {
+        const nm = a.name != null ? String(a.name).trim() : '';
+        const hw = nm ? this.hardwareByName.get(nm) ?? null : null;
+        const hid = hw?.id != null ? Number(hw.id) : null;
+        const bundle =
+          hid != null && remoteDeps.size > 0 ? bundleCache.get(hid) ?? null : null;
+        return keys.map((k) => this.getActivoValorPdf(a, k, hw, bundle));
+      });
+
+      const fontSize = keys.length > 10 ? 6 : keys.length > 7 ? 7 : 8;
+
+      autoTable(doc, {
+        head,
+        body,
+        startY: 44,
+        styles: { fontSize, cellPadding: 1.5, overflow: 'linebreak' },
+        headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: 14, right: 14 }
+      });
+
+      const nombreArchivo = `activos_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(nombreArchivo);
+      modal.close('ok');
+      this.notificationService.showSuccessMessage(`PDF generado: ${nombreArchivo}`);
+    } finally {
+      this.pdfGenerando = false;
+    }
+  }
+
+  private pdfLabelForKey(key: string): string {
+    return this.pdfColumnsFlat.find((c) => c.key === key)?.label ?? key;
+  }
+
+  private gatherRemoteDeps(keys: readonly string[]): Set<PdfHardwareRemoteDep> {
+    const s = new Set<PdfHardwareRemoteDep>();
+    for (const k of keys) {
+      const d = ActivosComponent.PDF_KEY_REMOTE_DEP[k];
+      if (d) s.add(d);
+    }
+    return s;
+  }
+
+  private async prefetchHwBundlesForPdf(
+    keys: readonly string[]
+  ): Promise<Map<number, HwPdfBundle>> {
+    const result = new Map<number, HwPdfBundle>();
+    const remoteDeps = this.gatherRemoteDeps(keys);
+    if (remoteDeps.size === 0) return result;
+
+    const ids = new Set<number>();
+    for (const a of this.activosFiltrados) {
+      const name = a.name != null ? String(a.name).trim() : '';
+      if (!name) continue;
+      const h = this.hardwareByName.get(name);
+      if (h?.id != null) ids.add(Number(h.id));
+    }
+    if (ids.size === 0) return result;
+
+    if (this.activosFiltrados.length > 60) {
+      this.notificationService.showWarning(
+        'Exportación con inventario',
+        'Se consultarán datos de inventario en Cerbero por equipo. Con muchas filas la generación puede tardar unos segundos.'
+      );
+    }
+
+    const idList = [...ids];
+    const batchSize = 6;
+    for (let i = 0; i < idList.length; i += batchSize) {
+      const slice = idList.slice(i, i + batchSize);
+      const loaded = await Promise.all(
+        slice.map((hid) => this.loadRemoteBundle(hid, remoteDeps))
+      );
+      slice.forEach((hid, idx) => result.set(hid, loaded[idx]));
+    }
+    return result;
+  }
+
+  private async loadRemoteBundle(
+    hwId: number,
+    deps: ReadonlySet<PdfHardwareRemoteDep>
+  ): Promise<HwPdfBundle> {
+    const b: HwPdfBundle = {};
+    const tasks: Promise<void>[] = [];
+
+    if (deps.has('bios')) {
+      tasks.push(
+        firstValueFrom(
+          this.biosService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          if (Array.isArray(data)) b.bios = data[0] ?? null;
+          else b.bios = data ?? null;
+        })
+      );
+    }
+    if (deps.has('cpu')) {
+      tasks.push(
+        firstValueFrom(
+          this.cpuService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          if (Array.isArray(data)) b.cpu = data[0] ?? null;
+          else b.cpu = data ?? null;
+        })
+      );
+    }
+    if (deps.has('drive')) {
+      tasks.push(
+        firstValueFrom(
+          this.driveService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          b.drive = this.normPdfArray(data);
+        })
+      );
+    }
+    if (deps.has('memory')) {
+      tasks.push(
+        firstValueFrom(
+          this.memoryService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          b.memory = this.normPdfArray(data);
+        })
+      );
+    }
+    if (deps.has('monitor')) {
+      tasks.push(
+        firstValueFrom(
+          this.monitorService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          b.monitor = this.normPdfArray(data);
+        })
+      );
+    }
+    if (deps.has('storage')) {
+      tasks.push(
+        firstValueFrom(
+          this.storageService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          b.storage = this.normPdfArray(data);
+        })
+      );
+    }
+    if (deps.has('video')) {
+      tasks.push(
+        firstValueFrom(
+          this.videoService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          b.video = this.normPdfArray(data);
+        })
+      );
+    }
+    if (deps.has('software')) {
+      tasks.push(
+        firstValueFrom(
+          this.softwareByHardwareService.getByHardwareId(hwId).pipe(catchError(() => of(null)))
+        ).then((data) => {
+          if (data == null) b.software = [];
+          else b.software = Array.isArray(data) ? data : [];
+        })
+      );
+    }
+
+    await Promise.all(tasks);
+    return b;
+  }
+
+  private normPdfArray(data: unknown): unknown[] {
+    if (data == null) return [];
+    return Array.isArray(data) ? data : [data];
+  }
+
+  private strPdf(v: unknown): string {
+    if (v === null || v === undefined) return '—';
+    const s = String(v).trim();
+    return s === '' ? '—' : s;
+  }
+
+  private pdfFmtDateTime(val: unknown): string {
+    if (val == null || val === '') return '—';
+    try {
+      const d = val instanceof Date ? val : new Date(val as string);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return '—';
+    }
+  }
+
+  private pdfDrivesSummary(drives: unknown[] | null | undefined): string {
+    if (!drives?.length) return '—';
+    return drives
+      .map((raw) => {
+        const d = raw as Record<string, unknown>;
+        const letter = d['letter'];
+        const fs = d['filesystem'];
+        const t = d['type'];
+        const bits = [letter, t, fs].map((x) => (x != null ? String(x).trim() : '')).filter(Boolean);
+        return bits.length ? bits.join(' ') : '—';
+      })
+      .join('; ');
+  }
+
+  private pdfMemorySummary(mem: unknown[] | null | undefined): string {
+    if (!mem?.length) return '—';
+    return mem
+      .map((raw) => {
+        const m = raw as Record<string, unknown>;
+        const cap = m['capacity'];
+        const capStr = cap != null ? `${cap}` : '';
+        const capLabel = capStr ? `${capStr} B` : '';
+        return [m['slotNumber'], m['caption'], capLabel, m['type']]
+          .map((x) => (x != null ? String(x).trim() : ''))
+          .filter(Boolean)
+          .join(' · ');
+      })
+      .join('; ');
+  }
+
+  private pdfMonitorsSummary(mon: unknown[] | null | undefined): string {
+    if (!mon?.length) return '—';
+    return mon
+      .map((raw) => {
+        const x = raw as Record<string, unknown>;
+        return [x['caption'], x['manufacturer'], x['serial']]
+          .map((v) => (v != null ? String(v).trim() : ''))
+          .filter(Boolean)
+          .join(' · ');
+      })
+      .join('; ');
+  }
+
+  private pdfStorageSummary(list: unknown[] | null | undefined): string {
+    if (!list?.length) return '—';
+    return list
+      .map((raw) => {
+        const s = raw as Record<string, unknown>;
+        const gb = s['diskSize'];
+        const gbStr = gb != null ? `${gb} GB` : '';
+        return [s['manufacturer'], s['model'], s['serialNumber'], gbStr, s['type']]
+          .map((v) => (v != null ? String(v).trim() : ''))
+          .filter(Boolean)
+          .join(' · ');
+      })
+      .join('; ');
+  }
+
+  private pdfVideosSummary(list: unknown[] | null | undefined): string {
+    if (!list?.length) return '—';
+    return list
+      .map((raw) => {
+        const v = raw as Record<string, unknown>;
+        return [v['name'], v['chipset'], v['resolution'], v['memory']]
+          .map((x) => (x != null ? String(x).trim() : ''))
+          .filter(Boolean)
+          .join(' · ');
+      })
+      .join('; ');
+  }
+
+  private pdfSoftwareSummarySoft(list: SoftwareDTO[] | null | undefined): string {
+    if (!list?.length) return '—';
+    const shown = list.slice(0, 14).map((s) => s.nombre?.trim() || '(sin nombre)');
+    const tail = list.length > 14 ? ` … (+${list.length - 14} más)` : '';
+    return `${list.length}: ${shown.join(', ')}${tail}`;
+  }
+
+  private cpuPdf(bundle: HwPdfBundle | null): Record<string, unknown> | null {
+    if (!bundle?.cpu || typeof bundle.cpu !== 'object') return null;
+    return bundle.cpu as Record<string, unknown>;
+  }
+
+  private biosPdf(bundle: HwPdfBundle | null): Record<string, unknown> | null {
+    if (!bundle?.bios || typeof bundle.bios !== 'object') return null;
+    return bundle.bios as Record<string, unknown>;
+  }
+
+  private getActivoValorPdf(
+    activo: ActivoDTO,
+    key: string,
+    hw: Record<string, unknown> | null,
+    bundle: HwPdfBundle | null
+  ): string {
+    const bios = this.biosPdf(bundle);
+    const cpu = this.cpuPdf(bundle);
+
+    switch (key) {
+      case 'idActivo':
+        return String(activo.idActivo ?? '');
+      case 'numeroActivo':
+        return activo.name || '—';
+      case 'compra':
+        return this.getNombreCompraFormateado(activo.idNumeroCompra);
+      case 'tipoActivo':
+        return this.getTipoActivoNombrePdf(activo.idTipoActivo);
+      case 'clasificacion':
+        return activo.clasificacionDeINFO || '—';
+      case 'responsable':
+        return this.getUsuarioInfo(activo.idUsuario);
+      case 'ubicacion':
+        return this.getUbicacionInfo(activo.idUbicacion);
+      case 'criticidad':
+        return activo.criticidad || '—';
+      case 'estado':
+        return activo.estado || '—';
+      case 'itemLote':
+        return this.getItemLotePdfTexto(activo.idItem);
+      case 'entrega':
+        return this.getEntregaPdfTexto(activo);
+      case 'idSecundario':
+        return activo.idSecundario ?? '—';
+      case 'servicioGarantia':
+        return this.getServicioGarantiaNombrePdf(activo.idServicioGarantia);
+      case 'fechaFinGarantia':
+        return activo.fechaFinGarantia ? this.formatearFecha(activo.fechaFinGarantia) : '—';
+
+      case 'hwIdInventario':
+        return hw?.['id'] != null ? String(hw['id']) : '—';
+      case 'hwWorkgroup':
+        return this.strPdf(hw?.['workgroup']);
+      case 'hwIpAddr':
+        return this.strPdf(hw?.['ipAddr']);
+      case 'hwIpSrc':
+        return this.strPdf(hw?.['ipSrc']);
+      case 'hwDns':
+        return this.strPdf(hw?.['dns']);
+      case 'hwDefaultGateway':
+        return this.strPdf(hw?.['defaultGateway']);
+      case 'hwOsName':
+        return this.strPdf(hw?.['osName']);
+      case 'hwOsVersion':
+        return this.strPdf(hw?.['osVersion']);
+      case 'hwOsComments':
+        return this.strPdf(hw?.['osComments']);
+      case 'hwDescription':
+        return this.strPdf(hw?.['description']);
+      case 'hwProcessorsLabel':
+        return this.strPdf(hw?.['processors']);
+      case 'hwProcessorType':
+        return this.strPdf(hw?.['processorType']);
+      case 'hwProcessorCores':
+        return this.strPdf(hw?.['processorN']);
+      case 'hwMemoryMb':
+        return this.strPdf(hw?.['memory']);
+      case 'hwSwapMb':
+        return this.strPdf(hw?.['swap']);
+      case 'hwWinCompany':
+        return this.strPdf(hw?.['winCompany']);
+      case 'hwWinUser':
+        return this.strPdf(hw?.['userid']);
+      case 'hwLastDate':
+        return this.pdfFmtDateTime(hw?.['lastDate']);
+      case 'hwLastCome':
+        return this.pdfFmtDateTime(hw?.['lastCome']);
+
+      case 'biosSmanufacturer':
+        return this.strPdf(bios?.['smanufacturer']);
+      case 'biosSmodel':
+        return this.strPdf(bios?.['smodel']);
+      case 'biosSsn':
+        return this.strPdf(bios?.['ssn']);
+      case 'biosAssettag':
+        return this.strPdf(bios?.['assettag']);
+      case 'biosType':
+        return this.strPdf(bios?.['type']);
+      case 'biosBmanufacturer':
+        return this.strPdf(bios?.['bmanufacturer']);
+      case 'biosBversion':
+        return this.strPdf(bios?.['bversion']);
+      case 'biosBdate':
+        return this.strPdf(bios?.['bdate']);
+
+      case 'cpuManufacturer':
+        return this.strPdf(cpu?.['manufacturer']);
+      case 'cpuType':
+        return this.strPdf(cpu?.['type']);
+      case 'cpuSerial':
+        return this.strPdf(cpu?.['serialNumber']);
+      case 'cpuSpeed':
+        return this.strPdf(cpu?.['speed']);
+      case 'cpuCores':
+        return this.strPdf(cpu?.['cores']);
+      case 'cpuSocket':
+        return this.strPdf(cpu?.['socket']);
+      case 'cpuArch':
+        return this.strPdf(cpu?.['cpuArch']);
+      case 'cpuLogicalCpus':
+        return this.strPdf(cpu?.['logicalCpus']);
+      case 'cpuVoltage':
+        return this.strPdf(cpu?.['voltage']);
+
+      case 'drivesSummary':
+        return this.pdfDrivesSummary(bundle?.drive ?? null);
+      case 'memorySummary':
+        return this.pdfMemorySummary(bundle?.memory ?? null);
+      case 'monitorsSummary':
+        return this.pdfMonitorsSummary(bundle?.monitor ?? null);
+      case 'storageSummary':
+        return this.pdfStorageSummary(bundle?.storage ?? null);
+      case 'videosSummary':
+        return this.pdfVideosSummary(bundle?.video ?? null);
+      case 'softwareSummary':
+        return this.pdfSoftwareSummarySoft(bundle?.software ?? null);
+
+      default:
+        return '—';
+    }
+  }
+
+  private getTipoActivoNombrePdf(idTipo: number): string {
+    const t = this.tiposActivoList.find(
+      (tipo) => Number(tipo.idActivo) === Number(idTipo)
+    );
+    return t?.nombre ?? (idTipo ? `Tipo #${idTipo}` : '—');
+  }
+
+  private getItemLotePdfTexto(idItem: number): string {
+    if (!idItem) return '—';
+    const l = this.lotesList.find((lo) => lo.idItem === idItem);
+    return l?.nombreItem ?? `Item #${idItem}`;
+  }
+
+  private getEntregaPdfTexto(activo: ActivoDTO): string {
+    const id = activo.idEntrega;
+    if (id == null) return '—';
+    const e = this.entregasList.find((ent) => ent.idEntrega === id);
+    if (!e) return `Entrega #${id}`;
+    const partes: string[] = [];
+    if (e.descripcion?.trim()) {
+      partes.push(e.descripcion.trim());
+    }
+    if (e.cantidad != null) {
+      partes.push(`Cant.: ${e.cantidad}`);
+    }
+    return partes.length ? partes.join(' · ') : `Entrega #${id}`;
+  }
+
+  private getServicioGarantiaNombrePdf(idServicio: number): string {
+    const s = this.serviciosGarantiaList.find(
+      (sg) => sg.idServicioGarantia === idServicio
+    );
+    return (
+      s?.nombreComercial ||
+      s?.nombre ||
+      (idServicio ? `Servicio #${idServicio}` : '—')
+    );
+  }
+
   getNombreCompraFormateado(idCompra: number): string {
     const compra = this.compras.get(idCompra);
     if (!compra) return 'No asignado';
@@ -1262,19 +2578,7 @@ export class ActivosComponent implements OnInit {
   }
 
   aplicarFiltroBusqueda(): void {
-    const valorBusqueda = this.numeroCompraControl.value?.toLowerCase() || '';
-    
-    if (!valorBusqueda) {
-      this.activosFiltrados = [...this.activos];
-    } else {
-      this.activosFiltrados = this.activos.filter(activo => {
-        const nombreCompra = this.getNombreCompraFormateado(activo.idNumeroCompra).toLowerCase();
-        return nombreCompra.includes(valorBusqueda);
-      });
-    }
-    
-    this.collectionSize = this.activosFiltrados.length;
-    this.page = 1;
+    this.aplicarTodosLosFiltros();
   }
 
   /**

@@ -19,14 +19,42 @@
 
   <div *ngIf="!loading && ticket" class="row g-3">
     <div class="col-lg-8">
-      <div class="content-section mb-3">
-          <h5 class="mb-1">{{ ticket.codigo }} - {{ ticket.titulo }}</h5>
-          <p class="text-muted mb-2">{{ ticket.descripcion }}</p>
-          <div class="small text-muted">
-            Área actual: <strong>{{ ticket.areaActual }}</strong> |
-            Estado: <strong>{{ getEstadoLabel(ticket.estado) }}</strong> |
-            Prioridad: <strong>{{ ticket.prioridad }}</strong>
-          </div>
+      <div class="content-section ticket-hero mb-3">
+        <div class="ticket-hero-accent" aria-hidden="true"></div>
+        <div class="ticket-hero-inner">
+          <header class="ticket-hero-head">
+            <span class="ticket-hero-code">
+              <i class="fas fa-ticket-alt" aria-hidden="true"></i>
+              {{ ticket.codigo }}
+            </span>
+            <div class="ticket-hero-chips" role="group" aria-label="Resumen del ticket">
+              <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroAreaClass(ticket.areaActual)" title="Área actual">
+                <i class="fas fa-sitemap" aria-hidden="true"></i>
+                {{ getHeroAreaLabel(ticket.areaActual) }}
+              </span>
+              <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroEstadoClass(ticket.estado)" title="Estado">
+                <i class="fas fa-flag" aria-hidden="true"></i>
+                {{ getEstadoLabel(ticket.estado) }}
+              </span>
+              <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroPrioridadClass(ticket.prioridad)" title="Prioridad">
+                <i class="fas fa-bolt" aria-hidden="true"></i>
+                {{ getHeroPrioridadLabel(ticket.prioridad) }}
+              </span>
+            </div>
+          </header>
+          <h2 class="ticket-hero-title">{{ ticket.titulo }}</h2>
+          <p class="ticket-hero-desc">{{ ticket.descripcion }}</p>
+          <footer class="ticket-hero-dates">
+            <span class="ticket-hero-date" *ngIf="ticket.fechaCreacion">
+              <i class="fas fa-plus-circle" aria-hidden="true"></i>
+              Alta: <time [attr.datetime]="ticket.fechaCreacion">{{ ticket.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</time>
+            </span>
+            <span class="ticket-hero-date" *ngIf="ticket.fechaActualizacion">
+              <i class="fas fa-sync-alt" aria-hidden="true"></i>
+              Última actividad: <time [attr.datetime]="ticket.fechaActualizacion">{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</time>
+            </span>
+          </footer>
+        </div>
       </div>
 
       <div class="content-section mb-3">
@@ -96,34 +124,27 @@
       <div class="content-section mb-3" *ngIf="canProcessCurrentTicket()">
         <h2 class="ticket-section-heading ticket-section-heading--accent">
           <i class="fas fa-tasks" aria-hidden="true"></i>
-          <span>Cambiar estado</span>
+          <span>Gestionar ticket</span>
         </h2>
         <div class="ticket-section-body">
-          <select class="form-select mb-2" [(ngModel)]="nuevoEstado">
+          <label class="form-label small text-muted mb-1">Estado</label>
+          <select class="form-select mb-3" [(ngModel)]="nuevoEstado">
             <option *ngFor="let estado of estados" [value]="estado">{{ getEstadoLabel(estado) }}</option>
           </select>
-          <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaEstado" placeholder="Nota del cambio (opcional)"></textarea>
-          <button type="button" class="btn btn-ticket-primary w-100" (click)="cambiarEstado()">
-            <i class="fas fa-check"></i>
-            Actualizar estado
-          </button>
-        </div>
-      </div>
-
-      <div class="content-section" *ngIf="canDerivarTicket()">
-        <h2 class="ticket-section-heading ticket-section-heading--warn">
-          <i class="fas fa-exchange-alt" aria-hidden="true"></i>
-          <span>Derivar a otra área</span>
-        </h2>
-        <div class="ticket-section-body">
+          <label class="form-label small text-muted mb-1">Derivar a otra área</label>
           <select class="form-select mb-2" [(ngModel)]="nuevaArea">
-            <option value="">Seleccionar área...</option>
+            <option value="">Sin derivar (solo cambiar estado)</option>
             <option *ngFor="let area of areasDerivacion" [value]="area">{{ area }}</option>
           </select>
-          <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaArea" placeholder="Nota de derivación (obligatoria)"></textarea>
-          <button type="button" class="btn btn-ticket-derive w-100" (click)="cambiarArea()">
-            <i class="fas fa-share"></i>
-            Derivar ticket
+          <label class="form-label small text-muted mb-1">Nota</label>
+          <textarea
+            class="form-control mb-3"
+            rows="3"
+            [(ngModel)]="notaGestion"
+            placeholder="Si derivás, la nota es obligatoria. Si solo cambiás el estado, es opcional."></textarea>
+          <button type="button" class="btn btn-ticket-primary w-100" (click)="aplicarGestionTicket()">
+            <i class="fas fa-check"></i>
+            Aplicar cambios
           </button>
         </div>
       </div>

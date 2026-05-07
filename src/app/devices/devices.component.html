@@ -61,16 +61,17 @@
       {{ errorMessage }}
     </div>
 
-    <!-- Filtro de búsqueda por MAC -->
+    <!-- Filtro de búsqueda por MAC o IP -->
     <div class="search-container">
       <div class="search-input-group">
         <i class="fas fa-search search-icon"></i>
         <input 
           type="text" 
           class="form-control search-input" 
-          placeholder="Buscar por MAC address..." 
-          [formControl]="macSearchControl" 
-          data-help="🔍 Busca dispositivos específicos por dirección MAC">
+          placeholder="Buscar" 
+          title="Dirección MAC o IP"
+          autocomplete="off"
+          [formControl]="macSearchControl">
       </div>
       <button 
         *ngIf="macSearchControl.value" 
@@ -84,7 +85,7 @@
 
     <!-- Tabla de dispositivos -->
     <div *ngIf="!loading && !errorMessage" class="table-container">
-      <table class="generic-table">
+      <table class="generic-table cerbero-list-table">
         <thead>
           <tr>
             <th (click)="sortData('name')" [class.active]="sortColumn === 'name'" class="sortable-header">
@@ -104,6 +105,16 @@
                   'fa-sort-up': sortColumn === 'ip' && sortDirection === 'asc',
                   'fa-sort-down': sortColumn === 'ip' && sortDirection === 'desc',
                   'fa-sort': sortColumn !== 'ip'
+                }"></i>
+              </div>
+            </th>
+            <th (click)="sortData('mac')" [class.active]="sortColumn === 'mac'" class="sortable-header">
+              <div class="th-content">
+                <span>MAC</span>
+                <i class="fas" [ngClass]="{
+                  'fa-sort-up': sortColumn === 'mac' && sortDirection === 'asc',
+                  'fa-sort-down': sortColumn === 'mac' && sortDirection === 'desc',
+                  'fa-sort': sortColumn !== 'mac'
                 }"></i>
               </div>
             </th>
@@ -141,6 +152,9 @@
             </td>
             <td>
               <span class="ip-address">{{ device.ip }}</span>
+            </td>
+            <td>
+              <span class="ip-address">{{ device.mac || '—' }}</span>
             </td>
             <td>
               <span class="type-badge" 
@@ -205,7 +219,7 @@
             </td>
           </tr>
           <tr *ngIf="pagedDevices.length === 0">
-            <td colspan="4" class="text-center p-4">
+            <td [attr.colspan]="columnasTablaDispositivos" class="text-center p-4">
               <div class="alert alert-info m-0">
                 <i class="fas fa-info-circle me-2"></i>
                 No hay dispositivos disponibles

@@ -131,6 +131,25 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.btn-logout:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.btn-logout:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn-logout:active {
+  outline: none;
+}
+
+.btn-logout::-moz-focus-inner {
+  border: 0;
+}
+
 .btn-logout i {
   font-size: 0.9rem;
 }

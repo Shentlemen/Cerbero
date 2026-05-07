@@ -1,11 +1,21 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { StockAlmacenService, StockAlmacenCreate } from '../../services/stock-almacen.service';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
 import { AlmacenConfig, defEstanteria, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
+import { NotificationService } from '../../services/notification.service';
 
 /** Stock tal como viene en la lista / API */
 export interface StockItemEdicion {
@@ -38,6 +48,18 @@ export class EditarRegistroStockModalComponent implements OnInit {
   divisionesDisponibles: string[] = [];
   guardando = false;
 
+  /** Sin vínculo a ítem del catálogo: al menos número o descripción. */
+  private identificacionSinCatalogoValidator: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+    const idItem = this._item?.item?.idItem;
+    const conItem =
+      idItem !== null && idItem !== undefined && !Number.isNaN(Number(idItem)) && Number(idItem) > 0;
+    if (conItem) return null;
+    const n = String(group.get('numero')?.value ?? '').trim();
+    const d = String(group.get('descripcion')?.value ?? '').trim();
+    if (n.length > 0 || d.length > 0) return null;
+    return { requiereNumeroODescripcion: true };
+  };
+
   /** Información de compra/ítem (solo lectura) */
   textoCompraItem = '';
 
@@ -57,17 +79,21 @@ export class EditarRegistroStockModalComponent implements OnInit {
     private fb: FormBuilder,
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
-    private almacenConfigService: AlmacenConfigService
+    private almacenConfigService: AlmacenConfigService,
+    private notificationService: NotificationService
   ) {
-    this.stockForm = this.fb.group({
-      almacenId: ['', Validators.required],
-      estanteria: ['', [Validators.required, Validators.maxLength(50)]],
-      estante: ['', [Validators.required, Validators.maxLength(50)]],
-      division: ['', Validators.maxLength(10)],
-      cantidad: [1, [Validators.required, Validators.min(1)]],
-      numero: ['', Validators.maxLength(50)],
-      descripcion: ['', Validators.maxLength(255)],
-    });
+    this.stockForm = this.fb.group(
+      {
+        almacenId: ['', Validators.required],
+        estanteria: ['', [Validators.required, Validators.maxLength(50)]],
+        estante: ['', [Validators.required, Validators.maxLength(50)]],
+        division: ['', Validators.maxLength(10)],
+        cantidad: [1, [Validators.required, Validators.min(1)]],
+        numero: ['', Validators.maxLength(50)],
+        descripcion: ['', Validators.maxLength(255)],
+      },
+      { validators: [this.identificacionSinCatalogoValidator] }
+    );
   }
 
   ngOnInit(): void {
@@ -86,6 +112,9 @@ export class EditarRegistroStockModalComponent implements OnInit {
     this.stockForm.get('estanteria')?.valueChanges.subscribe(() => {
       this.actualizarOpcionesPorEstanteriaSeleccionada();
     });
+    const revalidar = () => this.stockForm.updateValueAndValidity({ emitEvent: false });
+    this.stockForm.get('numero')?.valueChanges.subscribe(revalidar);
+    this.stockForm.get('descripcion')?.valueChanges.subscribe(revalidar);
   }
 
   private patchFromItem(val: StockItemEdicion): void {
@@ -117,6 +146,7 @@ export class EditarRegistroStockModalComponent implements OnInit {
     if (val.almacen?.id) {
       this.cargarConfiguracionAlmacen(val.almacen.id, true);
     }
+    this.stockForm.updateValueAndValidity({ emitEvent: false });
   }
 
   cargarConfiguracionAlmacen(almacenId: number, preservarUbicacion = false): void {
@@ -156,6 +186,12 @@ export class EditarRegistroStockModalComponent implements OnInit {
     });
   }
 
+  /** Con ítem de catálogo vinculado, número y descripción son opcionales. */
+  tieneItemCatalogo(): boolean {
+    const idItem = this._item?.item?.idItem;
+    return idItem != null && !Number.isNaN(Number(idItem)) && Number(idItem) > 0;
+  }
+
   limpiarConfiguracionAlmacen(): void {
     this.configAlmacenActual = null;
     this.estanteriasDisponibles = [];
@@ -176,6 +212,7 @@ export class EditarRegistroStockModalComponent implements OnInit {
   }
 
   guardar(): void {
+    this.stockForm.markAllAsTouched();
     if (!this._item?.id || this.stockForm.invalid || this.guardando) return;
     this.guardando = true;
     const fd = this.stockForm.value;
@@ -197,8 +234,12 @@ export class EditarRegistroStockModalComponent implements OnInit {
       next: () => {
         this.activeModal.close({ success: true });
       },
-      error: () => {
+      error: (err) => {
         this.guardando = false;
+        this.notificationService.showError(
+          'No se pudo guardar',
+          err?.error?.message || err?.error?.error || 'Revisá los datos del stock.'
+        );
       },
     });
   }

@@ -78,6 +78,14 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   
   // Estado de reactivación
   reactivandoItemId: string | number | null = null;
+
+  /** Eliminación de fila ítem en curso (`stock_almacen.id`). */
+  eliminandoStockId: number | null = null;
+
+  /** Confirmación visual (mismo patrón que assets / `styles.css` `.confirm-dialog-*`). */
+  showConfirmEliminarStock = false;
+  private stockRegistroParaEliminar: any = null;
+  stockEliminarEtiqueta = '';
   
   // Estado del dropdown de acciones
   dropdownAbiertoId: string | number | null = null;
@@ -1126,6 +1134,18 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
    * Edita ubicación y datos del registro en stock_almacen (ítems de compra / insumos registrados).
    * No aplica a equipos/dispositivos transferidos (esEquipoEspecial).
    */
+  /**
+   * ID numérico en `stock_almacen`; `null` para equipos/dispositivos o filas sintéticas.
+   */
+  getStockAlmacenNumericId(item: any): number | null {
+    if (!item || item.esEquipoEspecial === true) return null;
+    const raw = item.id;
+    const stockId =
+      raw == null ? NaN : typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    if (!Number.isFinite(stockId) || stockId <= 0) return null;
+    return stockId;
+  }
+
   abrirModalEditarRegistro(item: any): void {
     if (item?.esEquipoEspecial) {
       return;
@@ -1134,10 +1154,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       this.notificationService.showError('Permisos insuficientes', 'No tienes permisos para modificar el stock.');
       return;
     }
-    const raw = item?.id;
-    const stockId =
-      raw == null ? NaN : typeof raw === 'number' ? raw : parseInt(String(raw), 10);
-    if (!Number.isFinite(stockId) || stockId <= 0) {
+    const stockId = this.getStockAlmacenNumericId(item);
+    if (stockId == null) {
       this.notificationService.showError(
         'No editable',
         'Este ítem no tiene un registro de stock válido para editar (p. ej. filas solo de visualización).'
@@ -1178,6 +1196,56 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     modalRef.result.then((result: { success?: boolean }) => {
       if (result?.success) this.cargarDatos();
     }).catch(() => {});
+  }
+
+  eliminarRegistroStock(item: any): void {
+    if (item?.esEquipoEspecial) {
+      return;
+    }
+    if (!this.canManageStock()) {
+      this.notificationService.showError('Permisos insuficientes', 'No tienes permisos para eliminar stock.');
+      return;
+    }
+    const stockId = this.getStockAlmacenNumericId(item);
+    if (stockId == null) {
+      this.notificationService.showError(
+        'No eliminable',
+        'Este ítem no tiene un registro de stock válido para eliminar.'
+      );
+      return;
+    }
+    const numTxt = item?.numero != null ? String(item.numero).trim() : '';
+    const descTxt = item?.descripcion != null ? String(item.descripcion).trim() : '';
+    this.stockEliminarEtiqueta = item?.item?.nombreItem || numTxt || descTxt || `#${stockId}`;
+    this.stockRegistroParaEliminar = item;
+    this.showConfirmEliminarStock = true;
+  }
+
+  cancelarConfirmacionEliminarStock(): void {
+    this.showConfirmEliminarStock = false;
+    this.stockRegistroParaEliminar = null;
+  }
+
+  confirmarEliminacionRegistroStock(): void {
+    const item = this.stockRegistroParaEliminar;
+    if (!item) return;
+    const stockId = this.getStockAlmacenNumericId(item);
+
+    this.showConfirmEliminarStock = false;
+    this.stockRegistroParaEliminar = null;
+
+    if (stockId == null) return;
+
+    this.eliminandoStockId = stockId;
+    this.stockAlmacenService.deleteStock(stockId).subscribe({
+      next: () => {
+        this.eliminandoStockId = null;
+        this.cargarDatos();
+      },
+      error: () => {
+        this.eliminandoStockId = null;
+      },
+    });
   }
 
   /**

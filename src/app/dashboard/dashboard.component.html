@@ -96,7 +96,7 @@
     <div class="alert-filters">
       <div class="filter-buttons">
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'all'"
           (click)="filterAlerts('all')"
           title="Mostrar todas las alertas">
@@ -105,7 +105,7 @@
           <span class="count">({{alerts.length}})</span>
         </button>
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'new_hardware'"
           [style.--device-color]="'#2e7d32'"
           [style.--device-bg-color]="'#e8f5e9'"
@@ -117,7 +117,7 @@
           <span class="count">({{getFilterCount('new_hardware')}})</span>
         </button>
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'memory'"
           [style.--device-color]="'#1976d2'"
           [style.--device-bg-color]="'#e3f2fd'"
@@ -129,7 +129,7 @@
           <span class="count">({{getFilterCount('memory')}})</span>
         </button>
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'disk'"
           [style.--device-color]="'#f57c00'"
           [style.--device-bg-color]="'#fff3e0'"
@@ -141,7 +141,7 @@
           <span class="count">({{getFilterCount('disk')}})</span>
         </button>
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'ip'"
           [style.--device-color]="'#388e3c'"
           [style.--device-bg-color]="'#e8f5e9'"
@@ -153,7 +153,7 @@
           <span class="count">({{getFilterCount('ip')}})</span>
         </button>
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'video'"
           [style.--device-color]="'#7b1fa2'"
           [style.--device-bg-color]="'#f3e5f5'"
@@ -165,7 +165,7 @@
           <span class="count">({{getFilterCount('video')}})</span>
         </button>
         <button 
-          class="btn-filter" 
+          class="btn-filter filter-btn" 
           [class.active]="currentFilter === 'monitor'"
           [style.--device-color]="'#00838f'"
           [style.--device-bg-color]="'#e0f7fa'"

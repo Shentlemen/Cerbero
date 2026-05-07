@@ -137,17 +137,18 @@ export class AssetsComponent implements OnInit {
     }
   }
 
-  // Método para aplicar filtro por nombre
-  private aplicarFiltroNombre(nombre: string): void {
-    if (!nombre.trim()) {
-      // Si no hay filtro, mostrar todos los assets según el filtro de tipo actual
+  // Método para aplicar búsqueda rápida (nombre de equipo e IP)
+  private aplicarFiltroNombre(termino: string): void {
+    const t = (termino || '').trim().toLowerCase();
+    if (!t) {
       this.aplicarFiltroTipoActual();
     } else {
-      // Aplicar filtro de nombre sobre los assets filtrados por tipo
       const assetsPorTipo = this.obtenerAssetsPorTipoActual();
-      this.assetsFiltrados = assetsPorTipo.filter(asset => 
-        asset.name?.toLowerCase().includes(nombre.toLowerCase())
-      );
+      this.assetsFiltrados = assetsPorTipo.filter(asset => {
+        const name = (asset.name || '').toLowerCase();
+        const ip = (asset.ipAddr || '').toLowerCase();
+        return name.includes(t) || ip.includes(t);
+      });
       this.actualizarPaginacion();
     }
   }
@@ -868,7 +869,7 @@ export class AssetsComponent implements OnInit {
       filtroTexto = `Filtro: ${this.currentFilter}`;
     }
     if (this.nombreEquipoControl.value) {
-      filtroTexto += ' | Búsqueda por nombre activa';
+      filtroTexto += ' | Búsqueda activa (nombre/IP)';
     }
     doc.text(filtroTexto, 14, 28);
     

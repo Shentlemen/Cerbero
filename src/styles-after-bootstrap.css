@@ -1,0 +1,40 @@
+/*
+ * Cargado después de bootstrap.min.css para poder pisar su anillo de foco azul
+ * (--bs-btn-focus-shadow / rgba(13,110,253,.25)).
+ */
+
+/* Salir y cualquier botón del header sin clase .btn */
+app-header .btn-logout,
+.app-header .btn-logout {
+  -webkit-tap-highlight-color: transparent;
+}
+
+app-header .btn-logout,
+app-header .btn-logout:focus,
+app-header .btn-logout:focus-visible,
+app-header .btn-logout:active,
+app-header .btn-logout:focus-within,
+.app-header .btn-logout,
+.app-header .btn-logout:focus,
+.app-header .btn-logout:focus-visible,
+.app-header .btn-logout:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Icono / texto dentro del botón: quitar foco visual heredado */
+app-header .btn-logout *:focus,
+app-header .btn-logout *:focus-visible,
+.app-header .btn-logout *:focus,
+.app-header .btn-logout *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Opcional teclado: borde claro (no azul) sobre el header oscuro */
+app-header .btn-logout:focus-visible,
+.app-header .btn-logout:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}

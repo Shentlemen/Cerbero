@@ -21,6 +21,17 @@
   color: #333;
 }
 
+/* Selección de texto: evitar resaltado azul del sistema en el panel. */
+.dashboard-container ::selection {
+  background-color: rgba(44, 62, 80, 0.18);
+  color: inherit;
+}
+
+.dashboard-container ::-moz-selection {
+  background-color: rgba(44, 62, 80, 0.18);
+  color: inherit;
+}
+
 .dashboard-header {
   background-color: #ffffff;
   padding: 20px;
@@ -432,6 +443,20 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+/* Quitar borde / highlight azul en los botones de alertas */
+.alert-actions .btn:focus,
+.alert-actions .btn:active,
+.alert-actions .btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Evitar selección de texto/iconos dentro de los botones de alertas */
+.alert-actions .btn,
+.alert-actions .btn * {
+  user-select: none;
 }
 
 .alert-actions .btn-danger {
@@ -1077,11 +1102,38 @@ canvasjs-chart {
   justify-content: center;
 }
 
+/* Quitar highlight azul también en los filtros de alertas */
+.btn-filter:focus,
+.btn-filter:active,
+.btn-filter:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Asegurar que los elementos internos tampoco muestren recuadro azul */
+.btn-filter:focus-within,
+.btn-filter *:focus,
+.btn-filter *:active,
+.btn-filter *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Evitar selección de texto/iconos dentro de los botones de filtros */
+.btn-filter,
+.btn-filter * {
+  user-select: none;
+}
+
+/* En el dashboard, que el hover de los filtros se vea como activo (pestaña “pintada”) */
+.dashboard-container .btn-filter:hover {
+  background: var(--device-bg-color, #e3f2fd);
+  border-color: var(--device-border-color, #bbdefb);
+  color: var(--device-color, #1976d2);
+}
+
 .btn-filter:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  border-color: var(--device-color, #3498db);
-  color: var(--device-color, #3498db);
+  /* Dejamos que el estilo global .filter-btn:hover maneje color y sombra */
 }
 
 .btn-filter.active {

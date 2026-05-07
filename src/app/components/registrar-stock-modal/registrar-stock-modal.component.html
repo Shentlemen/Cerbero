@@ -109,12 +109,11 @@
             </div>
           </div>
           <div class="col-md-6 mb-3">
-            <label for="division" class="form-label">Sección</label>
+            <label for="division" class="form-label">Sección (Opcional)</label>
             <select class="form-select" id="division" formControlName="division">
               <option value="">Sin sección</option>
               <option *ngFor="let div of divisionesDisponibles" [value]="div">{{ div }}</option>
             </select>
-            <small class="form-text text-muted">Opcional</small>
           </div>
         </div>
       </div>
@@ -134,18 +133,41 @@
             <input type="number" class="form-control" id="cantidad" formControlName="cantidad" min="1" placeholder="1" required>
           </div>
           <div class="col-md-8 mb-3">
-            <label for="numero" class="form-label">Número</label>
-            <input type="text" class="form-control" id="numero" formControlName="numero" placeholder="Número identificador (opcional)" maxlength="50">
+            <label for="numero" class="form-label">
+              {{ tieneItemDeCompraSeleccionado() ? 'Número (Opcional)' : 'Número' }}
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="numero"
+              formControlName="numero"
+              maxlength="50"
+              placeholder="Número de PC"
+            >
             <div *ngIf="stockForm.get('numero')?.invalid && stockForm.get('numero')?.touched" class="text-danger mt-1">
               <small *ngIf="stockForm.get('numero')?.errors?.['maxlength']">Máximo 50 caracteres</small>
             </div>
           </div>
           <div class="col-md-12 mb-3">
-            <label for="descripcion" class="form-label">Descripción</label>
-            <textarea class="form-control" id="descripcion" formControlName="descripcion" placeholder="Descripción adicional (opcional)" maxlength="255" rows="3"></textarea>
+            <label for="descripcion" class="form-label">
+              {{ tieneItemDeCompraSeleccionado() ? 'Descripción (Opcional)' : 'Descripción' }}
+            </label>
+            <textarea
+              class="form-control"
+              id="descripcion"
+              formControlName="descripcion"
+              maxlength="255"
+              rows="3"
+              placeholder="Descripción adicional"
+            ></textarea>
             <div *ngIf="stockForm.get('descripcion')?.invalid && stockForm.get('descripcion')?.touched" class="text-danger mt-1">
               <small *ngIf="stockForm.get('descripcion')?.errors?.['maxlength']">Máximo 255 caracteres</small>
             </div>
+          </div>
+          <div *ngIf="stockForm.errors?.['requiereNumeroODescripcion'] && stockForm.touched" class="col-12 mb-2">
+            <small class="text-danger">
+              Se necesita indicar alguna de estas tres cosas: <strong>ítem de la compra</strong>, <strong>número de PC</strong> o <strong>descripción adicional</strong>.
+            </small>
           </div>
         </div>
       </div>

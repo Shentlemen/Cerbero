@@ -14,61 +14,132 @@
           {{ errorMessage }}
           <button type="button" class="btn-close" (click)="errorMessage = null"></button>
         </div>
-        <div class="filters-container">
-          <button 
-            type="button"
-            class="filter-btn" 
-            [class.active]="currentFilter === ''"
-            [style.--device-color]="'#3498db'"
-            [style.--device-bg-color]="'#f8f9fa'"
-            [style.--device-border-color]="'#dee2e6'"
-            (click)="filterByCriticidad('')">
-            <i class="fas fa-th-large"></i>
-            <span>Todos</span>
-            <span class="count">({{totalActivos}})</span>
-          </button>
-          
-          <button 
-            class="filter-btn" 
-            [class.active]="currentFilter === 'ALTA'"
-            [style.--device-color]="'#dc2626'"
-            [style.--device-bg-color]="'#fee2e2'"
-            [style.--device-border-color]="'#fecaca'"
-            (click)="filterByCriticidad('ALTA')">
-            <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
-            <span>Alta</span>
-            <span class="count">({{altaCount}})</span>
-          </button>
-          
-          <button 
-            class="filter-btn" 
-            [class.active]="currentFilter === 'MEDIA'"
-            [style.--device-color]="'#d97706'"
-            [style.--device-bg-color]="'#fef3c7'"
-            [style.--device-border-color]="'#fed7aa'"
-            (click)="filterByCriticidad('MEDIA')">
-            <i class="fas fa-exclamation-circle" style="color: #d97706;"></i>
-            <span>Media</span>
-            <span class="count">({{mediaCount}})</span>
-          </button>
-          
-          <button 
-            class="filter-btn" 
-            [class.active]="currentFilter === 'BAJA'"
-            [style.--device-color]="'#16a34a'"
-            [style.--device-bg-color]="'#dcfce7'"
-            [style.--device-border-color]="'#bbf7d0'"
-            (click)="filterByCriticidad('BAJA')">
-            <i class="fas fa-info-circle" style="color: #16a34a;"></i>
-            <span>Baja</span>
-            <span class="count">({{bajaCount}})</span>
-          </button>
+        <div class="activos-filters-stack">
+          <div class="filters-toolbar-row">
+            <span class="filters-toolbar-label">Criticidad</span>
+            <div class="filters-container">
+              <button 
+                type="button"
+                class="filter-btn" 
+                [class.active]="currentFilter === ''"
+                [style.--device-color]="'#3498db'"
+                [style.--device-bg-color]="'#f8f9fa'"
+                [style.--device-border-color]="'#dee2e6'"
+                (click)="filterByCriticidad('')">
+                <i class="fas fa-th-large"></i>
+                <span>Todos</span>
+                <span class="count">({{totalActivos}})</span>
+              </button>
+              
+              <button 
+                class="filter-btn" 
+                [class.active]="currentFilter === 'ALTA'"
+                [style.--device-color]="'#dc2626'"
+                [style.--device-bg-color]="'#fee2e2'"
+                [style.--device-border-color]="'#fecaca'"
+                (click)="filterByCriticidad('ALTA')">
+                <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
+                <span>Alta</span>
+                <span class="count">({{altaCount}})</span>
+              </button>
+              
+              <button 
+                class="filter-btn" 
+                [class.active]="currentFilter === 'MEDIA'"
+                [style.--device-color]="'#d97706'"
+                [style.--device-bg-color]="'#fef3c7'"
+                [style.--device-border-color]="'#fed7aa'"
+                (click)="filterByCriticidad('MEDIA')">
+                <i class="fas fa-exclamation-circle" style="color: #d97706;"></i>
+                <span>Media</span>
+                <span class="count">({{mediaCount}})</span>
+              </button>
+              
+              <button 
+                class="filter-btn" 
+                [class.active]="currentFilter === 'BAJA'"
+                [style.--device-color]="'#16a34a'"
+                [style.--device-bg-color]="'#dcfce7'"
+                [style.--device-border-color]="'#bbf7d0'"
+                (click)="filterByCriticidad('BAJA')">
+                <i class="fas fa-info-circle" style="color: #16a34a;"></i>
+                <span>Baja</span>
+                <span class="count">({{bajaCount}})</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="filters-toolbar-row mt-2">
+            <span class="filters-toolbar-label">Estado</span>
+            <div class="filters-container">
+              <button
+                type="button"
+                class="filter-btn"
+                [class.active]="currentEstadoFilter === ''"
+                [style.--device-color]="'#3498db'"
+                [style.--device-bg-color]="'#f8f9fa'"
+                [style.--device-border-color]="'#dee2e6'"
+                (click)="filterByEstado('')">
+                <i class="fas fa-th-large"></i>
+                <span>Todos</span>
+                <span class="count">({{totalActivos}})</span>
+              </button>
+
+              <button
+                type="button"
+                class="filter-btn"
+                [class.active]="currentEstadoFilter === 'ACTIVO'"
+                [style.--device-color]="'#16a34a'"
+                [style.--device-bg-color]="'#dcfce7'"
+                [style.--device-border-color]="'#bbf7d0'"
+                (click)="filterByEstado('ACTIVO')">
+                <i class="fas fa-check-circle" style="color: #16a34a;"></i>
+                <span>Activo</span>
+                <span class="count">({{estadoActivoCount}})</span>
+              </button>
+
+              <button
+                type="button"
+                class="filter-btn"
+                [class.active]="currentEstadoFilter === 'INACTIVO'"
+                [style.--device-color]="'#dc2626'"
+                [style.--device-bg-color]="'#fee2e2'"
+                [style.--device-border-color]="'#fecaca'"
+                (click)="filterByEstado('INACTIVO')">
+                <i class="fas fa-ban" style="color: #dc2626;"></i>
+                <span>Inactivo</span>
+                <span class="count">({{estadoInactivoCount}})</span>
+              </button>
+
+              <button
+                type="button"
+                class="filter-btn"
+                [class.active]="currentEstadoFilter === 'MANTENIMIENTO'"
+                [style.--device-color]="'#d97706'"
+                [style.--device-bg-color]="'#fef3c7'"
+                [style.--device-border-color]="'#fed7aa'"
+                (click)="filterByEstado('MANTENIMIENTO')">
+                <i class="fas fa-wrench" style="color: #d97706;"></i>
+                <span>Mantenimiento</span>
+                <span class="count">({{estadoMantenimientoCount}})</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="actions">
+      <div class="actions d-flex align-items-center flex-wrap activos-header-actions">
         <button class="btn btn-export" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Activo
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm print-btn"
+          (click)="abrirModalPdfActivos(pdfOpcionesModal)"
+          title="Exportar lista filtrada a PDF"
+          [disabled]="loading || activosFiltrados.length === 0">
+          <i class="fas fa-file-pdf" aria-hidden="true"></i>
+          Imprimir
         </button>
       </div>
     </div>
@@ -77,7 +148,7 @@
   <div class="content-section">
     <div class="row mb-3">
       <div class="col-12">
-        <input type="text" class="form-control" placeholder="Buscar por nombre de compra..." [formControl]="numeroCompraControl" style="max-width: 320px;">
+        <input type="text" class="form-control" placeholder="Buscar" [formControl]="numeroCompraControl" style="max-width: 360px;">
       </div>
     </div>
     <div class="table-container">
@@ -235,23 +306,51 @@
       <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
     </div>
     
-    <!-- Selector de modo de creación - Más compacto y arriba -->
-    <div class="row mb-3">
-      <div class="col-12">
-        <label class="form-label mb-2">Modo de Creación</label>
-        <div class="btn-group mode-selector" role="group" style="float: right;">
-          <input type="radio" class="btn-check" name="creationMode" id="singleMode" 
-                 [(ngModel)]="creationMode" value="single" [ngModelOptions]="{standalone: true}">
-          <label class="btn btn-outline-primary btn-sm" for="singleMode">
-            <i class="fas fa-desktop me-1"></i>Individual
-          </label>
-          
-          <input type="radio" class="btn-check" name="creationMode" id="rangeMode" 
-                 [(ngModel)]="creationMode" value="range" [ngModelOptions]="{standalone: true}">
-          <label class="btn btn-outline-primary btn-sm" for="rangeMode">
-            <i class="fas fa-layer-group me-1"></i>Rango
-          </label>
-        </div>
+    <!-- Modo de creación: selector tipo tarjeta -->
+    <div class="activo-creation-mode-wrap mb-3">
+      <span class="activo-creation-mode-heading">Modo de creación</span>
+      <div class="activo-creation-mode" role="radiogroup" aria-label="Modo de creación">
+        <label
+          class="activo-creation-mode-option"
+          [class.activo-creation-mode-option--active]="creationMode === 'single'">
+          <input
+            type="radio"
+            class="visually-hidden"
+            name="creationModeUi"
+            [(ngModel)]="creationMode"
+            value="single"
+            [ngModelOptions]="{standalone: true}">
+          <span class="activo-creation-mode-option-inner">
+            <span class="activo-creation-mode-icon" aria-hidden="true">
+              <i class="fas fa-desktop"></i>
+            </span>
+            <span class="activo-creation-mode-copy">
+              <span class="activo-creation-mode-title">Individual</span>
+              <span class="activo-creation-mode-desc">Un número de equipo</span>
+            </span>
+          </span>
+        </label>
+
+        <label
+          class="activo-creation-mode-option"
+          [class.activo-creation-mode-option--active]="creationMode === 'range'">
+          <input
+            type="radio"
+            class="visually-hidden"
+            name="creationModeUi"
+            [(ngModel)]="creationMode"
+            value="range"
+            [ngModelOptions]="{standalone: true}">
+          <span class="activo-creation-mode-option-inner">
+            <span class="activo-creation-mode-icon" aria-hidden="true">
+              <i class="fas fa-layer-group"></i>
+            </span>
+            <span class="activo-creation-mode-copy">
+              <span class="activo-creation-mode-title">Rango</span>
+              <span class="activo-creation-mode-desc">Varios equipos de una vez</span>
+            </span>
+          </span>
+        </label>
       </div>
     </div>
 
@@ -375,18 +474,71 @@
             <!-- Tercera fila: Número de Compra y Item -->
             <div class="row mb-3">
               <div class="col-md-6">
-                <label class="form-label">Número de Compra</label>
-                <select class="form-select" formControlName="idNumeroCompra">
-                  <option value="">Seleccione una compra</option>
-                  <option *ngFor="let compra of comprasList" [value]="compra.idCompra">
-                    {{compra.numeroCompra}} - {{compra.descripcion}}
-                  </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched && shouldShowValidationErrors">
-                  El número de compra es requerido.
+                <label class="form-label" for="activoModalCompraSearch">Compra</label>
+                <!-- Mismo patrón que Registrar Stock (stock.component → modal Ubicación): input + .items-dropdown -->
+                <div class="position-relative activo-modal-compra-search-wrap">
+                  <input
+                    id="activoModalCompraSearch"
+                    type="text"
+                    class="form-control"
+                    autocomplete="off"
+                    spellcheck="false"
+                    [(ngModel)]="compraModalSearchTerm"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Escriba para buscar compras por número o descripción…"
+                    [class.is-invalid]="
+                      activoForm.get('idNumeroCompra')?.errors?.['required'] &&
+                      activoForm.get('idNumeroCompra')?.touched &&
+                      shouldShowValidationErrors
+                    "
+                    (input)="filtrarComprasModal()"
+                    (focus)="onCompraModalSearchFocus()"
+                    (blur)="onCompraModalBlur()"
+                  />
+                  <div
+                    *ngIf="mostrarDropdownComprasModal && comprasModalFiltradas.length > 0"
+                    class="items-dropdown"
+                  >
+                    <div
+                      *ngFor="let c of comprasModalFiltradas"
+                      class="item-option"
+                      data-type="compra"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="seleccionarCompraModal(c)"
+                      [class.selected]="esCompraSeleccionadaEnModal(c)"
+                    >
+                      <i class="fas fa-shopping-cart me-2"></i>
+                      <span>Compra {{ c.numeroCompra }}</span>
+                      <small *ngIf="c.descripcion && c.descripcion.trim()" class="d-block item-option-subline">{{ c.descripcion }}</small>
+                    </div>
+                  </div>
+                  <div
+                    *ngIf="
+                      mostrarDropdownComprasModal &&
+                      comprasModalFiltradas.length === 0 &&
+                      compraModalSearchTerm.trim()
+                    "
+                    class="items-dropdown no-results"
+                  >
+                    <div class="item-option disabled">
+                      <i class="fas fa-search me-2"></i>
+                      No se encontraron compras
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 mt-1"
+                  *ngIf="compraModalSearchTerm.trim() || activoForm.get('idNumeroCompra')?.value"
+                  (click)="limpiarSeleccionCompraModal()"
+                >
+                  Limpiar compra
+                </button>
+                <div class="invalid-feedback d-block" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched && shouldShowValidationErrors">
+                  La compra es requerida.
                 </div>
                 <small class="text-muted">
-                  Al seleccionar una compra, se mostrarán solo los items disponibles para esa compra
+                  Lista desplegable bajo el campo (como en almacenes / Registrar stock). Al elegir una compra se cargarán los ítems de esa compra.
                 </small>
               </div>
               <div class="col-md-6">
@@ -433,15 +585,62 @@
                 </small>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Ubicación</label>
-                <select class="form-select" formControlName="idUbicacion">
-                  <option value="">Seleccione una ubicación</option>
-                  <option *ngFor="let ubicacion of ubicacionesList" [value]="ubicacion.id">
-                    {{ubicacion.nombreGerencia}} - {{ubicacion.nombreOficina}}
-                  </option>
-                </select>
+                <label class="form-label" for="activoModalUbicacionSearch">Ubicación</label>
+                <input type="hidden" formControlName="idUbicacion" />
+                <div class="position-relative activo-modal-ubicacion-search-wrap">
+                  <input
+                    id="activoModalUbicacionSearch"
+                    type="text"
+                    class="form-control"
+                    autocomplete="off"
+                    spellcheck="false"
+                    [(ngModel)]="ubicacionModalSearchTerm"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Escriba para buscar por gerencia, oficina, ciudad…"
+                    (input)="filtrarUbicacionesModal()"
+                    (focus)="onUbicacionModalSearchFocus()"
+                    (blur)="onUbicacionModalBlur()"
+                  />
+                  <div
+                    *ngIf="mostrarDropdownUbicacionesModal && ubicacionesModalFiltradas.length > 0"
+                    class="items-dropdown"
+                  >
+                    <div
+                      *ngFor="let u of ubicacionesModalFiltradas"
+                      class="item-option"
+                      data-type="ubicacion"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="seleccionarUbicacionModal(u)"
+                      [class.selected]="esUbicacionSeleccionadaEnModal(u)"
+                    >
+                      <i class="fas fa-map-marker-alt me-2"></i>
+                      <span>{{ etiquetaUbicacionModal(u) }}</span>
+                    </div>
+                  </div>
+                  <div
+                    *ngIf="
+                      mostrarDropdownUbicacionesModal &&
+                      ubicacionesModalFiltradas.length === 0 &&
+                      ubicacionModalSearchTerm.trim()
+                    "
+                    class="items-dropdown no-results"
+                  >
+                    <div class="item-option disabled">
+                      <i class="fas fa-search me-2"></i>
+                      No se encontraron ubicaciones
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 mt-1"
+                  *ngIf="ubicacionModalSearchTerm.trim() || activoForm.get('idUbicacion')?.value"
+                  (click)="limpiarSeleccionUbicacionModal()"
+                >
+                  Limpiar ubicación
+                </button>
                 <small class="text-muted">
-                  La ubicación es opcional y puede ser definida posteriormente
+                  Lista desplegable bajo el campo (como Compra). La ubicación es opcional.
                 </small>
               </div>
             </div>
@@ -475,16 +674,76 @@
             <!-- Sexta fila: Servicio de Garantía y Fecha Fin Garantía -->
             <div class="row mb-3">
               <div class="col-md-6">
-                <label class="form-label">Servicio de Garantía</label>
-                <select class="form-select" formControlName="idServicioGarantia">
-                  <option value="">Seleccione un servicio de garantía</option>
-                  <option *ngFor="let servicio of serviciosGarantiaList" [value]="servicio.idServicioGarantia">
-                    {{servicio.nombreComercial}}
-                  </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched && shouldShowValidationErrors">
+                <label class="form-label" for="activoModalServicioGarantiaSearch">Servicio de Garantía</label>
+                <input type="hidden" formControlName="idServicioGarantia" />
+                <div class="position-relative activo-modal-servicio-garantia-search-wrap">
+                  <input
+                    id="activoModalServicioGarantiaSearch"
+                    type="text"
+                    class="form-control"
+                    autocomplete="off"
+                    spellcheck="false"
+                    [(ngModel)]="servicioGarantiaModalSearchTerm"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Escriba para buscar por nombre comercial, razón social, RUC…"
+                    [class.is-invalid]="
+                      activoForm.get('idServicioGarantia')?.errors?.['required'] &&
+                      activoForm.get('idServicioGarantia')?.touched &&
+                      shouldShowValidationErrors
+                    "
+                    (input)="filtrarServiciosGarantiaModal()"
+                    (focus)="onServicioGarantiaModalSearchFocus()"
+                    (blur)="onServicioGarantiaModalBlur()"
+                  />
+                  <div
+                    *ngIf="mostrarDropdownServiciosGarantiaModal && serviciosGarantiaModalFiltrados.length > 0"
+                    class="items-dropdown"
+                  >
+                    <div
+                      *ngFor="let sg of serviciosGarantiaModalFiltrados"
+                      class="item-option"
+                      data-type="servicio-garantia"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="seleccionarServicioGarantiaModal(sg)"
+                      [class.selected]="esServicioGarantiaSeleccionadoEnModal(sg)"
+                    >
+                      <i class="fas fa-shield-alt me-2"></i>
+                      <span>{{ etiquetaServicioGarantiaModal(sg) }}</span>
+                      <small
+                        *ngIf="sg.nombre && sg.nombre.trim() && sg.nombre.trim() !== (sg.nombreComercial || '').trim()"
+                        class="d-block item-option-subline"
+                      >{{ sg.nombre }}</small>
+                      <small *ngIf="sg.ruc && sg.ruc.trim()" class="d-block text-muted item-option-subline">RUC {{ sg.ruc }}</small>
+                    </div>
+                  </div>
+                  <div
+                    *ngIf="
+                      mostrarDropdownServiciosGarantiaModal &&
+                      serviciosGarantiaModalFiltrados.length === 0 &&
+                      servicioGarantiaModalSearchTerm.trim()
+                    "
+                    class="items-dropdown no-results"
+                  >
+                    <div class="item-option disabled">
+                      <i class="fas fa-search me-2"></i>
+                      No se encontraron servicios de garantía
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 mt-1"
+                  *ngIf="servicioGarantiaModalSearchTerm.trim() || activoForm.get('idServicioGarantia')?.value"
+                  (click)="limpiarSeleccionServicioGarantiaModal()"
+                >
+                  Limpiar servicio de garantía
+                </button>
+                <div class="invalid-feedback d-block" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched && shouldShowValidationErrors">
                   El servicio de garantía es requerido.
                 </div>
+                <small class="text-muted">
+                  Lista desplegable bajo el campo (como Compra). El servicio de garantía es obligatorio.
+                </small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Fecha Fin Garantía</label>
@@ -498,28 +757,59 @@
             <!-- Activos Relacionados -->
             <div class="row mb-3">
               <div class="col-md-12">
-                <label class="form-label">Activos Relacionados</label>
+                <label class="form-label" for="activoModalRelacionadosSearch">Activos Relacionados</label>
                 <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">
                   <div class="selected-asset-badge" *ngFor="let assetId of selectedRelatedAssets">
                     <span>{{getAssetDescription(assetId)}}</span>
                     <button type="button" class="btn-close" (click)="removeRelatedAsset(assetId)"></button>
                   </div>
                 </div>
-                <div class="input-group">
-                  <select class="form-select" [(ngModel)]="selectedAssetId" [ngModelOptions]="{standalone: true}">
-                    <option [ngValue]="null">Seleccione un activo para relacionar</option>
-                    <option *ngFor="let activo of activos" [value]="activo.idActivo" 
-                            [disabled]="isAssetRelated(activo.idActivo)">
-                      {{getAssetDescription(activo.idActivo)}}
-                    </option>
-                  </select>
-                  <button class="btn btn-outline-primary" type="button" 
-                          (click)="addRelatedAsset(selectedAssetId)" 
-                          [disabled]="!selectedAssetId">
-                    <i class="fas fa-plus"></i> Agregar
-                  </button>
+                <div class="position-relative activo-modal-relacionados-search-wrap">
+                  <input
+                    id="activoModalRelacionadosSearch"
+                    type="text"
+                    class="form-control"
+                    autocomplete="off"
+                    spellcheck="false"
+                    [(ngModel)]="relacionadosModalSearchTerm"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Busque por número de equipo, ID de activo o ID secundario…"
+                    (input)="filtrarActivosRelacionadosModal()"
+                    (focus)="onRelacionadosModalSearchFocus()"
+                    (blur)="onRelacionadosModalBlur()"
+                  />
+                  <div
+                    *ngIf="mostrarDropdownRelacionadosModal && activosRelacionadosModalFiltrados.length > 0"
+                    class="items-dropdown"
+                  >
+                    <div
+                      *ngFor="let a of activosRelacionadosModalFiltrados"
+                      class="item-option"
+                      data-type="relacionado"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="seleccionarActivoRelacionadoModal(a)"
+                    >
+                      <i class="fas fa-link me-2"></i>
+                      <span>{{ getAssetDescription(a.idActivo) }}</span>
+                    </div>
+                  </div>
+                  <div
+                    *ngIf="
+                      mostrarDropdownRelacionadosModal &&
+                      activosRelacionadosModalFiltrados.length === 0 &&
+                      relacionadosModalSearchTerm.trim()
+                    "
+                    class="items-dropdown no-results"
+                  >
+                    <div class="item-option disabled">
+                      <i class="fas fa-search me-2"></i>
+                      No se encontraron activos
+                    </div>
+                  </div>
                 </div>
-                <small class="text-muted">Puede seleccionar múltiples activos para relacionar</small>
+                <small class="text-muted">
+                  Lista bajo el campo (como Compra). Puede agregar varios; no se muestra el activo actual ni los ya relacionados.
+                </small>
               </div>
             </div>
           </form>
@@ -560,7 +850,7 @@
           </li>
           <li *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
-            Número de compra es requerido
+            La compra es requerida
           </li>
           <li *ngIf="activoForm.get('idItem')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
@@ -928,7 +1218,77 @@
       <i class="fas fa-times me-2"></i>Cerrar
     </button>
   </div>
-</ng-template> 
+</ng-template>
+
+<ng-template #pdfOpcionesModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title"><i class="fas fa-file-pdf me-2" aria-hidden="true"></i>Columnas del PDF</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body activo-pdf-columnas-modal">
+    <p class="text-muted small mb-3">
+      Se exportan los <strong>{{ activosFiltrados.length }}</strong> activos de la lista actual
+      (filtro por criticidad y búsqueda). Los datos de gestión vienen del módulo de activos en Cerbero; las secciones de inventario usan la base de Cerbero del mismo nombre de equipo (hardware, BIOS, discos, etc.).
+    </p>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="pdfSeleccionSoloTabla()">
+        Como la tabla
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="pdfSeleccionTodasLasColumnas()">
+        Todas
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="pdfSeleccionNingunaColumna()">
+        Ninguna
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reiniciarSeleccionPdfColumnas()">
+        Por defecto
+      </button>
+    </div>
+    <div class="activo-pdf-secciones">
+      <div class="activo-pdf-seccion mb-3" *ngFor="let sec of pdfExportSections">
+        <div class="activo-pdf-seccion-head d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <h6 class="mb-0 activo-pdf-seccion-title">{{ sec.title }}</h6>
+          <div
+            *ngIf="sec.cols.length > 1"
+            class="btn-group btn-group-sm"
+            role="group"
+            [attr.aria-label]="'Grupo ' + sec.title">
+            <button type="button" class="btn btn-outline-secondary" (click)="pdfToggleSection(sec.id, true)">
+              Todo el grupo
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="pdfToggleSection(sec.id, false)">Nada</button>
+          </div>
+        </div>
+        <p *ngIf="sec.hint" class="text-muted small mb-2 mb-md-3">{{ sec.hint }}</p>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2 activo-pdf-campos-grid">
+          <div class="col" *ngFor="let col of sec.cols">
+            <label class="d-flex align-items-center gap-2 border rounded px-2 py-2 activo-pdf-campo-label mb-0">
+              <input
+                type="checkbox"
+                class="form-check-input m-0"
+                [name]="'pdf_col_' + col.key"
+                [(ngModel)]="pdfColumnSelected[col.key]"
+              />
+              <span>{{ col.label }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer activo-pdf-columnas-modal">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()" [disabled]="pdfGenerando">Cancelar</button>
+    <button
+      type="button"
+      class="btn btn-danger btn-sm d-inline-flex align-items-center gap-2"
+      (click)="generarPdfActivosListado(modal)"
+      [disabled]="activosFiltrados.length === 0 || pdfGenerando">
+      <span *ngIf="pdfGenerando" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      <i *ngIf="!pdfGenerando" class="fas fa-file-download" aria-hidden="true"></i>
+      Generar PDF
+    </button>
+  </div>
+</ng-template>
 
 <!-- Diálogo de confirmación -->
 <div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">

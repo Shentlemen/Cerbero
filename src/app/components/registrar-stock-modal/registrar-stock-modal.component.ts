@@ -1,6 +1,15 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+  ValidatorFn
+} from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { StockAlmacenService } from '../../services/stock-almacen.service';
 import { StockAlmacenCreateWithItem } from '../../interfaces/stock-almacen.interface';
@@ -10,6 +19,22 @@ import { ComprasService } from '../../services/compras.service';
 import { NotificationService } from '../../services/notification.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
 import { AlmacenConfig, defEstanteria, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
+
+/** Sin ítem: debe definirse identidad vía número de PC y/o descripción adicional. */
+const numeroODescripcionSiSinItemValidator: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+  const itemRaw = group.get('itemId')?.value;
+  const tieneItem =
+    itemRaw !== '' &&
+    itemRaw !== null &&
+    itemRaw !== undefined &&
+    !Number.isNaN(Number(itemRaw)) &&
+    Number(itemRaw) > 0;
+  if (tieneItem) return null;
+  const n = String(group.get('numero')?.value ?? '').trim();
+  const d = String(group.get('descripcion')?.value ?? '').trim();
+  if (n.length > 0 || d.length > 0) return null;
+  return { requiereNumeroODescripcion: true };
+};
 
 @Component({
   selector: 'app-registrar-stock-modal',
@@ -50,7 +75,8 @@ export class RegistrarStockModalComponent implements OnInit {
     private almacenConfigService: AlmacenConfigService,
     private fb: FormBuilder
   ) {
-    this.stockForm = this.fb.group({
+    this.stockForm = this.fb.group(
+      {
       compraId: [''],
       itemId: [''],
       almacenId: ['', Validators.required],
@@ -60,7 +86,14 @@ export class RegistrarStockModalComponent implements OnInit {
       cantidad: [1, [Validators.required, Validators.min(1)]],
       numero: ['', Validators.maxLength(50)],
       descripcion: ['', Validators.maxLength(255)]
-    });
+      },
+      { validators: [numeroODescripcionSiSinItemValidator] }
+    );
+
+    const revalidarGrupo = () => this.stockForm.updateValueAndValidity({ emitEvent: false });
+    this.stockForm.get('itemId')?.valueChanges.subscribe(revalidarGrupo);
+    this.stockForm.get('numero')?.valueChanges.subscribe(revalidarGrupo);
+    this.stockForm.get('descripcion')?.valueChanges.subscribe(revalidarGrupo);
   }
 
   ngOnInit(): void {
@@ -290,7 +323,20 @@ export class RegistrarStockModalComponent implements OnInit {
     return this.stockForm.valid;
   }
 
+  /** Con ítem de compra seleccionado, número y descripción son opcionales. */
+  tieneItemDeCompraSeleccionado(): boolean {
+    const raw = this.stockForm.get('itemId')?.value;
+    return (
+      raw !== '' &&
+      raw !== null &&
+      raw !== undefined &&
+      !Number.isNaN(Number(raw)) &&
+      Number(raw) > 0
+    );
+  }
+
   guardar(): void {
+    this.stockForm.markAllAsTouched();
     if (!this.isFormValid() || this.guardando) return;
     this.guardando = true;
     const fd = this.stockForm.value;

@@ -509,7 +509,7 @@
             </div>
 
             <div class="col-md-3 mb-3" *ngIf="divisionesDisponibles.length > 0">
-              <label for="division" class="form-label">Sección</label>
+              <label for="division" class="form-label">Sección (Opcional)</label>
               <select 
                 class="form-select" 
                 id="division"
@@ -519,7 +519,6 @@
                   {{ div }}
                 </option>
               </select>
-              <small class="form-text text-muted">Opcional</small>
             </div>
           </div>
         </div>
@@ -548,28 +547,28 @@
             </div>
 
             <div class="col-md-4 mb-3">
-              <label for="numero" class="form-label">Número</label>
+              <label for="numero" class="form-label">Número (Opcional)</label>
               <input 
                 type="text" 
                 class="form-control" 
                 id="numero"
                 formControlName="numero"
-                placeholder="Número identificador (opcional)"
-                maxlength="50">
+                maxlength="50"
+                placeholder="Número de PC">
               <div *ngIf="stockForm.get('numero')?.invalid && stockForm.get('numero')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('numero')?.errors?.['maxlength']">El número no puede exceder 50 caracteres</small>
               </div>
             </div>
 
             <div class="col-md-12 mb-3">
-              <label for="descripcion" class="form-label">Descripción</label>
+              <label for="descripcion" class="form-label">Descripción (Opcional)</label>
               <textarea 
                 class="form-control" 
                 id="descripcion"
                 formControlName="descripcion"
-                placeholder="Descripción adicional del stock (opcional)"
                 maxlength="255"
-                rows="3"></textarea>
+                rows="3"
+                placeholder="Descripción adicional"></textarea>
               <div *ngIf="stockForm.get('descripcion')?.invalid && stockForm.get('descripcion')?.touched" class="text-danger mt-1">
                 <small *ngIf="stockForm.get('descripcion')?.errors?.['maxlength']">La descripción no puede exceder 255 caracteres</small>
               </div>

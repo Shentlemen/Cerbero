@@ -34,8 +34,9 @@ export class UserProfileComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-      password: ['', [Validators.minLength(6)]], // Opcional para cambios
-      confirmPassword: ['', [Validators.minLength(6)]], // Opcional para cambios
+      /* Sin minLength aquí: vacío = válido; longitud y coincidencia en onSubmit */
+      password: [''],
+      confirmPassword: [''],
       role: [{ value: '', disabled: true }] // Rol deshabilitado
     });
   }
@@ -59,14 +60,32 @@ export class UserProfileComponent implements OnInit {
 
   populateForm(): void {
     if (this.currentUser) {
+      const u = this.currentUser;
       this.userForm.patchValue({
-        username: this.currentUser.username,
-        email: this.currentUser.email,
-        firstName: this.currentUser.firstName,
-        lastName: this.currentUser.lastName,
-        role: this.currentUser.role
+        username: u.username ?? '',
+        email: u.email ?? '',
+        firstName: u.firstName ?? '',
+        lastName: u.lastName ?? '',
+        role: this.getRoleLabel(u.role)
       });
     }
+  }
+
+  /** Solo campos obligatorios del perfil — contraseña es opcional y no cuenta para habilitar el botón. */
+  canSaveChanges(): boolean {
+    if (!this.isEditing || this.loading) {
+      return false;
+    }
+    const keys: Array<'username' | 'email' | 'firstName' | 'lastName'> = [
+      'username',
+      'email',
+      'firstName',
+      'lastName'
+    ];
+    return keys.every((key) => {
+      const c = this.userForm.get(key);
+      return c != null && !c.disabled && c.valid;
+    });
   }
 
   toggleEdit(): void {
@@ -78,6 +97,7 @@ export class UserProfileComponent implements OnInit {
       this.userForm.get('lastName')?.enable();
       this.userForm.get('password')?.enable();
       this.userForm.get('confirmPassword')?.enable();
+      this.userForm.patchValue({ password: '', confirmPassword: '' }, { emitEvent: false });
     } else {
       this.userForm.get('username')?.disable();
       this.userForm.get('email')?.disable();
@@ -90,7 +110,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.userForm.valid && this.currentUser) {
+    if (this.canSaveChanges() && this.currentUser) {
       // Validar que las contraseñas coincidan si se proporcionan
       const password = this.userForm.get('password')?.value;
       const confirmPassword = this.userForm.get('confirmPassword')?.value;
@@ -99,6 +119,14 @@ export class UserProfileComponent implements OnInit {
         this.notificationService.showError(
           'Error de Validación',
           'Las contraseñas no coinciden'
+        );
+        return;
+      }
+
+      if (password && password.trim() !== '' && String(password).length < 6) {
+        this.notificationService.showError(
+          'Error de Validación',
+          'La contraseña debe tener al menos 6 caracteres'
         );
         return;
       }
@@ -142,11 +170,8 @@ export class UserProfileComponent implements OnInit {
       });
     } else {
       // Marcar todos los campos como touched para mostrar los errores
-      Object.keys(this.userForm.controls).forEach(key => {
-        const control = this.userForm.get(key);
-        if (control && !control.disabled) {
-          control.markAsTouched();
-        }
+      ['username', 'email', 'firstName', 'lastName'].forEach((key) => {
+        this.userForm.get(key)?.markAsTouched();
       });
     }
   }

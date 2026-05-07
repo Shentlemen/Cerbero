@@ -362,17 +362,41 @@ button.print-btn:disabled {
   color: #212529;
 }
 
-/* Badges tipo stock: alineados con paleta de la app (texto #2c3e50, acento #3498db) */
-.badge-stock-tipo {
-  font-size: 0.75rem;
+/* Columna Tipo: chips discretos (evita el mismo azul sólido para ítem y equipo) */
+.stock-tipo-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 0.35em 0.65em;
-  border-radius: 6px;
+  line-height: 1.25;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
 
-.badge-stock-item {
-  background: #3498db;
-  color: #fff;
+.stock-tipo-etiqueta i {
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+.stock-tipo-etiqueta--item {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #6ee7b7;
+}
+
+.stock-tipo-etiqueta--equipo {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.stock-tipo-etiqueta--dispositivo {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #c4b5fd;
 }
 
 .descripcion-col {
@@ -391,6 +415,9 @@ button.print-btn:disabled {
 
 /* Edición de stock: outline — datos azul; cantidad verde teal (ver .editar-cantidad-btn) */
 .editar-datos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid #3498db;
   color: #2980b9;
@@ -399,8 +426,7 @@ button.print-btn:disabled {
   font-size: 0.75rem;
   font-weight: 600;
   transition: all 0.2s ease;
-  min-width: 92px;
-  text-align: center;
+  min-width: 118px;
   box-shadow: none;
 }
 
@@ -419,6 +445,9 @@ button.print-btn:disabled {
 
 /* Verde teal: distinto del Reactivar (#27ae60 siempre relleno) */
 .editar-cantidad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid #117864;
   color: #0d5c4a;
@@ -427,8 +456,7 @@ button.print-btn:disabled {
   font-size: 0.75rem;
   font-weight: 600;
   transition: all 0.2s ease;
-  min-width: 108px;
-  text-align: center;
+  min-width: 134px;
   box-shadow: none;
 }
 
@@ -443,6 +471,42 @@ button.print-btn:disabled {
 .editar-cantidad-btn:focus-visible {
   outline: 2px solid rgba(22, 160, 133, 0.45);
   outline-offset: 2px;
+}
+
+.eliminar-stock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #c0392b;
+  color: #922b21;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  box-shadow: none;
+}
+
+.eliminar-stock-btn:hover:not(:disabled) {
+  background: #c0392b;
+  border-color: #a93226;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(192, 57, 43, 0.35);
+}
+
+.eliminar-stock-btn:focus-visible {
+  outline: 2px solid rgba(192, 57, 43, 0.45);
+  outline-offset: 2px;
+}
+
+.eliminar-stock-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Transferir / Reactivar: outline transparente + borde de color; relleno al hover (laboratorio, cementerio, stock) */

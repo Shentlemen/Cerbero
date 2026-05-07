@@ -263,6 +263,42 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   box-shadow: none;
 }
 
+/*
+ * Anillo azul de foco de Bootstrap 5 en .btn (box-shadow 0 0 0 .25rem rgba(13,110,253,.25)).
+ * Las variantes outline/small y muchas pantallas no estaban cubiertas por las reglas por tipo.
+ */
+.btn:focus,
+.btn:focus-visible {
+  outline: none !important;
+}
+
+.btn:focus-visible {
+  box-shadow: none !important;
+}
+
+/* Mantener la sombra gris del tema en primario al enfocar (sin halo azul). */
+.btn-primary:focus,
+.btn-primary:focus-visible,
+.btn.btn-primary:focus,
+.btn.btn-primary:focus-visible,
+.action-buttons .btn-primary:focus-visible {
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2) !important;
+}
+
+.btn-primary:hover:focus-visible,
+.btn.btn-primary:hover:focus-visible {
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3) !important;
+}
+
+/* Botones nativos sin .btn (p. ej. Salir en app-header): mismo criterio, sin anillo del navegador. */
+.app-header button:not(.btn):focus,
+.app-header button:not(.btn):focus-visible,
+.menu-header button:not(.btn):focus,
+.menu-header button:not(.btn):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Estilos específicos para botones de acción (Ver, Editar, Eliminar) */
 /* Botones secundarios (Cerrar, Cancelar) - mismo estilo outline que info/warning */
 .btn-secondary,
@@ -1252,6 +1288,90 @@ ngb-pagination.custom-pagination {
   color: #2c3e50;
 }
 
+/*
+ * Inventario terminales + dispositivos: misma cabecera y cuerpo.
+ * Usar junto con generic-table o assets-table (clase extra en la <table>).
+ */
+.cerbero-list-table {
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.cerbero-list-table thead th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  cursor: default;
+  vertical-align: middle;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cerbero-list-table thead th:not(.sortable-header):hover {
+  background: #f1f5f9;
+}
+
+.cerbero-list-table thead th.sortable-header {
+  cursor: pointer;
+}
+
+.cerbero-list-table thead th.sortable-header:hover {
+  background: #eef2ff !important;
+  color: #4338ca !important;
+}
+
+.cerbero-list-table thead th.sortable-header.active {
+  background: #e8eaff !important;
+  color: #312e81 !important;
+}
+
+.cerbero-list-table .sortable-header .th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.cerbero-list-table .sortable-header .th-content i {
+  font-size: 0.7rem;
+  color: #a5b4fc;
+  transition: color 0.15s ease;
+}
+
+.cerbero-list-table thead th.sortable-header:hover .th-content i {
+  color: #6366f1;
+}
+
+.cerbero-list-table thead th.sortable-header.active .th-content i {
+  color: #4f46e5;
+}
+
+.cerbero-list-table .th-content {
+  position: static;
+}
+
+.cerbero-list-table tbody td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  font-size: 0.9375rem;
+  vertical-align: middle;
+}
+
+.cerbero-list-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.cerbero-list-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
 /* Estilos comunes para filas de tabla */
 .generic-row {
   cursor: pointer;
@@ -1478,7 +1598,11 @@ ngb-pagination.custom-pagination {
   }
 }
 
-/* Estilos para el diálogo de confirmación */
+/*
+ * Confirmación tipo modal (eliminar, etc.) y variante `.estado-dialog`.
+ * Una sola fuente aquí — no duplicar en componentes; extensiones muy puntuales
+ * pueden vivir como `.confirm-dialog-button.reactivar` en ese módulo.
+ */
 .confirm-dialog-overlay {
   position: fixed;
   top: 0;
@@ -1553,9 +1677,190 @@ ngb-pagination.custom-pagination {
   color: white;
 }
 
-.confirm-dialog-button.confirm:hover {
+.confirm-dialog-button.confirm:hover:not(:disabled) {
   background: #c82333;
   transform: translateY(-2px);
+}
+
+.confirm-dialog-button.confirm:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.confirm-dialog-message p {
+  margin: 0 0 1rem 0;
+}
+
+.confirm-dialog-message p:last-child {
+  margin-bottom: 0;
+}
+
+.confirm-dialog-message strong {
+  color: #dc3545;
+}
+
+/* Variantes del botón de acción dentro de estado-dialog (Dar de baja / Enviar a almacén) */
+.confirm-dialog-button.baja {
+  background: #ffc107;
+  color: #212529;
+}
+
+.confirm-dialog-button.baja:hover:not(:disabled) {
+  background: #e0a800;
+}
+
+.confirm-dialog-button.almacen {
+  background: #212529;
+  color: white;
+}
+
+.confirm-dialog-button.almacen:hover:not(:disabled) {
+  background: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Modal multi-paso o con formulario — compartido (assets, devices, user-mgmt, …) */
+.confirm-dialog.estado-dialog {
+  min-width: 520px;
+  max-width: 620px;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.estado-dialog .confirm-dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  color: #2c3e50;
+  font-weight: 600;
+  padding: 1rem 1.25rem;
+  margin: 1rem 1rem 0.75rem;
+}
+
+.estado-dialog .estado-title-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.estado-dialog .btn-close {
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  padding: 0.35rem;
+  opacity: 0.5;
+}
+
+.estado-dialog .btn-close:hover {
+  border-color: #adb5bd;
+  opacity: 0.75;
+}
+
+.estado-dialog .confirm-dialog-message {
+  text-align: left;
+  padding: 0 1.25rem 1.25rem;
+  background: #fff;
+  margin-bottom: 0;
+}
+
+.estado-dialog .confirm-dialog-message p {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.estado-dialog .equipo-info {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #0d6efd;
+}
+
+.estado-dialog .equipo-info h6 {
+  color: #2c3e50;
+}
+
+.estado-dialog .confirm-dialog-buttons {
+  display: flex;
+  padding: 0 1.25rem 1.25rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.estado-dialog .confirm-dialog-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 120px;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.observaciones-container {
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
+.observaciones-container label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.observaciones-container textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.observaciones-container textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.observaciones-container .text-muted {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.estado-dialog .confirm-dialog-button.cancel {
+  background: transparent !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+.estado-dialog .confirm-dialog-button.cancel:hover:not(:disabled) {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
 @media (max-width: 768px) {
@@ -1563,19 +1868,26 @@ ngb-pagination.custom-pagination {
     padding: 1.5rem;
     margin: 1rem;
   }
-  
+
+  .confirm-dialog.estado-dialog {
+    min-width: 300px;
+    max-width: 90vw;
+    margin: 1rem;
+    padding: 0;
+  }
+
   .confirm-dialog-title {
     font-size: 1.1rem;
   }
-  
+
   .confirm-dialog-message {
     font-size: 0.95rem;
   }
-  
+
   .confirm-dialog-buttons {
     flex-direction: column;
   }
-  
+
   .confirm-dialog-button {
     width: 100%;
   }
@@ -1716,6 +2028,8 @@ ngb-pagination.custom-pagination {
 
 .filter-btn i {
   font-size: 0.8rem;
+  /* Icono siempre con el color del dispositivo (como en hover/activo) */
+  color: var(--device-color, #3498db);
 }
 
 .filter-btn .count {
@@ -1826,6 +2140,54 @@ ngb-pagination.custom-pagination {
   box-shadow: none !important;
 }
 
+/* --- Dashboard: botones de filtros de alertas (.btn-filter) --- */
+/* Quitar completamente el reborde / anillo azul del navegador o Bootstrap */
+.btn-filter {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn-filter:focus,
+.btn-filter:focus-visible,
+.btn-filter:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn-filter *:focus,
+.btn-filter *:focus-visible,
+.btn-filter *:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Quitar también cualquier outline en texto e iconos dentro de TODOS los botones */
+button:focus,
+button:focus-visible,
+button:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button *:focus,
+button *:focus-visible,
+button *:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Refuerzo extra solo en el dashboard: texto e iconos dentro de los filtros */
+.dashboard-container .btn-filter *,
+.dashboard-container .btn-filter *:hover,
+.dashboard-container .btn-filter *:focus,
+.dashboard-container .btn-filter *:focus-visible,
+.dashboard-container .btn-filter *:active {
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
 /* Configuración global de zoom - Reducir tamaño del 20%
    Nota: no se aplica cuando el body tiene la clase .no-global-zoom
    (por ejemplo, en la demo de almacén 3D). */
@@ -1877,6 +2239,30 @@ html, body {
   padding: 0;
   background: #ffffff; /* Fondo blanco sólido */
   overflow-x: hidden; /* Evitar scroll horizontal */
+}
+
+/*
+ * Mi perfil (ruta /user-profile): el zoom global del body puede dejar huecos claros al scrollear.
+ * Forzamos negro también en html/body y en la cascata app-root → app-container → main hasta el alto del contenido.
+ */
+html:has(app-user-profile),
+body:has(app-user-profile) {
+  background-color: #000 !important;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+app-root:has(app-user-profile),
+app-root:has(app-user-profile) .app-container,
+app-root:has(app-user-profile) .app-container > .main-content {
+  background-color: #000;
+}
+
+app-root:has(app-user-profile) .app-container {
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex: 1 1 auto;
 }
 
 /* Asegurar que los contenedores principales usen todo el espacio disponible */

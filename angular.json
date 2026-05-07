@@ -42,6 +42,7 @@
             "styles": [
               "src/styles.css",
               "src/assets/css/bootstrap.min.css",
+              "src/styles-after-bootstrap.css",
               "src/assets/css/all.min.css",
               "src/assets/css/roboto-fonts.css",
               "src/assets/css/material-icons.css",

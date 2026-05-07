@@ -40,26 +40,43 @@
   font-size: 1.5rem;
 }
 
-.tickets-container .btn-tickets-new {
+.tickets-container .actions .btn.btn-export.btn-agregar-nuevo {
+  text-decoration: none;
+}
+
+.tickets-modal-nuevo-body {
+  max-height: min(75vh, 36rem);
+  overflow-y: auto;
+}
+
+.btn-ticket-nuevo-submit {
   background: linear-gradient(135deg, #3498db, #2980b9) !important;
   color: #fff !important;
   border: none !important;
   box-shadow: 0 2px 8px rgba(52, 152, 219, 0.35);
   font-weight: 600;
-  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.tickets-container .btn-tickets-new:hover {
+.btn-ticket-nuevo-submit:hover:not(:disabled) {
   background: linear-gradient(135deg, #2980b9, #1f6dad) !important;
   color: #fff !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.45);
-  text-decoration: none;
 }
 
-.tickets-container .btn-tickets-new:focus-visible {
+.btn-ticket-nuevo-submit:focus-visible {
   outline: 2px solid #3498db;
   outline-offset: 2px;
+}
+
+.btn-ticket-nuevo-submit:disabled {
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .tickets-filter-row {
@@ -92,6 +109,12 @@
   width: auto;
   min-width: 8rem;
   max-width: 200px;
+}
+
+.tickets-filter-busqueda {
+  flex: 1 1 auto;
+  min-width: min(100%, 10rem);
+  max-width: 280px;
 }
 
 .tickets-container .badge {

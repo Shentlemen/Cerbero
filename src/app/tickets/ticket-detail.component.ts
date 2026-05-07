@@ -13,6 +13,7 @@ import {
   TicketEstado,
   TicketMovimiento,
   TicketMovimientoView,
+  TicketPrioridad,
   TicketsService
 } from '../services/tickets.service';
 
@@ -31,9 +32,10 @@ export class TicketDetailComponent implements OnInit {
   loading = false;
 
   nuevoEstado: TicketEstado | '' = '';
+  /** Vacío = no derivar; solo cambiar estado. */
   nuevaArea = '';
-  notaEstado = '';
-  notaArea = '';
+  /** Nota única para el panel de gestión (obligatoria si hay derivación). */
+  notaGestion = '';
   comentario = '';
   /** Nota opcional al cerrar o reabrir como creador (estado RESUELTO). */
   notaCierreCreador = '';
@@ -99,13 +101,70 @@ export class TicketDetailComponent implements OnInit {
     });
   }
 
-  cambiarEstado(): void {
+  /**
+   * Un solo botón: solo estado | solo derivar (estado→DERIVADO en backend) | ambos en una llamada atómica.
+   */
+  aplicarGestionTicket(): void {
     if (!this.ticket || !this.nuevoEstado) return;
-    this.ticketsService.cambiarEstado(this.ticket.id, this.nuevoEstado, this.notaEstado.trim() || undefined).subscribe({
+
+    const nota = this.notaGestion.trim();
+    const derivar = !!this.nuevaArea && this.nuevaArea !== this.ticket.areaActual;
+    const cambiaEstado = this.nuevoEstado !== this.ticket.estado;
+
+    if (!derivar && !cambiaEstado) {
+      this.notificationService.showError('Sin cambios', 'Elegí otro estado o un área de destino distinta a la actual.');
+      return;
+    }
+    if (derivar && !nota) {
+      this.notificationService.showError('Nota obligatoria', 'Al derivar a otra área tenés que indicar el motivo en la nota.');
+      return;
+    }
+
+    if (derivar && cambiaEstado) {
+      this.ticketsService
+        .cambiarEstadoYArea(this.ticket.id, this.nuevoEstado, this.nuevaArea, nota || undefined)
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.notificationService.showSuccessMessage('Estado y área actualizados. Volviendo a la bandeja...');
+              this.notaGestion = '';
+              this.nuevaArea = '';
+              this.router.navigate(['/menu/tickets']);
+            } else {
+              this.notificationService.showError('Error', response.message || 'No se pudo aplicar los cambios.');
+            }
+          },
+          error: (error) => {
+            this.notificationService.showError('Error', error?.error?.message || 'No se pudo aplicar los cambios.');
+          }
+        });
+      return;
+    }
+
+    if (derivar) {
+      this.ticketsService.cambiarArea(this.ticket.id, this.nuevaArea, nota || undefined).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationService.showSuccessMessage('Área actualizada. Volviendo a la bandeja...');
+            this.nuevaArea = '';
+            this.notaGestion = '';
+            this.router.navigate(['/menu/tickets']);
+          } else {
+            this.notificationService.showError('Error', response.message || 'No se pudo cambiar área.');
+          }
+        },
+        error: (error) => {
+          this.notificationService.showError('Error', error?.error?.message || 'No se pudo cambiar área.');
+        }
+      });
+      return;
+    }
+
+    this.ticketsService.cambiarEstado(this.ticket.id, this.nuevoEstado, nota || undefined).subscribe({
       next: (response) => {
         if (response.success) {
           this.notificationService.showSuccessMessage('Estado actualizado.');
-          this.notaEstado = '';
+          this.notaGestion = '';
           this.cargarTodo();
         } else {
           this.notificationService.showError('Error', response.message || 'No se pudo cambiar estado.');
@@ -113,25 +172,6 @@ export class TicketDetailComponent implements OnInit {
       },
       error: (error) => {
         this.notificationService.showError('Error', error?.error?.message || 'No se pudo cambiar estado.');
-      }
-    });
-  }
-
-  cambiarArea(): void {
-    if (!this.ticket || !this.nuevaArea) return;
-    this.ticketsService.cambiarArea(this.ticket.id, this.nuevaArea, this.notaArea.trim() || undefined).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.notificationService.showSuccessMessage('Área actualizada. Volviendo a la bandeja...');
-          this.nuevaArea = '';
-          this.notaArea = '';
-          this.router.navigate(['/menu/tickets']);
-        } else {
-          this.notificationService.showError('Error', response.message || 'No se pudo cambiar área.');
-        }
-      },
-      error: (error) => {
-        this.notificationService.showError('Error', error?.error?.message || 'No se pudo cambiar área.');
       }
     });
   }
@@ -221,15 +261,65 @@ export class TicketDetailComponent implements OnInit {
     if (this.ticket.creadoPorUserId === u.id) return true;
     if (this.ticket.areaActual === 'LABORATORIO') return false;
     if (this.permissionsService.isUser()) return false;
-    return u.role === this.ticket.areaActual;
+    // Misma lógica que canProcessTicketsForArea: rol efectivo (p. ej. GM «Ver como ALMACEN»).
+    const efectivo = this.permissionsService.getEffectiveRole();
+    return efectivo !== null && efectivo === this.ticket.areaActual;
   }
 
   getEstadoLabel(estado?: string | null): string {
     return this.formatClaveLegible(estado);
   }
 
+  getHeroPrioridadLabel(prioridad?: TicketPrioridad | string | null): string {
+    return this.formatClaveLegible(prioridad ?? undefined);
+  }
+
+  getHeroAreaLabel(area?: string | null): string {
+    return this.formatClaveLegible(area ?? undefined);
+  }
+
+  getHeroEstadoClass(estado: TicketEstado): string {
+    const map: Record<TicketEstado, string> = {
+      NUEVO: 'td-estado--nuevo',
+      EN_REVISION: 'td-estado--en-revision',
+      EN_GESTION: 'td-estado--en-gestion',
+      DERIVADO: 'td-estado--derivado',
+      RESUELTO: 'td-estado--resuelto',
+      CERRADO: 'td-estado--cerrado',
+      REABIERTO: 'td-estado--reabierto'
+    };
+    return map[estado] ?? 'td-estado--nuevo';
+  }
+
+  getHeroPrioridadClass(prioridad: TicketPrioridad | string): string {
+    const map: Record<string, string> = {
+      BAJA: 'td-prioridad--baja',
+      MEDIA: 'td-prioridad--media',
+      ALTA: 'td-prioridad--alta',
+      CRITICA: 'td-prioridad--critica'
+    };
+    return map[String(prioridad).toUpperCase()] || 'td-prioridad--default';
+  }
+
+  getHeroAreaClass(area: string): string {
+    const key = (area || '').trim().toUpperCase();
+    const map: Record<string, string> = {
+      ALMACEN: 'td-area--almacen',
+      INVENTARIO: 'td-area--inventario',
+      COMPRAS: 'td-area--compras',
+      GESTION_EQUIP: 'td-area--gestion-equip',
+      IMPRESION: 'td-area--impresion',
+      GARANTIA: 'td-area--garantia',
+      LABORATORIO: 'td-area--laboratorio'
+    };
+    return map[key] || 'td-area--default';
+  }
+
   /** CREACION, CAMBIO_ESTADO, etc. → texto sin guiones bajos. */
   getTipoEventoLabel(tipo?: string | null): string {
+    if (tipo === 'CAMBIO_ESTADO_Y_AREA') {
+      return 'Cambio de estado y área';
+    }
     return this.formatClaveLegible(tipo);
   }
 

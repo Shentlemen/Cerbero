@@ -175,27 +175,48 @@
                     <td>
                       <span
                         *ngIf="esEquipoEspecial(item)"
-                        class="badge badge-stock-tipo badge-stock-item d-inline-flex align-items-center gap-1">
-                        <i class="fas" [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'fa-network-wired' : 'fa-desktop'"></i>
+                        class="stock-tipo-etiqueta"
+                        [class.stock-tipo-etiqueta--equipo]="getTipoEquipo(item) !== 'DISPOSITIVO'"
+                        [class.stock-tipo-etiqueta--dispositivo]="getTipoEquipo(item) === 'DISPOSITIVO'">
+                        <i class="fas" aria-hidden="true" [ngClass]="getTipoEquipo(item) === 'DISPOSITIVO' ? 'fa-network-wired' : 'fa-desktop'"></i>
                         {{ getTipoEquipo(item) === 'DISPOSITIVO' ? 'Dispositivo' : 'Equipo' }}
                       </span>
-                      <span *ngIf="!esEquipoEspecial(item)" class="badge badge-stock-tipo badge-stock-item">Ítem</span>
+                      <span *ngIf="!esEquipoEspecial(item)" class="stock-tipo-etiqueta stock-tipo-etiqueta--item">Ítem</span>
                     </td>
                     <td *ngIf="canManageStock()">
                       <div class="acciones-col">
                         <button
-                          *ngIf="!esEquipoEspecial(item)"
+                          *ngIf="!esEquipoEspecial(item) && getStockAlmacenNumericId(item) != null"
                           type="button"
                           class="btn btn-sm editar-datos-btn"
                           (click)="abrirModalEditarRegistro(item)">
+                          <i class="fas fa-edit me-1" aria-hidden="true"></i>
                           Editar datos
                         </button>
                         <button
-                          *ngIf="!esEquipoEspecial(item)"
+                          *ngIf="!esEquipoEspecial(item) && getStockAlmacenNumericId(item) != null"
                           type="button"
                           class="btn btn-sm editar-cantidad-btn"
                           (click)="abrirModalCantidad(item)">
+                          <i class="fas fa-boxes me-1" aria-hidden="true"></i>
                           Editar cantidad
+                        </button>
+                        <button
+                          *ngIf="!esEquipoEspecial(item) && getStockAlmacenNumericId(item) != null"
+                          type="button"
+                          class="btn btn-sm eliminar-stock-btn"
+                          [disabled]="
+                            eliminandoStockId === getStockAlmacenNumericId(item) ||
+                            transferiendoItemId === item.id ||
+                            reactivandoItemId === item.id
+                          "
+                          (click)="eliminarRegistroStock(item)">
+                          <i
+                            class="fas me-1"
+                            aria-hidden="true"
+                            [ngClass]="eliminandoStockId === getStockAlmacenNumericId(item) ? 'fa-spinner fa-spin' : 'fa-trash-alt'"
+                          ></i>
+                          {{ eliminandoStockId === getStockAlmacenNumericId(item) ? 'Eliminando…' : 'Eliminar' }}
                         </button>
                         <ng-container *ngIf="esEquipoEspecial(item)">
                           <button
@@ -262,4 +283,26 @@
       </ng-template>
     </div>
   </div>
-</div> 
+
+  <!-- Confirmar eliminar stock (igual patrón que assets + estilos globales `confirm-dialog-*`) -->
+  <div *ngIf="showConfirmEliminarStock" class="confirm-dialog-overlay">
+    <div class="confirm-dialog" (click)="$event.stopPropagation()">
+      <div class="confirm-dialog-title">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+        Confirmar Eliminación
+      </div>
+      <div class="confirm-dialog-message">
+        ¿Está seguro que desea eliminar del stock el ítem "{{ stockEliminarEtiqueta }}"? Esta acción no se puede deshacer.
+      </div>
+      <div class="confirm-dialog-buttons">
+        <button type="button" class="confirm-dialog-button cancel" (click)="cancelarConfirmacionEliminarStock()">
+          Cancelar
+        </button>
+        <button type="button" class="confirm-dialog-button confirm" (click)="confirmarEliminacionRegistroStock()">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

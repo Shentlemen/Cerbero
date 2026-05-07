@@ -133,17 +133,33 @@
 }
 
 .user-name {
+  display: inline-block;
   color: #ecf0f1;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.3s ease;
   white-space: nowrap;
+  padding: 4px 10px;
+  margin: 0;
+  border-radius: 6px;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Sin azul: resalte suave tipo “chip” sobre el fondo oscuro. */
 .user-name:hover {
-  color: #3498db;
-  text-decoration: underline;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  text-decoration: none;
+}
+
+.user-name:active {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.user-name:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 2px;
 }
 
 .badge {
@@ -175,6 +191,33 @@
   border-color: rgba(231, 76, 60, 0.5);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+/* Sin anillo azul (Bootstrap / navegador); :host encapsula pero refuerza !important */
+.btn-logout:focus,
+.btn-logout:focus-visible,
+.btn-logout:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.btn-logout:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+.btn-logout:active {
+  transform: translateY(0);
+}
+
+.btn-logout::-moz-focus-inner {
+  border: 0;
+}
+
+.btn-logout i,
+.btn-logout .logout-text {
+  outline: none !important;
 }
 
 .btn-logout i {

@@ -1,11 +1,12 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NgbActiveModal, NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { NotificationService } from '../services/notification.service';
 import { PermissionsService } from '../services/permissions.service';
-import { Ticket, TicketEstado, TicketsService } from '../services/tickets.service';
+import { Ticket, TicketEstado, TicketPrioridad, TicketsService } from '../services/tickets.service';
 import { forkJoin, Subscription } from 'rxjs';
 
 type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'fechaActualizacion';
@@ -13,7 +14,7 @@ type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'f
 @Component({
   selector: 'app-tickets',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, NotificationContainerComponent],
+  imports: [CommonModule, RouterModule, FormsModule, NgbModalModule, NotificationContainerComponent],
   templateUrl: './tickets.component.html',
   styleUrls: ['./tickets.component.css']
 })
@@ -27,9 +28,10 @@ export class TicketsComponent implements OnInit, OnDestroy {
   loadingCerrados = false;
   estadoFiltro: '' | TicketEstado = '';
 
-  /** Filtros locales (área y código) sobre las listas ya cargadas. */
+  /** Filtro de área aplicado a todas las bandejas (sobre datos ya cargados). */
   filtroArea = '';
-  filtroCodigo = '';
+  /** Filtro en vivo por código o título sobre las tres bandejas (datos ya cargados). */
+  busquedaCodigoTitulo = '';
 
   ordenColumna: TicketsOrdenColumna | null = null;
   ordenAsc = true;
@@ -64,10 +66,23 @@ export class TicketsComponent implements OnInit, OnDestroy {
   private viewAsSub?: Subscription;
   private lastViewAsRole: string | null = null;
 
+  /** Modal nuevo ticket (mismo flujo que el antiguo ticket-create). */
+  creandoTicket = false;
+  ticketNuevoForm = {
+    titulo: '',
+    descripcion: '',
+    areaDestino: '',
+    prioridad: 'MEDIA' as TicketPrioridad,
+    nota: ''
+  };
+  readonly prioridadesTicket: TicketPrioridad[] = ['BAJA', 'MEDIA', 'ALTA', 'CRITICA'];
+
   constructor(
     private ticketsService: TicketsService,
     private notificationService: NotificationService,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private modalService: NgbModal,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -189,9 +204,13 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   private filtrarLista(list: Ticket[]): Ticket[] {
     let out = list;
-    const cod = this.filtroCodigo.trim().toUpperCase();
-    if (cod) {
-      out = out.filter((t) => t.codigo.toUpperCase().includes(cod));
+    const q = this.busquedaCodigoTitulo.trim();
+    if (q) {
+      const u = q.toUpperCase();
+      out = out.filter(
+        (t) =>
+          (t.codigo || '').toUpperCase().includes(u) || (t.titulo || '').toUpperCase().includes(u)
+      );
     }
     if (this.filtroArea) {
       out = out.filter((t) => t.areaActual === this.filtroArea);
@@ -287,6 +306,65 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   canCreateTickets(): boolean {
     return this.permissionsService.canCreateTickets();
+  }
+
+  abrirModalTicketNuevo(contenido: TemplateRef<unknown>): void {
+    if (!this.canCreateTickets()) {
+      this.notificationService.showError('Sin permisos', 'No tenés permisos para crear tickets.');
+      return;
+    }
+    this.resetTicketNuevoForm();
+    this.modalService.open(contenido, {
+      size: 'xl',
+      backdrop: 'static',
+      centered: true
+    });
+  }
+
+  private resetTicketNuevoForm(): void {
+    this.ticketNuevoForm = {
+      titulo: '',
+      descripcion: '',
+      areaDestino: '',
+      prioridad: 'MEDIA',
+      nota: ''
+    };
+  }
+
+  guardarTicketNuevo(modal: NgbActiveModal): void {
+    const f = this.ticketNuevoForm;
+    if (!f.titulo.trim() || !f.descripcion.trim() || !f.areaDestino) {
+      this.notificationService.showWarning('Campos requeridos', 'Completá título, descripción y área destino.');
+      return;
+    }
+
+    this.creandoTicket = true;
+    this.ticketsService
+      .crear({
+        titulo: f.titulo.trim(),
+        descripcion: f.descripcion.trim(),
+        areaDestino: f.areaDestino,
+        prioridad: f.prioridad,
+        nota: f.nota.trim() || undefined
+      })
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            modal.close('ok');
+            this.notificationService.showSuccessMessage(`Ticket ${response.data.codigo} creado correctamente.`);
+            this.actualizarTodo();
+            this.router.navigate(['/menu/tickets', response.data.id]);
+          } else {
+            this.notificationService.showError('Error', response.message || 'No se pudo crear el ticket.');
+          }
+        },
+        error: (error) => {
+          this.notificationService.showError('Error', error?.error?.message || 'No se pudo crear el ticket.');
+        },
+        complete: () => {
+          this.creandoTicket = false;
+        }
+      });
   }
 
   esUsuarioRolGeneral(): boolean {

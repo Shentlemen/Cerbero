@@ -1,239 +1,250 @@
-<div class="profile-container">
-  <!-- Contenedor de notificaciones -->
+<div class="generic-container user-profile-root">
   <app-notification-container></app-notification-container>
-  
-  <div class="profile-header">
-    <div class="header-content">
-      <button class="btn-back" (click)="volver()">
-        <i class="fas fa-arrow-left"></i>
-        Volver
-      </button>
-      <h1 class="profile-title">
-        <i class="fas fa-user-circle"></i>
-        Mi Perfil
-      </h1>
-    </div>
-  </div>
 
-  <div class="profile-content">
-    <!-- Información del usuario -->
-    <div class="user-info-card" *ngIf="currentUser">
-      <div class="user-avatar">
-        <i [class]="getRoleIcon(currentUser.role)"></i>
+  <header class="header-section user-profile-header">
+    <div class="header-content user-profile-header-inner">
+      <div class="title-wrapper">
+        <h1>
+          <i class="fas fa-user-circle" aria-hidden="true"></i>
+          Mi perfil
+        </h1>
+        <p class="user-profile-subtitle mb-0">
+          Datos de tu cuenta Cerbero
+        </p>
       </div>
-      <div class="user-details">
-        <h2>{{ currentUser.firstName }} {{ currentUser.lastName }}</h2>
-        <p class="username">{{ '@' + currentUser.username }}</p>
-        <span class="role-badge" [class]="'role-' + currentUser.role.toLowerCase()">
+      <div class="user-profile-header-actions">
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm user-profile-back"
+          (click)="volver()">
+          <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
+          Volver
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="user-profile-body" *ngIf="currentUser">
+    <aside class="user-profile-summary" aria-label="Resumen del usuario">
+      <div class="user-profile-summary-card">
+        <div class="user-profile-avatar" aria-hidden="true">
           <i [class]="getRoleIcon(currentUser.role)"></i>
+        </div>
+        <h2 class="user-profile-name">
+          {{ currentUser.firstName }} {{ currentUser.lastName }}
+        </h2>
+        <p class="user-profile-handle">{{ '@' + currentUser.username }}</p>
+        <span
+          class="user-profile-role-pill"
+          [ngClass]="'user-profile-role-pill--' + currentUser.role.toLowerCase()">
+          <i [class]="getRoleIcon(currentUser.role)" aria-hidden="true"></i>
           {{ getRoleLabel(currentUser.role) }}
         </span>
       </div>
-    </div>
 
-    <!-- Mensajes de error y éxito -->
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      <i class="fas fa-exclamation-circle"></i>
-      {{ errorMessage }}
-    </div>
-    
-    <div *ngIf="successMessage" class="alert alert-success">
-      <i class="fas fa-check-circle"></i>
-      {{ successMessage }}
-    </div>
-
-    <!-- Formulario de perfil -->
-    <div class="profile-form-card">
-      <div class="card-header">
-        <h3>
-          <i class="fas fa-edit"></i>
-          Información Personal
+      <div class="content-section user-profile-meta">
+        <h3 class="user-profile-meta-title">
+          <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+          Cuenta
         </h3>
-        <button 
-          *ngIf="!isEditing" 
-          class="btn-edit" 
-          (click)="toggleEdit()"
-          [disabled]="loading">
-          <i class="fas fa-pencil-alt"></i>
-          Editar
-        </button>
+        <dl class="user-profile-dl">
+          <div class="user-profile-dl-row">
+            <dt>Alta</dt>
+            <dd>{{ currentUser.createdAt | date:'dd/MM/yyyy HH:mm' }}</dd>
+          </div>
+          <div class="user-profile-dl-row">
+            <dt>Estado</dt>
+            <dd>
+              <span class="user-profile-status">
+                <i class="fas fa-check-circle me-1" aria-hidden="true"></i>
+                Activo
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </aside>
+
+    <div class="user-profile-main">
+      <div *ngIf="errorMessage" class="alert alert-danger user-profile-alert" role="alert">
+        <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
+        {{ errorMessage }}
       </div>
 
-      <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="profile-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="username">
-              <i class="fas fa-user"></i>
-              Nombre de Usuario
-            </label>
-            <input 
-              type="text" 
-              id="username" 
-              formControlName="username"
-              [readonly]="!isEditing"
-              placeholder="Nombre de usuario">
-            <div *ngIf="userForm.get('username')?.invalid && userForm.get('username')?.touched" class="error-message">
-              <i class="fas fa-exclamation-triangle"></i>
-              El nombre de usuario es requerido y debe tener al menos 3 caracteres
-            </div>
-          </div>
+      <div *ngIf="successMessage" class="alert alert-success user-profile-alert" role="alert">
+        <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+        {{ successMessage }}
+      </div>
 
-          <div class="form-group">
-            <label for="email">
-              <i class="fas fa-envelope"></i>
-              Email
-            </label>
-            <input 
-              type="email" 
-              id="email" 
-              formControlName="email"
-              [readonly]="!isEditing"
-              placeholder="Email">
-            <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="error-message">
-              <i class="fas fa-exclamation-triangle"></i>
-              Ingrese un email válido
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstName">
-              <i class="fas fa-id-card"></i>
-              Nombre
-            </label>
-            <input 
-              type="text" 
-              id="firstName" 
-              formControlName="firstName"
-              [readonly]="!isEditing"
-              placeholder="Nombre">
-            <div *ngIf="userForm.get('firstName')?.invalid && userForm.get('firstName')?.touched" class="error-message">
-              <i class="fas fa-exclamation-triangle"></i>
-              El nombre es requerido
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="lastName">
-              <i class="fas fa-id-card"></i>
-              Apellido
-            </label>
-            <input 
-              type="text" 
-              id="lastName" 
-              formControlName="lastName"
-              [readonly]="!isEditing"
-              placeholder="Apellido">
-            <div *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched" class="error-message">
-              <i class="fas fa-exclamation-triangle"></i>
-              El apellido es requerido
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="role">
-            <i class="fas fa-shield-alt"></i>
-            Rol
-          </label>
-          <input 
-            type="text" 
-            id="role" 
-            formControlName="role"
-            readonly
-            [value]="getRoleLabel(currentUser?.role || '')"
-            class="role-display">
-          <small class="role-note">
-            <i class="fas fa-info-circle"></i>
-            El rol no puede ser modificado desde el perfil
-          </small>
-        </div>
-
-        <!-- Campos de contraseña (solo visibles en modo edición) -->
-        <div *ngIf="isEditing" class="password-section">
-          <h4>
-            <i class="fas fa-lock"></i>
-            Cambiar Contraseña
-          </h4>
-          <small class="password-note">
-            <i class="fas fa-info-circle"></i>
-            Deja los campos vacíos si no quieres cambiar la contraseña
-          </small>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="password">
-                <i class="fas fa-key"></i>
-                Nueva Contraseña
-              </label>
-              <input 
-                type="password" 
-                id="password" 
-                formControlName="password"
-                placeholder="Nueva contraseña (mínimo 6 caracteres)">
-              <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                La contraseña debe tener al menos 6 caracteres
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="confirmPassword">
-                <i class="fas fa-key"></i>
-                Confirmar Contraseña
-              </label>
-              <input 
-                type="password" 
-                id="confirmPassword" 
-                formControlName="confirmPassword"
-                placeholder="Confirmar nueva contraseña">
-              <div *ngIf="userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched" class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                Confirma la nueva contraseña
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Botones de acción -->
-        <div *ngIf="isEditing" class="form-actions">
-          <button 
-            type="submit" 
-            class="btn-save"
-            [disabled]="userForm.invalid || loading">
-            <i class="fas fa-save"></i>
-            {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
-          </button>
-          <button 
-            type="button" 
-            class="btn-cancel"
-            (click)="cancelEdit()"
+      <section class="content-section user-profile-panel" aria-labelledby="profile-form-heading">
+        <div class="user-profile-panel-head">
+          <h2 id="profile-form-heading" class="user-profile-panel-title">
+            <i class="fas fa-id-card me-2" aria-hidden="true"></i>
+            Información personal
+          </h2>
+          <button
+            *ngIf="!isEditing"
+            type="button"
+            class="btn btn-sm user-profile-btn-edit"
+            (click)="toggleEdit()"
             [disabled]="loading">
-            <i class="fas fa-times"></i>
-            Cancelar
+            <i class="fas fa-pencil-alt me-2" aria-hidden="true"></i>
+            Editar
           </button>
         </div>
-      </form>
-    </div>
 
-    <!-- Información adicional -->
-    <div class="info-card">
-      <h4>
-        <i class="fas fa-info-circle"></i>
-        Información de la Cuenta
-      </h4>
-      <div class="info-item" *ngIf="currentUser">
-        <span class="info-label">Fecha de Creación:</span>
-        <span class="info-value">{{ currentUser.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-      </div>
-      <div class="info-item" *ngIf="currentUser">
-        <span class="info-label">Estado:</span>
-        <span class="info-value status-active">
-          <i class="fas fa-check-circle"></i>
-          Activo
-        </span>
-      </div>
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-profile-form">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="username">
+                <i class="fas fa-user me-1" aria-hidden="true"></i>
+                Nombre de usuario
+              </label>
+              <input
+                type="text"
+                id="username"
+                class="form-control"
+                formControlName="username"
+                [readonly]="!isEditing"
+                placeholder="Nombre de usuario"
+                [class.is-readonly-like]="!isEditing">
+              <div
+                *ngIf="userForm.get('username')?.invalid && userForm.get('username')?.touched"
+                class="invalid-feedback d-block">
+                Requerido, mínimo 3 caracteres.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="email">
+                <i class="fas fa-envelope me-1" aria-hidden="true"></i>
+                Correo
+              </label>
+              <input
+                type="email"
+                id="email"
+                class="form-control"
+                formControlName="email"
+                [readonly]="!isEditing"
+                placeholder="correo@ejemplo.com"
+                [class.is-readonly-like]="!isEditing">
+              <div
+                *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched"
+                class="invalid-feedback d-block">
+                Ingresá un correo válido.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="firstName">
+                <i class="fas fa-signature me-1" aria-hidden="true"></i>
+                Nombre
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                class="form-control"
+                formControlName="firstName"
+                [readonly]="!isEditing"
+                placeholder="Nombre"
+                [class.is-readonly-like]="!isEditing">
+              <div
+                *ngIf="userForm.get('firstName')?.invalid && userForm.get('firstName')?.touched"
+                class="invalid-feedback d-block">
+                El nombre es requerido.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="lastName">
+                <i class="fas fa-signature me-1" aria-hidden="true"></i>
+                Apellido
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                class="form-control"
+                formControlName="lastName"
+                [readonly]="!isEditing"
+                placeholder="Apellido"
+                [class.is-readonly-like]="!isEditing">
+              <div
+                *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched"
+                class="invalid-feedback d-block">
+                El apellido es requerido.
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="role">
+                <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
+                Rol
+              </label>
+              <input
+                type="text"
+                id="role"
+                class="form-control user-profile-role-field"
+                formControlName="role"
+                readonly
+                tabindex="-1">
+              <p class="form-text mb-0">
+                <i class="fas fa-lock me-1" aria-hidden="true"></i>
+                El rol no se modifica desde esta pantalla.
+              </p>
+            </div>
+          </div>
+
+          <div *ngIf="isEditing" class="user-profile-password-block">
+            <h3 class="user-profile-password-title">
+              <i class="fas fa-lock me-2" aria-hidden="true"></i>
+              Cambiar contraseña
+            </h3>
+            <p class="form-text user-profile-password-hint">
+              Dejá ambos campos vacíos si no querés cambiar la contraseña.
+            </p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="password">Nueva contraseña</label>
+                <input
+                  type="password"
+                  id="password"
+                  class="form-control"
+                  formControlName="password"
+                  placeholder="Mínimo 6 caracteres"
+                  autocomplete="new-password">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="confirmPassword">Confirmar</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  class="form-control"
+                  formControlName="confirmPassword"
+                  placeholder="Repetir contraseña"
+                  autocomplete="new-password">
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="isEditing" class="user-profile-actions">
+            <button
+              type="button"
+              class="btn user-profile-btn-cancel"
+              (click)="cancelEdit()"
+              [disabled]="loading">
+              <i class="fas fa-times me-2" aria-hidden="true"></i>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn user-profile-btn-save"
+              [disabled]="!canSaveChanges() || loading">
+              <i class="fas fa-save me-2" aria-hidden="true"></i>
+              {{ loading ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   </div>
-</div> 
+</div>

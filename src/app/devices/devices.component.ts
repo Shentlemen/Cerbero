@@ -86,10 +86,7 @@ export class DevicesComponent implements OnInit {
   deviceToChangeState: any = null;
   estadoObservaciones: string = '';
 
-  // Control para el filtro de nombre
-  nombreEquipoControl = new FormControl('');
-
-  // Control para el filtro de búsqueda por MAC
+  /** Búsqueda por MAC (literal o solo hex) o por IP */
   macSearchControl = new FormControl('');
 
   constructor(
@@ -104,14 +101,8 @@ export class DevicesComponent implements OnInit {
     private authService: AuthService,
     private modalService: NgbModal
   ) {
-    // Suscribirse a cambios en el filtro de nombre
-    this.nombreEquipoControl.valueChanges.subscribe(value => {
-      this.aplicarFiltroNombre(value || '');
-    });
-
-    // Suscribirse a cambios en el filtro de MAC
     this.macSearchControl.valueChanges.subscribe(value => {
-      this.aplicarFiltroMac(value || '');
+      this.aplicarFiltroBusqueda(value || '');
     });
   }
 
@@ -609,6 +600,11 @@ export class DevicesComponent implements OnInit {
     return this.permissionsService.isGM() || this.permissionsService.isAdmin();
   }
 
+  /** Columnas actuales de la tabla (nombre, IP, MAC, tipo, descripción [, acciones]). */
+  get columnasTablaDispositivos(): number {
+    return this.canManageDevices() ? 6 : 5;
+  }
+
   // Métodos para los modales
   cancelarEliminacion(): void {
     this.showConfirmDialog = false;
@@ -627,31 +623,33 @@ export class DevicesComponent implements OnInit {
   }
 
   // Métodos de filtrado
-  private aplicarFiltroNombre(nombre: string): void {
-    if (!nombre.trim()) {
-      // Si no hay filtro de nombre, aplicar solo el filtro de tipo
-      this.applyFilter();
-    } else {
-      // Aplicar filtro de nombre sobre los dispositivos filtrados por tipo
-      const dispositivosPorTipo = this.obtenerDispositivosPorTipoActual();
-      this.filteredDevices = dispositivosPorTipo.filter(device => 
-        device.name?.toLowerCase().includes(nombre.toLowerCase())
-      );
-      this.actualizarPaginacion();
-    }
+  private soloHexMac(normalizado: string): string {
+    return (normalizado || '').replace(/[^a-fA-F0-9]/g, '').toLowerCase();
   }
 
-  private aplicarFiltroMac(mac: string): void {
-    if (!mac.trim()) {
-      // Si no hay filtro de MAC, aplicar solo el filtro de tipo
+  private aplicarFiltroBusqueda(term: string): void {
+    const trimmed = (term || '').trim();
+    if (!trimmed) {
       this.applyFilter();
-    } else {
-      // Aplicar filtro de MAC sobre los dispositivos filtrados por tipo
-      const dispositivosPorTipo = this.obtenerDispositivosPorTipoActual();
-      this.filteredDevices = dispositivosPorTipo.filter(device => 
-        device.mac?.toLowerCase().includes(mac.toLowerCase())
-      );
-      this.actualizarPaginacion();
+      return;
+    }
+    const t = trimmed.toLowerCase();
+    const termHex = this.soloHexMac(trimmed);
+    const dispositivosPorTipo = this.obtenerDispositivosPorTipoActual();
+    this.filteredDevices = dispositivosPorTipo.filter(device => {
+      const ip = (device.ip || '').toLowerCase();
+      if (ip.includes(t)) return true;
+      const macLower = (device.mac || '').toLowerCase();
+      if (macLower.includes(t)) return true;
+      if (termHex.length >= 2) {
+        const macHex = this.soloHexMac(device.mac || '');
+        if (macHex.includes(termHex)) return true;
+      }
+      return false;
+    });
+    this.actualizarPaginacion();
+    if (this.sortColumn) {
+      this.applySorting();
     }
   }
 
@@ -674,32 +672,29 @@ export class DevicesComponent implements OnInit {
 
   // Método para limpiar todos los filtros de búsqueda
   limpiarFiltros(): void {
-    this.nombreEquipoControl.setValue('');
     this.macSearchControl.setValue('');
     this.applyFilter();
   }
 
-  // Método para aplicar filtros de búsqueda por nombre y MAC
+  /** Aplicado al cambiar tipo de dispositivo: respeta texto de MAC/IP en el campo de búsqueda */
   private aplicarFiltrosDeBusqueda(dispositivos: NetworkInfoDTO[]): NetworkInfoDTO[] {
-    let dispositivosFiltrados = [...dispositivos];
-    
-    // Aplicar filtro de nombre si existe
-    const nombreFiltro = this.nombreEquipoControl.value;
-    if (nombreFiltro && nombreFiltro.trim()) {
-      dispositivosFiltrados = dispositivosFiltrados.filter(device => 
-        device.name?.toLowerCase().includes(nombreFiltro.toLowerCase())
-      );
-    }
-    
-    // Aplicar filtro de MAC si existe
-    const macFiltro = this.macSearchControl.value;
-    if (macFiltro && macFiltro.trim()) {
-      dispositivosFiltrados = dispositivosFiltrados.filter(device => 
-        device.mac?.toLowerCase().includes(macFiltro.toLowerCase())
-      );
-    }
-    
-    return dispositivosFiltrados;
+    const raw = this.macSearchControl.value;
+    const trimmed = (raw || '').trim();
+    if (!trimmed) return [...dispositivos];
+
+    const t = trimmed.toLowerCase();
+    const termHex = this.soloHexMac(trimmed);
+    return dispositivos.filter(device => {
+      const ip = (device.ip || '').toLowerCase();
+      if (ip.includes(t)) return true;
+      const macLower = (device.mac || '').toLowerCase();
+      if (macLower.includes(t)) return true;
+      if (termHex.length >= 2) {
+        const macHex = this.soloHexMac(device.mac || '');
+        if (macHex.includes(termHex)) return true;
+      }
+      return false;
+    });
   }
 
   // Método para exportar la lista filtrada a PDF
@@ -724,8 +719,8 @@ export class DevicesComponent implements OnInit {
     if (this.activeFilter !== 'all') {
       filtroTexto = `Filtro: ${this.activeFilter}`;
     }
-    if (this.nombreEquipoControl.value || this.macSearchControl.value) {
-      filtroTexto += ' | Búsqueda activa';
+    if (this.macSearchControl.value?.toString().trim()) {
+      filtroTexto += ' | Búsqueda activa (MAC/IP)';
     }
     doc.text(filtroTexto, 14, 28);
     
@@ -738,13 +733,14 @@ export class DevicesComponent implements OnInit {
     const tableData = this.filteredDevices.map(device => [
       device.name || 'N/A',
       device.ip || 'N/A',
+      device.mac || 'N/A',
       device.type || 'N/A',
       device.description || 'N/A'
     ]);
     
     // Crear la tabla
     autoTable(doc, {
-      head: [['Nombre de Red', 'IP', 'Tipo', 'Descripción']],
+      head: [['Nombre de Red', 'IP', 'MAC', 'Tipo', 'Descripción']],
       body: tableData,
       startY: 46,
       styles: { fontSize: 8, cellPadding: 2 },

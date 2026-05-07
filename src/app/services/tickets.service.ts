@@ -33,7 +33,12 @@ export interface Ticket {
 export interface TicketMovimiento {
   id: number;
   ticketId: number;
-  tipoEvento: 'CREACION' | 'CAMBIO_ESTADO' | 'CAMBIO_AREA' | 'NOTA';
+  tipoEvento:
+    | 'CREACION'
+    | 'CAMBIO_ESTADO'
+    | 'CAMBIO_AREA'
+    | 'CAMBIO_ESTADO_Y_AREA'
+    | 'NOTA';
   estadoAnterior?: TicketEstado | null;
   estadoNuevo?: TicketEstado | null;
   areaAnterior?: string | null;
@@ -135,6 +140,18 @@ export class TicketsService {
 
   cambiarArea(ticketId: number, areaDestino: string, nota?: string): Observable<ApiResponse<Ticket>> {
     return this.http.post<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}/area`, { areaDestino, nota }, {
+      params: this.withVistaComo()
+    });
+  }
+
+  /** Estado y área en un solo paso; un solo ítem en historial. */
+  cambiarEstadoYArea(
+    ticketId: number,
+    estado: TicketEstado,
+    areaDestino: string,
+    nota?: string
+  ): Observable<ApiResponse<Ticket>> {
+    return this.http.post<ApiResponse<Ticket>>(`${this.apiUrl}/${ticketId}/estado-area`, { estado, areaDestino, nota }, {
       params: this.withVistaComo()
     });
   }

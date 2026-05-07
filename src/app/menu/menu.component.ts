@@ -30,6 +30,7 @@ import { VersionService } from '../services/version.service';
 export class MenuComponent implements OnInit, OnDestroy {
   /** Top del layout bajo el header (60px o 60px + franja vista previa GM). */
   layoutTopPx = 60;
+  /** Mínimo alto bajo el header; el bloque crece con el contenido (evita franja blanca al hacer scroll). */
   layoutContentHeightCalc = 'calc(100vh - 60px)';
   private layoutSub?: Subscription;
 

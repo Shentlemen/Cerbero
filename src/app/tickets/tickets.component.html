@@ -9,10 +9,18 @@
           Tickets / Reclamos
         </h1>
       </div>
-      <a *ngIf="canCreateTickets()" routerLink="/menu/tickets/nuevo" class="btn btn-tickets-new btn-sm">
-        <i class="fas fa-plus"></i>
-        Nuevo ticket
-      </a>
+      <div
+        class="actions d-flex justify-content-end align-items-center"
+        style="gap: 1rem"
+        *ngIf="canCreateTickets()">
+        <button
+          type="button"
+          class="btn btn-export btn-agregar-nuevo"
+          (click)="abrirModalTicketNuevo(ticketNuevoModal)">
+          <i class="fas fa-plus me-2" aria-hidden="true"></i>
+          Nuevo ticket
+        </button>
+      </div>
     </div>
     <div class="tickets-filter-row">
       <label class="tickets-filter-label">Estado</label>
@@ -28,17 +36,16 @@
         <option value="">Todas</option>
         <option *ngFor="let area of areasTicket" [value]="area">{{ area }}</option>
       </select>
-      <label class="tickets-filter-label">Código</label>
+      <label class="tickets-filter-label" for="tickets-busqueda-global">Buscar</label>
       <input
+        id="tickets-busqueda-global"
         type="search"
-        class="form-control form-control-sm tickets-filter-input"
-        [(ngModel)]="filtroCodigo"
-        placeholder="Ej. TCK-000042"
-        autocomplete="off" />
-      <button type="button" class="btn btn-secondary btn-sm" (click)="actualizarTodo()">
-        <i class="fas fa-rotate-right"></i>
-        Actualizar
-      </button>
+        class="form-control form-control-sm tickets-filter-input tickets-filter-busqueda"
+        [(ngModel)]="busquedaCodigoTitulo"
+        placeholder="Código o título…"
+        autocomplete="off"
+        aria-describedby="tickets-busqueda-hint" />
+      <span id="tickets-busqueda-hint" class="visually-hidden">Coincidencias por código o título en las tres bandejas.</span>
     </div>
   </div>
 
@@ -67,7 +74,7 @@
         </div>
 
         <div *ngIf="ticketsArea.length > 0 && ticketsAreaVista.length === 0" class="tickets-panel-state text-muted">
-          Ningún ticket coincide con el área o el código indicados.
+          Ningún ticket coincide con el área o el texto de búsqueda.
         </div>
 
         <div class="table-container" *ngIf="ticketsAreaVista.length > 0">
@@ -175,7 +182,7 @@
         </div>
 
         <div *ngIf="ticketsMisCreados.length > 0 && ticketsMisCreadosVista.length === 0" class="tickets-panel-state text-muted">
-          Ningún ticket coincide con el área o el código indicados.
+          Ningún ticket coincide con el área o el texto de búsqueda.
         </div>
 
         <div class="table-container" *ngIf="ticketsMisCreadosVista.length > 0">
@@ -285,7 +292,7 @@
         </div>
 
         <div *ngIf="!loadingCerrados && ticketsCerrados.length > 0 && ticketsCerradosVista.length === 0" class="tickets-panel-state text-muted">
-          Ningún ticket coincide con el área o el código indicados.
+          Ningún ticket coincide con el área o el texto de búsqueda.
         </div>
 
         <div class="table-container" *ngIf="!loadingCerrados && ticketsCerradosVista.length > 0">
@@ -380,3 +387,65 @@
   </div>
 </div>
 
+<ng-template #ticketNuevoModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">Nuevo ticket / reclamo</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body tickets-modal-nuevo-body">
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label fw-bold">Título</label>
+        <input
+          class="form-control form-control-sm"
+          [(ngModel)]="ticketNuevoForm.titulo"
+          maxlength="200"
+          placeholder="Resumen breve del reclamo" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-bold">Área destino</label>
+        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.areaDestino">
+          <option value="">Seleccionar...</option>
+          <option *ngFor="let area of areasTicket" [value]="area">{{ area }}</option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-bold">Prioridad</label>
+        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.prioridad">
+          <option *ngFor="let p of prioridadesTicket" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label fw-bold">Descripción</label>
+        <textarea
+          class="form-control form-control-sm"
+          rows="5"
+          [(ngModel)]="ticketNuevoForm.descripcion"
+          placeholder="Detalle completo del reclamo"></textarea>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label fw-bold">Nota inicial (opcional)</label>
+        <textarea
+          class="form-control form-control-sm"
+          rows="3"
+          [(ngModel)]="ticketNuevoForm.nota"
+          placeholder="Nota de contexto para el primer movimiento"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+    <button
+      type="button"
+      class="btn btn-ticket-nuevo-submit btn-sm"
+      [disabled]="creandoTicket"
+      (click)="guardarTicketNuevo(modal)">
+      <i class="fas" [ngClass]="creandoTicket ? 'fa-spinner fa-spin' : 'fa-save'" aria-hidden="true"></i>
+      {{ creandoTicket ? 'Creando...' : 'Crear ticket' }}
+    </button>
+  </div>
+</ng-template>

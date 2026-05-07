@@ -181,7 +181,7 @@
 .asset-tab-btn i {
   pointer-events: none;
   font-size: 0.85rem;
-  color: inherit;
+  color: var(--device-color, #3498db);
   transition: color 0.2s ease;
 }
 

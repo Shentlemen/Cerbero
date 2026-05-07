@@ -522,13 +522,13 @@ button,
 .entrega-header h6,
 .card-header-custom h5 {
   font-weight: 600;
-  color: #495057;
+  color: #000;
   font-size: 0.95rem;
   margin: 0;
 }
 
 .card-header-custom h5 i {
-  color: #41A1AF;
+  color: #000;
 }
 
 /* Botones de acción en headers */
@@ -550,7 +550,7 @@ button,
 .compra-data-card .form-label,
 .entrega-card .form-label {
   font-weight: 500;
-  color: #495057;
+  color: #000;
   margin-bottom: 0.25rem;
   font-size: 0.85rem;
 }
@@ -558,8 +558,13 @@ button,
 .item-card .form-label i,
 .compra-data-card .form-label i,
 .entrega-card .form-label i {
-  color: #6c757d;
+  color: #000;
   width: 16px;
+}
+
+/* Modal nueva/editar compra: anula text-secondary (Bootstrap usa !important) */
+.modal-body:not(.details-body):not(.compact-view) h5.text-secondary {
+  color: #000 !important;
 }
 
 /* Texto de ayuda para campos */
@@ -1356,7 +1361,7 @@ button,
 .documento-upload-card .form-label {
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #495057;
+  color: #000;
   display: flex;
   align-items: center;
   min-height: 1.5rem;

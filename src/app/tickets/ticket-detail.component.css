@@ -5,6 +5,183 @@
   gap: 1rem;
 }
 
+/* Cabecera del ticket (hero) */
+.ticket-detail-container .ticket-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 0 !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+}
+
+.ticket-hero-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #3498db, #2980b9);
+  border-radius: 14px 0 0 14px;
+}
+
+.ticket-hero-inner {
+  position: relative;
+  padding: 1.25rem 1.35rem 1.15rem 1.55rem;
+}
+
+.ticket-hero-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.ticket-hero-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1e40af;
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.12), rgba(41, 128, 185, 0.08));
+  border: 1px solid rgba(52, 152, 219, 0.35);
+  border-radius: 10px;
+}
+
+.ticket-hero-code i {
+  font-size: 0.88rem;
+  opacity: 0.9;
+}
+
+.ticket-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ticket-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #1e293b;
+  border-width: 1px;
+  border-style: solid;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.ticket-hero-chip i {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Estado y prioridad (criticidad): más legibles */
+.ticket-hero-chip--lg {
+  padding: 0.52rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.ticket-hero-chip--lg i {
+  font-size: 0.84rem;
+}
+
+.ticket-hero-title {
+  margin: 0 0 0.65rem 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.ticket-hero-desc {
+  margin: 0 0 1rem 0;
+  font-size: 0.97rem;
+  line-height: 1.58;
+  color: #475569;
+  max-width: 65rem;
+}
+
+.ticket-hero-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.75rem;
+  padding-top: 0.95rem;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.ticket-hero-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ticket-hero-date i {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.ticket-hero-date time {
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Variantes chips (coherentes con bandeja de tickets) */
+.td-area--almacen { border-color: #d97706; }
+.td-area--inventario { border-color: #0ea5e9; }
+.td-area--compras { border-color: #f59e0b; }
+.td-area--gestion-equip { border-color: #7c3aed; }
+.td-area--impresion { border-color: #2563eb; }
+.td-area--garantia { border-color: #10b981; }
+.td-area--laboratorio { border-color: #8b5cf6; }
+.td-area--default { border-color: #94a3b8; }
+
+.td-estado--nuevo { border-color: #6c757d; color: #334155; }
+.td-estado--en-revision { border-color: #0ea5e9; }
+.td-estado--en-gestion { border-color: #2563eb; }
+.td-estado--derivado { border-color: #f59e0b; }
+.td-estado--resuelto { border-color: #16a34a; }
+.td-estado--cerrado { border-color: #343a40; color: #334155; }
+.td-estado--reabierto { border-color: #dc2626; }
+
+.td-prioridad--baja { border-color: #94a3b8; }
+.td-prioridad--media { border-color: #0ea5e9; }
+.td-prioridad--alta { border-color: #f59e0b; }
+.td-prioridad--critica { border-color: #dc2626; color: #b91c1c; }
+.td-prioridad--default { border-color: #6c757d; }
+
+@media (max-width: 576px) {
+  .ticket-hero-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ticket-hero-chips {
+    width: 100%;
+  }
+
+  .ticket-hero-title {
+    font-size: 1.15rem;
+  }
+}
+
 /* Títulos de sección (reemplaza card-header) */
 .ticket-section-heading {
   display: flex;

@@ -85,47 +85,12 @@
   background-color: white;
 }
 
-.assets-table th {
-  background: #f8f9fa;
-  padding: 0.75rem;
-  font-weight: 600;
-  color: #2c3e50;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.th-content {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.assets-table th:hover {
-  background: #edf2f7;
-}
-
-.assets-table th.active {
-  color: #3498db;
-}
-
 .asset-row {
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .asset-row:hover {
-  background: #f8f9fa;
-  transform: translateY(-1px);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-}
-
-.asset-row td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #edf2f7;
-  color: #2c3e50;
-  font-size: 0.9rem;
+  background: #f8fafc;
 }
 
 .asset-name {
@@ -280,7 +245,6 @@
   font-weight: normal;
 }
 
-/* Estilos para los botones de acción */
 .action-buttons {
   display: flex;
   gap: 0.25rem;
@@ -367,165 +331,7 @@
   margin-right: 0.25rem;
 }
 
-/* Estilos para el modal de cambio de estado */
-.estado-dialog {
-  min-width: 520px;
-  max-width: 620px;
-  padding: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-}
-
-.estado-dialog .confirm-dialog-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 10px;
-  color: #2c3e50;
-  font-weight: 600;
-  padding: 1rem 1.25rem;
-  margin: 1rem 1rem 0.75rem;
-}
-
-.estado-dialog .estado-title-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.estado-dialog .btn-close {
-  background-color: #ffffff;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  padding: 0.35rem;
-  opacity: 0.5;
-}
-
-.estado-dialog .btn-close:hover {
-  border-color: #adb5bd;
-  opacity: 0.75;
-}
-
-.estado-dialog .confirm-dialog-message {
-  text-align: left;
-  padding: 0 1.25rem 1.25rem;
-  background: #fff;
-}
-
-.estado-dialog .confirm-dialog-message p {
-  margin: 0 0 1rem 0;
-  color: #2c3e50;
-}
-
-.estado-dialog .equipo-info {
-  margin-bottom: 1rem;
-  padding: 0.9rem 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #0d6efd;
-}
-
-.estado-dialog .equipo-info h6 {
-  color: #2c3e50;
-}
-
-.estado-dialog .confirm-dialog-buttons {
-  display: flex;
-  padding: 0 1.25rem 1.25rem;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.estado-dialog .confirm-dialog-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-width: 120px;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.observaciones-container {
-  margin-top: 0.5rem;
-  text-align: left;
-}
-
-.observaciones-container label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.observaciones-container textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.9rem;
-  resize: vertical;
-  min-height: 80px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.observaciones-container textarea:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.observaciones-container .text-muted {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-.confirm-dialog-button.baja {
-  background: #ffc107;
-  color: #212529;
-}
-
-.confirm-dialog-button.baja:hover:not(:disabled) {
-  background: #e0a800;
-}
-
-.confirm-dialog-button.almacen {
-  background: #212529;
-  color: white;
-}
-
-.confirm-dialog-button.almacen:hover:not(:disabled) {
-  background: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.estado-dialog .confirm-dialog-button.cancel {
-  background: transparent !important;
-  color: #000000 !important;
-  border: 1px solid #000000 !important;
-  box-shadow: none !important;
-}
-
-.estado-dialog .confirm-dialog-button.cancel:hover:not(:disabled) {
-  background: #000000 !important;
-  color: #ffffff !important;
-  border: 1px solid #000000 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-}
+/* Diálogos confirm / estado-dialog: estilos globales en styles.css */
 
 /* Responsive para botones de acción */
 @media (max-width: 768px) {
@@ -538,11 +344,6 @@
     min-width: 60px;
     font-size: 0.7rem;
     padding: 0.25rem 0.375rem;
-  }
-  
-  .estado-dialog {
-    min-width: 300px;
-    max-width: 90vw;
   }
 }
 

@@ -130,10 +130,11 @@
         <input 
           type="text" 
           class="form-control" 
-          placeholder="Buscar por nombre de equipo..." 
+          placeholder="Buscar" 
+          title="Nombre de equipo o dirección IP"
           [formControl]="nombreEquipoControl" 
           style="max-width: 320px;"
-          data-help="🔍 Busca equipos específicos escribiendo parte del nombre del equipo">
+          autocomplete="off">
       </div>
     </div>
 
@@ -146,10 +147,10 @@
     </div>
 
     <div class="table-container" *ngIf="!loading">
-      <table class="assets-table">
+      <table class="assets-table cerbero-list-table">
         <thead>
           <tr>
-            <th (click)="sortData('name')" [class.active]="sortColumn === 'name'" data-help="📊 Haz clic para ordenar la lista por nombre de equipo">
+            <th (click)="sortData('name')" [class.active]="sortColumn === 'name'" class="sortable-header" data-help="📊 Haz clic para ordenar la lista por nombre de equipo">
               <div class="th-content">
                 <span>Equipo</span>
                 <i class="fas" [ngClass]="{
@@ -159,7 +160,7 @@
                 }"></i>
               </div>
             </th>
-            <th (click)="sortData('osName')" [class.active]="sortColumn === 'osName'">
+            <th (click)="sortData('osName')" [class.active]="sortColumn === 'osName'" class="sortable-header">
               <div class="th-content">
                 <span>Sistema Operativo</span>
                 <i class="fas" [ngClass]="{
@@ -169,7 +170,7 @@
                 }"></i>
               </div>
             </th>
-            <th (click)="sortData('ipAddr')" [class.active]="sortColumn === 'ipAddr'">
+            <th (click)="sortData('ipAddr')" [class.active]="sortColumn === 'ipAddr'" class="sortable-header">
               <div class="th-content">
                 <span>IP</span>
                 <i class="fas" [ngClass]="{
@@ -179,7 +180,7 @@
                 }"></i>
               </div>
             </th>
-            <th (click)="sortData('biosType')" [class.active]="sortColumn === 'biosType'">
+            <th (click)="sortData('biosType')" [class.active]="sortColumn === 'biosType'" class="sortable-header">
               <div class="th-content">
                 <span>Tipo</span>
                 <i class="fas" [ngClass]="{
@@ -194,7 +195,7 @@
                 <span>Nro. Compra</span>
               </div>
             </th>
-            <th *ngIf="canManageAssets()">
+            <th *ngIf="canManageAssets() || canManageAssetStates()">
               <div class="th-content">
                 <span>Acciones</span>
               </div>
