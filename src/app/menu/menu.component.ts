@@ -244,6 +244,15 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.permissionsService.canAccessConfiguration();
   }
 
+  canAccessWarehouseConfiguration(): boolean {
+    return this.permissionsService.canAccessWarehouseConfiguration();
+  }
+
+  canShowWarehouseConfigInAlmacenMenu(): boolean {
+    // GM ve todo (también en Almacén). Admin solo en Configuración.
+    return this.permissionsService.isGM() || this.permissionsService.isAlmacen();
+  }
+
   canAccessAdministration(): boolean {
     return this.permissionsService.canAccessAdministrationMenu();
   }

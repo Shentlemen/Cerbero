@@ -86,6 +86,10 @@
         <i class="fas fa-archive"></i>
         <span>ALMACEN LAB</span>
       </a>
+      <a *ngIf="canShowWarehouseConfigInAlmacenMenu()" routerLink="/menu/almacen/config" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-cogs"></i>
+        <span>ALMACÉN CONFIG</span>
+      </a>
     </div>
   </div>
 

@@ -209,6 +209,11 @@ export class PermissionsService {
     return this.isGMOrAdmin(); // GM and Admin can access configuration menu
   }
 
+  canAccessWarehouseConfiguration(): boolean {
+    // Configuración específica de almacenes: GM, Admin y Almacén.
+    return this.isGMOrAdmin() || this.isAlmacen();
+  }
+
   /**
    * Bloque «Administración» (sidebar): exclusivo de GM y Admin, no el rol USER ni personal de área.
    */

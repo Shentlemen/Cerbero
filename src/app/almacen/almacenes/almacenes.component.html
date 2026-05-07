@@ -15,7 +15,7 @@
     <!-- Header del contenido con botón de crear -->
     <div class="content-header">
       <!-- Botón para agregar nuevo almacén -->
-      <div class="actions-section" *ngIf="canManageAlmacenes()">
+      <div class="actions-section" *ngIf="canEditAlmacenes()">
         <button 
           class="btn btn-outline-secondary" 
           (click)="abrirModalAlmacen(modalAlmacen)">
@@ -53,15 +53,17 @@
               <i class="fas fa-building"></i>
               <span>{{ almacen.numero }}</span>
             </div>
-            <div class="card-actions" *ngIf="canManageAlmacenes()">
+            <div class="card-actions" *ngIf="canEditAlmacenes() || canDeleteAlmacenes()">
               <button 
                 class="btn btn-warning btn-sm" 
+                *ngIf="canEditAlmacenes()"
                 (click)="abrirModalAlmacen(modalAlmacen, almacen); $event.stopPropagation()"
                 title="Editar almacén">
                 <i class="fas fa-edit"></i>
               </button>
               <button 
                 class="btn btn-danger btn-sm" 
+                *ngIf="canDeleteAlmacenes()"
                 (click)="confirmarEliminacion(almacen); $event.stopPropagation()"
                 title="Eliminar almacén">
                 <i class="fas fa-trash-alt"></i>
