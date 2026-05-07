@@ -425,3 +425,30 @@ app-video-details {
   color: #856404;
   font-size: 0.9rem;
 }
+
+.location-action-btn {
+  background: transparent;
+  border: 1px solid #198754;
+  color: #198754;
+}
+
+.location-action-btn:hover:not(:disabled) {
+  background: #198754;
+  border-color: #198754;
+  color: #fff;
+}
+
+.location-action-btn:focus,
+.location-action-btn:focus-visible,
+.location-action-btn:active {
+  background: #198754;
+  border-color: #198754;
+  color: #fff;
+}
+
+.location-action-btn:disabled {
+  background: transparent;
+  border-color: #9ec5ae;
+  color: #9ec5ae;
+  opacity: 1;
+}

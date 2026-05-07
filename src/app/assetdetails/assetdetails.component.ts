@@ -17,7 +17,7 @@ import { AssetEditModalComponent } from '../asset-edit-modal/asset-edit-modal.co
 import { forkJoin } from 'rxjs';
 import { SoftwareByHardwareService } from '../services/software-by-hardware.service';
 import { UbicacionesService } from '../services/ubicaciones.service';
-import { UbicacionDTO } from '../interfaces/ubicacion.interface';
+import { UbicacionDTO, UbicacionHistorialDTO } from '../interfaces/ubicacion.interface';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
 import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
@@ -104,6 +104,12 @@ export class AssetdetailsComponent implements OnInit {
   loading: boolean = false;
   error: string | null = null;
   ubicacionesDisponibles: UbicacionDTO[] = [];
+  historialUbicaciones: UbicacionHistorialDTO[] = [];
+  loadingHistorialUbicaciones = false;
+  errorHistorialUbicaciones: string | null = null;
+  deletingHistorialId: number | null = null;
+  showDeleteHistorialDialog = false;
+  historialPendienteEliminar: UbicacionHistorialDTO | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -161,6 +167,7 @@ export class AssetdetailsComponent implements OnInit {
 
               if (this.asset?.id) {
                 this.cargarUbicacion();
+                this.cargarHistorialUbicaciones();
                 
 
               }
@@ -259,6 +266,29 @@ export class AssetdetailsComponent implements OnInit {
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     let currentY = 20;
+
+    const addFooterToAllPages = () => {
+      const pageCount = doc.getNumberOfPages();
+      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+        doc.setPage(pageNumber);
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(
+          `Página ${pageNumber} de ${pageCount}`,
+          pageWidth - 20,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+
+        doc.setDrawColor(200);
+        doc.line(
+          14,
+          pageHeight - 20,
+          pageWidth - 14,
+          pageHeight - 20
+        );
+      }
+    };
     
     // Configuración del encabezado
     doc.setFillColor(65, 161, 175);
@@ -274,6 +304,8 @@ export class AssetdetailsComponent implements OnInit {
     // Agregar fecha de generación
     const fecha = new Date().toLocaleString();
     doc.text(`Generado el: ${fecha}`, 14, 35);
+    // El contenido de secciones debe empezar debajo de la fecha para evitar solapamientos.
+    currentY = 45;
     
     // Función para agregar nueva página si es necesario
     const addNewPageIfNeeded = (requiredSpace: number) => {
@@ -328,27 +360,6 @@ export class AssetdetailsComponent implements OnInit {
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 'auto' },
           1: { cellWidth: 'auto' }
-        },
-        didDrawPage: function(data) {
-          // Agregar pie de página en cada página
-          const pageCount = doc.getNumberOfPages();
-          doc.setFontSize(8);
-          doc.setTextColor(100);
-          doc.text(
-            `Página ${data.pageNumber} de ${pageCount}`,
-            pageWidth - 20,
-            pageHeight - 10,
-            { align: 'right' }
-          );
-          
-          // Agregar línea divisoria en el pie de página
-          doc.setDrawColor(200);
-          doc.line(
-            14,
-            pageHeight - 20,
-            pageWidth - 14,
-            pageHeight - 20
-          );
         }
       });
       
@@ -404,6 +415,9 @@ export class AssetdetailsComponent implements OnInit {
     if (this.componentData.software && this.componentData.software.length > 0) {
       addSection('SOFTWARE INSTALADO', this.prepareSoftwareData());
     }
+
+    // Renderizar pie de página una sola vez por hoja para evitar superposición.
+    addFooterToAllPages();
 
     // Guardar el PDF con nombre descriptivo
     const fileName = `${this.asset.name}_REPORTE_COMPLETO_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -638,20 +652,102 @@ export class AssetdetailsComponent implements OnInit {
       this.ubicacionesService.getUbicacionEquipo(this.asset.id).subscribe({
         next: (ubicacion) => {
           this.ubicacionActual = ubicacion;
+          this.componentData.ubicacion = ubicacion;
           this.loading = false;
         },
         error: (error: any) => {
           if (error.message?.includes('no encontrada')) {
             this.ubicacionActual = undefined;
+            this.componentData.ubicacion = null;
             this.error = null;
           } else {
             console.error('Error al cargar ubicación:', error);
             this.error = 'Error al cargar la ubicación. Por favor, intente nuevamente.';
+            this.ubicacionActual = undefined;
+            this.componentData.ubicacion = null;
           }
           this.loading = false;
         }
       });
     }
+  }
+
+  cargarHistorialUbicaciones() {
+    if (!this.asset?.id) {
+      this.historialUbicaciones = [];
+      this.errorHistorialUbicaciones = null;
+      return;
+    }
+
+    this.loadingHistorialUbicaciones = true;
+    this.errorHistorialUbicaciones = null;
+
+    this.ubicacionesService.getHistorialUbicacionesEquipo(this.asset.id).subscribe({
+      next: (historial) => {
+        this.historialUbicaciones = historial ?? [];
+        this.loadingHistorialUbicaciones = false;
+      },
+      error: (error: unknown) => {
+        console.error('Error al cargar historial de ubicaciones:', error);
+        this.historialUbicaciones = [];
+        this.errorHistorialUbicaciones = 'No se pudo cargar el historial de ubicaciones.';
+        this.loadingHistorialUbicaciones = false;
+      }
+    });
+  }
+
+  formatHistorialFecha(value: string | null): string {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+  }
+
+  formatHistorialOrigen(origen: string | null | undefined): string {
+    if (!origen) return 'N/A';
+    switch (origen) {
+      case 'INVENTARIO_MODAL':
+        return 'Inventario (edición activo)';
+      case 'ASSET_DETAILS':
+        return 'Asset details (pestaña Ubicación)';
+      case 'BACKFILL':
+        return 'Backfill automático';
+      case 'BACKFILL_LEGACY':
+        return 'Backfill legacy';
+      default:
+        return origen;
+    }
+  }
+
+  solicitarEliminarMovimientoHistorial(item: UbicacionHistorialDTO): void {
+    if (!item?.id || this.deletingHistorialId !== null) return;
+    this.historialPendienteEliminar = item;
+    this.showDeleteHistorialDialog = true;
+  }
+
+  cancelarEliminarMovimientoHistorial(): void {
+    this.showDeleteHistorialDialog = false;
+    this.historialPendienteEliminar = null;
+  }
+
+  confirmarEliminarMovimientoHistorial(): void {
+    const item = this.historialPendienteEliminar;
+    if (!item?.id || this.deletingHistorialId !== null) return;
+
+    this.deletingHistorialId = item.id;
+    this.ubicacionesService.deleteHistorialUbicacion(item.id).subscribe({
+      next: () => {
+        this.deletingHistorialId = null;
+        this.cancelarEliminarMovimientoHistorial();
+        this.cargarHistorialUbicaciones();
+      },
+      error: (error: any) => {
+        this.deletingHistorialId = null;
+        console.error('Error al eliminar movimiento del historial:', error);
+        this.errorHistorialUbicaciones = error?.error?.message || error?.message || 'No se pudo eliminar el movimiento del historial.';
+        this.cancelarEliminarMovimientoHistorial();
+      }
+    });
   }
 
   actualizarUbicacion() {
@@ -671,6 +767,7 @@ export class AssetdetailsComponent implements OnInit {
         this.ubicacionesService.actualizarUbicacionEquipo(this.asset.id, ubicacionData).subscribe({
           next: (response) => {
             this.cargarUbicacion();
+            this.cargarHistorialUbicaciones();
             this.loading = false;
           },
           error: (error: any) => {
@@ -690,6 +787,7 @@ export class AssetdetailsComponent implements OnInit {
         this.ubicacionesService.crearUbicacionEquipo(ubicacionData).subscribe({
           next: (response) => {
             this.cargarUbicacion();
+            this.cargarHistorialUbicaciones();
             this.loading = false;
           },
           error: (error: any) => {
@@ -789,6 +887,10 @@ export class AssetdetailsComponent implements OnInit {
    */
   canManageAssetLocations(): boolean {
     return this.permissionsService.canManageAssets();
+  }
+
+  canDeleteAssetLocationHistory(): boolean {
+    return this.permissionsService.isGMOrAdmin();
   }
 
 }

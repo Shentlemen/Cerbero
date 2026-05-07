@@ -177,17 +177,19 @@ import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
       font-weight: 500;
     }
     .btn-primary {
-      background: #41A1AF;
-      border: none;
+      background: #198754;
+      border: 1px solid #198754;
     }
     .btn-primary:disabled {
-      background: #E2E8F0;
-      color: #94A3B8;
+      background: #9ec5ae;
+      border-color: #9ec5ae;
+      color: #ffffff;
     }
     .btn-primary:not(:disabled):hover {
-      background: #3A8F9C;
+      background: #157347;
+      border-color: #157347;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(65, 161, 175, 0.25);
+      box-shadow: 0 4px 12px rgba(25, 135, 84, 0.25);
     }
     .btn-secondary {
       background: #6c757d;

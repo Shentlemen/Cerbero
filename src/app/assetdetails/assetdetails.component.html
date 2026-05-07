@@ -266,7 +266,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
               <h4>Ubicación del Equipo</h4>
               <button 
-                class="btn btn-export" 
+                class="btn btn-sm location-action-btn" 
                 (click)="seleccionarUbicacion()" 
                 [disabled]="loading"
                 *ngIf="canManageAssetLocations()"
@@ -313,6 +313,62 @@
                     Este equipo no tiene una ubicación asignada.
                   </div>
                 </ng-template>
+
+                <hr class="my-4" />
+                <h5 class="mb-3">Historial de ubicaciones</h5>
+
+                <div *ngIf="loadingHistorialUbicaciones" class="text-center p-3">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Cargando historial...</span>
+                  </div>
+                  <p class="mt-2 mb-0">Cargando historial de ubicaciones...</p>
+                </div>
+
+                <div *ngIf="!loadingHistorialUbicaciones && errorHistorialUbicaciones" class="alert alert-warning">
+                  {{ errorHistorialUbicaciones }}
+                </div>
+
+                <div *ngIf="!loadingHistorialUbicaciones && !errorHistorialUbicaciones">
+                  <div *ngIf="historialUbicaciones.length === 0" class="alert alert-light border">
+                    No hay movimientos de ubicación registrados para este equipo.
+                  </div>
+
+                  <div *ngIf="historialUbicaciones.length > 0" class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Usuario</th>
+                          <th>Origen</th>
+                          <th>Tipo</th>
+                          <th>De</th>
+                          <th>A</th>
+                          <th *ngIf="canDeleteAssetLocationHistory()">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of historialUbicaciones">
+                          <td>{{ formatHistorialFecha(item.fechaCambio) }}</td>
+                          <td>{{ item.usuarioNombre || 'system' }}</td>
+                          <td>{{ formatHistorialOrigen(item.origen) }}</td>
+                          <td>{{ item.tipoCambio }}</td>
+                          <td>{{ item.ubicacionAnteriorNombre || 'N/A' }}</td>
+                          <td>{{ item.ubicacionNuevaNombre || 'N/A' }}</td>
+                          <td *ngIf="canDeleteAssetLocationHistory()">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-danger"
+                              [disabled]="deletingHistorialId === item.id"
+                              (click)="solicitarEliminarMovimientoHistorial(item)"
+                              title="Eliminar movimiento del historial">
+                              <i class="fas fa-trash-alt"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -320,6 +376,27 @@
         <div *ngSwitchCase="'software'">
           <app-software-details *ngIf="componentData.software" [softwareData]="componentData.software"></app-software-details>
           <p *ngIf="!componentData.software">No hay datos de software disponibles.</p>
+        </div>
+      </div>
+
+      <div *ngIf="showDeleteHistorialDialog" class="confirm-dialog-overlay">
+        <div class="confirm-dialog">
+          <div class="confirm-dialog-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            Confirmar Eliminación
+          </div>
+          <div class="confirm-dialog-message">
+            ¿Está seguro de que desea eliminar este movimiento del historial de ubicaciones?
+            Esta acción no se puede deshacer.
+          </div>
+          <div class="confirm-dialog-buttons">
+            <button class="confirm-dialog-button cancel" (click)="cancelarEliminarMovimientoHistorial()">
+              Cancelar
+            </button>
+            <button class="confirm-dialog-button confirm" (click)="confirmarEliminarMovimientoHistorial()">
+              Eliminar
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1469,6 +1469,15 @@ export class ActivosComponent implements OnInit {
     
     // El formulario ya fue validado en guardarActivo()
     const formData = this.activoForm.value;
+    const nombreActivoNormalizado = String(formData.name || '').trim().toUpperCase();
+
+    const existeDuplicado = this.isNombreActivoDuplicado(nombreActivoNormalizado);
+
+    if (existeDuplicado) {
+      this.setNameDuplicateError(true);
+      this.shouldShowValidationErrors = true;
+      return;
+    }
     
     // Obtener el idUsuario correcto
     const idUsuario = this.getUserIdFromForm(formData);
@@ -1494,10 +1503,9 @@ export class ActivosComponent implements OnInit {
     console.log('Datos a enviar:', activo);
 
     try {
-      let response: ActivoDTO;
       if (this.modoEdicion && this.activoSeleccionado) {
         console.log('Actualizando activo existente');
-        response = await firstValueFrom(this.activosService.actualizarActivo(this.activoSeleccionado.idActivo, activo));
+        await firstValueFrom(this.activosService.actualizarActivo(this.activoSeleccionado.idActivo, activo));
         await this.actualizarRelaciones(this.activoSeleccionado.idActivo);
         
         this.modalService.dismissAll();
@@ -1507,7 +1515,7 @@ export class ActivosComponent implements OnInit {
         setTimeout(() => this.successMessage = null, 3000);
       } else {
         console.log('Creando nuevo activo');
-        response = await firstValueFrom(this.activosService.crearActivo(activo));
+        const response = await firstValueFrom(this.activosService.crearActivo(activo));
         console.log('Respuesta del servidor:', response);
         
         if (response.idActivo) {
@@ -2691,6 +2699,51 @@ export class ActivosComponent implements OnInit {
     }
     
     return false;
+  }
+
+  onAssetNameInputChange(): void {
+    if (this.creationMode !== 'single') {
+      this.setNameDuplicateError(false);
+      return;
+    }
+
+    const control = this.activoForm.get('name');
+    const rawValue = control?.value;
+    const normalized = String(rawValue || '').trim().toUpperCase();
+
+    if (!normalized) {
+      this.setNameDuplicateError(false);
+      return;
+    }
+
+    this.setNameDuplicateError(this.isNombreActivoDuplicado(normalized));
+  }
+
+  private isNombreActivoDuplicado(nombreNormalizado: string): boolean {
+    return this.activos.some((a) => {
+      const nombreExistente = String(a.name || '').trim().toUpperCase();
+      if (this.modoEdicion && this.activoSeleccionado) {
+        return a.idActivo !== this.activoSeleccionado.idActivo && nombreExistente === nombreNormalizado;
+      }
+      return nombreExistente === nombreNormalizado;
+    });
+  }
+
+  private setNameDuplicateError(hasDuplicate: boolean): void {
+    const control = this.activoForm.get('name');
+    if (!control) return;
+
+    const currentErrors = { ...(control.errors || {}) };
+    if (hasDuplicate) {
+      currentErrors['duplicate'] = true;
+      control.setErrors(currentErrors);
+      return;
+    }
+
+    if ('duplicate' in currentErrors) {
+      delete currentErrors['duplicate'];
+      control.setErrors(Object.keys(currentErrors).length ? currentErrors : null);
+    }
   }
 
   /**

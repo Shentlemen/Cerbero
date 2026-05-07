@@ -128,7 +128,7 @@
         </div>
       </div>
       <div class="actions d-flex align-items-center flex-wrap activos-header-actions">
-        <button class="btn btn-export" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
+        <button type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Activo
         </button>
@@ -363,9 +363,20 @@
             <div class="row mb-3" *ngIf="creationMode === 'single'">
               <div class="col-md-6">
                 <label class="form-label">Número de Activo</label>
-                <input type="text" class="form-control" formControlName="name" placeholder="Ej: PC14000, PC1, 14000, 1">
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="name"
+                  placeholder="Ej: PC14000, PC1, 14000, 1"
+                  [class.is-invalid]="activoForm.get('name')?.errors?.['duplicate'] || (activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors)"
+                  (input)="onAssetNameInputChange()"
+                  (blur)="onAssetNameInputChange()"
+                >
                 <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors">
                   El número de activo es requerido.
+                </div>
+                <div class="invalid-feedback d-block" *ngIf="activoForm.get('name')?.errors?.['duplicate']">
+                  Este número de activo ya está registrado.
                 </div>
               </div>
             </div>
@@ -831,6 +842,10 @@
           <li *ngIf="creationMode === 'single' && activoForm.get('name')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
             Nombre del PC es requerido
+          </li>
+          <li *ngIf="creationMode === 'single' && activoForm.get('name')?.errors?.['duplicate']">
+            <i class="fas fa-times-circle text-danger me-1"></i>
+            El número de activo ya está registrado
           </li>
           <li *ngIf="activoForm.get('idTipoActivo')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>

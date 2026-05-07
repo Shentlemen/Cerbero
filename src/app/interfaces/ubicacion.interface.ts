@@ -17,6 +17,21 @@ export interface UbicacionDTO {
     deviceName: string | null;
 }
 
+export interface UbicacionHistorialDTO {
+    id: number;
+    activoId: number | null;
+    hardwareId: number | null;
+    ubicacionAnteriorId: number | null;
+    ubicacionAnteriorNombre: string | null;
+    ubicacionNuevaId: number | null;
+    ubicacionNuevaNombre: string | null;
+    tipoCambio: string;
+    origen: string;
+    usuarioId: number | null;
+    usuarioNombre: string | null;
+    fechaCambio: string | null;
+}
+
 export interface UbicacionSimpleDTO {
     idUbicacion: number;
     idSubnet?: number;

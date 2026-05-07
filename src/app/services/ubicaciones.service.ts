@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
 import { ApiResponse } from '../interfaces/api-response.interface';
 import { map } from 'rxjs/operators';
-import { UbicacionDTO, UbicacionSimpleDTO } from '../interfaces/ubicacion.interface';
+import { UbicacionDTO, UbicacionHistorialDTO, UbicacionSimpleDTO } from '../interfaces/ubicacion.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -44,6 +44,29 @@ export class UbicacionesService {
         } else {
           throw new Error(response.message);
         }
+      })
+    );
+  }
+
+  getHistorialUbicacionesEquipo(hardwareId: number): Observable<UbicacionHistorialDTO[]> {
+    return this.http.get<ApiResponse<UbicacionHistorialDTO[]>>(`${this.apiUrl}/ubicaciones/equipos/${hardwareId}/historial`).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data ?? [];
+        } else {
+          throw new Error(response.message);
+        }
+      })
+    );
+  }
+
+  deleteHistorialUbicacion(historialId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/ubicaciones/equipos/historial/${historialId}`).pipe(
+      map(response => {
+        if (response.success) {
+          return;
+        }
+        throw new Error(response.message || 'No se pudo eliminar el movimiento del historial');
       })
     );
   }

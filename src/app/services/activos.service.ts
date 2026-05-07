@@ -20,6 +20,9 @@ export interface ActivoDTO {
   idSecundario: string;
   idServicioGarantia: number;
   fechaFinGarantia: string;
+  fechaAlta?: string;
+  usuarioAltaId?: number | null;
+  usuarioAltaUsername?: string | null;
   numeroCompra?: string;
   activosRelacionados?: number[];
 }
@@ -60,7 +63,14 @@ export class ActivosService {
   }
 
   crearActivo(activo: ActivoDTO): Observable<ActivoDTO> {
-    return this.http.post<ActivoDTO>(this.apiUrl, activo);
+    return this.http.post<ApiResponse<ActivoDTO>>(this.apiUrl, activo).pipe(
+      map(response => {
+        if (response.success) {
+          return response.data;
+        }
+        throw new Error(response.message || 'No se pudo crear el activo');
+      })
+    );
   }
 
   crearActivosBatch(activos: ActivoDTO[]): Observable<ActivoDTO[]> {
@@ -76,8 +86,15 @@ export class ActivosService {
     );
   }
 
-  actualizarActivo(id: number, activo: ActivoDTO): Observable<ActivoDTO> {
-    return this.http.put<ActivoDTO>(`${this.apiUrl}/${id}`, activo);
+  actualizarActivo(id: number, activo: ActivoDTO): Observable<void> {
+    return this.http.put<ApiResponse<void>>(`${this.apiUrl}/${id}`, activo).pipe(
+      map(response => {
+        if (response.success) {
+          return;
+        }
+        throw new Error(response.message || 'No se pudo actualizar el activo');
+      })
+    );
   }
 
   eliminarActivo(id: number): Observable<void> {

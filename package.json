@@ -4,7 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "prebuild": "npm run version:build",
     "build": "ng build",
+    "build:prod": "npm run build -- --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "version:major": "node scripts/version-updater.js major",
