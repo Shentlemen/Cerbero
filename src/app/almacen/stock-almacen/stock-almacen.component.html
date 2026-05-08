@@ -4,7 +4,8 @@
   
   <div #stockPaginaInicio class="header-section">
     <div class="title-wrapper">
-      <h1>
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1" *ngIf="!embedStock">
+        <h1 class="mb-0" id="tour-stock-almacen-title">
         <i class="fas fa-boxes"></i> 
         <span *ngIf="almacenSeleccionado; else defaultTitle">
           Stock del {{ almacenSeleccionado.numero }} - {{ almacenSeleccionado.nombre }}
@@ -13,6 +14,21 @@
           Gestión de Stock de Almacén
         </ng-template>
       </h1>
+        <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourStockDetalle()">
+          <i class="fas fa-route"></i> Tour guiado
+        </button>
+      </div>
+      <ng-container *ngIf="embedStock">
+      <h1>
+        <i class="fas fa-boxes"></i> 
+        <span *ngIf="almacenSeleccionado; else defaultTitleEmbed">
+          Stock del {{ almacenSeleccionado.numero }} - {{ almacenSeleccionado.nombre }}
+        </span>
+        <ng-template #defaultTitleEmbed>
+          Gestión de Stock de Almacén
+        </ng-template>
+      </h1>
+      </ng-container>
     </div>
   </div>
 
@@ -33,7 +49,7 @@
 
     <!-- Contenido del stock -->
     <div *ngIf="!loading && !error" class="stock-organizado">
-      <div class="toolbar">
+      <div class="toolbar" id="tour-stock-almacen-toolbar">
         <div class="search-highlight-section">
           <div class="search-input-wrapper">
             <i class="fas fa-search search-icon"></i>
@@ -77,7 +93,7 @@
       </div>
 
       <div *ngIf="getAlmacenes().length > 0; else noStock">
-        <div class="kpi-grid">
+        <div class="kpi-grid" id="tour-stock-almacen-kpis">
           <div class="kpi-card">
             <span class="kpi-label">Unidades visibles</span>
             <span class="kpi-value">{{ getTotalUnidadesVistaActual() }}</span>
@@ -97,7 +113,7 @@
         </div>
 
         <div class="layout-hibrido">
-          <aside class="panel-ubicaciones" *ngIf="getAlmacenActivoKey() as almacenKey">
+          <aside class="panel-ubicaciones" *ngIf="getAlmacenActivoKey() as almacenKey" id="tour-stock-almacen-tree">
             <div class="panel-header">
               <h3>Ubicaciones</h3>
               <button type="button" class="btn btn-sm btn-ver-todo" (click)="limpiarSeleccionUbicacion()">
@@ -132,7 +148,7 @@
             </div>
           </aside>
 
-          <section class="panel-listado">
+          <section class="panel-listado" id="tour-stock-almacen-listado">
             <div class="panel-header listado">
               <h3>Listado de stock</h3>
               <span class="seleccion-actual">{{ getEtiquetaSeleccionActual() }}</span>

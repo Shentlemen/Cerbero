@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -18,6 +18,8 @@ import { TransferirEquipoModalComponent } from '../components/transferir-equipo-
 import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-almacen-laboratorio',
@@ -27,7 +29,7 @@ import autoTable from 'jspdf-autotable';
   styleUrls: ['./almacen-laboratorio.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class AlmacenLaboratorioComponent implements OnInit {
+export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
 
   equiposEnAlmacen: any[] = [];
   equiposFiltrados: any[] = [];
@@ -63,6 +65,8 @@ export class AlmacenLaboratorioComponent implements OnInit {
   editingObservacionesValue: string = '';
   updatingObservaciones: boolean = false;
 
+  private pageTour?: Driver;
+
   constructor(
     private hardwareService: HardwareService,
     private biosService: BiosService,
@@ -74,7 +78,8 @@ export class AlmacenLaboratorioComponent implements OnInit {
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
@@ -84,6 +89,10 @@ export class AlmacenLaboratorioComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadItemsEnAlmacen();
+  }
+
+  ngOnDestroy(): void {
+    this.pageTour?.destroy();
   }
 
   loadItemsEnAlmacen(): void {
@@ -866,6 +875,21 @@ export class AlmacenLaboratorioComponent implements OnInit {
     this.notificationService.showSuccessMessage(
       `PDF exportado exitosamente: ${nombreArchivo}`
     );
+  }
+
+  iniciarTourAlmacenLaboratorio(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-almacen-lab-title', title: 'Almacén laboratorio', description: 'Equipos y dispositivos en almacén (distinto del cementerio): pendientes de ubicación operativa.', side: 'bottom' },
+      { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Filtrá por todos, solo equipos o solo dispositivos de red.', side: 'bottom' },
+      { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
+      { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Transferencias, reactivación y observaciones según permisos.', side: 'top' },
+      { selector: '#tour-almacen-lab-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 }
 

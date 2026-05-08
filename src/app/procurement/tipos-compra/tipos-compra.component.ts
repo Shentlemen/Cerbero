@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-tipos-compra',
@@ -29,11 +31,13 @@ export class TiposCompraComponent implements OnInit {
   tipoCompraSeleccionado: TipoDeCompraDTO | null = null;
   showConfirmDialog = false;
   tipoCompraToDelete: number | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private tiposCompraService: TiposCompraService,
     private fb: FormBuilder,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.tipoCompraForm = this.fb.group({
       descripcion: ['', Validators.required],
@@ -206,5 +210,18 @@ export class TiposCompraComponent implements OnInit {
   cancelarEliminacion(): void {
     this.showConfirmDialog = false;
     this.tipoCompraToDelete = null;
+  }
+
+  iniciarTourTiposCompra(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-tipos-compra-title', title: 'Tipos de compra', description: 'Clasificación para filtros y etiquetas en órdenes de compra (descripción y abreviatura opcional).', side: 'bottom' },
+      { selector: '#tour-tipos-compra-nuevo', title: 'Nuevo tipo', description: 'Alta desde modal; luego aparecerá en chips de compras.', side: 'left' },
+      { selector: '#tour-tipos-compra-table', title: 'Tabla', description: 'Editá o eliminá tipos existentes.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

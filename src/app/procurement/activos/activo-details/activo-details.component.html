@@ -3,15 +3,20 @@
   <app-notification-container></app-notification-container>
   
   <div class="header-section">
-    <div class="title-wrapper">
-      <h1>
+    <div class="title-wrapper d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <h1 id="tour-activo-details-title">
         <i class="fas fa-box"></i>
         Detalles del Activo
       </h1>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourDetalleActivo()">
+          <i class="fas fa-route"></i> Tour guiado
+        </button>
       <button class="btn btn-secondary" (click)="volver()">
         <i class="fas fa-arrow-left"></i>
         Volver
       </button>
+      </div>
     </div>
   </div>
 
@@ -27,8 +32,8 @@
       <p class="mt-2">Cargando detalles del activo...</p>
     </div>
 
-    <div *ngIf="!loading && !error && activo" class="details-grid">
-      <div class="detail-card">
+    <div *ngIf="!loading && !error && activo" class="details-grid" id="tour-activo-details-grid">
+      <div class="detail-card" id="tour-activo-details-general">
         <h3>Información General</h3>
         <div class="detail-item">
           <span class="label">ID:</span>
@@ -90,7 +95,7 @@
         </div>
       </div>
 
-      <div class="detail-card">
+      <div class="detail-card" id="tour-activo-details-asignacion">
         <h3>Asignación</h3>
         <div class="detail-item">
           <span class="label">Entrega:</span>

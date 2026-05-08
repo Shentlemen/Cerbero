@@ -5,26 +5,32 @@
   <div class="header-section">
     <div class="title-wrapper">
       <div class="title-row">
-        <h1>
+        <h1 id="tour-cementerio-title">
           <i class="fas fa-skull-crossbones"></i> 
           Cementerio de Equipos y Dispositivos
           <span class="subtitle">Equipos y dispositivos dados de baja</span>
         </h1>
         
-        <!-- Botón de imprimir/exportar PDF -->
-        <button 
-          class="btn btn-primary btn-sm print-btn" 
-          (click)="exportarPDF()"
-          title="Exportar lista filtrada a PDF"
-          [disabled]="loading || equiposFiltrados.length === 0">
-          <i class="fas fa-file-pdf"></i>
-          Imprimir
-        </button>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourCementerio()">
+            <i class="fas fa-route"></i> Tour guiado
+          </button>
+          <!-- Botón de imprimir/exportar PDF -->
+          <button 
+            class="btn btn-primary btn-sm print-btn" 
+            id="tour-cementerio-print"
+            (click)="exportarPDF()"
+            title="Exportar lista filtrada a PDF"
+            [disabled]="loading || equiposFiltrados.length === 0">
+            <i class="fas fa-file-pdf"></i>
+            Imprimir
+          </button>
+        </div>
       </div>
     </div>
     
     <!-- Filtros por tipo -->
-    <div class="filters-container" *ngIf="!loading">
+    <div class="filters-container" *ngIf="!loading" id="tour-cementerio-filters">
       <button 
         class="filter-btn" 
         [class.active]="filtroTipo === 'todos'"
@@ -65,7 +71,7 @@
 
   <div class="cementerio-content">
     <!-- Filtro de búsqueda -->
-    <div class="row mb-3">
+    <div class="row mb-3" id="tour-cementerio-search">
       <div class="col-12">
         <input 
           type="text" 
@@ -93,7 +99,7 @@
     </div>
 
     <!-- Tabla de equipos en baja -->
-    <div class="table-container" *ngIf="!loading && equiposFiltrados.length > 0">
+    <div class="table-container" *ngIf="!loading && equiposFiltrados.length > 0" id="tour-cementerio-table">
       <table class="cementerio-table">
         <thead>
           <tr>

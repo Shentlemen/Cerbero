@@ -7,6 +7,8 @@ import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 // Extendemos la interfaz SubnetDTO para incluir las propiedades adicionales
 interface ExtendedSubnet extends SubnetDTO {
@@ -51,10 +53,12 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
     lat: -34.9011,
     lng: -56.1645
   };
+  private pageTour?: Driver;
 
   constructor(
     private subnetService: SubnetService,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   ngOnInit(): void {
@@ -365,5 +369,19 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
 
   canManageSubnets(): boolean {
     return this.permissionsService.canManageSubnets();
+  }
+
+  iniciarTourSubredes(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-subnets-header', title: 'Subredes', description: 'Definición de VLANs y datos para ubicar equipos en el plano (IP, máscara, coordenadas).', side: 'bottom' },
+      { selector: '#tour-subnets-toolbar', title: 'Resumen', description: 'Contador de registros cargados y estado de la operación.', side: 'bottom' },
+      { selector: '#tour-subnets-table', title: 'Tabla editable', description: 'In-line: nombre, IP, máscara y datos del mapa; guardá cambios desde cada fila si tenés permiso.', side: 'top' },
+      { selector: '#tour-subnets-map', title: 'Mapa', description: 'Vista Leaflet con agregación de marcadores según coordenadas guardadas.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

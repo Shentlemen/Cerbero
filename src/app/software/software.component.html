@@ -5,8 +5,13 @@
   <div class="header-section">
     <div class="header-content">
       <div class="title-wrapper">
-        <h1><i class="fas fa-code"></i> Software Instalado</h1>
-        <div class="stats-pills filters-container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100 mb-2">
+          <h1 id="tour-software-title" class="mb-0"><i class="fas fa-code"></i> Software Instalado</h1>
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourSoftware()">
+            <i class="fas fa-route"></i> Tour guiado
+          </button>
+        </div>
+        <div class="stats-pills filters-container" id="tour-software-tabs">
           <div
             class="filter-btn software-filter-btn"
             [class.active]="activeTab === 'total'"
@@ -79,6 +84,7 @@
               <input 
                 type="text" 
                 class="form-control" 
+                id="tour-software-search"
                 placeholder="Buscar software..." 
                 [ngModel]="searchTerm"
                 (input)="filterSoftware($event)"
@@ -87,7 +93,7 @@
           </div>
           
           <!-- Panel de selección múltiple -->
-          <div class="multi-select-controls" *ngIf="canManageSoftware()">
+          <div class="multi-select-controls" *ngIf="canManageSoftware()" id="tour-software-multiselect">
             <button class="multi-select-toggle" 
                     [class.active]="multiSelectMode"
                     (click)="toggleMultiSelectMode()"
@@ -183,7 +189,7 @@
   </div>
 
   <div class="content-section" *ngIf="!loading && !isFiltering">
-    <div class="table-container">
+    <div class="table-container" id="tour-software-table">
       <table class="software-table" [class.multi-select]="multiSelectMode">
         <thead>
           <tr>

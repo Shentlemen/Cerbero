@@ -19,6 +19,9 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
 import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
 import { MaintenanceService } from '../services/maintenance.service';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
+import type { DriveStep } from 'driver.js';
 
 declare var bootstrap: any;
 
@@ -61,6 +64,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   expandedChartTitle: string = '';
   expandedChartOptions: any = null;
   private activeModalRef: any = null;
+  private pageTour?: Driver;
 
   private typeMap: Record<string, string> = {
     '0': 'PC',
@@ -83,7 +87,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private http: HttpClient,
     private authService: AuthService,
     private estadoDispositivoService: EstadoDispositivoService,
-    private maintenanceService: MaintenanceService
+    private maintenanceService: MaintenanceService,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -1214,5 +1219,117 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       default:
         return normalizedType;
     }
+  }
+
+  iniciarTourPanel(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      {
+        selector: '#tour-dashboard-title',
+        title: 'Panel de control',
+        description:
+          'Resumen visual del entorno: tipos de terminales, fabricantes, sistemas operativos y dispositivos de red.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-dashboard-charts',
+        title: 'Gráficas',
+        description:
+          'Cada tarjeta resume un corte del inventario. Podés ampliar una gráfica con el ícono de expandir y, en la vista ampliada, usar la opción de imprimir/exportar.',
+        side: 'top'
+      }
+    ]);
+
+    const actionSteps = this.buildDashboardActionsSteps();
+    steps.push(...actionSteps);
+
+    const alertsSteps = this.guidedTourHost.buildSteps([
+      {
+        selector: '#tour-dashboard-alerts',
+        title: 'Alertas recientes',
+        description:
+          'Debajo tenés la lista de alertas detectadas (hardware, disco, red, software, etc.) y los filtros por tipo para enfocarte en lo urgente.',
+        side: 'top'
+      }
+    ]);
+    steps.push(...alertsSteps);
+
+    // Evita iniciar el tour ya scrolleado hacia abajo.
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    const inst = this.guidedTourHost.startTour(steps, () => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+    if (inst) {
+      this.pageTour = inst;
+    }
+  }
+
+  private buildDashboardActionsSteps(): DriveStep[] {
+    const defs: Array<{ selector: string; title: string; description: string; side: 'left' | 'bottom' }> = [
+      {
+        selector: '#tour-dashboard-btn-check',
+        title: 'Verificar cambios',
+        description:
+          'Compara el estado actual de equipos contra el inventario y genera o actualiza alertas automáticamente.',
+        side: 'left'
+      },
+      {
+        selector: '#tour-dashboard-btn-update',
+        title: 'Actualizar dispositivos',
+        description:
+          'Sincroniza dispositivos de red desde OCS para refrescar la información guardada en Cerbero.',
+        side: 'left'
+      },
+      {
+        selector: '#tour-dashboard-btn-cleanup',
+        title: 'Limpiar alertas',
+        description:
+          'Elimina alertas obsoletas o inconsistentes para dejar la bandeja limpia y vigente.',
+        side: 'left'
+      }
+    ];
+
+    const steps: DriveStep[] = [];
+    for (const def of defs) {
+      if (!document.querySelector(def.selector)) {
+        continue;
+      }
+      steps.push({
+        element: def.selector,
+        popover: {
+          title: def.title,
+          description: def.description,
+          side: def.side,
+          align: 'start'
+        },
+        onHighlighted: () => {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+          this.guidedTourHost.refreshPopoverLayout(this.pageTour);
+        }
+      });
+    }
+
+    if (steps.length === 0 && document.querySelector('#tour-dashboard-alert-actions')) {
+      steps.push({
+        element: '#tour-dashboard-alert-actions',
+        popover: {
+          title: 'Acciones rápidas',
+          description: 'En esta zona se concentran las acciones de mantenimiento y sincronización de alertas.',
+          side: 'left',
+          align: 'start'
+        },
+        onHighlighted: () => {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+          this.guidedTourHost.refreshPopoverLayout(this.pageTour);
+        }
+      });
+    }
+
+    return steps;
   }
 }

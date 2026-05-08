@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NetworkInfoService } from '../services/network-info.service';
@@ -17,6 +17,8 @@ import { forkJoin } from 'rxjs';
 import { FormControl } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -39,7 +41,7 @@ interface DeviceType {
   templateUrl: './devices.component.html',
   styleUrls: ['./devices.component.css']
 })
-export class DevicesComponent implements OnInit {
+export class DevicesComponent implements OnInit, OnDestroy {
   devices: NetworkInfoDTO[] = [];
   filteredDevices: NetworkInfoDTO[] = [];
   errorMessage: string | null = null;
@@ -88,6 +90,7 @@ export class DevicesComponent implements OnInit {
 
   /** Búsqueda por MAC (literal o solo hex) o por IP */
   macSearchControl = new FormControl('');
+  private pageTour?: Driver;
 
   constructor(
     private networkInfoService: NetworkInfoService,
@@ -99,7 +102,8 @@ export class DevicesComponent implements OnInit {
     private permissionsService: PermissionsService,
     private estadoDispositivoService: EstadoDispositivoService,
     private authService: AuthService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.macSearchControl.valueChanges.subscribe(value => {
       this.aplicarFiltroBusqueda(value || '');
@@ -108,6 +112,10 @@ export class DevicesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarDispositivos();
+  }
+
+  ngOnDestroy(): void {
+    this.pageTour?.destroy();
   }
 
   cargarDispositivos(): void {
@@ -757,5 +765,26 @@ export class DevicesComponent implements OnInit {
     this.notificationService.showSuccessMessage(
       `PDF exportado exitosamente: ${nombreArchivo}`
     );
+  }
+
+  iniciarTourDispositivos(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-devices-title', title: 'Dispositivos de red', description: 'Periféricos y equipo activo de red excluyendo bajas y stock en almacén.', side: 'bottom' },
+      { selector: '#tour-devices-filters', title: 'Tipos', description: 'Filtrá por categoría: impresoras, switches, APs, etc.', side: 'bottom' },
+      { selector: '#tour-devices-search', title: 'Búsqueda', description: 'Buscá por MAC o dirección IP.', side: 'bottom' },
+      {
+        selector: '#tour-devices-table',
+        title: 'Tabla',
+        description:
+          'Hacé clic en los encabezados para ordenar. Cada fila abre el detalle; con permisos, al final de la fila tenés acciones (baja, almacén, transferir, eliminar).',
+        side: 'bottom'
+      },
+      { selector: '#tour-devices-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

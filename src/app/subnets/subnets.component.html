@@ -1,13 +1,18 @@
 <div class="generic-container subnets-page">
   <div class="header-section">
-    <div class="title-wrapper">
-      <h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
+    <div class="title-wrapper flex-grow-1" id="tour-subnets-header">
+      <h1 id="tour-subnets-title">
         <i class="fas fa-network-wired"></i>
         Subredes
       </h1>
       <p class="subnets-lead text-muted mb-0">
         Gestión de subredes y coordenadas para el mapa.
       </p>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided align-self-start" (click)="iniciarTourSubredes()">
+      <i class="fas fa-route"></i> Tour guiado
+    </button>
     </div>
   </div>
 
@@ -26,14 +31,14 @@
     </div>
 
     <ng-container *ngIf="!loading">
-      <div class="subnets-toolbar">
+      <div class="subnets-toolbar" id="tour-subnets-toolbar">
         <span class="subnets-count">
           <strong>{{ collectionSize }}</strong>
           <span class="text-muted">subredes</span>
         </span>
       </div>
 
-      <div class="table-container subnets-table-container">
+      <div class="table-container subnets-table-container" id="tour-subnets-table">
         <table class="table table-sm table-hover align-middle generic-table subnets-table">
           <thead>
             <tr>
@@ -164,7 +169,7 @@
     </ng-container>
 
     <!-- Siempre en el DOM: Leaflet se inicializa al cargar y no debe perder el contenedor al poner loading=true -->
-    <div class="subnets-map-block" [class.subnets-map-block--dimmed]="loading">
+    <div class="subnets-map-block" id="tour-subnets-map" [class.subnets-map-block--dimmed]="loading">
       <h2 class="subnets-map-title">
         <i class="fas fa-map-marked-alt me-2"></i>
         Mapa de subredes

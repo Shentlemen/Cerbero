@@ -1,4 +1,26 @@
 /* You can add global styles to this file, and also import other style files */
+@import "driver.js/dist/driver.css";
+
+/* Tour guiado — mismo estilo en todas las pantallas con botón propio */
+.btn-tour-guided {
+  border-color: #198754;
+  color: #198754;
+  flex-shrink: 0;
+}
+.btn-tour-guided:hover {
+  background-color: #198754;
+  border-color: #198754;
+  color: #fff;
+}
+
+/* Tours guiados: transiciones más lentas que el default de driver.js (~0.2s). */
+body.driver-active.driver-fade .driver-overlay {
+  animation-duration: 0.55s !important;
+  animation-timing-function: ease-in-out !important;
+}
+body.driver-active.driver-fade .driver-popover {
+  animation-duration: 0.45s !important;
+}
 
 /* Estilos base y variables */
 :root {

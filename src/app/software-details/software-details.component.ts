@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SoftwareDTO } from '../services/software.service';
 
@@ -9,14 +9,20 @@ import { SoftwareDTO } from '../services/software.service';
   templateUrl: './software-details.component.html',
   styleUrls: ['./software-details.component.css']
 })
-export class SoftwareDetailsComponent {
+export class SoftwareDetailsComponent implements OnChanges {
   @Input() softwareData: SoftwareDTO[] = [];
+  /** Solo se reordena al cambiar datos; antes el getter ordenaba en cada CD y trababa pestaña Software/tour. */
+  softwareDataSorted: SoftwareDTO[] = [];
 
-  get softwareDataSorted(): SoftwareDTO[] {
-    return [...(this.softwareData || [])].sort((a, b) =>
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['softwareData']) {
+      return;
+    }
+    const raw = this.softwareData || [];
+    this.softwareDataSorted = [...raw].sort((a, b) =>
       (a?.nombre || '').localeCompare(b?.nombre || '', 'es', {
         sensitivity: 'base'
       })
     );
   }
-} 
+}

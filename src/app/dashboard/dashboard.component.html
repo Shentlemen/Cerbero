@@ -3,12 +3,17 @@
   <app-notification-container></app-notification-container>
   
   <header class="dashboard-header">
-    <h1 class="dashboard-title">
-      <i class="fas fa-chart-line"></i>
-      <span>Panel de Control</span>
-    </h1>
+    <div class="dashboard-header-row w-100 mb-2">
+      <h1 class="dashboard-title mb-0" id="tour-dashboard-title">
+        <i class="fas fa-chart-line"></i>
+        <span>Panel de Control</span>
+      </h1>
+      <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided dashboard-tour-btn" (click)="iniciarTourPanel()">
+        <i class="fas fa-route"></i> Tour guiado
+      </button>
+    </div>
   </header>
-  <div class="charts-container">
+  <div class="charts-container" id="tour-dashboard-charts">
     <div class="chart-card" *ngIf="pieChartOptions">
       <div class="chart-header">
         <h3>Terminales</h3>
@@ -55,15 +60,16 @@
     </div>
   </div>
 
-  <div class="alerts-container">
+  <div class="alerts-container" id="tour-dashboard-alerts">
     <div class="alerts-header">
       <h2 class="alerts-title">
         <i class="fa-solid fa-bell"></i>
         Alertas Recientes
       </h2>
-      <div class="alerts-buttons">
+      <div class="alerts-buttons" id="tour-dashboard-alert-actions">
         <button 
           class="btn btn-check-changes" 
+          id="tour-dashboard-btn-check"
           (click)="checkHardwareChanges()" 
           [disabled]="isChecking"
           title="Verificar cambios en el hardware"
@@ -73,6 +79,7 @@
         </button>
         <button 
           class="btn btn-update-devices" 
+          id="tour-dashboard-btn-update"
           (click)="actualizarDispositivos()" 
           [disabled]="isUpdatingDevices"
           title="Actualizar dispositivos de red desde OCS"
@@ -82,6 +89,7 @@
         </button>
         <button 
           class="btn btn-cleanup-alerts" 
+          id="tour-dashboard-btn-cleanup"
           (click)="cleanupOrphanedAlerts()" 
           [disabled]="isCleaning"
           title="Verificar y limpiar todas las alertas obsoletas (hardware eliminado, software ya no prohibido, equipos 'nuevos' que ya existen, cambios que ya no son válidos)"

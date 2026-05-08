@@ -42,6 +42,7 @@
     "bootstrap": "^5.3.3",
     "cerbero": "file:",
     "chart.js": "^4.4.4",
+    "driver.js": "^1.4.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

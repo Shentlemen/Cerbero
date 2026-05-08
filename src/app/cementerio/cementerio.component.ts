@@ -19,6 +19,8 @@ import { FormularioBajaModalComponent, DatosBaja } from '../components/formulari
 import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-cementerio',
@@ -63,6 +65,7 @@ export class CementerioComponent implements OnInit {
   editingObservacionesId: string | number | null = null;
   editingObservacionesValue: string = '';
   updatingObservaciones: boolean = false;
+  private pageTour?: Driver;
 
   constructor(
     private hardwareService: HardwareService,
@@ -74,7 +77,8 @@ export class CementerioComponent implements OnInit {
     private router: Router,
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
@@ -828,5 +832,20 @@ export class CementerioComponent implements OnInit {
     this.notificationService.showSuccessMessage(
       `PDF exportado exitosamente: ${nombreArchivo}`
     );
+  }
+
+  iniciarTourCementerio(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-cementerio-title', title: 'Cementerio', description: 'Equipos y dispositivos dados de baja operativamente; no aparecen en inventario activo.', side: 'bottom' },
+      { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Alterná entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
+      { selector: '#tour-cementerio-search', title: 'Búsqueda', description: 'Filtrá por nombre para ubicar un registro.', side: 'bottom' },
+      { selector: '#tour-cementerio-table', title: 'Tabla', description: 'Reactivá, transferí o editá observaciones según permisos.', side: 'top' },
+      { selector: '#tour-cementerio-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

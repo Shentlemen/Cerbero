@@ -37,6 +37,7 @@ import autoTable from 'jspdf-autotable';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
+import { driver, type Driver, type DriveStep } from 'driver.js';
 
 type PdfHardwareRemoteDep =
   | 'bios'
@@ -82,6 +83,9 @@ interface PdfExportSection {
   encapsulation: ViewEncapsulation.None
 })
 export class ActivosComponent implements OnInit {
+  private inventoryTour?: Driver;
+  private inventoryTourZoomSuspendCount = 0;
+  private inventoryTourOpenedActivoModal = false;
   private static readonly PDF_KEY_REMOTE_DEP: Partial<
     Record<string, PdfHardwareRemoteDep>
   > = {
@@ -540,6 +544,243 @@ export class ActivosComponent implements OnInit {
 
     // Actualizar validaciones iniciales
     this.updateValidationRules();
+  }
+
+  iniciarTourInventario(): void {
+    this.inventoryTourOpenedActivoModal = false;
+    const steps: DriveStep[] = [];
+    const addStep = (selector: string, title: string, description: string, side: 'top' | 'bottom' | 'left' | 'right' = 'bottom') => {
+      if (!this.documentRef.querySelector(selector)) return;
+      steps.push({
+        element: selector,
+        popover: {
+          title,
+          description,
+          side,
+          align: 'start'
+        }
+      });
+    };
+
+    addStep(
+      '#activos-tour-title',
+      'Gestión de Activos',
+      'Desde esta pantalla gestionás altas, edición, filtros, búsqueda e impresión del inventario.',
+      'bottom'
+    );
+    addStep(
+      '#activos-tour-new-btn',
+      'Nuevo Activo',
+      'Este botón abre el modal para crear activos individuales o por rango.',
+      'bottom',
+    );
+    addStep(
+      '#activos-tour-search',
+      'Búsqueda rápida',
+      'Acá podés buscar por número de activo, responsable o compra para filtrar la lista.',
+      'bottom'
+    );
+    addStep(
+      '#activos-tour-table',
+      'Tabla de inventario',
+      'La tabla muestra el estado actual del inventario y permite ver detalles o editar registros.',
+      'top'
+    );
+    addStep(
+      '#activos-tour-print-btn',
+      'Exportar a PDF',
+      'Desde acá exportás el listado filtrado con las columnas que elijas.',
+      'left'
+    );
+
+    // Paso especial: abrir modal y continuar dentro del formulario.
+    steps.push({
+      element: '#activos-tour-new-btn',
+      popover: {
+        title: 'Vamos al formulario',
+        description: 'Al continuar, se abrirá el modal para mostrarte los campos más importantes.',
+        side: 'bottom',
+        align: 'start',
+        onNextClick: () => {
+          this.inventoryTourOpenedActivoModal = true;
+          void this.abrirModal(this.activoModalTemplate).then(
+            () => this.inventoryTourAdvanceWhenModalCreationModeListo(),
+            () => this.inventoryTourAdvanceWhenModalCreationModeListo()
+          );
+        }
+      }
+    });
+    steps.push({
+      element: '#activos-tour-modal-creation-mode',
+      onHighlighted: () => this.inventoryTourRefreshHighlightAfterLayout(),
+      popover: {
+        title: 'Individual o por rango',
+        description:
+          'Individual: un solo número de activo en el campo correspondiente. ' +
+          'Rango: indicá número inicial y final con el mismo formato (por ejemplo PC14000 a PC14005, o 100 a 105). ' +
+          'Se crearán tantos activos como números incluya el rango; tipo, compra, ítem, entrega y demás datos comunes se aplican a todos. ' +
+          'Si el rango es muy grande, el sistema avisa porque el proceso puede tardar.',
+        side: 'bottom',
+        align: 'start'
+      }
+    });
+    steps.push({
+      element: '#activos-tour-modal-name',
+      onHighlighted: () => this.inventoryTourRefreshHighlightAfterLayout(),
+      popover: {
+        title: 'Número de Activo',
+        description: 'Este campo identifica al equipo y se valida que no esté duplicado.',
+        side: 'bottom',
+        align: 'start'
+      }
+    });
+    steps.push({
+      element: '#activos-tour-modal-tipo',
+      popover: {
+        title: 'Tipo de Activo',
+        description: 'Define clasificación operativa y ayuda a autocompletar responsable según reglas del sistema.',
+        side: 'bottom',
+        align: 'start'
+      }
+    });
+    steps.push({
+      element: '#activos-tour-modal-compra',
+      popover: {
+        title: 'Compra e ítems',
+        description: 'Primero elegís la compra; luego se habilitan ítem y entrega asociados.',
+        side: 'bottom',
+        align: 'start'
+      }
+    });
+    steps.push({
+      element: '#activos-tour-modal-save',
+      popover: {
+        title: 'Guardar',
+        description:
+          'Cuando el formulario está completo, este botón registra el alta o las modificaciones.',
+        side: 'top',
+        align: 'start',
+        onNextClick: () => {
+          this.modalService.dismissAll();
+          this.inventoryTourOpenedActivoModal = false;
+          this.changeDetectorRef.detectChanges();
+          this.inventoryTourAdvanceWhenVisibleSelector('#activos-tour-table');
+        }
+      }
+    });
+
+    if (steps.length === 0) {
+      return;
+    }
+
+    this.inventoryTour?.destroy();
+    this.suspenderZoomGlobalParaTour();
+    this.inventoryTour = driver({
+      allowClose: true,
+      showProgress: true,
+      overlayOpacity: 0.6,
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Anterior',
+      doneBtnText: 'Finalizar',
+      onDestroyed: () => {
+        if (this.inventoryTourOpenedActivoModal) {
+          this.modalService.dismissAll();
+          this.inventoryTourOpenedActivoModal = false;
+        }
+        this.restaurarZoomGlobalTrasTour();
+      },
+      steps
+    });
+    this.inventoryTour.drive();
+  }
+
+  private suspenderZoomGlobalParaTour(): void {
+    this.inventoryTourZoomSuspendCount += 1;
+    this.documentRef.body.classList.add('no-global-zoom');
+  }
+
+  private restaurarZoomGlobalTrasTour(): void {
+    this.inventoryTourZoomSuspendCount = Math.max(0, this.inventoryTourZoomSuspendCount - 1);
+    if (this.inventoryTourZoomSuspendCount === 0) {
+      this.documentRef.body.classList.remove('no-global-zoom');
+    }
+  }
+
+  /** driver.js puede medir antes de que el modal termine layout; repetir refresh evita el “globo centrado”. */
+  private inventoryTourRefreshHighlightAfterLayout(): void {
+    const tour = this.inventoryTour;
+    const tick = () => tour?.refresh();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.setTimeout(tick, 0);
+        window.setTimeout(tick, 100);
+        window.setTimeout(tick, 260);
+      });
+    });
+  }
+
+  private isElementDomReadyForHighlight(el: Element | null): boolean {
+    if (!(el instanceof HTMLElement)) {
+      return false;
+    }
+    const r = el.getBoundingClientRect();
+    return r.width >= 4 && r.height >= 4;
+  }
+
+  /**
+   * Espera a que el selector exista y tenga tamaño (y opcionalmente condición extra) antes de moveNext + refresh.
+   */
+  private inventoryTourAdvanceWhenVisibleSelector(
+    selector: string,
+    options?: {
+      extra?: () => boolean;
+      maxAttempts?: number;
+      intervalMs?: number;
+      settleDelayMs?: number;
+    }
+  ): void {
+    const maxAttempts = options?.maxAttempts ?? 50;
+    const intervalMs = options?.intervalMs ?? 80;
+    const settleDelayMs = options?.settleDelayMs ?? 140;
+
+    const tryAdvance = (left: number) => {
+      const el = this.documentRef.querySelector(selector);
+      const base = this.isElementDomReadyForHighlight(el);
+      const extraOk = options?.extra ? options.extra() : true;
+      if (base && extraOk) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.setTimeout(() => {
+              this.inventoryTour?.moveNext();
+              window.setTimeout(() => this.inventoryTour?.refresh(), 100);
+            }, settleDelayMs);
+          });
+        });
+        return;
+      }
+      if (left <= 0) {
+        this.inventoryTour?.moveNext();
+        window.setTimeout(() => this.inventoryTour?.refresh(), 160);
+        return;
+      }
+      window.setTimeout(() => tryAdvance(left - 1), intervalMs);
+    };
+    tryAdvance(maxAttempts);
+  }
+
+  private inventoryTourAdvanceWhenModalCreationModeListo(): void {
+    this.changeDetectorRef.detectChanges();
+    this.inventoryTourAdvanceWhenVisibleSelector('#activos-tour-modal-creation-mode', {
+      extra: () => !!this.documentRef.querySelector('.modal.show'),
+      maxAttempts: 55,
+      intervalMs: 70,
+      settleDelayMs: 160
+    });
+  }
+
+  /** Evita enviar el formulario del activo con un clic accidental durante el tour guiado. */
+  isActivoSubmitBlockedByInventoryTour(): boolean {
+    return !!(this.inventoryTour?.isActive() && this.inventoryTourOpenedActivoModal);
   }
 
   cargarUsuarios() {
@@ -1346,6 +1587,9 @@ export class ActivosComponent implements OnInit {
   }
 
   async guardarActivo() {
+    if (this.isActivoSubmitBlockedByInventoryTour()) {
+      return;
+    }
     console.log('Método guardarActivo llamado');
     console.log('Modo de creación:', this.creationMode);
     
@@ -2828,6 +3072,9 @@ export class ActivosComponent implements OnInit {
    */
   cerrarModal(modal: any) {
     this.shouldShowValidationErrors = false;
+    if (this.inventoryTour?.isActive()) {
+      this.inventoryTourOpenedActivoModal = false;
+    }
     modal.dismiss();
   }
 

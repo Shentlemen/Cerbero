@@ -10,6 +10,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-software',
@@ -63,12 +65,14 @@ export class SoftwareComponent implements OnInit {
   showConfirmDialog: boolean = false;
   showConfirmDialogMultiple: boolean = false;
   softwareToDelete: SoftwareDTO | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private softwareService: SoftwareService,
     private router: Router,
     private permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private guidedTourHost: GuidedTourHostService
   ) {
     // Ya no necesitamos búsqueda reactiva, se maneja directamente en filterSoftware
   }
@@ -816,6 +820,21 @@ export class SoftwareComponent implements OnInit {
       );
     } finally {
       this.isUpdatingMultiple = false;
+    }
+  }
+
+  iniciarTourSoftware(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-software-title', title: 'Software instalado', description: 'Inventario agregado de aplicaciones detectadas en los equipos. Podés clasificar y auditar uso.', side: 'bottom' },
+      { selector: '#tour-software-tabs', title: 'Vistas', description: 'Total, ocultos, prohibidos, drivers y licenciados: cada pestaña aplica un filtro rápido sobre la base.', side: 'bottom' },
+      { selector: '#tour-software-search', title: 'Búsqueda', description: 'Buscá por nombre o editor para acotar la tabla.', side: 'bottom' },
+      { selector: '#tour-software-multiselect', title: 'Selección múltiple', description: 'Activá el modo para marcar varios ítems y aplicar visibilidad, prohibido, driver o borrado en lote (según permisos).', side: 'bottom' },
+      { selector: '#tour-software-table', title: 'Listado', description: 'Revisá versiones, equipos afectados y acciones por fila. La paginación está abajo del listado.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
     }
   }
 }

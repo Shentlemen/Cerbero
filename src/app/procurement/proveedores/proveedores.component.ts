@@ -7,6 +7,8 @@ import { NgbPaginationModule, NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bo
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 import { ContactosService, ContactoDTO } from '../../services/contactos.service';
 import { PermissionsService } from '../../services/permissions.service';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-proveedores',
@@ -39,6 +41,7 @@ export class ProveedoresComponent implements OnInit {
   contactosVista: ContactoDTO[] = [];
   proveedorVistaNombre: string = '';
   formError: string | null = null;
+  private pageTour?: Driver;
 
   readonly fb: FormBuilder;
 
@@ -48,7 +51,8 @@ export class ProveedoresComponent implements OnInit {
     private modalService: NgbModal,
     private contactosService: ContactosService,
     private permissionsService: PermissionsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.fb = fb;
     this.filterForm = this.fb.group({
@@ -462,5 +466,19 @@ export class ProveedoresComponent implements OnInit {
   getDisplayUrl(url: string): string {
     if (!url) return '';
     return url.replace(/^https?:\/\//, '');
+  }
+
+  iniciarTourProveedores(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-proveedores-title', title: 'Proveedores', description: 'Directorio de proveedores con datos comerciales y contactos asociados a compras.', side: 'bottom' },
+      { selector: '#tour-proveedores-nuevo', title: 'Nuevo proveedor', description: 'Alta rápida con pestañas de datos y contactos (si tenés permiso de gestión).', side: 'left' },
+      { selector: '#tour-proveedores-search', title: 'Búsqueda', description: 'Filtrá por nombre comercial sin recargar la página.', side: 'bottom' },
+      { selector: '#tour-proveedores-table', title: 'Listado', description: 'Ordená columnas, editá o eliminá; podés ver contactos en modal.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

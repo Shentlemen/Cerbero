@@ -6,6 +6,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-entregas',
@@ -31,12 +33,14 @@ export class EntregasComponent implements OnInit {
   modoEdicion = false;
   showConfirmDialog = false;
   entregaToDelete: number | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private entregasService: EntregasService,
     private lotesService: LotesService,
     private fb: FormBuilder,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -247,5 +251,19 @@ export class EntregasComponent implements OnInit {
 
   formatearFecha(fecha: string): string {
     return new Date(fecha).toLocaleDateString('es-ES');
+  }
+
+  iniciarTourEntregas(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-entregas-header', title: 'Entregas', description: 'Registro de entregas de ítems de compra hacia almacén u otras ubicaciones lógicas.', side: 'bottom' },
+      { selector: '#tour-entregas-stats', title: 'Total', description: 'Contador rápido de entregas cargadas en la vista actual.', side: 'bottom' },
+      { selector: '#tour-entregas-nueva', title: 'Nueva entrega', description: 'Alta con vínculo a lote y fechas asociadas.', side: 'left' },
+      { selector: '#tour-entregas-table', title: 'Tabla', description: 'Consultá y editá entregas existentes.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

@@ -5,7 +5,7 @@
   <div class="header-section">
     <div class="header-content">
       <div class="title-wrapper">
-        <h1><i class="fas fa-box"></i> Gestión de Activos</h1>
+        <h1 id="activos-tour-title"><i class="fas fa-box"></i> Gestión de Activos</h1>
         <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
           {{ successMessage }}
           <button type="button" class="btn-close" (click)="successMessage = null"></button>
@@ -128,11 +128,16 @@
         </div>
       </div>
       <div class="actions d-flex align-items-center flex-wrap activos-header-actions">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
+        <button type="button" class="btn btn-outline-secondary btn-tour-activos" (click)="iniciarTourInventario()">
+          <i class="fas fa-route me-2"></i>
+          Tour guiado
+        </button>
+        <button id="activos-tour-new-btn" type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Activo
         </button>
         <button
+          id="activos-tour-print-btn"
           type="button"
           class="btn btn-primary btn-sm print-btn"
           (click)="abrirModalPdfActivos(pdfOpcionesModal)"
@@ -148,7 +153,7 @@
   <div class="content-section">
     <div class="row mb-3">
       <div class="col-12">
-        <input type="text" class="form-control" placeholder="Buscar" [formControl]="numeroCompraControl" style="max-width: 360px;">
+        <input id="activos-tour-search" type="text" class="form-control" placeholder="Buscar" [formControl]="numeroCompraControl" style="max-width: 360px;">
       </div>
     </div>
     <div class="table-container">
@@ -163,7 +168,7 @@
         <p class="mt-2">Cargando activos...</p>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
+      <div id="activos-tour-table" class="table-responsive" *ngIf="!loading && !error">
         <table class="generic-table">
           <thead>
             <tr>
@@ -301,13 +306,13 @@
     <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Activo</h4>
     <button type="button" class="btn-close" (click)="cerrarModal(modal)"></button>
   </div>
-  <div class="modal-body">
+  <div id="activos-tour-modal-root" class="modal-body">
     <div *ngIf="errorMessage" class="alert alert-danger">
       <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
     </div>
     
     <!-- Modo de creación: selector tipo tarjeta -->
-    <div class="activo-creation-mode-wrap mb-3">
+    <div class="activo-creation-mode-wrap mb-3" id="activos-tour-modal-creation-mode">
       <span class="activo-creation-mode-heading">Modo de creación</span>
       <div class="activo-creation-mode" role="radiogroup" aria-label="Modo de creación">
         <label
@@ -364,6 +369,7 @@
               <div class="col-md-6">
                 <label class="form-label">Número de Activo</label>
                 <input
+                  id="activos-tour-modal-name"
                   type="text"
                   class="form-control"
                   formControlName="name"
@@ -427,7 +433,7 @@
             <div class="row mb-3">
               <div class="col-md-6">
                 <label class="form-label">Tipo de Activo</label>
-                <select class="form-select" formControlName="idTipoActivo">
+                <select id="activos-tour-modal-tipo" class="form-select" formControlName="idTipoActivo">
                   <option value="">Seleccione un tipo de activo</option>
                   <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">
                     {{tipo.descripcion}}
@@ -485,11 +491,11 @@
             <!-- Tercera fila: Número de Compra y Item -->
             <div class="row mb-3">
               <div class="col-md-6">
-                <label class="form-label" for="activoModalCompraSearch">Compra</label>
+                <label class="form-label" for="activos-tour-modal-compra">Compra</label>
                 <!-- Mismo patrón que Registrar Stock (stock.component → modal Ubicación): input + .items-dropdown -->
                 <div class="position-relative activo-modal-compra-search-wrap">
                   <input
-                    id="activoModalCompraSearch"
+                    id="activos-tour-modal-compra"
                     type="text"
                     class="form-control"
                     autocomplete="off"
@@ -911,12 +917,16 @@
     <div class="d-flex justify-content-between align-items-center w-100">
       <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cerrarModal(modal)">Cancelar</button>
       <button type="button" class="btn btn-sm" 
-              [class.btn-success]="activoForm.valid" 
-              [class.btn-warning]="!activoForm.valid"
+              id="activos-tour-modal-save"
+              [class.btn-success]="activoForm.valid && !isActivoSubmitBlockedByInventoryTour()" 
+              [class.btn-warning]="!activoForm.valid && !isActivoSubmitBlockedByInventoryTour()"
+              [class.btn-secondary]="isActivoSubmitBlockedByInventoryTour()"
+              [disabled]="isActivoSubmitBlockedByInventoryTour()"
               (click)="guardarActivo()">
-        <i class="fas" [ngClass]="{'fa-save': activoForm.valid, 'fa-exclamation-triangle': !activoForm.valid}"></i>
+        <i class="fas" [ngClass]="isActivoSubmitBlockedByInventoryTour() ? 'fa-lock' : (activoForm.valid ? 'fa-save' : 'fa-exclamation-triangle')"></i>
         {{modoEdicion ? 'Actualizar' : 'Guardar'}}
-        <span *ngIf="!activoForm.valid && shouldShowValidationErrors" class="ms-1">(Revisar errores)</span>
+        <span *ngIf="isActivoSubmitBlockedByInventoryTour()" class="ms-1">(Tour)</span>
+        <span *ngIf="!isActivoSubmitBlockedByInventoryTour() && !activoForm.valid && shouldShowValidationErrors" class="ms-1">(Revisar errores)</span>
       </button>
     </div>
   </div>

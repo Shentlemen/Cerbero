@@ -14,6 +14,8 @@ import { HardwareService } from '../../services/hardware.service';
 import { BiosService } from '../../services/bios.service';
 import { NetworkInfoService } from '../../services/network-info.service';
 import { forkJoin } from 'rxjs';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-almacenes',
@@ -65,6 +67,7 @@ export class AlmacenesComponent implements OnInit {
 
   /** Si el usuario cerró el panel, no volver a abrir solo el almacén 1 al refrescar datos. */
   private omitirAbrirStockPorDefecto = false;
+  private pageTour?: Driver;
 
   constructor(
     private stockAlmacenService: StockAlmacenService,
@@ -77,7 +80,8 @@ export class AlmacenesComponent implements OnInit {
     private estadoDispositivoService: EstadoDispositivoService,
     private hardwareService: HardwareService,
     private biosService: BiosService,
-    private networkInfoService: NetworkInfoService
+    private networkInfoService: NetworkInfoService,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.almacenForm = this.fb.group({
       numero: ['', [Validators.required, Validators.maxLength(50)]],
@@ -530,5 +534,18 @@ export class AlmacenesComponent implements OnInit {
   actualizarPaginacion(): void {
     this.collectionSize = this.almacenesFiltrados.length;
     this.page = 1;
+  }
+
+  iniciarTourAlmacenes(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-almacenes-title', title: 'Almacenes', description: 'Vista en tarjetas de cada depósito físico y su numeración.', side: 'bottom' },
+      { selector: '#tour-almacenes-nuevo', title: 'Alta de almacén', description: 'Creá o editá datos del almacén según rol (GM, Admin, Almacén).', side: 'left' },
+      { selector: '#tour-almacenes-cards', title: 'Tarjetas', description: 'Hacé clic en una tarjeta para ver el stock incrustado y operar movimientos desde ahí.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

@@ -86,6 +86,15 @@
   background: linear-gradient(145deg, #f8f9fa, #e9ecef);
   border-radius: 10px;
   border: 1px solid #dee2e6;
+  /* Tour / scrollIntoView: dejar espacio bajo header fijo del layout */
+  scroll-margin-top: 76px;
+}
+
+/* Durante el tour mantenemos la franja de pestañas visible al iluminar un botón. */
+body.driver-active #tour-assetdetails-tabs {
+  position: sticky;
+  top: 68px;
+  z-index: 10040;
 }
 
 .asset-tab-strip {
@@ -265,6 +274,7 @@
   background: white;
   border: none;
   padding: 1rem 0;
+  scroll-margin-top: 76px;
 }
 
 /* Lists */

@@ -1,4 +1,4 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ActivatedRoute } from '@angular/router';
@@ -34,6 +34,8 @@ import { MonitorDetailsComponent } from '../monitor-details/monitor-details.comp
 import { StorageDetailsComponent } from '../storage-details/storage-details.component';
 import { VideoDetailsComponent } from '../video-details/video-details.component';
 import { SoftwareDetailsComponent } from '../software-details/software-details.component';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver, DriveStep } from 'driver.js';
 
 interface Asset {
   id: number;
@@ -93,7 +95,7 @@ interface Asset {
   templateUrl: './assetdetails.component.html',
   styleUrls: ['./assetdetails.component.css']
 })
-export class AssetdetailsComponent implements OnInit {
+export class AssetdetailsComponent implements OnInit, OnDestroy {
   asset: Asset | null = null;
   /** Lista de subnets cargada desde la API para resolver nombre por IP. */
   subnets: SubnetDTO[] = [];
@@ -110,6 +112,23 @@ export class AssetdetailsComponent implements OnInit {
   deletingHistorialId: number | null = null;
   showDeleteHistorialDialog = false;
   historialPendienteEliminar: UbicacionHistorialDTO | null = null;
+  private pageTour?: Driver;
+  private returnToAssetsAfterTour = false;
+  private readonly loadedComponentTabs = new Set<string>();
+  private readonly loadingComponentTabs = new Set<string>();
+
+  private readonly tourTabButtonSelectors: Record<string, string> = {
+    general: '#tour-assetdetails-tab-general',
+    bios: '#tour-assetdetails-tab-bios',
+    cpu: '#tour-assetdetails-tab-cpu',
+    drive: '#tour-assetdetails-tab-drive',
+    memory: '#tour-assetdetails-tab-memory',
+    monitor: '#tour-assetdetails-tab-monitor',
+    storage: '#tour-assetdetails-tab-storage',
+    video: '#tour-assetdetails-tab-video',
+    ubicacion: '#tour-assetdetails-tab-ubicacion',
+    software: '#tour-assetdetails-tab-software'
+  };
 
   constructor(
     private route: ActivatedRoute,
@@ -127,7 +146,9 @@ export class AssetdetailsComponent implements OnInit {
     private softwareByHardwareService: SoftwareByHardwareService,
     private ubicacionesService: UbicacionesService,
     private subnetService: SubnetService,
-    public permissionsService: PermissionsService
+    public permissionsService: PermissionsService,
+    private guidedTourHost: GuidedTourHostService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   /** Nombre de subred (`subnet.NAME`) obtenido emparejando `asset.ipAddr` con NETID/MASK de Cerbero. */
@@ -147,6 +168,11 @@ export class AssetdetailsComponent implements OnInit {
               result.lastDate = result.lastDate ? new Date(result.lastDate) : null;
               result.lastCome = result.lastCome ? new Date(result.lastCome) : null;
               this.asset = result as Asset;
+              this.componentData = {};
+              this.loadedComponentTabs.clear();
+              this.loadingComponentTabs.clear();
+              this.scrollAssetDetailsViewportToTop();
+              window.setTimeout(() => this.scrollAssetDetailsViewportToTop(), 0);
 
               this.subnetsLoaded = false;
               this.subnetService.getSubnets().subscribe({
@@ -160,16 +186,20 @@ export class AssetdetailsComponent implements OnInit {
                 }
               });
               
-              // Pre-cargar datos de todas las pestañas
-              ['bios', 'cpu', 'drive', 'memory', 'monitor', 'storage', 'video'].forEach(tab => {
+              // Pre-cargar datos de todas las pestañas (incl. Software: evita desalinear el spotlight del tour hasta que llega el HTTP).
+              ['bios', 'cpu', 'drive', 'memory', 'monitor', 'storage', 'video', 'software'].forEach((tab) => {
                 this.loadComponentData(tab);
               });
 
               if (this.asset?.id) {
                 this.cargarUbicacion();
                 this.cargarHistorialUbicaciones();
-                
-
+                const startDetailsTour = sessionStorage.getItem('cerbero:start-asset-details-tour') === '1';
+                this.returnToAssetsAfterTour = sessionStorage.getItem('cerbero:return-to-assets-after-details-tour') === '1';
+                if (startDetailsTour) {
+                  sessionStorage.removeItem('cerbero:start-asset-details-tour');
+                  window.setTimeout(() => this.iniciarTourDetalleActivo(), 220);
+                }
               }
             },
             (error) => {
@@ -181,6 +211,10 @@ export class AssetdetailsComponent implements OnInit {
         }
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.pageTour?.destroy();
   }
 
   changeTab(tab: string): void {
@@ -198,8 +232,11 @@ export class AssetdetailsComponent implements OnInit {
     }, 150);
   }
 
-  loadComponentData(component: string): void {
+  loadComponentData(component: string, forceReload = false): void {
     if (!this.asset) return;
+    if (!forceReload && (this.loadedComponentTabs.has(component) || this.loadingComponentTabs.has(component))) {
+      return;
+    }
 
     let service: any;
     let method: string = 'getByHardwareId';
@@ -234,6 +271,7 @@ export class AssetdetailsComponent implements OnInit {
     }
 
     if (service && service[method]) {
+      this.loadingComponentTabs.add(component);
       service[method](this.asset.id).subscribe(
         (data: any) => {
           if (component === 'bios' || component === 'cpu') {
@@ -243,12 +281,15 @@ export class AssetdetailsComponent implements OnInit {
             // Para otros componentes, mantener el comportamiento actual
             this.componentData[component] = Array.isArray(data) ? data : [data];
           }
-          
+          this.loadedComponentTabs.add(component);
+          this.loadingComponentTabs.delete(component);
 
         },
         (error: unknown) => {
           console.error(`Error al cargar datos de ${component}:`, error);
           this.componentData[component] = null;
+          this.loadedComponentTabs.add(component);
+          this.loadingComponentTabs.delete(component);
         }
       );
     } else {
@@ -891,6 +932,215 @@ export class AssetdetailsComponent implements OnInit {
 
   canDeleteAssetLocationHistory(): boolean {
     return this.permissionsService.isGMOrAdmin();
+  }
+
+  /** Al abrir esta pantalla conviene quedar arriba (evita recuperar scroll de navegaciones largas previas). */
+  private scrollAssetDetailsViewportToTop(): void {
+    const apply = (): void => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+      document.body.scrollTop = 0;
+      const main = document.querySelector('.main-content');
+      if (main instanceof HTMLElement) {
+        main.scrollTop = 0;
+      }
+    };
+    apply();
+    requestAnimationFrame(apply);
+  }
+
+  /** Reencuadrar pestañas al inicio visible; un solo refresco delegado en GuidedTourHostService. */
+  private repositionTourTechnicalTabs(driverInst?: Driver): void {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const main = document.querySelector('.main-content');
+    if (main instanceof HTMLElement) {
+      main.scrollTop = 0;
+    }
+    document.querySelector('#tour-assetdetails-tabs')?.scrollIntoView({
+      behavior: 'auto',
+      block: 'start',
+      inline: 'nearest'
+    });
+    this.guidedTourHost.refreshPopoverLayout(driverInst);
+  }
+
+  /** Cambio instantáneo de pestaña para el tour (sin animación fade de changeTab). */
+  private activateTabForTour(tab: string): void {
+    this.activeTab = tab;
+    this.loadComponentData(tab);
+    this.cdr.detectChanges();
+  }
+
+  private refreshTourStage(driverInst: Driver): void {
+    this.guidedTourHost.refreshPopoverLayout(driverInst);
+  }
+
+  /** Elemento del botón de pestaña para el spotlight de driver.js (fallback: franja completa). */
+  private tourTabButtonEl(tabKey: string): HTMLElement {
+    const sel = this.tourTabButtonSelectors[tabKey];
+    const btn = sel ? document.querySelector(sel) : null;
+    return (btn ?? document.querySelector('#tour-assetdetails-tabs')) as HTMLElement;
+  }
+
+  /** Una sola explicación para BIOS, CPU, Unidades, Memoria, Monitor, Discos físicos y Video. */
+  private tourHardwareComponentsOverviewStep(): DriveStep {
+    return {
+      element: '#tour-assetdetails-tabs',
+      popover: {
+        title: 'Hardware del equipo',
+        description:
+          'Las pestañas BIOS, CPU, Unidades de disco, Memoria, Monitor, Almacenamiento y Video muestran el detalle técnico inventariado por el agente: modelos, series, tamaños y periféricos. Abrí cada una cuando necesités profundizar en un componente concreto.',
+        side: 'bottom',
+        align: 'start'
+      },
+      onHighlightStarted: () => {
+        this.activateTabForTour('bios');
+      },
+      onHighlighted: (_el, _step, opts) => {
+        this.repositionTourTechnicalTabs(opts.driver);
+      }
+    };
+  }
+
+  /**
+   * Software: después de cargar tabla el layout cambia una vez; segundo refresh tarde alinea hueco/popover si el navegador aún pintaba la filas.
+   */
+  private tourSoftwareTabStep(): DriveStep {
+    return {
+      element: (): HTMLElement => {
+        this.activateTabForTour('software');
+        return this.tourTabButtonEl('software');
+      },
+      popover: {
+        title: 'Software',
+        description:
+          'Listado de aplicaciones instaladas detectadas por el inventario del agente. El software marcado como prohibido se muestra en rojo (texto y fila destacada).',
+        side: 'bottom',
+        align: 'start'
+      },
+      onHighlighted: (_el, _step, opts) => {
+        this.repositionTourTechnicalTabs(opts.driver);
+        window.setTimeout(() => this.guidedTourHost.refreshPopoverLayout(opts.driver), 240);
+      }
+    };
+  }
+
+  /**
+   * Paso por pestaña: driver ilumina solo el botón; el contenido de abajo se actualiza para que coincida con el texto.
+   */
+  private tourTabContentStep(tab: string, title: string, description: string, side: 'top' | 'bottom' | 'left' | 'right' = 'bottom'): DriveStep {
+    return {
+      element: (): HTMLElement => {
+        this.activateTabForTour(tab);
+        return this.tourTabButtonEl(tab);
+      },
+      popover: { title, description, side, align: 'start' },
+      onHighlighted: (_el, _step, opts) => {
+        this.refreshTourStage(opts.driver);
+      }
+    };
+  }
+
+  /** Pestaña Ubicación abierta + spotlight sobre el bloque Historial (#tour-assetdetails-history). */
+  private tourUbicacionHistorialStep(): DriveStep {
+    return {
+      element: (): HTMLElement => {
+        this.activateTabForTour('ubicacion');
+        const hist = document.querySelector('#tour-assetdetails-history');
+        const panel = document.querySelector('#tour-assetdetails-tab-panel');
+        return (hist ?? panel) as HTMLElement;
+      },
+      popover: {
+        title: 'Historial de ubicaciones',
+        description:
+          'Cada cambio queda registrado (fecha, usuario, origen, de/a): es la trazabilidad del equipo dentro del organismo.',
+        side: 'top',
+        align: 'start'
+      },
+      onHighlighted: (_el, _step, opts) => {
+        document.querySelector('#tour-assetdetails-history')?.scrollIntoView({
+          behavior: 'auto',
+          block: 'start',
+          inline: 'nearest'
+        });
+        this.refreshTourStage(opts.driver);
+      }
+    };
+  }
+
+  private iniciarTourDetalleActivo(): void {
+    this.pageTour?.destroy();
+    this.scrollAssetDetailsViewportToTop();
+    const steps: DriveStep[] = [];
+    if (document.querySelector('#tour-assetdetails-ficha-step')) {
+      steps.push({
+        element: '#tour-assetdetails-ficha-step',
+        popover: {
+          title: 'Ficha del equipo',
+          description: 'Desde esta cabecera y las pestañas accedés a toda la ficha técnica del equipo; cada pestaña muestra datos distintos abajo.',
+          side: 'bottom',
+          align: 'start'
+        },
+        onHighlighted: (_el, _step, opts) => {
+          this.scrollAssetDetailsViewportToTop();
+          this.guidedTourHost.refreshPopoverLayout(opts.driver);
+        }
+      });
+    }
+
+    if (document.querySelector('#tour-assetdetails-tabs')) {
+      steps.push({
+        element: '#tour-assetdetails-tabs',
+        popover: {
+          title: 'Pestañas técnicas',
+          description:
+            'Te mostramos la pestaña General con detalle, un resumen de las pestañas de hardware del equipo, después Ubicación e historial, y por último Software y la exportación a PDF.',
+          side: 'bottom',
+          align: 'start'
+        },
+        onHighlighted: (_el, _step, opts) => {
+          this.repositionTourTechnicalTabs(opts.driver);
+        }
+      });
+      steps.push(
+        this.tourTabContentStep(
+          'general',
+          'General',
+          'Acá ves la identidad del equipo en red (IP y nombre de subred desde Cerbero), últimas fechas de inventario/contacto del agente, sistema operativo, vista resumida de hardware y datos de Windows (usuario, empresa, producto cuando el agente lo informó). Es el panorama operativo día a día antes de entrar en el detalle por componentes.',
+          'bottom'
+        ),
+        this.tourHardwareComponentsOverviewStep(),
+        this.tourTabContentStep(
+          'ubicacion',
+          'Ubicación',
+          'Ubicación operativa actual (gerencia, oficina, dirección, etc.). Si tenés permisos, podés asignar o actualizar desde acá.',
+          'bottom'
+        ),
+        this.tourUbicacionHistorialStep(),
+        this.tourSoftwareTabStep()
+      );
+    }
+
+    steps.push(
+      ...this.guidedTourHost.buildSteps([
+        { selector: '#tour-assetdetails-print', title: 'Exportar PDF', description: 'Genera un reporte técnico completo del activo.', side: 'left' }
+      ])
+    );
+    const inst = this.guidedTourHost.startTour(steps, () => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (this.returnToAssetsAfterTour) {
+        sessionStorage.removeItem('cerbero:return-to-assets-after-details-tour');
+        this.router.navigate(['/menu/assets']);
+      }
+    });
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 
 }

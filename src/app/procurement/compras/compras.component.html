@@ -1,9 +1,10 @@
 <div class="generic-container">
   <div class="header-section">
     <div class="header-content">
-      <div class="title-wrapper">
-        <h1><i class="fas fa-shopping-cart"></i> Gestión de Compras</h1>
-        <div class="filters-container">
+      <div class="d-flex flex-wrap w-100 justify-content-between align-items-start gap-2 mb-2">
+      <div class="title-wrapper flex-grow-1">
+        <h1 id="tour-compras-title"><i class="fas fa-shopping-cart"></i> Gestión de Compras</h1>
+        <div class="filters-container" id="tour-compras-filters">
           <button 
             class="filter-btn" 
             [class.active]="!filterForm.get('moneda')?.value"
@@ -40,8 +41,12 @@
           </button>
         </div>
       </div>
-      <div class="actions d-flex justify-content-end align-items-center" style="gap: 1rem;" *ngIf="canManagePurchases()">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(compraModal)">
+      <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided align-self-start" (click)="iniciarTourCompras()">
+        <i class="fas fa-route"></i> Tour guiado
+      </button>
+      </div>
+      <div class="actions d-flex justify-content-end align-items-center flex-wrap" style="gap: 1rem;" *ngIf="canManagePurchases()">
+        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-compras-nueva" (click)="abrirModal(compraModal)">
           <i class="fas fa-plus me-2"></i>
           Nueva Compra
         </button>
@@ -50,9 +55,9 @@
   </div>
 
   <div class="content-section">
-    <div class="row mb-3">
+    <div class="row mb-3" id="tour-compras-search-row">
       <div class="col-12 d-flex align-items-center gap-3">
-        <div class="search-container">
+        <div class="search-container" id="tour-compras-search">
           <input type="text" class="form-control" placeholder="Número de compra" [formControl]="numeroCompraControl" style="max-width: 320px;">
         </div>
         
@@ -78,7 +83,7 @@
         </div>
       </div>
     </div>
-    <div class="table-container">
+    <div class="table-container" id="tour-compras-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
       </div>

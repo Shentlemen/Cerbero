@@ -3,21 +3,27 @@
   <app-notification-container></app-notification-container>
   
   <div class="header-section">
-    <div class="title-wrapper">
-      <h1 style="text-align: left; justify-content: flex-start;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100 mb-2">
+    <div class="title-wrapper flex-grow-1">
+      <h1 id="tour-almacenes-title" style="text-align: left; justify-content: flex-start;">
         <i class="fas fa-warehouse"></i> 
         Gestión de Almacenes
       </h1>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourAlmacenes()">
+      <i class="fas fa-route"></i> Tour guiado
+    </button>
     </div>
   </div>
 
   <div class="almacenes-content">
     <!-- Header del contenido con botón de crear -->
-    <div class="content-header">
+    <div class="content-header" id="tour-almacenes-actions">
       <!-- Botón para agregar nuevo almacén -->
       <div class="actions-section" *ngIf="canEditAlmacenes()">
         <button 
           class="btn btn-outline-secondary" 
+          id="tour-almacenes-nuevo"
           (click)="abrirModalAlmacen(modalAlmacen)">
           <i class="fas fa-plus"></i>
           Nuevo Almacén
@@ -40,7 +46,7 @@
     </div>
 
           <!-- Cards de almacenes -->
-      <div *ngIf="!loading && !error" class="cards-container">
+      <div *ngIf="!loading && !error" class="cards-container" id="tour-almacenes-cards">
 
       <!-- Grid de cards -->
       <div class="almacenes-grid">

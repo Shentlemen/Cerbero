@@ -20,6 +20,9 @@ import { FormularioBajaModalComponent, DatosBaja } from '../components/formulari
 import { catchError, of } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
+import type { DriveStep } from 'driver.js';
 
 @Component({
   selector: 'app-assets',
@@ -41,6 +44,7 @@ export class AssetsComponent implements OnInit {
   pageSize = 20;
   collectionSize = 0;
   loading: boolean = true; // Agregar propiedad loading
+  private pageTour?: Driver;
 
   totalAssets: number = 0; // Declaración de la propiedad
   pcCount: number = 0;     // Declaración de la propiedad
@@ -80,7 +84,8 @@ export class AssetsComponent implements OnInit {
     private notificationService: NotificationService,
     private estadoEquipoService: EstadoEquipoService,
     private authService: AuthService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -906,5 +911,60 @@ export class AssetsComponent implements OnInit {
     this.notificationService.showSuccessMessage(
       `PDF exportado exitosamente: ${nombreArchivo}`
     );
+  }
+
+  iniciarTourTerminales(): void {
+    this.pageTour?.destroy();
+    const steps: DriveStep[] = [];
+
+    steps.push(
+      ...this.guidedTourHost.buildSteps([
+        { selector: '#tour-assets-title', title: 'Inventario de terminales', description: 'Listado de equipos detectados por inventario (OCS). Desde acá accedés al detalle de cada terminal.', side: 'bottom' },
+        { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Acotá la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
+        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo o dirección IP.', side: 'bottom' },
+        { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual.', side: 'left' }
+      ])
+    );
+
+    if (document.querySelector('#tour-assets-actions')) {
+      steps.push({
+        element: '#tour-assets-actions',
+        popover: {
+          title: 'Acciones rápidas del equipo',
+          description:
+            'Transferir mueve el equipo al almacén que elijas. Almacén lo envía al almacén de laboratorio. Baja lo envía al cementerio, donde quedan equipos fuera de operación (dados de baja).',
+          side: 'left',
+          align: 'start'
+        }
+      });
+    }
+
+    if (document.querySelector('#tour-assets-table')) {
+      steps.push({
+        element: '#tour-assets-table',
+        popover: {
+          title: 'Entrar al detalle de un equipo',
+          description: 'Ahora vamos a abrir un activo para ver su ficha y hacer un paseo por las pestañas (General, BIOS, CPU, Unidades, Memoria, etc.).',
+          side: 'top',
+          align: 'start',
+          onNextClick: (_el, _step, ctx) => {
+            const firstAsset = this.pagedAssets[0] || this.assetsFiltrados[0];
+            if (firstAsset?.id) {
+              sessionStorage.setItem('cerbero:start-asset-details-tour', '1');
+              sessionStorage.setItem('cerbero:return-to-assets-after-details-tour', '1');
+              this.pageTour?.destroy();
+              this.router.navigate(['/menu/asset-details', firstAsset.id]);
+              return;
+            }
+            ctx.driver.moveNext();
+          }
+        }
+      });
+    }
+
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 }

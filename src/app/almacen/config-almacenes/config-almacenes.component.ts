@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
@@ -9,6 +9,8 @@ import { AlmacenConfig, AlmacenEstanteriaDef, estanteriasOrdenadas } from '../..
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-config-almacenes',
@@ -17,13 +19,15 @@ import { NotificationContainerComponent } from '../../components/notification-co
   templateUrl: './config-almacenes.component.html',
   styleUrls: ['./config-almacenes.component.css']
 })
-export class ConfigAlmacenesComponent implements OnInit {
+export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
   almacenes: Almacen[] = [];
   configs: AlmacenConfig[] = [];
   almacenConfigForm: FormGroup;
   modoEdicionConfig: boolean = false;
   configSeleccionada: AlmacenConfig | null = null;
   loadingConfigs: boolean = false;
+
+  private pageTour?: Driver;
 
   /** Auxiliar: dar de alta varias estanterías con la misma forma */
   variasCantidad: number = 2;
@@ -37,7 +41,8 @@ export class ConfigAlmacenesComponent implements OnInit {
     private modalService: NgbModal,
     private fb: FormBuilder,
     public permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.almacenConfigForm = this.fb.group({
       almacenId: ['', Validators.required],
@@ -52,6 +57,10 @@ export class ConfigAlmacenesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarAlmacenesYConfigs();
+  }
+
+  ngOnDestroy(): void {
+    this.pageTour?.destroy();
   }
 
   cargarAlmacenesYConfigs(): void {
@@ -272,5 +281,18 @@ export class ConfigAlmacenesComponent implements OnInit {
 
   trackByEstanteria(_i: number, d: AlmacenEstanteriaDef): string {
     return `${d.codigo}-${d.orden}`;
+  }
+
+  iniciarTourConfigAlmacenes(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-config-almacenes-title', title: 'Configuración de almacenes', description: 'Aquí definís estanterías, cantidad de estantes y sectores por almacén. Esa estructura alimenta validaciones y la vista 3D.', side: 'bottom' },
+      { selector: '#tour-config-almacenes-actions', title: 'Alta', description: 'Creá una configuración nueva o abrí el modal desde cada tarjeta para editar.', side: 'bottom' },
+      { selector: '#tour-config-almacenes-cards', title: 'Listado', description: 'Cada almacén muestra resumen de estanterías o un aviso si aún no está configurado.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 }

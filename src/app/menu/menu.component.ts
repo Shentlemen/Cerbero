@@ -1,8 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule, Router, NavigationEnd } from '@angular/router';
-import { HelperService } from '../services/helper.service';
-import { HelpTip } from '../services/helper.service';
 import { filter, Subscription } from 'rxjs';
 import { HelperDogComponent } from '../components/helper-dog/helper-dog.component';
 import { UserHeaderComponent } from '../components/user-header/user-header.component';
@@ -39,9 +37,6 @@ export class MenuComponent implements OnInit, OnDestroy {
   isAlmacenExpanded: boolean = false;
   isAdminExpanded: boolean = false;
   isAdquisicionesExpanded: boolean = false;
-  isHelperActive = false;
-  showHelperMessage = false;
-  currentHelperTip?: HelpTip;
   currentUser: User | null = null;
   versionInfo = getDefaultVersionInfo();
   private routerSubscription: Subscription;
@@ -78,7 +73,6 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private helperService: HelperService,
     private authService: AuthService,
     private permissionsService: PermissionsService,
     private versionService: VersionService
@@ -141,8 +135,6 @@ export class MenuComponent implements OnInit, OnDestroy {
         this.isAdminExpanded = false;
         this.isAdquisicionesExpanded = false;
       }
-      
-      this.closeHelper();
 
       // Siempre hacer scroll al top al cambiar de ruta
       window.scrollTo({ top: 0, behavior: 'auto' });
@@ -221,19 +213,6 @@ export class MenuComponent implements OnInit, OnDestroy {
       this.isAlmacenExpanded = false;
       this.isAdminExpanded = false;
     }
-  }
-
-  toggleHelper() {
-    this.isHelperActive = !this.isHelperActive;
-    this.showHelperMessage = this.isHelperActive;
-    
-    const currentRoute = this.router.url.split('/').pop() || 'dashboard';
-    this.currentHelperTip = this.helperService.getHelpForSection(currentRoute);
-  }
-
-  closeHelper() {
-    this.isHelperActive = false;
-    this.showHelperMessage = false;
   }
 
   isGM(): boolean {

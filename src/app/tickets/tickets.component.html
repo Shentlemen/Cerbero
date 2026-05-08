@@ -4,11 +4,14 @@
   <div class="header-section tickets-header">
     <div class="title-row">
       <div class="title-wrapper">
-        <h1>
+        <h1 id="tour-tickets-title">
           <i class="fas fa-ticket-alt"></i>
           Tickets / Reclamos
         </h1>
       </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourTickets()">
+        <i class="fas fa-route"></i> Tour guiado
+      </button>
       <div
         class="actions d-flex justify-content-end align-items-center"
         style="gap: 1rem"
@@ -16,13 +19,14 @@
         <button
           type="button"
           class="btn btn-export btn-agregar-nuevo"
+          id="tour-tickets-nuevo"
           (click)="abrirModalTicketNuevo(ticketNuevoModal)">
           <i class="fas fa-plus me-2" aria-hidden="true"></i>
           Nuevo ticket
         </button>
       </div>
     </div>
-    <div class="tickets-filter-row">
+    <div class="tickets-filter-row" id="tour-tickets-filters">
       <label class="tickets-filter-label">Estado</label>
       <select
         class="form-select form-select-sm tickets-filter-select"
@@ -49,7 +53,7 @@
     </div>
   </div>
 
-  <div class="tickets-panels">
+  <div class="tickets-panels" id="tour-tickets-panels">
     <div *ngIf="loading" class="tickets-panel-state tickets-active-loading py-3">
       <div class="spinner-border text-primary" role="status" aria-label="Cargando"></div>
       <span class="text-muted ms-2">Cargando bandejas activas…</span>

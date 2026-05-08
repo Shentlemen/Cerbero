@@ -1,5 +1,14 @@
 <div class="demo-container">
   <app-notification-container></app-notification-container>
+
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-2 pt-2" *ngIf="!loading">
+    <h2 class="h5 mb-0" id="tour-almacen-3d-title">
+      <i class="fas fa-cube me-2"></i>Vista 3D del almacén
+    </h2>
+    <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourAlmacen3dDemo()">
+      <i class="fas fa-route"></i> Tour guiado
+    </button>
+  </div>
   <!-- Indicador de carga -->
   <div *ngIf="loading" class="loading-overlay">
     <div class="spinner-border text-primary" role="status">
@@ -8,7 +17,7 @@
     <p class="mt-2">Cargando datos del almacén...</p>
   </div>
 
-  <div class="selector-almacen" *ngIf="almacenes.length > 0">
+  <div class="selector-almacen" *ngIf="almacenes.length > 0" id="tour-almacen-3d-selector">
     <label for="almacen-select">
       <i class="fas fa-warehouse me-2"></i>Almacén para vista 3D:
     </label>
@@ -35,7 +44,7 @@
     </button>
   </div>
 
-  <div class="layout-editor" *ngIf="editLayoutMode && estanteriasLayoutDraft.length > 0">
+  <div class="layout-editor" *ngIf="editLayoutMode && estanteriasLayoutDraft.length > 0" id="tour-almacen-3d-layout-editor">
     <div class="layout-editor-header">
       Ajuste manual (X/Z/Rotación). Los cambios no actualizan el 3D hasta que pulses <strong>Aplicar al 3D</strong>.
     </div>
@@ -54,7 +63,7 @@
     </div>
   </div>
 
-  <div class="content-wrapper" *ngIf="almacenSeleccionado">
+  <div class="content-wrapper" *ngIf="almacenSeleccionado" id="tour-almacen-3d-canvas">
     <app-almacen-3d
       [almacenId]="almacenSeleccionado.numero || 'Sin número'"
       [almacenNombre]="almacenSeleccionado.nombre || ''"

@@ -12,7 +12,7 @@ export interface VersionInfo extends AppVersionData {
 
 const DEFAULT_VERSION: AppVersionData = {
   version: '0.9.0',
-  buildNumber: '2026.05.002'
+  buildNumber: '2026.05.008'
 };
 
 const VERSION_METADATA = {

@@ -6,6 +6,8 @@ import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-locations',
@@ -26,11 +28,13 @@ export class LocationsComponent implements OnInit {
   error: string | null = null;
   showConfirmDialog = false;
   ubicacionToDelete: UbicacionDTO | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private ubicacionesService: UbicacionesService,
     private subnetService: SubnetService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   ngOnInit() {
@@ -149,5 +153,18 @@ export class LocationsComponent implements OnInit {
         console.log('Modal cerrado por:', reason);
       }
     );
+  }
+
+  iniciarTourUbicaciones(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-locations-title', title: 'Ubicaciones físicas', description: 'Catálogo jerárquico (gerencia, oficina, piso, puerta) usado en activos y stock.', side: 'bottom' },
+      { selector: '#tour-locations-nueva', title: 'Nueva ubicación', description: 'Alta o edición mediante el selector de ubicación y validación de subred asociada si aplica.', side: 'left' },
+      { selector: '#tour-locations-table', title: 'Listado', description: 'Editá o eliminá ubicaciones; los cambios impactan asignaciones de equipos.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

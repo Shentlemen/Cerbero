@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
@@ -17,6 +17,8 @@ import { forkJoin } from 'rxjs';
 import { TiposCompraService } from '../../../services/tipos-compra.service';
 import { NotificationService } from '../../../services/notification.service';
 import { NotificationContainerComponent } from '../../../components/notification-container/notification-container.component';
+import { GuidedTourHostService } from '../../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-activo-details',
@@ -25,7 +27,7 @@ import { NotificationContainerComponent } from '../../../components/notification
   templateUrl: './activo-details.component.html',
   styleUrls: ['./activo-details.component.css']
 })
-export class ActivoDetailsComponent implements OnInit {
+export class ActivoDetailsComponent implements OnInit, OnDestroy {
   activo: ActivoDTO | null = null;
   entregaSeleccionada: EntregaDTO | null = null;
   ubicacionSeleccionada: UbicacionDTO | null = null;
@@ -47,6 +49,7 @@ export class ActivoDetailsComponent implements OnInit {
   loadingRelacionados: boolean = false;
   errorRelacionados: string | null = null;
   private tipoActivoMap: Map<number, string> | null = null;
+  private pageTour?: Driver;
   numeroCompraInfo: string = '';
   tipoCompraDescripcion: string = '';
   nombreItemInfo: string = '';
@@ -70,7 +73,8 @@ export class ActivoDetailsComponent implements OnInit {
     private modalService: NgbModal,
     private hardwareService: HardwareService,
     private tiposCompraService: TiposCompraService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   ngOnInit() {
@@ -80,6 +84,10 @@ export class ActivoDetailsComponent implements OnInit {
         this.cargarActivo(parseInt(id));
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.pageTour?.destroy();
   }
 
   cargarActivo(id: number) {
@@ -502,5 +510,19 @@ export class ActivoDetailsComponent implements OnInit {
 
   volver() {
     this.location.back();
+  }
+
+  iniciarTourDetalleActivo(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-activo-details-title', title: 'Ficha del activo', description: 'Vista consolidada de un ítem de inventario Cerbero con enlaces a compras, entregas y hardware.', side: 'bottom' },
+      { selector: '#tour-activo-details-grid', title: 'Paneles', description: 'Los datos se agrupan por tema: general, clasificación, referencias, asignación, garantía y relacionados.', side: 'top' },
+      { selector: '#tour-activo-details-general', title: 'Identificación', description: 'ID Cerbero, nombre de PC (enlace a ficha de hardware) y datos auxiliares.', side: 'right' },
+      { selector: '#tour-activo-details-asignacion', title: 'Asignación', description: 'Entrega, ubicación física y responsable; muchos campos abren modales de detalle.', side: 'right' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

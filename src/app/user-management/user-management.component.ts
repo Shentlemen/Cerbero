@@ -6,6 +6,8 @@ import { AuthService } from '../services/auth.service';
 import { User, CreateUserRequest, UpdateUserRequest } from '../interfaces/auth.interface';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-user-management',
@@ -31,6 +33,7 @@ export class UserManagementComponent implements OnInit {
   userToDelete: User | null = null;
   showEstadoDialog = false;
   userToToggle: User | null = null;
+  private pageTour?: Driver;
 
   roles = [
     { value: 'USER', label: 'Usuario' },
@@ -48,7 +51,8 @@ export class UserManagementComponent implements OnInit {
     private authService: AuthService,
     private fb: FormBuilder,
     private modalService: NgbModal,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.filterForm = this.fb.group({
       search: ['']
@@ -414,5 +418,19 @@ export class UserManagementComponent implements OnInit {
   isCurrentUser(user: User): boolean {
     const currentUser = this.authService.getCurrentUser();
     return currentUser?.id === user.id;
+  }
+
+  iniciarTourUsuariosCerbero(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-users-title', title: 'Usuarios Cerbero', description: 'Alta, edición y desactivación de cuentas con roles funcionales (almacén, compras, GM, etc.).', side: 'bottom' },
+      { selector: '#tour-users-nuevo', title: 'Nuevo usuario', description: 'Abre el formulario en pantalla con usuario, correo, nombre y asignación de rol.', side: 'left' },
+      { selector: '#tour-users-filters', title: 'Filtros', description: 'Búsqueda libre y recortes por estado o rol para encontrar cuentas rápido.', side: 'bottom' },
+      { selector: '#tour-users-table', title: 'Tabla', description: 'Editá datos, cambiá estado activo/inactivo o eliminá según políticas de seguridad.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

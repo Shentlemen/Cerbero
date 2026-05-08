@@ -1,17 +1,22 @@
 <div class="generic-container">
   <div class="header-section">
     <div class="header-content">
-      <div class="title-wrapper">
-        <h1><i class="fas fa-boxes"></i> Gestión de Lotes</h1>
-        <div class="stats-pills">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
+      <div class="title-wrapper flex-grow-1" id="tour-lotes-header">
+        <h1 id="tour-lotes-title"><i class="fas fa-boxes"></i> Gestión de Lotes</h1>
+        <div class="stats-pills" id="tour-lotes-stats">
           <div class="stat-pill total">
             <i class="fas fa-boxes"></i>
             <span>{{collectionSize}} Total</span>
           </div>
         </div>
       </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided align-self-start" (click)="iniciarTourLotes()">
+        <i class="fas fa-route"></i> Tour guiado
+      </button>
+      </div>
       <div class="actions">
-        <button class="btn btn-export" (click)="abrirModal(loteModal)">
+        <button class="btn btn-export" id="tour-lotes-nueva" (click)="abrirModal(loteModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo Lote
         </button>
@@ -20,7 +25,7 @@
   </div>
 
   <div class="content-section">
-    <div class="table-container">
+    <div class="table-container" id="tour-lotes-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
       </div>

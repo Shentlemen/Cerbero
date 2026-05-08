@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-usuarios',
@@ -30,11 +32,13 @@ export class UsuariosComponent implements OnInit {
   usuarioSeleccionado: UsuarioDTO | null = null;
   showConfirmDialog = false;
   usuarioToDelete: number | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private usuariosService: UsuariosService,
     private fb: FormBuilder,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.filterForm = this.fb.group({
       nombre: [''],
@@ -265,6 +269,19 @@ export class UsuariosComponent implements OnInit {
       });
     } else {
       this.cargarUsuarios();
+    }
+  }
+
+  iniciarTourPersonasOrganizacion(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-proc-personas-title', title: 'Personas de organización', description: 'Directorio de personas reales (cédula, unidad, cargo) usado para responsables en activos y compras — distinto de usuarios de login Cerbero.', side: 'bottom' },
+      { selector: '#tour-proc-personas-nuevo', title: 'Alta', description: 'Registrá una persona para vincularla después en tipos de activo o formularios.', side: 'left' },
+      { selector: '#tour-proc-personas-table', title: 'Tabla', description: 'Editá datos o eliminá registros; ordená por columnas disponibles.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
     }
   }
 } 

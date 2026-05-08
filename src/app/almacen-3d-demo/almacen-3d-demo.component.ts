@@ -20,6 +20,8 @@ import { AlmacenConfig, estanteriasOrdenadas } from '../interfaces/almacen-confi
 import { forkJoin } from 'rxjs';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { AuthService } from '../services/auth.service';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-almacen-3d-demo',
@@ -49,6 +51,8 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   transferiendoItemId: string | number | null = null;
   reactivandoItemId: string | number | null = null;
 
+  private pageTour?: Driver;
+
   constructor(
     private modalService: NgbModal,
     private stockAlmacenService: StockAlmacenService,
@@ -60,7 +64,8 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private networkInfoService: NetworkInfoService,
-    private authService: AuthService
+    private authService: AuthService,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   ngOnInit(): void {
@@ -93,6 +98,7 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.pageTour?.destroy();
   }
 
   compareAlmacenes(a: any, b: any): boolean {
@@ -736,6 +742,20 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   onItemClick(item: any): void {
     if (item?.id) {
       this.abrirModalCantidad(item);
+    }
+  }
+
+  iniciarTourAlmacen3dDemo(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-almacen-3d-title', title: 'Vista 3D', description: 'Exploración visual del almacén según la configuración de estanterías y el stock cargado.', side: 'bottom' },
+      { selector: '#tour-almacen-3d-selector', title: 'Almacén y layout', description: 'Elegí el almacén, abrí edición de layout si necesitás ajustar posiciones en escena, y guardá cuando corresponda.', side: 'bottom' },
+      { selector: '#tour-almacen-3d-layout-editor', title: 'Editor de layout', description: 'Ajustes numéricos de X, Z y rotación; usá «Aplicar al 3D» para ver el resultado sin cerrar el panel.', side: 'left' },
+      { selector: '#tour-almacen-3d-canvas', title: 'Escena 3D', description: 'Seleccioná cajas para ver contenido, transferir o reactivar según permisos.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
     }
   }
 }

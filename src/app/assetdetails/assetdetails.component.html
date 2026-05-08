@@ -1,89 +1,94 @@
 <div class="container-fluid" *ngIf="asset">
   <div class="card shadow-lg">
-    <div class="card-header title-bar">
-      <div class="d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">
-          <i class="fas fa-desktop me-2"></i>DETALLES DEL ACTIVO
-        </h2>
-        <div class="header-actions" *ngIf="asset">
-          <span class="asset-name">
-            <i class="fas fa-laptop me-2"></i>{{ asset.name }}
-          </span>
-          <button class="btn btn-primary btn-sm print-btn" (click)="exportarAPdf()">
-            <i class="fas fa-file-pdf"></i>
-            Exportar a PDF
-          </button>
+    <!-- Región acotada del tour “Ficha” (cabecera + pestañas; sin todo el alto del panel). -->
+    <div id="tour-assetdetails-ficha-step">
+      <div class="card-header title-bar">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">
+            <i class="fas fa-desktop me-2"></i><span id="tour-assetdetails-title">DETALLES DEL ACTIVO</span>
+          </h2>
+          <div class="header-actions" *ngIf="asset">
+            <span class="asset-name">
+              <i class="fas fa-laptop me-2"></i>{{ asset.name }}
+            </span>
+            <button class="btn btn-primary btn-sm print-btn" id="tour-assetdetails-print" (click)="exportarAPdf()">
+              <i class="fas fa-file-pdf"></i>
+              Exportar a PDF
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="card-body">
+      <div class="card-body pb-3 pt-3">
       <!-- Misma filosofía visual que los filtros de alertas (dashboard.component) -->
-      <div class="asset-tab-filters">
+      <div class="asset-tab-filters" id="tour-assetdetails-tabs">
         <ul class="asset-tab-strip">
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-general"
               [class.active]="activeTab === 'general'" (click)="changeTab('general')">
               <i class="fas fa-info-circle" aria-hidden="true"></i><span>General</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-bios"
               [class.active]="activeTab === 'bios'" (click)="changeTab('bios')">
               <i class="fas fa-microchip" aria-hidden="true"></i><span>BIOS</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-cpu"
               [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')">
               <i class="fas fa-microchip" aria-hidden="true"></i><span>CPU</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-drive"
               [class.active]="activeTab === 'drive'" (click)="changeTab('drive')">
               <i class="fas fa-database" aria-hidden="true"></i><span>Unidades</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-memory"
               [class.active]="activeTab === 'memory'" (click)="changeTab('memory')">
               <i class="fas fa-memory" aria-hidden="true"></i><span>Memoria</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-monitor"
               [class.active]="activeTab === 'monitor'" (click)="changeTab('monitor')">
               <i class="fas fa-tv" aria-hidden="true"></i><span>Monitor</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-storage"
               [class.active]="activeTab === 'storage'" (click)="changeTab('storage')">
               <i class="fas fa-hard-drive" aria-hidden="true"></i><span>Almacenamiento</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-video"
               [class.active]="activeTab === 'video'" (click)="changeTab('video')">
               <i class="fas fa-film" aria-hidden="true"></i><span>Video</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-ubicacion"
               [class.active]="activeTab === 'ubicacion'" (click)="changeTab('ubicacion')">
               <i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>Ubicación</span>
             </button>
           </li>
           <li>
-            <button type="button" class="asset-tab-btn"
+            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-software"
               [class.active]="activeTab === 'software'" (click)="changeTab('software')">
               <i class="fas fa-cube" aria-hidden="true"></i><span>Software</span>
             </button>
           </li>
         </ul>
       </div>
-      <!-- Contenido de las pestañas -->
-      <div class="tab-content" [ngSwitch]="activeTab">
+      </div>
+    </div>
+    <!-- Contenido bajo pestañas (ya no dentro del spotlight “Ficha” del tour) -->
+    <div class="card-body border-top pt-3">
+      <div class="tab-content" id="tour-assetdetails-tab-panel" [ngSwitch]="activeTab">
         <div *ngSwitchCase="'general'">
           <!-- Contenido existente para información general -->
           <div class="row">
@@ -315,7 +320,7 @@
                 </ng-template>
 
                 <hr class="my-4" />
-                <h5 class="mb-3">Historial de ubicaciones</h5>
+                <h5 class="mb-3" id="tour-assetdetails-history">Historial de ubicaciones</h5>
 
                 <div *ngIf="loadingHistorialUbicaciones" class="text-center p-3">
                   <div class="spinner-border spinner-border-sm text-primary" role="status">

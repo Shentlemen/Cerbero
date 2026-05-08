@@ -14,6 +14,8 @@ import { NotificationContainerComponent } from '../../components/notification-co
 import { AlmacenConfigService } from '../../services/almacen-config.service';
 import { AlmacenConfig, defEstanteria, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
 import { firstValueFrom } from 'rxjs';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-ubicaciones',
@@ -76,6 +78,7 @@ export class UbicacionesComponent implements OnInit {
   estanteriasDisponibles: string[] = [];
   estantesDisponibles: string[] = [];
   divisionesDisponibles: string[] = [];
+  private pageTour?: Driver;
 
   constructor(
     private stockAlmacenService: StockAlmacenService,
@@ -89,7 +92,8 @@ export class UbicacionesComponent implements OnInit {
     private almacenConfigService: AlmacenConfigService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.stockForm = this.fb.group({
       compraId: ['', Validators.required],
@@ -907,5 +911,18 @@ export class UbicacionesComponent implements OnInit {
     const termino = this.searchTerm.toLowerCase();
     
     return itemName.toLowerCase().includes(termino);
+  }
+
+  iniciarTourStockAlmacen(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-stock-title', title: 'Stock global', description: 'Vista unificada de ítems en almacén: compra, ubicación física (estantería/estante) y cantidades.', side: 'bottom' },
+      { selector: '#tour-stock-search', title: 'Búsqueda', description: 'Buscá por número de equipo, código de stock o nombre de almacén.', side: 'bottom' },
+      { selector: '#tour-stock-table', title: 'Tabla', description: 'Altas y movimientos desde las acciones de cada fila o el botón de registrar stock.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

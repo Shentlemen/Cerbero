@@ -8,6 +8,8 @@ import { NotificationService } from '../services/notification.service';
 import { PermissionsService } from '../services/permissions.service';
 import { Ticket, TicketEstado, TicketPrioridad, TicketsService } from '../services/tickets.service';
 import { forkJoin, Subscription } from 'rxjs';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'fechaActualizacion';
 
@@ -65,6 +67,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
   ];
   private viewAsSub?: Subscription;
   private lastViewAsRole: string | null = null;
+  private pageTour?: Driver;
 
   /** Modal nuevo ticket (mismo flujo que el antiguo ticket-create). */
   creandoTicket = false;
@@ -82,7 +85,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private permissionsService: PermissionsService,
     private modalService: NgbModal,
-    private router: Router
+    private router: Router,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   ngOnInit(): void {
@@ -380,6 +384,20 @@ export class TicketsComponent implements OnInit, OnDestroy {
       .replaceAll('_', ' ')
       .toLowerCase()
       .replace(/(^|\s)\S/g, (m) => m.toUpperCase());
+  }
+
+  iniciarTourTickets(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-tickets-title', title: 'Tickets', description: 'Bandejas de reclamos internos: áreas de almacén, inventario, compras, laboratorio, etc.', side: 'bottom' },
+      { selector: '#tour-tickets-nuevo', title: 'Nuevo ticket', description: 'Creá un reclamo con título, descripción, área destino y prioridad (según permisos).', side: 'left' },
+      { selector: '#tour-tickets-filters', title: 'Filtros', description: 'Estado, área y búsqueda por código o título aplican a las tablas cargadas.', side: 'bottom' },
+      { selector: '#tour-tickets-panels', title: 'Bandejas', description: 'Tickets del área de tu rol, los que creaste y el historial de cerrados; abrí el detalle desde cada fila.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 }
 

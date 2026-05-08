@@ -2,13 +2,18 @@
   <app-notification-container></app-notification-container>
   
   <div class="header-section">
-    <div class="title-wrapper">
-      <h1><i class="fas fa-cog"></i> Configuración del Sistema</h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100 mb-2">
+    <div class="title-wrapper flex-grow-1 mb-0">
+      <h1 id="tour-settings-title" class="mb-0"><i class="fas fa-cog"></i> Configuración del Sistema</h1>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourConfiguracion()">
+      <i class="fas fa-route"></i> Tour guiado
+    </button>
     </div>
   </div>
 
   <div class="content-section">
-  <div class="settings-section">
+  <div class="settings-section" id="tour-settings-ocs">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
       <h3>Reseteo de Tablas OCS</h3>
@@ -22,6 +27,7 @@
       
               <button 
           class="btn btn-warning sync-button" 
+          id="tour-settings-reset-ocs"
           (click)="mostrarConfirmacion(confirmModal)"
           [disabled]="isSyncing">
           <i class="fas fa-sync me-2" [class.fa-spin]="isSyncing"></i>

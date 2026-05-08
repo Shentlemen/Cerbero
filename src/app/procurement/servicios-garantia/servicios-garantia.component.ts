@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-servicios-garantia',
@@ -29,11 +31,13 @@ export class ServiciosGarantiaComponent implements OnInit {
   modoEdicion = false;
   showConfirmDialog = false;
   servicioToDelete: number | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private serviciosGarantiaService: ServiciosGarantiaService,
     private fb: FormBuilder,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.filterForm = this.fb.group({
       nombre: [''],
@@ -246,5 +250,19 @@ export class ServiciosGarantiaComponent implements OnInit {
   cancelarEliminacion(): void {
     this.showConfirmDialog = false;
     this.servicioToDelete = null;
+  }
+
+  iniciarTourServiciosGarantia(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-servicios-garantia-title', title: 'Servicios de garantía', description: 'Proveedores o talleres de soporte vinculados a activos (contacto, RUC, nombre comercial).', side: 'bottom' },
+      { selector: '#tour-servicios-garantia-nuevo', title: 'Nuevo servicio', description: 'Alta desde modal con datos de contacto completos.', side: 'left' },
+      { selector: '#tour-servicios-garantia-search', title: 'Búsqueda', description: 'Filtrá por nombre comercial en tiempo real.', side: 'bottom' },
+      { selector: '#tour-servicios-garantia-table', title: 'Tabla', description: 'Gestioná registros existentes.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

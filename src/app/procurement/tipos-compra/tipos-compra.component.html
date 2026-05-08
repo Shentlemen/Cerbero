@@ -1,11 +1,16 @@
 <div class="tipos-compra-container">
   <div class="header-section">
     <div class="header-content">
-      <div class="title-wrapper">
-        <h1><i class="fas fa-file-invoice-dollar"></i> Tipos de Compra</h1>
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
+      <div class="title-wrapper flex-grow-1">
+        <h1 id="tour-tipos-compra-title"><i class="fas fa-file-invoice-dollar"></i> Tipos de Compra</h1>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided align-self-start" (click)="iniciarTourTiposCompra()">
+        <i class="fas fa-route"></i> Tour guiado
+      </button>
       </div>
       <div class="actions">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(tipoCompraModal)">
+        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-tipos-compra-nuevo" (click)="abrirModal(tipoCompraModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo Tipo de Compra
         </button>
@@ -14,7 +19,7 @@
   </div>
 
   <div class="tipos-compra-content">
-    <div class="table-container">
+    <div class="table-container" id="tour-tipos-compra-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
       </div>

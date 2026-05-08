@@ -6,6 +6,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 @Component({
   selector: 'app-tipos-activo',
@@ -32,12 +34,14 @@ export class TiposActivoComponent implements OnInit {
   tipoActivoSeleccionado: TipoDeActivoDTO | null = null;
   showConfirmDialog = false;
   tipoActivoToDelete: number | null = null;
+  private pageTour?: Driver;
 
   constructor(
     private tiposActivoService: TiposActivoService,
     private usuariosService: UsuariosService,
     private modalService: NgbModal,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.tipoActivoForm = this.fb.group({
       descripcion: ['', [Validators.required]],
@@ -210,5 +214,18 @@ export class TiposActivoComponent implements OnInit {
   cancelarEliminacion(): void {
     this.showConfirmDialog = false;
     this.tipoActivoToDelete = null;
+  }
+
+  iniciarTourTiposActivo(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-tipos-activo-title', title: 'Tipos de activo', description: 'Catálogo usado al dar de alta equipos en inventario Cerbero; cada tipo puede tener usuario responsable por defecto.', side: 'bottom' },
+      { selector: '#tour-tipos-activo-nuevo', title: 'Nuevo tipo', description: 'Creá descripción y vinculá el usuario responsable automático en altas.', side: 'left' },
+      { selector: '#tour-tipos-activo-table', title: 'Listado', description: 'Editá o eliminá tipos; impacta formularios de activos y reglas de asignación.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 

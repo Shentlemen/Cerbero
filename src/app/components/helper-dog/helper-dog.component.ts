@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { HelperService, HelpTip, UserBehavior, SmartSuggestion } from '../../services/helper.service';
@@ -13,28 +13,26 @@ import { filter, Subscription } from 'rxjs';
 })
 export class HelperDogComponent implements OnInit, OnDestroy {
   @Input() currentSection: string = '';
-  
-  isActive = false;
-  showMessage = false;
-  showSuggestions = false;
 
   currentTip?: HelpTip;
   smartSuggestions: SmartSuggestion[] = [];
   userLevel: 'beginner' | 'intermediate' | 'advanced' = 'beginner';
   contextualHelpText = '';
+  showWoofMessage = false;
+  isBouncing = false;
   highlightedElement: HTMLElement | null = null;
   private routerSubscription: Subscription;
   private userLevelSubscription: Subscription;
   private suggestionsSubscription: Subscription;
-  private messageTimeout: any;
   private sessionStartTime: Date;
   private lastActionTime: Date;
   mousePosition = { x: 0, y: 0 };
+  private woofTimeoutId: number | null = null;
+  private bounceTimeoutId: number | null = null;
 
   constructor(
     private router: Router,
-    private helperService: HelperService,
-    private elementRef: ElementRef
+    private helperService: HelperService
   ) {
     this.sessionStartTime = new Date();
     this.lastActionTime = new Date();
@@ -89,12 +87,18 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     if (this.suggestionsSubscription) {
       this.suggestionsSubscription.unsubscribe();
     }
-    if (this.messageTimeout) {
-      clearTimeout(this.messageTimeout);
-    }
-    
+
     // Registrar fin de sesión
     this.recordSessionEnd();
+
+    if (this.woofTimeoutId !== null) {
+      window.clearTimeout(this.woofTimeoutId);
+      this.woofTimeoutId = null;
+    }
+    if (this.bounceTimeoutId !== null) {
+      window.clearTimeout(this.bounceTimeoutId);
+      this.bounceTimeoutId = null;
+    }
   }
 
   private handleRouteChange(): void {
@@ -108,8 +112,8 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     // Obtener sugerencias inteligentes para la nueva sección
     this.smartSuggestions = this.helperService.getSmartSuggestions(currentRoute);
     
-    // Ya no mostrar ayuda automáticamente al cambiar de sección
-    // Solo se mostrará cuando el usuario haga clic en el perrito
+    // Contexto de sección listo para tutoriales futuros (p. ej. lista de tours por ruta).
+    // Por ahora no hay UI en el perro al hacer clic.
   }
 
   private initializeContextualHelp(): void {
@@ -170,68 +174,6 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     }
   }
 
-
-
-
-
-  toggleHelper() {
-    this.isActive = !this.isActive;
-    this.showMessage = this.isActive;
-    this.showSuggestions = false;
-    
-    // Comentado: registrar interacción con el helper
-    // this.recordUserBehavior('helper_interaction', this.currentSection);
-    
-    // Solo mostrar la burbuja del woof
-    // console.log('Woof! 🐕'); // Comentado ya que ahora se muestra en la burbuja
-    
-    // Comentado: mostrar mensaje cuando se activa el helper
-    // if (this.showMessage && this.currentTip) {
-    //   this.showSmartMessage();
-    // }
-  }
-
-
-
-
-
-  // Comentado: método para mostrar mensajes inteligentes
-  /*
-  private showSmartMessage(): void {
-    // Limpiar timeout anterior si existe
-    if (this.messageTimeout) {
-      clearTimeout(this.messageTimeout);
-    }
-    
-    // Calcular duración basada en cantidad de palabras y nivel de usuario
-    const words = this.currentTip!.message.split(' ').length;
-    let readingTimeMs = Math.max(words * 200, 3000); // 200ms por palabra, mínimo 3 segundos
-    
-    // Ajustar tiempo basado en nivel de usuario
-    if (this.userLevel === 'advanced') {
-      readingTimeMs *= 0.7; // Los usuarios avanzados leen más rápido
-    } else if (this.userLevel === 'advanced') {
-      readingTimeMs *= 1.3; // Los principiantes necesitan más tiempo
-    }
-    
-    this.messageTimeout = setTimeout(() => {
-      this.closeHelper();
-    }, readingTimeMs);
-  }
-  */
-
-  closeHelper() {
-    this.isActive = false;
-    this.showMessage = false;
-    this.showSuggestions = false;
-    this.removeHighlight();
-    // Comentado: no cerrar automáticamente por timeout
-    // if (this.messageTimeout) {
-    //   clearTimeout(this.messageTimeout);
-    // }
-  }
-
-  // Métodos para registrar comportamiento del usuario
   private recordUserBehavior(action: string, section: string, errors?: string[]): void {
     const now = new Date();
     const duration = now.getTime() - this.lastActionTime.getTime();
@@ -263,14 +205,8 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     this.helperService.recordUserBehavior(behavior);
   }
 
-  // Método para manejar errores del usuario
   recordError(error: string): void {
     this.recordUserBehavior('error', this.currentSection, [error]);
-    
-    // Mostrar sugerencia de ayuda si hay muchos errores
-    if (this.smartSuggestions.some(s => s.basedOn.includes('error_pattern'))) {
-      this.showSuggestions = true;
-    }
   }
 
 
@@ -278,6 +214,28 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   // Método para obtener sugerencias filtradas por confianza
   getFilteredSuggestions(): SmartSuggestion[] {
     return this.smartSuggestions.filter(s => s.confidence > 0.5);
+  }
+
+  onDogClick(): void {
+    this.showWoofMessage = true;
+    this.isBouncing = true;
+
+    if (this.woofTimeoutId !== null) {
+      window.clearTimeout(this.woofTimeoutId);
+    }
+    if (this.bounceTimeoutId !== null) {
+      window.clearTimeout(this.bounceTimeoutId);
+    }
+
+    this.bounceTimeoutId = window.setTimeout(() => {
+      this.isBouncing = false;
+      this.bounceTimeoutId = null;
+    }, 650);
+
+    this.woofTimeoutId = window.setTimeout(() => {
+      this.showWoofMessage = false;
+      this.woofTimeoutId = null;
+    }, 1400);
   }
 
   // Método para trackBy en ngFor

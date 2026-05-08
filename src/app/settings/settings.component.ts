@@ -6,6 +6,8 @@ import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -38,13 +40,15 @@ export class SettingsComponent {
   comparisonError: string | null = null;
   
   private apiUrl: string;
+  private pageTour?: Driver;
 
   constructor(
     private http: HttpClient,
     private configService: ConfigService,
     private modalService: NgbModal,
     private permissionsService: PermissionsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private guidedTourHost: GuidedTourHostService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/sync`;
   }
@@ -217,6 +221,19 @@ export class SettingsComponent {
       );
     } finally {
       this.isComparingDatabases = false;
+    }
+  }
+
+  iniciarTourConfiguracion(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-settings-title', title: 'Configuración', description: 'Herramientas de mantenimiento de bajo nivel (solo GM). Usalas con criterio.', side: 'bottom' },
+      { selector: '#tour-settings-ocs', title: 'Reset OCS', description: 'Vuelve a importar hardware, software y dispositivos desde OCS; preserva usuarios y alertas Cerbero.', side: 'top' },
+      { selector: '#tour-settings-reset-ocs', title: 'Botón de reseteo', description: 'Abre confirmación explícita antes de ejecutar el proceso largo de limpieza e importación.', side: 'left' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
     }
   }
 }

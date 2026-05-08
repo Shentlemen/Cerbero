@@ -3,11 +3,16 @@
   <app-notification-container></app-notification-container>
   
   <div class="header-section">
-    <div class="title-wrapper">
-      <h1 style="text-align: left; justify-content: flex-start;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100 mb-2">
+    <div class="title-wrapper flex-grow-1">
+      <h1 id="tour-stock-title" style="text-align: left; justify-content: flex-start;">
         <i class="fas fa-boxes"></i> 
         Gestión de Stock de Almacén
       </h1>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourStockAlmacen()">
+      <i class="fas fa-route"></i> Tour guiado
+    </button>
     </div>
   </div>
 
@@ -15,7 +20,7 @@
     <!-- Header del contenido con botón de crear -->
     <div class="content-header">
       <div class="search-section">
-        <div class="input-group" style="max-width: 500px;">
+        <div class="input-group" style="max-width: 500px;" id="tour-stock-search">
           <span class="input-group-text">
             <i class="fas fa-search"></i>
           </span>
@@ -83,7 +88,7 @@
     </div>
 
     <!-- Tabla de ubicaciones -->
-    <div *ngIf="!loading && !error" class="table-container">
+    <div *ngIf="!loading && !error" class="table-container" id="tour-stock-table">
       <table class="ubicaciones-table">
         <thead>
           <tr>

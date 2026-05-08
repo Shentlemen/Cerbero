@@ -23,6 +23,17 @@
   gap: 0.75rem;
 }
 
+.btn-tour-activos {
+  border-color: #198754;
+  color: #198754;
+}
+
+.btn-tour-activos:hover {
+  background-color: #198754;
+  border-color: #198754;
+  color: #fff;
+}
+
 .activos-filters-stack {
   width: 100%;
 }

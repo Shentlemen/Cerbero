@@ -19,6 +19,8 @@ import { CurrencyMaskDirective } from '../../shared/directives/currency-mask.dir
 // Importaciones para PDF
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GuidedTourHostService } from '../../services/guided-tour-host.service';
+import type { Driver } from 'driver.js';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
@@ -63,6 +65,7 @@ export class ComprasComponent implements OnInit {
   lotesDetalles: LoteDTO[] = [];
   entregasDetalles: EntregaDTO[] = [];
   isCompactView: boolean = true;
+  private pageTour?: Driver;
   proveedoresFiltrados: { [key: number]: ProveedorDTO[] } = {};
   // serviciosGarantiaFiltrados: { [key: number]: ServicioGarantiaDTO[] } = {};
   proveedorSearchValues: { [key: number]: string } = {};
@@ -101,7 +104,8 @@ export class ComprasComponent implements OnInit {
     private entregasService: EntregasService,
     private cdr: ChangeDetectorRef,
     private permissionsService: PermissionsService,
-    private remitosService: RemitosService
+    private remitosService: RemitosService,
+    private guidedTourHost: GuidedTourHostService
     // private pliegosService: PliegosService // Eliminar
   ) {
     this.filterForm = this.fb.group({
@@ -1821,5 +1825,20 @@ export class ComprasComponent implements OnInit {
     }
     const subtotal = this.calcularSubtotalDesdeMontoTotal();
     return montoTotal - subtotal;
+  }
+
+  iniciarTourCompras(): void {
+    this.pageTour?.destroy();
+    const steps = this.guidedTourHost.buildSteps([
+      { selector: '#tour-compras-title', title: 'Compras', description: 'Registro de adquisiciones: moneda, tipo, lotes, ítems y entregas vinculados al inventario Cerbero.', side: 'bottom' },
+      { selector: '#tour-compras-filters', title: 'Filtro por moneda', description: 'Acotá la lista por USD o UYU; “Todos” muestra el universo cargado.', side: 'bottom' },
+      { selector: '#tour-compras-nueva', title: 'Nueva compra', description: 'Alta o edición en modal con ítems, proveedor y documentos según tus permisos.', side: 'left' },
+      { selector: '#tour-compras-search-row', title: 'Búsqueda y tipo', description: 'Buscá por número de compra y refiná con chips de tipo de compra.', side: 'bottom' },
+      { selector: '#tour-compras-table', title: 'Tabla', description: 'Ordená columnas y usá acciones por fila para ver detalle, editar o eliminar.', side: 'top' }
+    ]);
+    const inst = this.guidedTourHost.startTour(steps);
+    if (inst) {
+      this.pageTour = inst;
+    }
   }
 } 
