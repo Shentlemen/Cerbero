@@ -69,6 +69,9 @@ export class AlmacenesComponent implements OnInit {
   private omitirAbrirStockPorDefecto = false;
   private pageTour?: Driver;
 
+  /** Validación y errores API en el modal crear/editar almacén (pie del modal). */
+  almacenModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
+
   constructor(
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
@@ -88,6 +91,44 @@ export class AlmacenesComponent implements OnInit {
       nombre: ['', [Validators.required, Validators.maxLength(100)]],
       descripcion: ['', Validators.maxLength(500)]
     });
+
+    this.almacenForm.valueChanges.subscribe(() => this.limpiarFeedbackAlmacenModal());
+  }
+
+  limpiarFeedbackAlmacenModal(): void {
+    this.almacenModalValidacion = null;
+  }
+
+  private mensajeErrorHttp(error: unknown): string {
+    const e = error as { error?: string | { message?: string }; message?: string };
+    const body = e?.error;
+    if (typeof body === 'string') {
+      return body;
+    }
+    if (body && typeof body === 'object' && typeof body.message === 'string') {
+      return body.message;
+    }
+    if (typeof e?.message === 'string') {
+      return e.message;
+    }
+    return 'Ocurrió un error inesperado.';
+  }
+
+  private armarLineasValidacionAlmacen(): string[] {
+    const lineas: string[] = [];
+    const n = this.almacenForm.get('numero');
+    const nom = this.almacenForm.get('nombre');
+    if (n?.hasError('required')) {
+      lineas.push('El número es obligatorio.');
+    } else if (n?.hasError('maxlength')) {
+      lineas.push('El número no puede exceder 50 caracteres.');
+    }
+    if (nom?.hasError('required')) {
+      lineas.push('El nombre es obligatorio.');
+    } else if (nom?.hasError('maxlength')) {
+      lineas.push('El nombre no puede exceder 100 caracteres.');
+    }
+    return lineas;
   }
 
   ngOnInit(): void {
@@ -352,6 +393,7 @@ export class AlmacenesComponent implements OnInit {
   }
 
   abrirModalAlmacen(modal: any, almacen?: Almacen): void {
+    this.almacenModalValidacion = null;
     this.modoEdicion = !!almacen;
     this.almacenSeleccionado = almacen || null;
 
@@ -364,47 +406,68 @@ export class AlmacenesComponent implements OnInit {
       this.almacenForm.reset();
     }
 
-    this.modalService.open(modal, { size: 'lg' });
+    this.modalService.open(modal, {
+      size: 'lg',
+      windowClass: 'almacen-form-modal-window'
+    });
   }
 
   guardarAlmacen(): void {
-    if (this.almacenForm.valid) {
-      const formData = this.almacenForm.value;
-      
-      if (this.modoEdicion && this.almacenSeleccionado) {
-        // Actualizar almacén existente
-        const almacenActualizado: Almacen = {
-          ...this.almacenSeleccionado,
-          numero: formData.numero,
-          nombre: formData.nombre
-        };
+    if (!this.almacenForm.valid) {
+      this.almacenForm.markAllAsTouched();
+      const lineas = this.armarLineasValidacionAlmacen();
+      this.almacenModalValidacion = {
+        titulo: 'Revisá el formulario antes de guardar',
+        lineas: lineas.length > 0 ? lineas : ['Completá los campos obligatorios.'],
+        esError: false
+      };
+      return;
+    }
 
-        this.almacenService.updateAlmacen(this.almacenSeleccionado.id, almacenActualizado).subscribe({
-          next: () => {
-            this.modalService.dismissAll();
-            this.cargarDatos();
-          },
-          error: (error) => {
-            console.error('Error al actualizar almacén:', error);
-          }
-        });
-      } else {
-        // Crear nuevo almacén
-        const nuevoAlmacen: Omit<Almacen, 'id'> = {
-          numero: formData.numero,
-          nombre: formData.nombre
-        };
+    const formData = this.almacenForm.value;
+    this.almacenModalValidacion = null;
 
-        this.almacenService.createAlmacen(nuevoAlmacen).subscribe({
-          next: () => {
-            this.modalService.dismissAll();
-            this.cargarDatos();
-          },
-          error: (error) => {
-            console.error('Error al crear almacén:', error);
-          }
-        });
-      }
+    if (this.modoEdicion && this.almacenSeleccionado) {
+      const almacenActualizado: Almacen = {
+        ...this.almacenSeleccionado,
+        numero: formData.numero,
+        nombre: formData.nombre
+      };
+
+      this.almacenService.updateAlmacen(this.almacenSeleccionado.id, almacenActualizado).subscribe({
+        next: () => {
+          this.modalService.dismissAll();
+          this.cargarDatos();
+        },
+        error: (error) => {
+          console.error('Error al actualizar almacén:', error);
+          this.almacenModalValidacion = {
+            titulo: 'Error al actualizar el almacén',
+            lineas: [this.mensajeErrorHttp(error)],
+            esError: true
+          };
+        }
+      });
+    } else {
+      const nuevoAlmacen: Omit<Almacen, 'id'> = {
+        numero: formData.numero,
+        nombre: formData.nombre
+      };
+
+      this.almacenService.createAlmacen(nuevoAlmacen).subscribe({
+        next: () => {
+          this.modalService.dismissAll();
+          this.cargarDatos();
+        },
+        error: (error) => {
+          console.error('Error al crear almacén:', error);
+          this.almacenModalValidacion = {
+            titulo: 'Error al crear el almacén',
+            lineas: [this.mensajeErrorHttp(error)],
+            esError: true
+          };
+        }
+      });
     }
   }
 

@@ -35,6 +35,9 @@ export class UserManagementComponent implements OnInit {
   userToToggle: User | null = null;
   private pageTour?: Driver;
 
+  /** Validación cliente y errores API dentro del modal usuario (mismo criterio que compras/proveedores). */
+  usuarioModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
+
   roles = [
     { value: 'USER', label: 'Usuario' },
     { value: 'ADMIN', label: 'Administrador' },
@@ -65,6 +68,62 @@ export class UserManagementComponent implements OnInit {
       lastName: ['', [Validators.required]],
       role: ['USER', [Validators.required]]
     });
+
+    this.userForm.valueChanges.subscribe(() => this.limpiarFeedbackUsuarioModal());
+  }
+
+  limpiarFeedbackUsuarioModal(): void {
+    this.usuarioModalValidacion = null;
+  }
+
+  private mensajeErrorHttp(error: unknown): string {
+    const e = error as { error?: string | { message?: string }; message?: string };
+    const body = e?.error;
+    if (typeof body === 'string') {
+      return body;
+    }
+    if (body && typeof body === 'object' && typeof body.message === 'string') {
+      return body.message;
+    }
+    if (typeof e?.message === 'string') {
+      return e.message;
+    }
+    return 'Ocurrió un error inesperado.';
+  }
+
+  private armarLineasValidacionUsuario(): string[] {
+    const lineas: string[] = [];
+    const f = this.userForm;
+    const usernameCtrl = f.get('username');
+    if (usernameCtrl && !usernameCtrl.disabled) {
+      if (usernameCtrl.hasError('required')) {
+        lineas.push('El usuario es obligatorio.');
+      }
+      if (usernameCtrl.hasError('minlength')) {
+        lineas.push('El usuario debe tener al menos 3 caracteres.');
+      }
+    }
+    const emailCtrl = f.get('email');
+    if (emailCtrl?.hasError('required')) {
+      lineas.push('El email es obligatorio.');
+    }
+    if (emailCtrl?.hasError('email')) {
+      lineas.push('Ingresá un email válido.');
+    }
+    const pwd = f.get('password');
+    if (!this.editingUser && pwd?.hasError('required')) {
+      lineas.push('La contraseña es obligatoria.');
+    }
+    if (f.get('firstName')?.hasError('required')) {
+      lineas.push('El nombre es obligatorio.');
+    }
+    if (f.get('lastName')?.hasError('required')) {
+      lineas.push('El apellido es obligatorio.');
+    }
+    if (f.get('role')?.hasError('required')) {
+      lineas.push('Seleccioná un rol.');
+    }
+    return lineas;
   }
 
   ngOnInit(): void {
@@ -90,6 +149,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   showCreateForm(): void {
+    this.usuarioModalValidacion = null;
     this.editingUser = null;
     this.showForm = true;
     
@@ -108,6 +168,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   showEditForm(user: User): void {
+    this.usuarioModalValidacion = null;
     this.editingUser = user;
     this.showForm = true;
     
@@ -135,13 +196,25 @@ export class UserManagementComponent implements OnInit {
     this.userForm.reset();
     this.errorMessage = '';
     this.successMessage = '';
+    this.usuarioModalValidacion = null;
   }
 
   onSubmit(): void {
-    if (this.userForm.valid) {
-      this.loading = true;
-      this.errorMessage = '';
-      this.successMessage = '';
+    if (!this.userForm.valid) {
+      this.userForm.markAllAsTouched();
+      const lineas = this.armarLineasValidacionUsuario();
+      this.usuarioModalValidacion = {
+        titulo: 'Revisá el formulario antes de guardar',
+        lineas: lineas.length > 0 ? lineas : ['Hay campos con datos inválidos.'],
+        esError: false
+      };
+      return;
+    }
+
+    this.usuarioModalValidacion = null;
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
 
       // Habilitar temporalmente el campo username para obtener su valor
       const usernameControl = this.userForm.get('username');
@@ -186,11 +259,13 @@ export class UserManagementComponent implements OnInit {
             this.loading = false;
           },
           error: (error) => {
-            this.errorMessage = 'Error al actualizar usuario: ' + error.message;
-            this.notificationService.showError(
-              'Error al Actualizar Usuario',
-              'No se pudo actualizar el usuario: ' + error.message
-            );
+            const msg = this.mensajeErrorHttp(error);
+            this.usuarioModalValidacion = {
+              titulo: 'Error al actualizar el usuario',
+              lineas: [msg],
+              esError: true
+            };
+            this.notificationService.showError('Error al Actualizar Usuario', 'No se pudo actualizar el usuario: ' + msg);
             this.loading = false;
           }
         });
@@ -210,22 +285,17 @@ export class UserManagementComponent implements OnInit {
             this.loading = false;
           },
           error: (error) => {
-            this.errorMessage = 'Error al crear usuario: ' + error.message;
-            this.notificationService.showError(
-              'Error al Crear Usuario',
-              'No se pudo crear el usuario: ' + error.message
-            );
+            const msg = this.mensajeErrorHttp(error);
+            this.usuarioModalValidacion = {
+              titulo: 'Error al crear el usuario',
+              lineas: [msg],
+              esError: true
+            };
+            this.notificationService.showError('Error al Crear Usuario', 'No se pudo crear el usuario: ' + msg);
             this.loading = false;
           }
         });
       }
-    } else {
-      // Marcar todos los campos como touched para mostrar los errores
-      Object.keys(this.userForm.controls).forEach(key => {
-        const control = this.userForm.get(key);
-        control?.markAsTouched();
-      });
-    }
   }
 
   private procesarToggleEstado(user: User): void {

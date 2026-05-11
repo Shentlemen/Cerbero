@@ -10,7 +10,7 @@
       </button>
       </div>
       <div class="actions">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-locations-nueva" (click)="openNewLocationModal()">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-locations-nueva" (click)="openNewLocationModal()">
           <i class="fas fa-plus me-2"></i>
           Nueva Ubicación
         </button>
@@ -86,7 +86,7 @@
     </div>
     <div class="confirm-dialog-message">
       ¿Está seguro que desea eliminar la ubicación "{{ubicacionToDelete?.nombreGerencia || ''}} - {{ubicacionToDelete?.nombreOficina}}"?
-      Esta acción no se puede deshacer.
+      Si hay activos o equipos/dispositivos de red asignados a esta ubicación, quedarán sin ubicación. Esta acción no se puede deshacer.
     </div>
     <div class="confirm-dialog-buttons">
       <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">

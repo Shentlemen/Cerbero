@@ -824,7 +824,13 @@ export class SoftwareComponent implements OnInit {
   }
 
   iniciarTourSoftware(): void {
+    if (this.loading) {
+      return;
+    }
     this.pageTour?.destroy();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     const steps = this.guidedTourHost.buildSteps([
       { selector: '#tour-software-title', title: 'Software instalado', description: 'Inventario agregado de aplicaciones detectadas en los equipos. Podés clasificar y auditar uso.', side: 'bottom' },
       { selector: '#tour-software-tabs', title: 'Vistas', description: 'Total, ocultos, prohibidos, drivers y licenciados: cada pestaña aplica un filtro rápido sobre la base.', side: 'bottom' },
@@ -832,7 +838,11 @@ export class SoftwareComponent implements OnInit {
       { selector: '#tour-software-multiselect', title: 'Selección múltiple', description: 'Activá el modo para marcar varios ítems y aplicar visibilidad, prohibido, driver o borrado en lote (según permisos).', side: 'bottom' },
       { selector: '#tour-software-table', title: 'Listado', description: 'Revisá versiones, equipos afectados y acciones por fila. La paginación está abajo del listado.', side: 'top' }
     ]);
-    const inst = this.guidedTourHost.startTour(steps);
+    const inst = this.guidedTourHost.startTour(steps, () => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
     if (inst) {
       this.pageTour = inst;
     }

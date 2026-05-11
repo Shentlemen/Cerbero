@@ -243,7 +243,7 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardarLote()" [disabled]="!loteForm.valid">
+    <button type="button" class="btn modal-btn-primario" (click)="guardarLote()" [disabled]="!loteForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>

@@ -10,7 +10,7 @@
       </button>
       </div>
       <div class="actions">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-proc-personas-nuevo" (click)="abrirModal(usuarioModal)">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-proc-personas-nuevo" (click)="abrirModal(usuarioModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo Usuario
         </button>
@@ -170,7 +170,7 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardarUsuario()" [disabled]="!usuarioForm.valid">
+    <button type="button" class="btn modal-btn-primario" (click)="guardarUsuario()" [disabled]="!usuarioForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>

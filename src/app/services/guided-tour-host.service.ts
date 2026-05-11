@@ -65,7 +65,8 @@ export class GuidedTourHostService {
       overlayClickBehavior: () => undefined,
       allowKeyboardControl: false,
       showProgress: true,
-      animate: true,
+      /** Sin tween entre pasos: con zoom global que se suspende al abrir, animar suele pegar la UI. */
+      animate: false,
       /** Evita animar scroll al cambiar paso: menos jank y el spotlight/popover coinciden con el DOM estable. */
       smoothScroll: false,
       stagePadding: 10,
@@ -79,7 +80,12 @@ export class GuidedTourHostService {
       },
       steps
     });
-    inst.drive();
+    // Tras `no-global-zoom` el layout cambia de escala; medir en el mismo tick desalinea el spotlight.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        inst.drive();
+      });
+    });
     return inst;
   }
 

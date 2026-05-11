@@ -238,7 +238,7 @@
 }
 
 .proveedor-card-header i {
-  color: #3498db;
+  color: #212529;
 }
 
 .proveedor-card-body {
@@ -253,7 +253,7 @@
 }
 
 .proveedor-card .form-label i {
-  color: #3498db;
+  color: #212529;
   width: 16px;
 }
 
@@ -309,7 +309,7 @@
 }
 
 .contacto-card-header i {
-  color: #3498db;
+  color: #212529;
 }
 
 .contacto-card-body {
@@ -324,7 +324,7 @@
 }
 
 .contacto-card .form-label i {
-  color: #3498db;
+  color: #212529;
   width: 16px;
 }
 
@@ -393,7 +393,8 @@
   border-top: 1px solid #edf2f7;
 }
 
-.btn-secondary {
+/* Botones secundarios grandes solo cuando no son .btn-sm (Cancelar en modales usa btn-sm). */
+.btn-secondary:not(.btn-sm) {
   background: #e2e8f0;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -401,7 +402,7 @@
   transition: all 0.3s ease;
 }
 
-.btn-secondary:hover {
+.btn-secondary:not(.btn-sm):hover {
   background: #cbd5e0;
   transform: translateY(-2px);
 }
@@ -419,6 +420,33 @@
   border-color: #475569 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 8px rgba(71, 85, 105, 0.35) !important;
+}
+
+/*
+ * Modal crear/editar proveedor: pie en columna (alerta + fila Cancelar | Guardar).
+ * windowClass porque ngb-modal-window se renderiza fuera del host.
+ */
+ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-footer-stack {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-footer-stack .proveedor-form-modal-footer-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-footer-stack .proveedor-form-modal-validacion .alert {
+  text-align: left;
 }
 
 /* Personalización de pestañas ngbNav */

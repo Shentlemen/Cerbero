@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { UbicacionesService } from '../services/ubicaciones.service';
 import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
@@ -115,13 +116,25 @@ export class LocationsComponent implements OnInit {
             this.ubicacionToDelete = null;
           } else {
             this.error = response.message || 'Error al eliminar la ubicación';
+            this.showConfirmDialog = false;
+            this.ubicacionToDelete = null;
           }
           this.loading = false;
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error al eliminar la ubicación:', error);
-          this.error = 'Error al eliminar la ubicación. Por favor, intente nuevamente.';
+          const body = error.error as { message?: string } | string | null | undefined;
+          const serverMsg =
+            typeof body === 'string'
+              ? body
+              : typeof body?.message === 'string'
+                ? body.message.trim()
+                : '';
+          this.error =
+            serverMsg || 'Error al eliminar la ubicación. Por favor, intente nuevamente.';
           this.loading = false;
+          this.showConfirmDialog = false;
+          this.ubicacionToDelete = null;
         }
       });
     }

@@ -677,6 +677,9 @@ export class ActivosComponent implements OnInit {
     this.suspenderZoomGlobalParaTour();
     this.inventoryTour = driver({
       allowClose: true,
+      /** No cerrar ni avanzar con clic en el oscuro: solo botones del popover y la X. */
+      overlayClickBehavior: () => undefined,
+      allowKeyboardControl: false,
       showProgress: true,
       overlayOpacity: 0.6,
       nextBtnText: 'Siguiente',
@@ -1501,7 +1504,8 @@ export class ActivosComponent implements OnInit {
 
       const modalOpts: NgbModalOptions = {
         size: 'xl',
-        backdrop: true,
+        /** En edición no cerrar por clic fuera (evita pérdida de cambios). Alta sigue igual que antes. */
+        backdrop: this.modoEdicion ? 'static' : true,
         keyboard: false,
         centered: false
       };

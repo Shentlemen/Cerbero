@@ -46,7 +46,7 @@
       </button>
       </div>
       <div class="actions d-flex justify-content-end align-items-center flex-wrap" style="gap: 1rem;" *ngIf="canManagePurchases()">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-compras-nueva" (click)="abrirModal(compraModal)">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-compras-nueva" (click)="abrirModal(compraModal)">
           <i class="fas fa-plus me-2"></i>
           Nueva Compra
         </button>
@@ -793,11 +793,32 @@
     </ul>
     <div [ngbNavOutlet]="nav"></div>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-success btn-sm" (click)="guardarCompra()" [disabled]="!compraForm.get('idTipoCompra')?.valid || !compraForm.get('numeroCompra')?.valid || !compraForm.get('ano')?.valid">
-      {{modoEdicion ? 'Actualizar' : 'Guardar'}}
-    </button>
+  <div class="modal-footer compra-form-modal-footer-stack">
+    <div *ngIf="compraModalValidacion" class="compra-form-modal-validacion">
+      <div
+        class="alert mb-0 py-2 px-3 small"
+        [ngClass]="compraModalValidacion.esError ? 'alert-danger' : 'alert-warning'"
+        role="alert">
+        <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="compraModalValidacion.esError">
+          <i class="fas" [ngClass]="compraModalValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+          {{ compraModalValidacion.titulo }}
+        </h6>
+        <ul class="mb-0 ps-3 small">
+          <li *ngFor="let linea of compraModalValidacion.lineas">{{ linea }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="compra-form-modal-footer-actions">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button
+        type="button"
+        class="btn btn-sm modal-btn-primario"
+        [class.modal-btn-primario--valid]="compraForm.valid"
+        [class.modal-btn-primario--invalid]="!compraForm.valid"
+        (click)="guardarCompra()">
+        {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+      </button>
+    </div>
   </div>
 </ng-template>
 

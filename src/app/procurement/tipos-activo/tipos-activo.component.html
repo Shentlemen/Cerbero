@@ -10,7 +10,7 @@
       </button>
       </div>
       <div class="actions">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-tipos-activo-nuevo" (click)="openNewTipoActivoModal()">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-tipos-activo-nuevo" (click)="openNewTipoActivoModal()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Tipo de Activo
         </button>
@@ -109,7 +109,7 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="saveTipoActivo()" [disabled]="!tipoActivoForm.valid">
+    <button type="button" class="btn modal-btn-primario" (click)="saveTipoActivo()" [disabled]="!tipoActivoForm.valid">
       {{modoEdicion ? 'Actualizar' : 'Guardar'}}
     </button>
   </div>

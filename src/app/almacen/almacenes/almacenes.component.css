@@ -38,6 +38,8 @@
 .actions-section {
   display: flex;
   gap: 1rem;
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 /* Estilos personalizados para el botón de nuevo almacén */
@@ -52,17 +54,24 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.actions-section .btn-outline-secondary:hover {
-  background: #f8f9fa;
-  color: #495057;
-  border-color: #adb5bd;
+.actions-section .btn-outline-secondary:hover,
+.actions-section .btn-outline-secondary:hover:focus,
+.actions-section .btn-outline-secondary:hover:focus-visible {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
-.actions-section .btn-outline-secondary:active {
+.actions-section .btn-outline-secondary:active,
+.actions-section .btn-outline-secondary:active:focus,
+.actions-section .btn-outline-secondary:active:focus-visible {
+  background: #111111 !important;
+  border-color: #111111 !important;
+  color: #ffffff !important;
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28) !important;
 }
 
 .actions-section .btn-outline-secondary i {
@@ -399,7 +408,8 @@
   opacity: 0.6;
 }
 
-.btn-secondary {
+/* No aplicar padding grande a .btn-sm (Cancelar en modales, como el resto de la app). */
+.btn-secondary:not(.btn-sm) {
   background: #6c757d;
   border: none;
   font-weight: 600;
@@ -408,7 +418,7 @@
   transition: all 0.3s ease;
 }
 
-.btn-secondary:hover {
+.btn-secondary:not(.btn-sm):hover {
   background: #545b62;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(108,117,125,0.3);
@@ -468,7 +478,7 @@
   }
 
   .actions-section {
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   /* Grid responsive para móviles */

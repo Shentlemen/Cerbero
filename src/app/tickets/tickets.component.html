@@ -18,7 +18,7 @@
         *ngIf="canCreateTickets()">
         <button
           type="button"
-          class="btn btn-export btn-agregar-nuevo"
+          class="btn btn-sm btn-export btn-agregar-nuevo"
           id="tour-tickets-nuevo"
           (click)="abrirModalTicketNuevo(ticketNuevoModal)">
           <i class="fas fa-plus me-2" aria-hidden="true"></i>
@@ -393,63 +393,88 @@
 
 <ng-template #ticketNuevoModal let-modal>
   <div class="modal-header">
-    <h4 class="modal-title">Nuevo ticket / reclamo</h4>
+    <h4 class="modal-title">
+      <i class="fas fa-ticket-alt me-2" aria-hidden="true"></i>
+      Nuevo ticket / reclamo
+    </h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Cerrar"></button>
   </div>
-  <div class="modal-body tickets-modal-nuevo-body">
+  <div class="modal-body" id="tour-tickets-nuevo-modal-body">
     <div class="row g-3">
-      <div class="col-12">
-        <label class="form-label fw-bold">Título</label>
+      <div class="col-12" id="tour-ticket-nuevo-titulo">
+        <label class="form-label">Título</label>
         <input
           class="form-control form-control-sm"
           [(ngModel)]="ticketNuevoForm.titulo"
+          (ngModelChange)="limpiarFeedbackTicketNuevo()"
           maxlength="200"
           placeholder="Resumen breve del reclamo" />
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label fw-bold">Área destino</label>
-        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.areaDestino">
+      <div class="col-md-6" id="tour-ticket-nuevo-area">
+        <label class="form-label">Área destino</label>
+        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.areaDestino" (ngModelChange)="limpiarFeedbackTicketNuevo()">
           <option value="">Seleccionar...</option>
           <option *ngFor="let area of areasTicket" [value]="area">{{ area }}</option>
         </select>
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label fw-bold">Prioridad</label>
-        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.prioridad">
+      <div class="col-md-6" id="tour-ticket-nuevo-prioridad">
+        <label class="form-label">Prioridad</label>
+        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.prioridad" (ngModelChange)="limpiarFeedbackTicketNuevo()">
           <option *ngFor="let p of prioridadesTicket" [value]="p">{{ p }}</option>
         </select>
       </div>
 
-      <div class="col-12">
-        <label class="form-label fw-bold">Descripción</label>
+      <div class="col-12" id="tour-ticket-nuevo-descripcion">
+        <label class="form-label">Descripción</label>
         <textarea
           class="form-control form-control-sm"
           rows="5"
           [(ngModel)]="ticketNuevoForm.descripcion"
+          (ngModelChange)="limpiarFeedbackTicketNuevo()"
           placeholder="Detalle completo del reclamo"></textarea>
       </div>
 
-      <div class="col-12">
-        <label class="form-label fw-bold">Nota inicial (opcional)</label>
+      <div class="col-12" id="tour-ticket-nuevo-nota">
+        <label class="form-label">Nota inicial (opcional)</label>
         <textarea
           class="form-control form-control-sm"
           rows="3"
           [(ngModel)]="ticketNuevoForm.nota"
+          (ngModelChange)="limpiarFeedbackTicketNuevo()"
           placeholder="Nota de contexto para el primer movimiento"></textarea>
       </div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
-    <button
-      type="button"
-      class="btn btn-ticket-nuevo-submit btn-sm"
-      [disabled]="creandoTicket"
-      (click)="guardarTicketNuevo(modal)">
-      <i class="fas" [ngClass]="creandoTicket ? 'fa-spinner fa-spin' : 'fa-save'" aria-hidden="true"></i>
-      {{ creandoTicket ? 'Creando...' : 'Crear ticket' }}
-    </button>
+  <div class="modal-footer tickets-modal-nuevo-footer-stack">
+    <div *ngIf="ticketNuevoValidacion" class="tickets-modal-nuevo-validacion">
+      <div
+        class="alert mb-0 py-2 px-3 small"
+        [ngClass]="ticketNuevoValidacion.esError ? 'alert-danger' : 'alert-warning'"
+        role="alert">
+        <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="ticketNuevoValidacion.esError">
+          <i class="fas" [ngClass]="ticketNuevoValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+          {{ ticketNuevoValidacion.titulo }}
+        </h6>
+        <ul class="mb-0 ps-3 small">
+          <li *ngFor="let linea of ticketNuevoValidacion.lineas">{{ linea }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tickets-modal-nuevo-footer-actions">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button
+        id="tour-ticket-nuevo-crear"
+        type="button"
+        class="btn btn-sm modal-btn-primario"
+        [class.modal-btn-primario--valid]="esTicketNuevoFormValido()"
+        [class.modal-btn-primario--invalid]="!esTicketNuevoFormValido()"
+        [disabled]="creandoTicket"
+        (click)="guardarTicketNuevo(modal)">
+        <i class="fas" [ngClass]="creandoTicket ? 'fa-spinner fa-spin' : 'fa-save'" aria-hidden="true"></i>
+        {{ creandoTicket ? 'Creando...' : 'Crear ticket' }}
+      </button>
+    </div>
   </div>
 </ng-template>

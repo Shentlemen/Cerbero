@@ -91,6 +91,9 @@ export class ComprasComponent implements OnInit {
   descripcionDocumento: string = '';
   subiendoDocumento: boolean = false;
 
+  /** Validación y errores del modal nueva/editar compra (mismo criterio que tickets). */
+  compraModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
+
   @ViewChild('detallesModal') detallesModal!: TemplateRef<any>;
 
   constructor(
@@ -136,6 +139,45 @@ export class ComprasComponent implements OnInit {
     this.filterForm.valueChanges.subscribe(() => {
       this.aplicarFiltros();
     });
+
+    this.compraForm.valueChanges.subscribe(() => this.limpiarFeedbackCompraModal());
+    this.itemsFormArray.valueChanges.subscribe(() => this.limpiarFeedbackCompraModal());
+    this.entregasFormArray.valueChanges.subscribe(() => this.limpiarFeedbackCompraModal());
+  }
+
+  limpiarFeedbackCompraModal(): void {
+    this.compraModalValidacion = null;
+  }
+
+  private armarLineasValidacionCompraPrincipal(): string[] {
+    const lineas: string[] = [];
+    const f = this.compraForm;
+    const marcar = (name: string, mensaje: string) => {
+      const c = f.get(name);
+      if (c?.invalid) {
+        lineas.push(mensaje);
+      }
+    };
+    marcar('idTipoCompra', 'Seleccioná el tipo de compra.');
+    marcar('numeroCompra', 'El número de compra es obligatorio.');
+    marcar('ano', 'El año es obligatorio.');
+    marcar('valorDolar', 'El valor del dólar es obligatorio.');
+    return lineas;
+  }
+
+  private mensajeErrorHttp(error: unknown): string {
+    const e = error as { error?: string | { message?: string }; message?: string };
+    const body = e?.error;
+    if (typeof body === 'string') {
+      return body;
+    }
+    if (body && typeof body === 'object' && typeof body.message === 'string') {
+      return body.message;
+    }
+    if (typeof e?.message === 'string') {
+      return e.message;
+    }
+    return 'Ocurrió un error inesperado.';
   }
 
   ngOnInit(): void {
@@ -311,6 +353,7 @@ export class ComprasComponent implements OnInit {
   }
 
   abrirModal(modal: any, compra?: CompraConTipo): void {
+    this.compraModalValidacion = null;
     this.activeTab = '1';
     if (compra) {
       this.modoEdicion = true;
@@ -401,9 +444,10 @@ export class ComprasComponent implements OnInit {
       // this.descripcionPliego = '';
     }
     this.cdr.detectChanges();
-    this.modalService.open(modal, { 
+    this.modalService.open(modal, {
       size: 'xl',
-      backdrop: true
+      backdrop: true,
+      windowClass: 'compra-form-modal-window'
     });
   }
 
@@ -518,89 +562,120 @@ export class ComprasComponent implements OnInit {
   }
 
   guardarCompra(): void {
-    if (this.compraForm.valid) {
-      // Validar que el valor del dólar esté presente
-      const valorDolar = this.compraForm.get('valorDolar')?.value;
-      if (!valorDolar || valorDolar <= 0) {
-        this.error = 'El valor del dólar es requerido y debe ser mayor a 0';
-        return;
-      }
-      
-      // Solo validar ítems si existen
-      const itemsData = this.itemsFormArray.value;
-      if (itemsData.length > 0) {
-        // Validar que todos los ítems tengan precio unitario
-        for (let i = 0; i < itemsData.length; i++) {
-          const item = itemsData[i];
-          if (!item.precioUnitario || item.precioUnitario <= 0) {
-            this.error = `El ítem "${item.nombreItem}" debe tener un precio unitario válido`;
-            return;
-          }
-          if (!item.monedaPrecio) {
-            this.error = `El ítem "${item.nombreItem}" debe tener una moneda de precio especificada`;
-            return;
-          }
-        }
-      }
-      
-      // Calcular el monto total con IVA antes de guardar (será 0 si no hay ítems)
-      const montoTotalConIva = this.calcularMontoTotalConIva();
-      const subtotalTotal = this.calcularSubtotalTotal();
-      const ivaTotal = this.calcularIvaTotal();
-      
-      // Convertir los montos según la moneda de la compra
-      const moneda = this.compraForm.get('moneda')?.value;
-      
-      let montoConvertido = montoTotalConIva;
-      let subtotalConvertido = subtotalTotal;
-      let ivaConvertido = ivaTotal;
-      
-      if (moneda === 'UYU' && valorDolar && valorDolar > 0) {
-        montoConvertido = montoTotalConIva * valorDolar;
-        subtotalConvertido = subtotalTotal * valorDolar;
-        ivaConvertido = ivaTotal * valorDolar;
-      }
-      
-      this.compraForm.patchValue({ 
-        monto: montoConvertido,
-        montoTotalConIva: montoConvertido,
-        subtotalCompra: subtotalConvertido,
-        totalIva: ivaConvertido
-      });
-      
-      const compraData = this.compraForm.value;
-      const entregasData = this.entregasFormArray.value;
+    if (!this.compraForm.valid) {
+      this.compraForm.markAllAsTouched();
+      const lineas = this.armarLineasValidacionCompraPrincipal();
+      this.compraModalValidacion = {
+        titulo: 'Revisá el formulario antes de guardar',
+        lineas: lineas.length > 0 ? lineas : ['Por favor, complete todos los campos requeridos.'],
+        esError: false
+      };
       this.error = null;
+      return;
+    }
 
-      if (this.modoEdicion) {
-        if (!compraData.idCompra) {
-          this.error = 'Error: ID de compra no válido';
+    const valorDolar = this.compraForm.get('valorDolar')?.value;
+    if (!valorDolar || valorDolar <= 0) {
+      this.compraModalValidacion = {
+        titulo: 'Revisá el valor del dólar',
+        lineas: ['El valor del dólar es requerido y debe ser mayor a 0.'],
+        esError: false
+      };
+      this.error = null;
+      return;
+    }
+
+    const itemsData = this.itemsFormArray.value;
+    if (itemsData.length > 0) {
+      for (const item of itemsData) {
+        const nombre = (item.nombreItem || 'sin nombre').trim() || 'sin nombre';
+        if (!item.precioUnitario || item.precioUnitario <= 0) {
+          this.compraModalValidacion = {
+            titulo: 'Revisá los ítems',
+            lineas: [`El ítem "${nombre}" debe tener un precio unitario válido.`],
+            esError: false
+          };
+          this.error = null;
           return;
         }
-        // Actualizar compra
-        this.comprasService.actualizarCompra(compraData.idCompra, compraData).subscribe({
-          next: () => {
-            this.guardarItemsYEntregas(compraData.idCompra, itemsData, entregasData);
-          },
-          error: (error) => {
-            this.error = 'Error al actualizar la compra: ' + error.message;
-          }
-        });
-      } else {
-        // Crear compra
-        const { idCompra, ...nuevaCompra } = compraData;
-        this.comprasService.crearCompra(nuevaCompra).subscribe({
-          next: (compraCreada) => {
-            // compraCreada debe tener idCompra
-            this.guardarItemsYEntregas(compraCreada.idCompra, itemsData, entregasData);
-          },
-          error: (error) => {
-            this.error = 'Error al crear la compra: ' + error.message;
-          }
-        });
+        if (!item.monedaPrecio) {
+          this.compraModalValidacion = {
+            titulo: 'Revisá los ítems',
+            lineas: [`El ítem "${nombre}" debe tener una moneda de precio especificada.`],
+            esError: false
+          };
+          this.error = null;
+          return;
+        }
       }
+    }
+
+    const montoTotalConIva = this.calcularMontoTotalConIva();
+    const subtotalTotal = this.calcularSubtotalTotal();
+    const ivaTotal = this.calcularIvaTotal();
+
+    const moneda = this.compraForm.get('moneda')?.value;
+
+    let montoConvertido = montoTotalConIva;
+    let subtotalConvertido = subtotalTotal;
+    let ivaConvertido = ivaTotal;
+
+    if (moneda === 'UYU' && valorDolar && valorDolar > 0) {
+      montoConvertido = montoTotalConIva * valorDolar;
+      subtotalConvertido = subtotalTotal * valorDolar;
+      ivaConvertido = ivaTotal * valorDolar;
+    }
+
+    this.compraForm.patchValue({
+      monto: montoConvertido,
+      montoTotalConIva: montoConvertido,
+      subtotalCompra: subtotalConvertido,
+      totalIva: ivaConvertido
+    });
+
+    const compraData = this.compraForm.value;
+    const entregasData = this.entregasFormArray.value;
+    this.compraModalValidacion = null;
+    this.error = null;
+
+    if (this.modoEdicion) {
+      if (!compraData.idCompra) {
+        this.compraModalValidacion = {
+          titulo: 'No se pudo guardar',
+          lineas: ['Error: ID de compra no válido.'],
+          esError: true
+        };
+        this.error = null;
+        return;
+      }
+      this.comprasService.actualizarCompra(compraData.idCompra, compraData).subscribe({
+        next: () => {
+          this.guardarItemsYEntregas(compraData.idCompra, itemsData, entregasData);
+        },
+        error: (error) => {
+          this.compraModalValidacion = {
+            titulo: 'Error al actualizar la compra',
+            lineas: [this.mensajeErrorHttp(error)],
+            esError: true
+          };
+          this.error = null;
+        }
+      });
     } else {
-      this.error = 'Por favor, complete todos los campos requeridos';
+      const { idCompra, ...nuevaCompra } = compraData;
+      this.comprasService.crearCompra(nuevaCompra).subscribe({
+        next: (compraCreada) => {
+          this.guardarItemsYEntregas(compraCreada.idCompra, itemsData, entregasData);
+        },
+        error: (error) => {
+          this.compraModalValidacion = {
+            titulo: 'Error al crear la compra',
+            lineas: [this.mensajeErrorHttp(error)],
+            esError: true
+          };
+          this.error = null;
+        }
+      });
     }
   }
 
@@ -686,7 +761,12 @@ export class ComprasComponent implements OnInit {
           console.error('🔍 DEBUG - Error details:', error.error);
         }
         
-        this.error = 'Error al guardar ítems o entregas: ' + (error.message || error);
+        this.compraModalValidacion = {
+          titulo: 'Error al guardar ítems o entregas',
+          lineas: [this.mensajeErrorHttp(error)],
+          esError: true
+        };
+        this.error = null;
       });
   }
 

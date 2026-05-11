@@ -769,6 +769,9 @@ export class DevicesComponent implements OnInit, OnDestroy {
 
   iniciarTourDispositivos(): void {
     this.pageTour?.destroy();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     const steps = this.guidedTourHost.buildSteps([
       { selector: '#tour-devices-title', title: 'Dispositivos de red', description: 'Periféricos y equipo activo de red excluyendo bajas y stock en almacén.', side: 'bottom' },
       { selector: '#tour-devices-filters', title: 'Tipos', description: 'Filtrá por categoría: impresoras, switches, APs, etc.', side: 'bottom' },
@@ -782,7 +785,11 @@ export class DevicesComponent implements OnInit, OnDestroy {
       },
       { selector: '#tour-devices-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
     ]);
-    const inst = this.guidedTourHost.startTour(steps);
+    const inst = this.guidedTourHost.startTour(steps, () => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
     if (inst) {
       this.pageTour = inst;
     }

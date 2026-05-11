@@ -113,7 +113,7 @@
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">Cancelar</button>
-  <button type="button" class="btn btn-dark" [disabled]="stockForm.invalid || guardando" (click)="guardar()">
+  <button type="button" class="btn modal-btn-primario" [disabled]="stockForm.invalid || guardando" (click)="guardar()">
     <i class="fas" [ngClass]="guardando ? 'fa-spinner fa-spin' : 'fa-save'" class="me-1"></i>
     {{ guardando ? 'Guardando…' : 'Guardar' }}
   </button>

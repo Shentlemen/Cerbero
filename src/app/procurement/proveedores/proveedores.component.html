@@ -10,7 +10,7 @@
       </button>
       </div>
       <div class="actions" *ngIf="canManageProviders()">
-        <button type="button" class="btn btn-export btn-agregar-nuevo" id="tour-proveedores-nuevo" (click)="abrirModal(proveedorModal)">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-proveedores-nuevo" (click)="abrirModal(proveedorModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo Proveedor
         </button>
@@ -182,12 +182,6 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    <!-- Mensaje de error del formulario -->
-    <div *ngIf="formError" class="alert alert-danger mb-3">
-      <i class="fas fa-exclamation-triangle me-2"></i>
-      {{ formError }}
-    </div>
-    
     <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
       <li [ngbNavItem]="1">
         <a ngbNavLink>Datos del proveedor</a>
@@ -371,7 +365,7 @@
             </div>
           </div>
           <div *ngIf="!contactosCargados" class="text-center p-3">
-            <div class="spinner-border text-primary" role="status">
+            <div class="spinner-border text-dark" role="status">
               <span class="visually-hidden">Cargando contactos...</span>
             </div>
           </div>
@@ -380,12 +374,33 @@
     </ul>
     <div [ngbNavOutlet]="nav"></div>
   </div>
-      <div class="modal-footer">
-      <button type="button" class="btn btn-outline-secondary btn-sm contactos-modal-close-btn" (click)="modal.dismiss()">Cancelar</button>
-      <button type="button" class="btn btn-success btn-sm" (click)="guardarProveedor()">
-        {{modoEdicion ? 'Actualizar' : 'Guardar'}}
+  <div class="modal-footer proveedor-form-modal-footer-stack">
+    <div *ngIf="proveedorModalValidacion" class="proveedor-form-modal-validacion">
+      <div
+        class="alert mb-0 py-2 px-3 small"
+        [ngClass]="proveedorModalValidacion.esError ? 'alert-danger' : 'alert-warning'"
+        role="alert">
+        <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="proveedorModalValidacion.esError">
+          <i class="fas" [ngClass]="proveedorModalValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+          {{ proveedorModalValidacion.titulo }}
+        </h6>
+        <ul class="mb-0 ps-3 small">
+          <li *ngFor="let linea of proveedorModalValidacion.lineas">{{ linea }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="proveedor-form-modal-footer-actions">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button
+        type="button"
+        class="btn btn-sm modal-btn-primario"
+        (click)="guardarProveedor()"
+        [class.modal-btn-primario--valid]="proveedorForm.valid"
+        [class.modal-btn-primario--invalid]="!proveedorForm.valid">
+        {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
       </button>
     </div>
+  </div>
 </ng-template>
 
 <!-- Modal para ver contactos del proveedor -->

@@ -29,6 +29,9 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
 
   private pageTour?: Driver;
 
+  /** Validación y errores API en el modal nueva/editar configuración (pie del modal). */
+  configModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
+
   /** Auxiliar: dar de alta varias estanterías con la misma forma */
   variasCantidad: number = 2;
   variasNumeroInicial: number = 1;
@@ -49,6 +52,59 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
       nombre: [''],
       estanteriasRows: this.fb.array([]),
     });
+
+    this.almacenConfigForm.valueChanges.subscribe(() => this.limpiarFeedbackConfigModal());
+    this.estanteriasRows.valueChanges.subscribe(() => this.limpiarFeedbackConfigModal());
+  }
+
+  limpiarFeedbackConfigModal(): void {
+    this.configModalValidacion = null;
+  }
+
+  private mensajeErrorHttp(error: unknown): string {
+    const e = error as { error?: string | { message?: string }; message?: string };
+    const body = e?.error;
+    if (typeof body === 'string') {
+      return body;
+    }
+    if (body && typeof body === 'object' && typeof body.message === 'string') {
+      return body.message;
+    }
+    if (typeof e?.message === 'string') {
+      return e.message;
+    }
+    return 'Ocurrió un error inesperado.';
+  }
+
+  private armarLineasValidacionConfigAlmacen(): string[] {
+    const lineas: string[] = [];
+    const aid = this.almacenConfigForm.get('almacenId');
+    if (aid?.invalid) {
+      lineas.push('Seleccioná un almacén.');
+    }
+    this.estanteriasRows.controls.forEach((ctrl, i) => {
+      const g = ctrl as FormGroup;
+      const cod = g.get('codigo');
+      const est = g.get('cantidadEstantes');
+      const div = g.get('divisionesEstante');
+      const n = i + 1;
+      if (cod?.hasError('required')) {
+        lineas.push(`Fila ${n}: el código de estantería es obligatorio.`);
+      }
+      if (cod?.hasError('maxlength')) {
+        lineas.push(`Fila ${n}: el código no puede superar 32 caracteres.`);
+      }
+      if (est?.hasError('required')) {
+        lineas.push(`Fila ${n}: la cantidad de estantes es obligatoria.`);
+      }
+      if (est?.hasError('min')) {
+        lineas.push(`Fila ${n}: la cantidad de estantes debe ser al menos 1.`);
+      }
+      if (div?.hasError('required')) {
+        lineas.push(`Fila ${n}: los sectores son obligatorios.`);
+      }
+    });
+    return lineas;
   }
 
   get estanteriasRows(): FormArray {
@@ -146,6 +202,7 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
   }
 
   abrirModalConfig(modal: unknown, config?: AlmacenConfig, almacenPreseleccionado?: Almacen): void {
+    this.configModalValidacion = null;
     this.modoEdicionConfig = !!config;
     this.configSeleccionada = config || null;
 
@@ -164,7 +221,11 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
       this.resetEstanteriasRowsFromConfig(undefined);
     }
 
-    this.modalService.open(modal, { size: 'lg', backdrop: true });
+    this.modalService.open(modal, {
+      size: 'lg',
+      backdrop: true,
+      windowClass: 'config-almacen-modal-window'
+    });
   }
 
   private codigosDuplicadosEnForm(): boolean {
@@ -182,10 +243,23 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
 
   guardarConfig(): void {
     if (this.codigosDuplicadosEnForm()) {
-      this.notificationService.showError('Validación', 'Hay códigos de estantería duplicados.');
+      this.configModalValidacion = {
+        titulo: 'Revisá los códigos de estantería',
+        lineas: ['Hay códigos duplicados en las filas del formulario.'],
+        esError: false
+      };
       return;
     }
+
     if (!this.almacenConfigForm.valid) {
+      this.almacenConfigForm.markAllAsTouched();
+      this.estanteriasRows.controls.forEach((c) => (c as FormGroup).markAllAsTouched());
+      const lineas = this.armarLineasValidacionConfigAlmacen();
+      this.configModalValidacion = {
+        titulo: 'Revisá el formulario antes de guardar',
+        lineas: lineas.length > 0 ? lineas : ['Hay campos con datos inválidos.'],
+        esError: false
+      };
       return;
     }
 
@@ -203,8 +277,12 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
       divisionesEstante: String(r.divisionesEstante ?? '').trim(),
     }));
 
-    if (estanterias.some((e) => !e.codigo || e.cantidadEstantes < 1 || !e.divisionesEstante)) {
-      this.notificationService.showError('Validación', 'Revise código, cantidad de estantes y sectores en cada fila.');
+    if (estanterias.some((e) => !e.codigo || Number.isNaN(e.cantidadEstantes) || e.cantidadEstantes < 1 || !e.divisionesEstante)) {
+      this.configModalValidacion = {
+        titulo: 'Revisá las estanterías',
+        lineas: ['Revisá código, cantidad de estantes y sectores en cada fila.'],
+        esError: false
+      };
       return;
     }
 
@@ -215,9 +293,15 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
     };
 
     if (this.codigosDuplicadosEnLista(estanterias)) {
-      this.notificationService.showError('Validación', 'Hay códigos de estantería duplicados.');
+      this.configModalValidacion = {
+        titulo: 'Revisá los códigos de estantería',
+        lineas: ['Hay códigos duplicados en la lista enviada.'],
+        esError: false
+      };
       return;
     }
+
+    this.configModalValidacion = null;
 
     if (this.modoEdicionConfig && this.configSeleccionada) {
       this.almacenConfigService.updateConfig(this.configSeleccionada.id, configData).subscribe({
@@ -227,7 +311,13 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al actualizar configuración:', err);
-          this.notificationService.showError('Error', err?.error?.message || 'No se pudo actualizar la configuración');
+          const msg = this.mensajeErrorHttp(err);
+          this.configModalValidacion = {
+            titulo: 'Error al actualizar la configuración',
+            lineas: [msg],
+            esError: true
+          };
+          this.notificationService.showError('Error', msg);
         }
       });
     } else {
@@ -238,7 +328,13 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al crear configuración:', err);
-          this.notificationService.showError('Error', err?.error?.message || 'No se pudo crear la configuración');
+          const msg = this.mensajeErrorHttp(err);
+          this.configModalValidacion = {
+            titulo: 'Error al crear la configuración',
+            lineas: [msg],
+            esError: true
+          };
+          this.notificationService.showError('Error', msg);
         }
       });
     }

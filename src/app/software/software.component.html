@@ -7,7 +7,12 @@
       <div class="title-wrapper">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100 mb-2">
           <h1 id="tour-software-title" class="mb-0"><i class="fas fa-code"></i> Software Instalado</h1>
-          <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided" (click)="iniciarTourSoftware()">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary btn-tour-guided"
+            [disabled]="loading"
+            [title]="loading ? 'Esperá a que termine de cargar el listado' : 'Recorrido por la pantalla'"
+            (click)="iniciarTourSoftware()">
             <i class="fas fa-route"></i> Tour guiado
           </button>
         </div>

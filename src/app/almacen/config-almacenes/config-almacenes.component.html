@@ -15,8 +15,9 @@
   </div>
   
   <div class="controls-section mb-4" id="tour-config-almacenes-actions">
-    <button 
-      class="btn btn-dark" 
+    <button
+      type="button"
+      class="btn btn-sm btn-nueva-config-almacen"
       (click)="abrirModalConfig(configModal)"
       [disabled]="loadingConfigs">
       <i class="fas fa-plus me-2"></i>
@@ -213,19 +214,33 @@
         </div>
       </form>
     </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
-        <i class="fas fa-times me-2"></i>
-        Cancelar
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-dark" 
-        (click)="guardarConfig()"
-        [disabled]="!almacenConfigForm.valid">
-        <i class="fas fa-save me-2"></i>
-        Guardar
-      </button>
+    <div class="modal-footer config-almacen-modal-footer-stack">
+      <div *ngIf="configModalValidacion" class="config-almacen-modal-validacion">
+        <div
+          class="alert mb-0 py-2 px-3 small"
+          [ngClass]="configModalValidacion.esError ? 'alert-danger' : 'alert-warning'"
+          role="alert">
+          <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="configModalValidacion.esError">
+            <i class="fas" [ngClass]="configModalValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+            {{ configModalValidacion.titulo }}
+          </h6>
+          <ul class="mb-0 ps-3 small">
+            <li *ngFor="let linea of configModalValidacion.lineas">{{ linea }}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="config-almacen-modal-footer-actions">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-sm modal-btn-primario"
+          [class.modal-btn-primario--valid]="almacenConfigForm.valid"
+          [class.modal-btn-primario--invalid]="!almacenConfigForm.valid"
+          (click)="guardarConfig()">
+          <i class="fas fa-save" aria-hidden="true"></i>
+          Guardar
+        </button>
+      </div>
     </div>
   </ng-template>
 </div>

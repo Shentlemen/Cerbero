@@ -191,19 +191,33 @@
 
     </form>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
-      <i class="fas fa-times me-1"></i>
-      Cancelar
-    </button>
-    <button 
-      type="button" 
-      class="btn btn-primary" 
-      (click)="guardarAlmacen()"
-      [disabled]="almacenForm.invalid">
-      <i class="fas fa-save me-1"></i>
-      {{ modoEdicion ? 'Actualizar' : 'Crear' }}
-    </button>
+  <div class="modal-footer almacen-form-modal-footer-stack">
+    <div *ngIf="almacenModalValidacion" class="almacen-form-modal-validacion">
+      <div
+        class="alert mb-0 py-2 px-3 small"
+        [ngClass]="almacenModalValidacion.esError ? 'alert-danger' : 'alert-warning'"
+        role="alert">
+        <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="almacenModalValidacion.esError">
+          <i class="fas" [ngClass]="almacenModalValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+          {{ almacenModalValidacion.titulo }}
+        </h6>
+        <ul class="mb-0 ps-3 small">
+          <li *ngFor="let linea of almacenModalValidacion.lineas">{{ linea }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="almacen-form-modal-footer-actions">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button
+        type="button"
+        class="btn btn-sm modal-btn-primario"
+        [class.modal-btn-primario--valid]="almacenForm.valid"
+        [class.modal-btn-primario--invalid]="!almacenForm.valid"
+        (click)="guardarAlmacen()">
+        <i class="fas fa-save" aria-hidden="true"></i>
+        {{ modoEdicion ? 'Actualizar' : 'Crear' }}
+      </button>
+    </div>
   </div>
 </ng-template>
 

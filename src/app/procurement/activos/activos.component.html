@@ -132,7 +132,7 @@
           <i class="fas fa-route me-2"></i>
           Tour guiado
         </button>
-        <button id="activos-tour-new-btn" type="button" class="btn btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
+        <button id="activos-tour-new-btn" type="button" class="btn btn-sm btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Activo
         </button>
@@ -915,12 +915,13 @@
     </div>
     
     <div class="d-flex justify-content-between align-items-center w-100">
-      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cerrarModal(modal)">Cancelar</button>
-      <button type="button" class="btn btn-sm" 
+      <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModal(modal)">Cancelar</button>
+      <button
+              type="button"
+              class="btn btn-sm modal-btn-primario"
               id="activos-tour-modal-save"
-              [class.btn-success]="activoForm.valid && !isActivoSubmitBlockedByInventoryTour()" 
-              [class.btn-warning]="!activoForm.valid && !isActivoSubmitBlockedByInventoryTour()"
-              [class.btn-secondary]="isActivoSubmitBlockedByInventoryTour()"
+              [class.modal-btn-primario--valid]="activoForm.valid && !isActivoSubmitBlockedByInventoryTour()"
+              [class.modal-btn-primario--invalid]="!activoForm.valid && !isActivoSubmitBlockedByInventoryTour()"
               [disabled]="isActivoSubmitBlockedByInventoryTour()"
               (click)="guardarActivo()">
         <i class="fas" [ngClass]="isActivoSubmitBlockedByInventoryTour() ? 'fa-lock' : (activoForm.valid ? 'fa-save' : 'fa-exclamation-triangle')"></i>

@@ -12,10 +12,11 @@
       </button>
       </div>
       <div class="actions">
-        <button 
-          class="btn btn-export" 
+        <button
+          type="button"
+          class="btn btn-sm btn-export btn-agregar-nuevo"
           id="tour-users-nuevo"
-          (click)="showCreateForm()" 
+          (click)="showCreateForm()"
           [disabled]="showForm">
           <i class="fas fa-plus me-2"></i>
           Agregar Usuario
@@ -111,20 +112,39 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button 
-              type="button" 
-              class="btn btn-secondary"
-              (click)="cancelForm()"
-              [disabled]="loading">
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              class="btn btn-success"
-              [disabled]="userForm.invalid || loading">
-              <i class="fas fa-save me-1"></i>{{ editingUser ? 'Actualizar' : 'Crear' }}
-            </button>
+          <div class="modal-footer user-modal-footer-stack">
+            <div *ngIf="usuarioModalValidacion" class="user-modal-validacion">
+              <div
+                class="alert mb-0 py-2 px-3 small"
+                [ngClass]="usuarioModalValidacion.esError ? 'alert-danger' : 'alert-warning'"
+                role="alert">
+                <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="usuarioModalValidacion.esError">
+                  <i class="fas" [ngClass]="usuarioModalValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+                  {{ usuarioModalValidacion.titulo }}
+                </h6>
+                <ul class="mb-0 ps-3 small">
+                  <li *ngFor="let linea of usuarioModalValidacion.lineas">{{ linea }}</li>
+                </ul>
+              </div>
+            </div>
+            <div class="user-modal-footer-actions">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                (click)="cancelForm()"
+                [disabled]="loading">
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-sm modal-btn-primario"
+                [class.modal-btn-primario--valid]="userForm.valid"
+                [class.modal-btn-primario--invalid]="!userForm.valid"
+                [disabled]="loading">
+                <i class="fas fa-save" aria-hidden="true"></i>
+                {{ editingUser ? 'Actualizar' : 'Crear' }}
+              </button>
+            </div>
           </div>
         </form>
       </div>
