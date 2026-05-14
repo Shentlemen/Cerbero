@@ -314,3 +314,86 @@
     min-height: 10rem;
   }
 }
+
+/* Pastilla con clip para indicar adjuntos en cada fila de las tablas.
+   Click directo lleva al detalle del ticket con el fragmento #adjuntos
+   (manejado en ticket-detail.component.ts) para hacer scroll a la seccion. */
+.tickets-title-text {
+  vertical-align: middle;
+}
+
+.tickets-attach-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(102, 126, 234, 0.12);
+  color: #4f46e5;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  vertical-align: middle;
+}
+
+.tickets-attach-pill:hover,
+.tickets-attach-pill:focus-visible {
+  background: rgba(79, 70, 229, 0.18);
+  color: #312e81;
+  transform: translateY(-1px);
+  text-decoration: none;
+  outline: none;
+}
+
+.tickets-attach-pill i {
+  font-size: 0.75rem;
+}
+
+.tickets-attach-pill-count {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+/* Filas no leidas (tipo email): fondo azul claro, borde izquierdo intenso, texto en negrita.
+   Se aplica solo a las dos tablas activas (Bandeja del area y Mis tickets); los cerrados
+   no aparecen como "no leidos" porque el backend solo cuenta tickets activos. */
+.tickets-table tbody tr.tickets-row--no-leido {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.04) 70%, transparent 100%);
+  box-shadow: inset 4px 0 0 0 #4f46e5;
+  font-weight: 600;
+  position: relative;
+}
+
+.tickets-table tbody tr.tickets-row--no-leido:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.08) 70%, transparent 100%);
+}
+
+/* Puntito brillante al lado del codigo: refuerza el "no leido" en una sola mirada. */
+.tickets-table tbody tr.tickets-row--no-leido td:first-child {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.tickets-table tbody tr.tickets-row--no-leido td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4f46e5;
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.55);
+  animation: ticketsUnreadDot 1.8s ease-out infinite;
+}
+
+@keyframes ticketsUnreadDot {
+  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+}

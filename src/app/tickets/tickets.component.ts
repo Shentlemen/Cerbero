@@ -36,6 +36,18 @@ export class TicketsComponent implements OnInit, OnDestroy {
   /** Filtro en vivo por código o título sobre las tres bandejas (datos ya cargados). */
   busquedaCodigoTitulo = '';
 
+  /**
+   * Mapa `ticketId -> cantidad de adjuntos activos`. Si un ticket no tiene clave aqui, no tiene adjuntos.
+   * Lo refrescamos junto con la lista, pero su fallo es no critico (las tablas siguen funcionando).
+   */
+  adjuntosCountPorTicket: Record<number, number> = {};
+
+  /**
+   * IDs de tickets activos que aun no lei (o que cambiaron desde mi ultima lectura).
+   * Lo usamos para aplicar la clase visual "no leido" en las tablas tipo email.
+   */
+  private idsNoLeidos: Set<number> = new Set();
+
   ordenColumna: TicketsOrdenColumna | null = null;
   ordenAsc = true;
 
@@ -98,12 +110,17 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.lastViewAsRole = this.permissionsService.getViewAsRole();
+    this.aplicarFiltroAreaDefault(false);
     this.actualizarTodo();
     this.viewAsSub = this.permissionsService.viewAs$.subscribe((nextRole) => {
       if (nextRole === this.lastViewAsRole) {
         return;
       }
       this.lastViewAsRole = nextRole;
+      // Forzamos: cambió el rol efectivo, el filtro local previo (manual o no)
+      // ya no aplica al nuevo contexto. Si dejamos el filtro pegado, las listas
+      // se ven vacías y el usuario interpreta que "ver como" no funciona.
+      this.aplicarFiltroAreaDefault(true);
       this.actualizarTodo();
     });
     const tours = [
@@ -139,6 +156,28 @@ export class TicketsComponent implements OnInit, OnDestroy {
     this.cargarCerrados();
   }
 
+  /**
+   * Default del filtro de área:
+   * - GM/Admin (rol efectivo): pre-selecciona LABORATORIO porque son quienes atienden esa bandeja.
+   * - Otros roles: sin filtro de área por defecto.
+   *
+   * @param forzarReset cuando es {@code true}, descarta la elección manual previa del usuario
+   *   y vuelve al default. Lo usamos al cambiar "Ver como" para que el nuevo contexto
+   *   muestre los tickets esperados (si dejábamos el filtro pegado, las listas quedaban vacías).
+   *   En el primer render llamamos con {@code false} para respetar lo que el usuario tenía elegido.
+   */
+  private aplicarFiltroAreaDefault(forzarReset: boolean): void {
+    if (this.permissionsService.isGMOrAdmin()) {
+      if (forzarReset || !this.filtroArea || this.filtroArea === 'LABORATORIO') {
+        this.filtroArea = 'LABORATORIO';
+      }
+      return;
+    }
+    if (forzarReset || this.filtroArea === 'LABORATORIO') {
+      this.filtroArea = '';
+    }
+  }
+
   cargarTickets(): void {
     this.loading = true;
     const estado = this.estadoFiltro || undefined;
@@ -169,6 +208,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
         this.loading = false;
       }
     });
+    this.cargarAdjuntosCount();
+    this.cargarIdsNoLeidos();
   }
 
   cargarCerrados(): void {
@@ -188,6 +229,67 @@ export class TicketsComponent implements OnInit, OnDestroy {
         this.loadingCerrados = false;
       }
     });
+  }
+
+  /**
+   * Carga el mapa `ticketId -> cantidad de adjuntos activos` que alimenta el icono de clip por fila.
+   * Falla silenciosa: si el endpoint no responde, simplemente no mostramos el icono (vaciamos el cache).
+   */
+  private cargarAdjuntosCount(): void {
+    this.ticketsService.contarAdjuntosPorTicket().subscribe({
+      next: (response) => {
+        if (!response?.success || !response.data) {
+          this.adjuntosCountPorTicket = {};
+          return;
+        }
+        const mapa: Record<number, number> = {};
+        for (const [key, value] of Object.entries(response.data)) {
+          const id = Number(key);
+          const total = Number(value);
+          if (!Number.isNaN(id) && total > 0) {
+            mapa[id] = total;
+          }
+        }
+        this.adjuntosCountPorTicket = mapa;
+      },
+      error: () => {
+        this.adjuntosCountPorTicket = {};
+      }
+    });
+  }
+
+  /** True si el ticket tiene al menos un adjunto activo (usado por el icono fa-paperclip en la lista). */
+  tieneAdjuntos(ticketId: number): boolean {
+    return (this.adjuntosCountPorTicket[ticketId] || 0) > 0;
+  }
+
+  /** Cantidad de adjuntos para mostrar como badge al lado del clip. */
+  cantidadAdjuntos(ticketId: number): number {
+    return this.adjuntosCountPorTicket[ticketId] || 0;
+  }
+
+  /**
+   * Carga el set de IDs de tickets activos que aun no lei. Fallo silencioso: si el endpoint
+   * no responde, simplemente no resaltamos nada (el set queda vacio).
+   */
+  private cargarIdsNoLeidos(): void {
+    this.ticketsService.obtenerIdsNoLeidos().subscribe({
+      next: (response) => {
+        if (!response?.success || !Array.isArray(response.data)) {
+          this.idsNoLeidos = new Set();
+          return;
+        }
+        this.idsNoLeidos = new Set(response.data.map((id) => Number(id)).filter((id) => !Number.isNaN(id)));
+      },
+      error: () => {
+        this.idsNoLeidos = new Set();
+      }
+    });
+  }
+
+  /** True si el usuario actual no abrio este ticket o si tuvo cambios desde la ultima lectura. */
+  esNoLeido(ticketId: number): boolean {
+    return this.idsNoLeidos.has(ticketId);
   }
 
   /** Bandeja del área: filtrada y ordenada (solo vista). */

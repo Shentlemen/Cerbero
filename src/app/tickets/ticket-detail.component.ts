@@ -1,13 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { NotificationService } from '../services/notification.service';
 import { PermissionsService } from '../services/permissions.service';
+import { UnreadTicketsService } from '../services/unread-tickets.service';
 import {
   Ticket,
+  TICKET_ADJUNTOS_EXT_PERMITIDAS,
+  TICKET_ADJUNTOS_MAX_BYTES,
+  TICKET_ADJUNTOS_MIME_PERMITIDOS,
+  TicketAdjunto,
+  TicketAdjuntoView,
   TicketComentario,
   TicketComentarioView,
   TicketEstado,
@@ -24,12 +30,16 @@ import {
   templateUrl: './ticket-detail.component.html',
   styleUrls: ['./ticket-detail.component.css']
 })
-export class TicketDetailComponent implements OnInit {
+export class TicketDetailComponent implements OnInit, OnDestroy {
   ticketId!: number;
   ticket: Ticket | null = null;
   movimientos: TicketMovimiento[] = [];
   comentarios: TicketComentario[] = [];
+  adjuntos: (TicketAdjunto & { usuarioNombre?: string })[] = [];
   loading = false;
+
+  private viewAsSub?: Subscription;
+  private lastViewAsRole: string | null = null;
 
   nuevoEstado: TicketEstado | '' = '';
   /** Vacío = no derivar; solo cambiar estado. */
@@ -39,6 +49,13 @@ export class TicketDetailComponent implements OnInit {
   comentario = '';
   /** Nota opcional al cerrar o reabrir como creador (estado RESUELTO). */
   notaCierreCreador = '';
+
+  archivoSeleccionado: File | null = null;
+  descripcionAdjunto = '';
+  subiendoAdjunto = false;
+  readonly adjuntoMaxBytes = TICKET_ADJUNTOS_MAX_BYTES;
+  readonly adjuntoExtensionesPermitidas = TICKET_ADJUNTOS_EXT_PERMITIDAS;
+  readonly adjuntoAccept = '.pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/jpeg,image/png,image/gif,image/webp';
 
   readonly estados: TicketEstado[] = [
     'NUEVO',
@@ -59,7 +76,8 @@ export class TicketDetailComponent implements OnInit {
     private router: Router,
     private ticketsService: TicketsService,
     private notificationService: NotificationService,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    private unreadTicketsService: UnreadTicketsService
   ) {}
 
   ngOnInit(): void {
@@ -68,7 +86,24 @@ export class TicketDetailComponent implements OnInit {
       this.notificationService.showError('Error', 'ID de ticket inválido.');
       return;
     }
+    this.lastViewAsRole = this.permissionsService.getViewAsRole();
     this.cargarTodo();
+    // Recargar el detalle cuando el GM cambia "Ver como otro usuario" en el header.
+    // Sin esto los botones de gestión se reevalúan pero el ticket y sus datos se quedan
+    // con la respuesta del rol anterior (e incluso los permisos del backend no
+    // se validan hasta la próxima acción). Si el rol simulado no puede leer este ticket,
+    // el backend rechaza con 4xx y volvemos a la bandeja con un aviso.
+    this.viewAsSub = this.permissionsService.viewAs$.subscribe((nextRole) => {
+      if (nextRole === this.lastViewAsRole) {
+        return;
+      }
+      this.lastViewAsRole = nextRole;
+      this.cargarTodo();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.viewAsSub?.unsubscribe();
   }
 
   cargarTodo(): void {
@@ -76,12 +111,14 @@ export class TicketDetailComponent implements OnInit {
     forkJoin({
       ticket: this.ticketsService.obtener(this.ticketId),
       historial: this.ticketsService.historial(this.ticketId),
-      comentarios: this.ticketsService.comentarios(this.ticketId)
+      comentarios: this.ticketsService.comentarios(this.ticketId),
+      adjuntos: this.ticketsService.listarAdjuntos(this.ticketId)
     }).subscribe({
       next: (response) => {
         this.ticket = response.ticket.data;
         const historial = (response.historial.data || []) as TicketMovimientoView[];
         const comentarios = (response.comentarios.data || []) as TicketComentarioView[];
+        const adjuntos = (response.adjuntos.data || []) as TicketAdjuntoView[];
         this.movimientos = historial.map(h => ({
           ...h.movimiento,
           usuarioNombre: h.usuarioNombre
@@ -90,13 +127,77 @@ export class TicketDetailComponent implements OnInit {
           ...c.comentario,
           usuarioNombre: c.usuarioNombre
         } as TicketComentario & { usuarioNombre?: string }));
+        this.adjuntos = adjuntos.map(a => ({
+          ...a.adjunto,
+          usuarioNombre: a.usuarioNombre
+        }));
         this.nuevoEstado = this.ticket?.estado || '';
       },
       error: (error) => {
+        this.loading = false;
+        // El rol simulado (o real) no tiene permisos para leer este ticket: volvemos a la bandeja.
+        const status = error?.status;
+        if (status === 401 || status === 403) {
+          this.notificationService.showError(
+            'Sin acceso',
+            'El rol seleccionado no tiene permisos para ver este ticket. Volviendo a la bandeja.'
+          );
+          this.router.navigate(['/menu/tickets']);
+          return;
+        }
         this.notificationService.showError('Error', error?.error?.message || 'No se pudo cargar el ticket');
       },
       complete: () => {
         this.loading = false;
+        this.marcarTicketComoLeido();
+        this.scrollAlFragmentoSiCorresponde();
+      }
+    });
+  }
+
+  /**
+   * Si la URL tiene fragment `#adjuntos` (la bandeja lo pone cuando el usuario clickea el clip),
+   * hacemos scroll a la sección apenas terminamos de cargar. El `setTimeout` da un tick para
+   * que Angular pinte la sección antes de buscar el elemento.
+   */
+  private scrollAlFragmentoSiCorresponde(): void {
+    const fragment = this.route.snapshot.fragment;
+    if (!fragment) return;
+    setTimeout(() => {
+      const el = document.getElementById(fragment);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 0);
+  }
+
+  /**
+   * Marca este ticket como leído por el usuario actual (patrón Gmail: solo al abrir el detalle)
+   * y refresca el contador global del helper dog. Silencioso: si el endpoint falla no molestamos
+   * con un toast porque es secundario al render del ticket.
+   */
+  private marcarTicketComoLeido(): void {
+    if (!this.ticketId) return;
+    this.ticketsService.marcarTicketLeido(this.ticketId).subscribe({
+      next: () => this.unreadTicketsService.refresh(),
+      error: () => { /* silencioso */ }
+    });
+  }
+
+  recargarAdjuntos(): void {
+    this.ticketsService.listarAdjuntos(this.ticketId).subscribe({
+      next: (response) => {
+        const adjuntos = (response.data || []) as TicketAdjuntoView[];
+        this.adjuntos = adjuntos.map(a => ({
+          ...a.adjunto,
+          usuarioNombre: a.usuarioNombre
+        }));
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error',
+          error?.error?.message || 'No se pudieron cargar los adjuntos'
+        );
       }
     });
   }
@@ -339,6 +440,167 @@ export class TicketDetailComponent implements OnInit {
   getComentarioUsuario(c: TicketComentario): string {
     const nombre = (c as TicketComentario & { usuarioNombre?: string }).usuarioNombre;
     return nombre || `Usuario ${c.usuarioId}`;
+  }
+
+  /** Misma regla que comentar: creador, área actual o GM/Admin, y ticket no cerrado. */
+  puedeSubirAdjuntos(): boolean {
+    if (!this.ticket) return false;
+    if (this.ticket.estado === 'CERRADO') return false;
+    return this.canAddCommentOnTicket();
+  }
+
+  /** Solo el autor del adjunto o GM/Admin; nunca en ticket cerrado. */
+  puedeEliminarAdjunto(adj: TicketAdjunto): boolean {
+    if (!this.ticket || this.ticket.estado === 'CERRADO') return false;
+    if (this.permissionsService.isGMOrAdmin()) return true;
+    const u = this.permissionsService.getCurrentUser();
+    return !!u?.id && adj.usuarioId === u.id;
+  }
+
+  onArchivoSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files.length > 0 ? input.files[0] : null;
+    if (!file) {
+      this.archivoSeleccionado = null;
+      return;
+    }
+    const error = this.validarArchivoCliente(file);
+    if (error) {
+      this.notificationService.showError('Archivo no permitido', error);
+      this.archivoSeleccionado = null;
+      input.value = '';
+      return;
+    }
+    this.archivoSeleccionado = file;
+  }
+
+  /** Doble validación (MIME + extensión) por si el navegador no manda content-type. */
+  private validarArchivoCliente(file: File): string | null {
+    const mime = (file.type || '').toLowerCase();
+    const nombre = file.name || '';
+    const ext = nombre.includes('.') ? nombre.split('.').pop()!.toLowerCase() : '';
+    const mimeOk = TICKET_ADJUNTOS_MIME_PERMITIDOS.includes(mime);
+    const extOk = this.adjuntoExtensionesPermitidas.includes(ext);
+    if (!mimeOk && !extOk) {
+      return 'Tipo de archivo no permitido. Solo se aceptan PDF, JPG, PNG, GIF o WEBP.';
+    }
+    if (file.size > this.adjuntoMaxBytes) {
+      const pesoMb = (file.size / (1024 * 1024)).toFixed(1);
+      return `El archivo supera el límite de 10 MB (este pesa ${pesoMb} MB). Comprimilo o subilo dividido.`;
+    }
+    if (file.size === 0) {
+      return 'El archivo seleccionado está vacío.';
+    }
+    return null;
+  }
+
+  subirAdjunto(): void {
+    if (!this.ticket) return;
+    if (!this.archivoSeleccionado) {
+      this.notificationService.showError('Sin archivo', 'Seleccioná un archivo antes de adjuntar.');
+      return;
+    }
+    const error = this.validarArchivoCliente(this.archivoSeleccionado);
+    if (error) {
+      this.notificationService.showError('Archivo no permitido', error);
+      return;
+    }
+    this.subiendoAdjunto = true;
+    this.ticketsService
+      .subirAdjunto(this.ticket.id, this.archivoSeleccionado, this.descripcionAdjunto)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationService.showSuccessMessage('Adjunto subido correctamente.');
+            this.archivoSeleccionado = null;
+            this.descripcionAdjunto = '';
+            const input = document.getElementById('ticket-adjunto-input') as HTMLInputElement | null;
+            if (input) input.value = '';
+            this.recargarAdjuntos();
+          } else {
+            this.notificationService.showError(
+              'Error',
+              response.message || 'No se pudo subir el adjunto.'
+            );
+          }
+        },
+        error: (err) => {
+          this.notificationService.showError(
+            'Error',
+            err?.error?.message || 'No se pudo subir el adjunto.'
+          );
+        },
+        complete: () => {
+          this.subiendoAdjunto = false;
+        }
+      });
+  }
+
+  eliminarAdjunto(adj: TicketAdjunto): void {
+    if (!this.puedeEliminarAdjunto(adj)) return;
+    const ok = window.confirm(`¿Eliminar el adjunto "${adj.nombreArchivoOriginal}"?`);
+    if (!ok) return;
+    this.ticketsService.eliminarAdjunto(adj.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.showSuccessMessage('Adjunto eliminado.');
+          this.recargarAdjuntos();
+        } else {
+          this.notificationService.showError(
+            'Error',
+            response.message || 'No se pudo eliminar el adjunto.'
+          );
+        }
+      },
+      error: (err) => {
+        this.notificationService.showError(
+          'Error',
+          err?.error?.message || 'No se pudo eliminar el adjunto.'
+        );
+      }
+    });
+  }
+
+  esAdjuntoImagen(adj: TicketAdjunto): boolean {
+    return (adj.tipoArchivo || '').toLowerCase().startsWith('image/');
+  }
+
+  esAdjuntoPdf(adj: TicketAdjunto): boolean {
+    return (adj.tipoArchivo || '').toLowerCase() === 'application/pdf';
+  }
+
+  getAdjuntoBadgeLabel(adj: TicketAdjunto): string {
+    if (this.esAdjuntoPdf(adj)) return 'PDF';
+    if (this.esAdjuntoImagen(adj)) return 'IMG';
+    return 'ARCHIVO';
+  }
+
+  getAdjuntoBadgeClass(adj: TicketAdjunto): string {
+    if (this.esAdjuntoPdf(adj)) return 'attach-badge attach-badge--pdf';
+    if (this.esAdjuntoImagen(adj)) return 'attach-badge attach-badge--img';
+    return 'attach-badge attach-badge--default';
+  }
+
+  getAdjuntoUsuario(adj: TicketAdjunto): string {
+    const nombre = (adj as TicketAdjunto & { usuarioNombre?: string }).usuarioNombre;
+    return nombre || `Usuario ${adj.usuarioId}`;
+  }
+
+  getAdjuntoVerUrl(adj: TicketAdjunto): string {
+    return this.ticketsService.getAdjuntoVerUrl(adj.id);
+  }
+
+  getAdjuntoDescargarUrl(adj: TicketAdjunto): string {
+    return this.ticketsService.getAdjuntoDescargarUrl(adj.id);
+  }
+
+  formatearTamanoAdjunto(bytes: number): string {
+    if (!bytes || bytes <= 0) return '0 B';
+    const k = 1024;
+    const unidades = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), unidades.length - 1);
+    const valor = bytes / Math.pow(k, i);
+    return `${valor.toFixed(valor >= 10 || i === 0 ? 0 : 1)} ${unidades[i]}`;
   }
 }
 

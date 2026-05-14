@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { HelperService, HelpTip, UserBehavior, SmartSuggestion } from '../../services/helper.service';
 import { TourDefinition, TourRegistryService } from '../../services/tour-registry.service';
+import { UnreadTicketsService } from '../../services/unread-tickets.service';
 import { filter, Subscription } from 'rxjs';
 
 @Component({
@@ -26,10 +27,13 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   availableTours: TourDefinition[] = [];
   /** Estado abierto/cerrado del menú radial. */
   showRadialMenu = false;
+  /** Tickets no leídos en la bandeja del usuario; alimenta el badge rojo del perro. */
+  ticketsNoLeidos = 0;
   private routerSubscription: Subscription;
   private userLevelSubscription: Subscription;
   private suggestionsSubscription: Subscription;
   private toursSubscription: Subscription;
+  private unreadSubscription?: Subscription;
   private sessionStartTime: Date;
   private lastActionTime: Date;
   private woofTimeoutId: number | null = null;
@@ -47,7 +51,8 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     private helperService: HelperService,
     private tourRegistry: TourRegistryService,
     private hostRef: ElementRef<HTMLElement>,
-    private zone: NgZone
+    private zone: NgZone,
+    private unreadTicketsService: UnreadTicketsService
   ) {
     this.sessionStartTime = new Date();
     this.lastActionTime = new Date();
@@ -77,6 +82,11 @@ export class HelperDogComponent implements OnInit, OnDestroy {
       if (tours.length === 0) {
         this.showRadialMenu = false;
       }
+    });
+
+    // Badge de tickets no leídos (LABORATORIO para GM/Admin, área del rol para los demás).
+    this.unreadSubscription = this.unreadTicketsService.unreadCount$.subscribe((count) => {
+      this.ticketsNoLeidos = count;
     });
   }
 
@@ -120,6 +130,9 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     }
     if (this.toursSubscription) {
       this.toursSubscription.unsubscribe();
+    }
+    if (this.unreadSubscription) {
+      this.unreadSubscription.unsubscribe();
     }
 
     this.recordSessionEnd();
@@ -279,6 +292,13 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     event?.stopPropagation();
     this.showRadialMenu = false;
     this.tourRegistry.runTour(tour.id);
+  }
+
+  /** Click en el badge de tickets no leídos: va directo a la bandeja. */
+  irATickets(event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.showRadialMenu = false;
+    this.router.navigate(['/menu/tickets']);
   }
 
   /**

@@ -283,3 +283,134 @@
   background: #f8fafc;
 }
 
+/* ---------- Adjuntos ---------- */
+.ticket-detail-container .attach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.ticket-detail-container .attach-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.ticket-detail-container .attach-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+}
+
+.ticket-detail-container .attach-thumb-wrapper {
+  display: block;
+  text-decoration: none;
+  background: #f1f5f9;
+  height: 140px;
+  overflow: hidden;
+}
+
+.ticket-detail-container .attach-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ticket-detail-container .attach-pdf-tile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #fff5f5, #fee2e2);
+  color: #c0392b;
+  font-size: 3.2rem;
+}
+
+.ticket-detail-container .attach-body {
+  padding: 0.55rem 0.7rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ticket-detail-container .attach-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: space-between;
+}
+
+.ticket-detail-container .attach-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ticket-detail-container .attach-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  flex: 0 0 auto;
+}
+
+.ticket-detail-container .attach-badge--pdf {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ticket-detail-container .attach-badge--img {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ticket-detail-container .attach-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.25;
+}
+
+.ticket-detail-container .attach-desc {
+  font-size: 0.78rem;
+  color: #475569;
+  background: #f8fafc;
+  border-left: 3px solid #cbd5e1;
+  padding: 0.25rem 0.5rem;
+  margin-top: 0.25rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.ticket-detail-container .attach-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.ticket-detail-container .attach-actions .btn {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.ticket-detail-container .attach-uploader {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: #f8fafc;
+}
+
+

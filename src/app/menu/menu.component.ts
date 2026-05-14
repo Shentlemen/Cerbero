@@ -227,9 +227,13 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.permissionsService.canAccessWarehouseConfiguration();
   }
 
-  canShowWarehouseConfigInAlmacenMenu(): boolean {
-    // GM ve todo (también en Almacén). Admin solo en Configuración.
-    return this.permissionsService.isGM() || this.permissionsService.isAlmacen();
+  /**
+   * El submenú Configuración se muestra para:
+   *  - GM / Admin (ven todos los ítems via `canAccessConfiguration`).
+   *  - Rol ALMACEN (solo ven «ALMACÉN CONFIG», via `canAccessWarehouseConfiguration`).
+   */
+  canShowConfigurationMenu(): boolean {
+    return this.canAccessConfiguration() || this.canAccessWarehouseConfiguration();
   }
 
   canAccessAdministration(): boolean {

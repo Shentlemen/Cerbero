@@ -86,41 +86,41 @@
         <i class="fas fa-archive"></i>
         <span>ALMACEN LAB</span>
       </a>
-      <a *ngIf="canShowWarehouseConfigInAlmacenMenu()" routerLink="/menu/almacen/config" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-cogs"></i>
-        <span>ALMACÉN CONFIG</span>
-      </a>
     </div>
   </div>
 
-  <!-- Menú expandible de Configuración - Solo visible para GM y Admin -->
-  <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canAccessConfiguration()">
+  <!--
+    Menú Configuración:
+    - GM/Admin ven todos los ítems (ubicaciones, subredes, tipos, usuarios, almacén config).
+    - Rol ALMACEN ve solo «ALMACÉN CONFIG» (entra al menú únicamente para esa opción).
+  -->
+  <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canShowConfigurationMenu()">
     <div class="menu-header" (click)="toggleConfigMenu()">
       <i class="fas fa-cog"></i>
       <span>CONFIGURACIÓN</span>
     </div>
     <div class="submenu" [class.show]="isConfigExpanded">
-      <a routerLink="/menu/locations" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canAccessConfiguration()" routerLink="/menu/locations" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-map-marker-alt"></i>
         <span>UBICACIONES</span>
       </a>
-      <a routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canAccessConfiguration()" routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-network-wired"></i>
         <span>SUB REDES</span>
       </a>
-      <a routerLink="/menu/procurement/tipos-activo" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canAccessConfiguration()" routerLink="/menu/procurement/tipos-activo" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-tags"></i>
         <span>TIPOS DE ACTIVO</span>
       </a>
-      <a routerLink="/menu/procurement/tipos-compra" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canAccessConfiguration()" routerLink="/menu/procurement/tipos-compra" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-file-invoice-dollar"></i>
         <span>TIPOS DE COMPRA</span>
       </a>
-      <a routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canAccessConfiguration()" routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-users"></i>
         <span>USUARIOS</span>
       </a>
-      <a routerLink="/menu/almacen/config" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canAccessWarehouseConfiguration()" routerLink="/menu/almacen/config" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-cogs"></i>
         <span>ALMACÉN CONFIG</span>
       </a>

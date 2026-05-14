@@ -35,6 +35,18 @@
       {{ availableTours.length }}
     </span>
 
+    <!-- Badge de tickets no leídos: rojo, pulsa para llamar la atención. Click navega a /menu/tickets. -->
+    <button
+      *ngIf="ticketsNoLeidos > 0"
+      type="button"
+      class="tickets-badge"
+      [attr.aria-label]="ticketsNoLeidos + ' tickets nuevos en tu bandeja. Click para ver.'"
+      [title]="ticketsNoLeidos + ' tickets nuevos en tu bandeja'"
+      (click)="irATickets($event)">
+      <i class="fas fa-exclamation" aria-hidden="true"></i>
+      <span class="tickets-badge-count">{{ ticketsNoLeidos > 9 ? '9+' : ticketsNoLeidos }}</span>
+    </button>
+
     <img
       src="assets/awoo-awoo-shoppe.gif"
       alt="Asistente"

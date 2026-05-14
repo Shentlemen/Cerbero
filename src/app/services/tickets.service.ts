@@ -67,6 +67,38 @@ export interface TicketComentarioView {
   usuarioNombre: string;
 }
 
+export interface TicketAdjunto {
+  id: number;
+  ticketId: number;
+  usuarioId: number;
+  nombreArchivoOriginal: string;
+  tipoArchivo: string;
+  tamanoArchivo: number;
+  descripcion?: string | null;
+  fechaCreacion: string;
+}
+
+export interface TicketAdjuntoView {
+  adjunto: TicketAdjunto;
+  usuarioNombre: string;
+}
+
+/** Tope alineado con `spring.servlet.multipart.max-file-size=10MB`. */
+export const TICKET_ADJUNTOS_MAX_BYTES = 10 * 1024 * 1024;
+
+export const TICKET_ADJUNTOS_MIME_PERMITIDOS: readonly string[] = [
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp'
+];
+
+export const TICKET_ADJUNTOS_EXT_PERMITIDAS: readonly string[] = [
+  'pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'
+];
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -175,5 +207,78 @@ export class TicketsService {
     return this.http.get<ApiResponse<TicketComentarioView[]>>(`${this.apiUrl}/${ticketId}/comentarios`, {
       params: this.withVistaComo()
     });
+  }
+
+  listarAdjuntos(ticketId: number): Observable<ApiResponse<TicketAdjuntoView[]>> {
+    return this.http.get<ApiResponse<TicketAdjuntoView[]>>(
+      `${this.apiUrl}/${ticketId}/adjuntos`,
+      { params: this.withVistaComo() }
+    );
+  }
+
+  subirAdjunto(
+    ticketId: number,
+    archivo: File,
+    descripcion?: string
+  ): Observable<ApiResponse<TicketAdjunto>> {
+    const form = new FormData();
+    form.append('archivo', archivo);
+    if (descripcion && descripcion.trim()) {
+      form.append('descripcion', descripcion.trim());
+    }
+    return this.http.post<ApiResponse<TicketAdjunto>>(
+      `${this.apiUrl}/${ticketId}/adjuntos`,
+      form,
+      { params: this.withVistaComo() }
+    );
+  }
+
+  eliminarAdjunto(adjuntoId: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(
+      `${this.apiUrl}/adjuntos/${adjuntoId}`,
+      { params: this.withVistaComo() }
+    );
+  }
+
+  /** URL para previsualizar inline (img / iframe). El backend valida permisos via JWT. */
+  getAdjuntoVerUrl(adjuntoId: number): string {
+    return `${this.apiUrl}/adjuntos/${adjuntoId}/ver`;
+  }
+
+  getAdjuntoDescargarUrl(adjuntoId: number): string {
+    return `${this.apiUrl}/adjuntos/${adjuntoId}/descargar`;
+  }
+
+  /** Tickets no leidos en mi bandeja (LABORATORIO para GM/Admin; mi area para los demas). */
+  contarNoLeidos(): Observable<ApiResponse<{ count: number }>> {
+    return this.http.get<ApiResponse<{ count: number }>>(`${this.apiUrl}/no-leidos`, {
+      params: this.withVistaComo()
+    });
+  }
+
+  /** Marca como leido el ticket para el usuario actual (upsert con fecha = ahora). */
+  marcarTicketLeido(ticketId: number): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/${ticketId}/marcar-leido`,
+      null,
+      { params: this.withVistaComo() }
+    );
+  }
+
+  /**
+   * Mapa `ticketId -> cantidad de adjuntos activos`, solo para tickets que tengan al menos uno.
+   * Lo usa la bandeja para mostrar el icono de clip por fila sin pedir adjuntos por ticket.
+   * El backend devuelve las claves como string (JSON keys son strings), por eso lo tipamos asi.
+   */
+  contarAdjuntosPorTicket(): Observable<ApiResponse<Record<string, number>>> {
+    return this.http.get<ApiResponse<Record<string, number>>>(`${this.apiUrl}/adjuntos-counts`);
+  }
+
+  /**
+   * IDs de tickets activos que el usuario actual aun no leyo (o que cambiaron desde la ultima vez).
+   * La bandeja lo usa para resaltar visualmente las filas tipo "email no leido".
+   */
+  obtenerIdsNoLeidos(): Observable<ApiResponse<number[]>> {
+    return this.http.get<ApiResponse<number[]>>(`${this.apiUrl}/ids-no-leidos`);
   }
 }

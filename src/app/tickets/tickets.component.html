@@ -147,9 +147,23 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let ticket of ticketsAreaVista" class="generic-row">
+              <tr *ngFor="let ticket of ticketsAreaVista"
+                  class="generic-row"
+                  [class.tickets-row--no-leido]="esNoLeido(ticket.id)">
                 <td><strong>{{ ticket.codigo }}</strong></td>
-                <td>{{ ticket.titulo }}</td>
+                <td>
+                  <span class="tickets-title-text">{{ ticket.titulo }}</span>
+                  <a
+                    *ngIf="tieneAdjuntos(ticket.id)"
+                    class="tickets-attach-pill"
+                    [routerLink]="['/menu/tickets', ticket.id]"
+                    fragment="adjuntos"
+                    [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s) - click para verlos'"
+                    [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
+                    <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    <span class="tickets-attach-pill-count">{{ cantidadAdjuntos(ticket.id) }}</span>
+                  </a>
+                </td>
                 <td>
                   <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </td>
@@ -255,9 +269,23 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let ticket of ticketsMisCreadosVista" class="generic-row">
+              <tr *ngFor="let ticket of ticketsMisCreadosVista"
+                  class="generic-row"
+                  [class.tickets-row--no-leido]="esNoLeido(ticket.id)">
                 <td><strong>{{ ticket.codigo }}</strong></td>
-                <td>{{ ticket.titulo }}</td>
+                <td>
+                  <span class="tickets-title-text">{{ ticket.titulo }}</span>
+                  <a
+                    *ngIf="tieneAdjuntos(ticket.id)"
+                    class="tickets-attach-pill"
+                    [routerLink]="['/menu/tickets', ticket.id]"
+                    fragment="adjuntos"
+                    [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s) - click para verlos'"
+                    [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
+                    <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    <span class="tickets-attach-pill-count">{{ cantidadAdjuntos(ticket.id) }}</span>
+                  </a>
+                </td>
                 <td>
                   <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </td>
@@ -367,7 +395,19 @@
             <tbody>
               <tr *ngFor="let ticket of ticketsCerradosVista" class="generic-row">
                 <td><strong>{{ ticket.codigo }}</strong></td>
-                <td>{{ ticket.titulo }}</td>
+                <td>
+                  <span class="tickets-title-text">{{ ticket.titulo }}</span>
+                  <a
+                    *ngIf="tieneAdjuntos(ticket.id)"
+                    class="tickets-attach-pill"
+                    [routerLink]="['/menu/tickets', ticket.id]"
+                    fragment="adjuntos"
+                    [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s) - click para verlos'"
+                    [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
+                    <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    <span class="tickets-attach-pill-count">{{ cantidadAdjuntos(ticket.id) }}</span>
+                  </a>
+                </td>
                 <td>
                   <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </td>
