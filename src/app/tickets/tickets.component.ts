@@ -9,6 +9,7 @@ import { PermissionsService } from '../services/permissions.service';
 import { Ticket, TicketEstado, TicketPrioridad, TicketsService } from '../services/tickets.service';
 import { forkJoin, Subscription } from 'rxjs';
 import { GuidedTourHostService, type GuidedTourStepDef } from '../services/guided-tour-host.service';
+import { TourRegistryService } from '../services/tour-registry.service';
 import type { DriveStep, Driver } from 'driver.js';
 
 type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'fechaActualizacion';
@@ -68,6 +69,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
   private viewAsSub?: Subscription;
   private lastViewAsRole: string | null = null;
   private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   @ViewChild('ticketNuevoModal') ticketNuevoModalTpl!: TemplateRef<unknown>;
 
@@ -90,7 +92,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
     private permissionsService: PermissionsService,
     private modalService: NgbModal,
     private router: Router,
-    private guidedTourHost: GuidedTourHostService
+    private guidedTourHost: GuidedTourHostService,
+    private tourRegistry: TourRegistryService
   ) {}
 
   ngOnInit(): void {
@@ -103,10 +106,32 @@ export class TicketsComponent implements OnInit, OnDestroy {
       this.lastViewAsRole = nextRole;
       this.actualizarTodo();
     });
+    const tours = [
+      {
+        id: 'tickets-overview',
+        title: 'Tour de tickets',
+        icon: 'fa-route',
+        run: () => this.runTourTickets(),
+      },
+      ...(this.canCreateTickets()
+        ? [{
+            id: 'tickets-crear',
+            title: 'Cómo crear un ticket',
+            icon: 'fa-plus-circle',
+            description: 'Abre el modal de alta y explica cada campo.',
+            run: () => this.runTourCrearTicket(),
+          }]
+        : []),
+    ];
+    this.tourCleanup = this.tourRegistry.register('tickets', tours);
   }
 
   ngOnDestroy(): void {
     this.viewAsSub?.unsubscribe();
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
+    this.pageTour?.destroy();
+    this.pageTour = undefined;
   }
 
   actualizarTodo(): void {
@@ -447,7 +472,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
       .replace(/(^|\s)\S/g, (m) => m.toUpperCase());
   }
 
-  iniciarTourTickets(): void {
+  private runTourTickets(): void {
     this.pageTour?.destroy();
     this.modalService.dismissAll();
 
@@ -456,7 +481,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
         selector: '#tour-tickets-title',
         title: 'Tickets / Reclamos',
         description:
-          'Acá gestionás reclamos internos entre áreas (almacén, inventario, compras, laboratorio, etc.). En los siguientes pasos verás filtros, bandejas y, si tenés permiso, el botón para crear tickets y los campos del formulario.',
+          'Acá gestionás reclamos internos entre áreas (almacén, inventario, compras, laboratorio, etc.).',
         side: 'bottom'
       },
       {
@@ -479,91 +504,100 @@ export class TicketsComponent implements OnInit, OnDestroy {
               selector: '#tour-tickets-nuevo',
               title: 'Botón «Nuevo ticket»',
               description:
-                'Desde acá abrís el mismo formulario que veremos en el tour. En el siguiente paso el modal se abre solo para mostrarte los campos; podés cerrarlo con la X o «Cancelar» al finalizar el recorrido.',
+                'Desde acá abrís el formulario de alta. Si querés un recorrido por los campos del modal, elegí «Cómo crear un ticket» en el menú del perro.',
               side: 'bottom' as const
             }
           ] satisfies GuidedTourStepDef[])
         : [])
     ];
 
-    const pasosModal: GuidedTourStepDef[] = this.canCreateTickets()
-      ? [
-          {
-            selector: '#tour-ticket-nuevo-area',
-            title: 'Área destino (obligatorio)',
-            description:
-              'El área que debe atender el ticket. El reclamo llegará a su bandeja; elegí la que corresponda al tipo de pedido.',
-            side: 'right'
-          },
-          {
-            selector: '#tour-ticket-nuevo-prioridad',
-            title: 'Prioridad',
-            description:
-              'BAJA, MEDIA, ALTA o CRÍTICA. Indicá la urgencia real para que el equipo priorice sin sobrecargar lo crítico.',
-            side: 'left'
-          },
-          {
-            selector: '#tour-ticket-nuevo-descripcion',
-            title: 'Descripción (obligatorio)',
-            description:
-              'Detalle del problema, pasos para reproducirlo o lo que necesitás. Cuanto más contexto, más rápida puede ser la respuesta.',
-            side: 'top'
-          },
-          {
-            selector: '#tour-ticket-nuevo-nota',
-            title: 'Nota inicial (opcional)',
-            description:
-              'Texto extra que queda en el primer movimiento del historial. Útil para enlaces, adjuntos ya cargados fuera del sistema o aclaraciones.',
-            side: 'top'
-          },
-          {
-            selector: '#tour-ticket-nuevo-crear',
-            title: 'Crear ticket',
-            description:
-              'Valida título, descripción y área. Si falta algo, verás avisos en el pie del modal (y el botón indica estado con el hover verde/ámbar).',
-            side: 'top'
-          }
-        ]
-      : [];
-
-    const stepsBase = this.guidedTourHost.buildSteps(pasosBase);
-    const modalSteps: DriveStep[] = pasosModal.map((d) => ({
-      element: d.selector,
-      popover: {
-        title: d.title,
-        description: d.description,
-        side: (d.side ?? 'bottom') as 'top' | 'bottom' | 'left' | 'right',
-        align: 'start'
-      }
-    }));
-
-    const pageSteps: DriveStep[] = [...stepsBase];
-    if (this.canCreateTickets() && modalSteps.length > 0 && pageSteps.length > 0) {
-      const lastIdx = pageSteps.length - 1;
-      const last = pageSteps[lastIdx];
-      pageSteps[lastIdx] = {
-        ...last,
-        popover: {
-          ...(last.popover ?? {}),
-          onNextClick: (_element, _step, opts) => {
-            this.abrirModalTicketNuevo();
-            const d = opts.driver;
-            setTimeout(() => {
-              this.guidedTourHost.refreshPopoverLayout(d);
-              d.moveNext();
-            }, 320);
-          }
-        }
-      };
+    const steps = this.guidedTourHost.buildSteps(pasosBase);
+    if (steps.length === 0) {
+      return;
     }
-
-    const steps = [...pageSteps, ...modalSteps];
-    const inst = this.guidedTourHost.startTour(steps, () => {
-      this.modalService.dismissAll();
-    });
+    const inst = this.guidedTourHost.startTour(steps);
     if (inst) {
       this.pageTour = inst;
     }
+  }
+
+  private runTourCrearTicket(): void {
+    this.pageTour?.destroy();
+    this.modalService.dismissAll();
+    if (!this.canCreateTickets()) {
+      return;
+    }
+
+    this.abrirModalTicketNuevo();
+
+    const pasosModal: GuidedTourStepDef[] = [
+      {
+        selector: '#tour-ticket-nuevo-titulo',
+        title: 'Título (obligatorio)',
+        description:
+          'Resumen breve del reclamo (máximo 200 caracteres). Se usa en la grilla y en notificaciones, así que conviene un título claro y específico. Es obligatorio: sin título el botón "Crear" rechaza el formulario.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-ticket-nuevo-area',
+        title: 'Área destino (obligatorio)',
+        description:
+          'El área que debe atender el ticket. El reclamo llegará a su bandeja; elegí la que corresponda al tipo de pedido.',
+        side: 'right'
+      },
+      {
+        selector: '#tour-ticket-nuevo-prioridad',
+        title: 'Prioridad',
+        description:
+          'BAJA, MEDIA, ALTA o CRÍTICA. Indicá la urgencia real para que el equipo priorice sin sobrecargar lo crítico.',
+        side: 'left'
+      },
+      {
+        selector: '#tour-ticket-nuevo-descripcion',
+        title: 'Descripción (obligatorio)',
+        description:
+          'Detalle del problema, pasos para reproducirlo o lo que necesitás. Cuanto más contexto, más rápida puede ser la respuesta. Es obligatorio.',
+        side: 'top'
+      },
+      {
+        selector: '#tour-ticket-nuevo-nota',
+        title: 'Nota inicial (opcional)',
+        description:
+          'Texto extra que queda en el primer movimiento del historial. Útil para enlaces o aclaraciones.',
+        side: 'top'
+      },
+      {
+        selector: '#tour-ticket-nuevo-crear',
+        title: 'Crear ticket',
+        description:
+          'Valida que estén completos los tres campos obligatorios: título, descripción y área destino. Si falta alguno, verás un aviso en el pie del modal indicando qué corregir.',
+        side: 'top'
+      }
+    ];
+
+    setTimeout(() => {
+      const modalSteps: DriveStep[] = pasosModal
+        .filter((d) => document.querySelector(d.selector))
+        .map((d) => ({
+          element: d.selector,
+          popover: {
+            title: d.title,
+            description: d.description,
+            side: (d.side ?? 'bottom') as 'top' | 'bottom' | 'left' | 'right',
+            align: 'start'
+          }
+        }));
+      if (modalSteps.length === 0) {
+        this.modalService.dismissAll();
+        return;
+      }
+      const inst = this.guidedTourHost.startTour(modalSteps, () => {
+        this.modalService.dismissAll();
+      });
+      if (inst) {
+        this.pageTour = inst;
+      }
+    }, 320);
   }
 }
 

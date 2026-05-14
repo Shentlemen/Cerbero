@@ -1,12 +1,11 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-servicios-garantia',
@@ -16,7 +15,7 @@ import type { Driver } from 'driver.js';
   styleUrls: ['./servicios-garantia.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class ServiciosGarantiaComponent implements OnInit {
+export class ServiciosGarantiaComponent implements OnInit, OnDestroy {
   serviciosList: ServicioGarantiaDTO[] = [];
   serviciosFiltrados: ServicioGarantiaDTO[] = [];
   filterForm: FormGroup;
@@ -31,13 +30,13 @@ export class ServiciosGarantiaComponent implements OnInit {
   modoEdicion = false;
   showConfirmDialog = false;
   servicioToDelete: number | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private serviciosGarantiaService: ServiciosGarantiaService,
     private fb: FormBuilder,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.filterForm = this.fb.group({
       nombre: [''],
@@ -62,6 +61,22 @@ export class ServiciosGarantiaComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadServiciosGarantia();
+    this.tourCleanup = this.tourRegistry.register('servicios-garantia', [{
+      id: 'servicios-garantia-overview',
+      title: 'Tour de garantías',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-servicios-garantia-title', title: 'Servicios de garantía', description: 'Proveedores o talleres de soporte vinculados a activos (contacto, RUC, nombre comercial).', side: 'bottom' },
+        { selector: '#tour-servicios-garantia-nuevo', title: 'Nuevo servicio', description: 'Alta desde modal con datos de contacto completos.', side: 'left' },
+        { selector: '#tour-servicios-garantia-search', title: 'Búsqueda', description: 'Filtrá por nombre comercial en tiempo real.', side: 'bottom' },
+        { selector: '#tour-servicios-garantia-table', title: 'Tabla', description: 'Gestioná registros existentes.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadServiciosGarantia(): void {
@@ -252,17 +267,4 @@ export class ServiciosGarantiaComponent implements OnInit {
     this.servicioToDelete = null;
   }
 
-  iniciarTourServiciosGarantia(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-servicios-garantia-title', title: 'Servicios de garantía', description: 'Proveedores o talleres de soporte vinculados a activos (contacto, RUC, nombre comercial).', side: 'bottom' },
-      { selector: '#tour-servicios-garantia-nuevo', title: 'Nuevo servicio', description: 'Alta desde modal con datos de contacto completos.', side: 'left' },
-      { selector: '#tour-servicios-garantia-search', title: 'Búsqueda', description: 'Filtrá por nombre comercial en tiempo real.', side: 'bottom' },
-      { selector: '#tour-servicios-garantia-table', title: 'Tabla', description: 'Gestioná registros existentes.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

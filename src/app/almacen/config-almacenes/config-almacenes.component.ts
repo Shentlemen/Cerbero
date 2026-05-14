@@ -1,16 +1,18 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
-import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
 import { AlmacenConfig, AlmacenEstanteriaDef, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
 import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService, TourDefinition } from '../../services/tour-registry.service';
+import { GuidedTourHostService, GuidedTourStepDef } from '../../services/guided-tour-host.service';
+import type { Driver, DriveStep } from 'driver.js';
+import { driver } from 'driver.js';
 
 @Component({
   selector: 'app-config-almacenes',
@@ -27,7 +29,12 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
   configSeleccionada: AlmacenConfig | null = null;
   loadingConfigs: boolean = false;
 
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
+  private tourCrearConfig?: Driver;
+  private tourDemoConfigModalRef?: NgbModalRef;
+  /** Activo durante el tour DEMO del modal de crear configuración. */
+  tourDemoActivo = false;
+  @ViewChild('configModal') configModalTpl?: TemplateRef<unknown>;
 
   /** Validación y errores API en el modal nueva/editar configuración (pie del modal). */
   configModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
@@ -45,6 +52,7 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     public permissionsService: PermissionsService,
     private notificationService: NotificationService,
+    private tourRegistry: TourRegistryService,
     private guidedTourHost: GuidedTourHostService
   ) {
     this.almacenConfigForm = this.fb.group({
@@ -113,10 +121,35 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarAlmacenesYConfigs();
+    const tours: TourDefinition[] = [
+      {
+        id: 'config-almacenes-overview',
+        title: 'Tour de configuración de almacenes',
+        icon: 'fa-route',
+        steps: [
+          { selector: '#tour-config-almacenes-title', title: 'Configuración de almacenes', description: 'Aquí definís estanterías, cantidad de estantes y sectores por almacén. Esa estructura alimenta validaciones y la vista 3D.', side: 'bottom' },
+          { selector: '#tour-config-almacenes-actions', title: 'Alta', description: 'Creá una configuración nueva o abrí el modal desde cada tarjeta para editar.', side: 'bottom' },
+          { selector: '#tour-config-almacenes-cards', title: 'Listado', description: 'Cada almacén muestra resumen de estanterías o un aviso si aún no está configurado.', side: 'top' },
+          { selector: '.btn-eliminar-config', title: 'Eliminar configuración',
+            description: '<strong>Borra la configuración</strong> del almacén (estanterías, estantes y sectores). El almacén sigue existiendo, pero pierde la estructura interna hasta que vuelvas a configurarlo. Pide confirmación antes de aplicar.', side: 'top' }
+        ]
+      },
+      {
+        id: 'config-almacenes-crear-detalle',
+        title: 'Cómo crear una configuración',
+        icon: 'fa-cogs',
+        run: () => this.runTourCrearConfig(),
+      }
+    ];
+    this.tourCleanup = this.tourRegistry.register('config-almacenes', tours);
   }
 
   ngOnDestroy(): void {
-    this.pageTour?.destroy();
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
+    this.tourCrearConfig?.destroy();
+    this.tourCrearConfig = undefined;
+    this.tourDemoConfigModalRef?.dismiss();
   }
 
   cargarAlmacenesYConfigs(): void {
@@ -242,6 +275,10 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
   }
 
   guardarConfig(): void {
+    if (this.tourDemoActivo) {
+      this.tourDemoConfigModalRef?.dismiss();
+      return;
+    }
     if (this.codigosDuplicadosEnForm()) {
       this.configModalValidacion = {
         titulo: 'Revisá los códigos de estantería',
@@ -350,7 +387,145 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  /**
+   * Lanza el tour DEMO del modal "Nueva Configuración de Almacén":
+   * pre-llena el formulario con datos plausibles, bloquea el guardado
+   * y recorre cada sección.
+   */
+  private runTourCrearConfig(): void {
+    if (!this.configModalTpl) {
+      return;
+    }
+    this.tourCrearConfig?.destroy();
+    this.tourCrearConfig = undefined;
+
+    this.prepararConfigDemo();
+    const modalRef = this.modalService.open(this.configModalTpl, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false,
+      windowClass: 'config-almacen-modal-window'
+    });
+    this.tourDemoConfigModalRef = modalRef;
+    modalRef.result
+      .then(() => this.finalizarTourCrearConfig())
+      .catch(() => this.finalizarTourCrearConfig());
+
+    const pasos: GuidedTourStepDef[] = [
+      { selector: '#tour-config-modal-almacen', title: 'Almacén (obligatorio)',
+        description: 'Elegí el <strong>almacén</strong> al que vas a definirle la estructura. En edición este selector queda bloqueado.', side: 'right' },
+      { selector: '#tour-config-modal-nombre', title: 'Nombre personalizado',
+        description: 'Opcional. Sirve para <strong>renombrar visualmente</strong> la configuración (por ejemplo, "Depósito Norte – Planta 2"). Si lo dejás vacío, se usa el nombre del almacén.', side: 'left' },
+      { selector: '#tour-config-modal-estanterias-title', title: 'Estanterías',
+        description: 'Acá definís cada <strong>estantería</strong> que tendrá el almacén. Una fila = una estantería. Cada estantería puede tener cantidades de estantes y sectores distintos.', side: 'bottom' },
+      { selector: '#tour-config-modal-fila-codigo', title: 'Código',
+        description: 'Identificador corto de la estantería (ej.: <em>E1</em>, <em>A</em>, <em>NORTE-3</em>). No puede repetirse dentro del mismo almacén.', side: 'right' },
+      { selector: '#tour-config-modal-fila-estantes', title: 'Estantes',
+        description: 'Cantidad de <strong>estantes (niveles)</strong> que tiene esta estantería. Mínimo 1.', side: 'top' },
+      { selector: '#tour-config-modal-fila-sectores', title: 'Sectores',
+        description: 'Lista de <strong>sectores</strong> separados por coma (ej.: <em>A,B,C</em>). Cada estante se subdivide en estos sectores para ubicar el stock con precisión.', side: 'top' },
+      { selector: '#tour-config-modal-fila-quitar', title: 'Quitar fila',
+        description: 'Elimina esta estantería del formulario. Si quitás todas, vuelve a aparecer una vacía: el form siempre exige al menos una.', side: 'left' },
+      { selector: '#tour-config-modal-agregar-fila', title: 'Agregar fila',
+        description: 'Suma una nueva estantería al formulario. El código se autopropone como <em>E + número</em>, pero lo podés cambiar libremente.', side: 'top' },
+      { selector: '#tour-config-modal-varias-card', title: 'Agregar varias iguales',
+        description: 'Atajo para cargar <strong>en lote</strong> estanterías con la misma forma. Ahorra mucho tiempo cuando el almacén tiene decenas de estanterías idénticas.', side: 'top' },
+      { selector: '#tour-config-modal-varias-cantidad', title: 'Cantidad',
+        description: 'Cuántas <strong>estanterías nuevas</strong> querés generar de una sola vez (hasta 200).', side: 'right' },
+      { selector: '#tour-config-modal-varias-inicial', title: 'Nº inicial',
+        description: 'A partir de qué <strong>número</strong> arranca el código autogenerado. Ej.: con cantidad 3 y nº inicial 10, se crean <em>E10, E11, E12</em>.', side: 'top' },
+      { selector: '#tour-config-modal-varias-estantes', title: 'Estantes c/u',
+        description: 'Cantidad de estantes que tendrá <strong>cada una</strong> de las estanterías que vas a generar.', side: 'top' },
+      { selector: '#tour-config-modal-varias-sectores', title: 'Sectores',
+        description: 'Los sectores (separados por coma) que se asignan a <strong>todas</strong> las estanterías nuevas en este lote.', side: 'top' },
+      { selector: '#tour-config-modal-varias-add', title: 'Añadir lote',
+        description: 'Inserta el lote completo al final de la lista de estanterías. Después podés ajustar individualmente cualquier fila.', side: 'left' },
+      { selector: '#tour-config-modal-save', title: 'Guardar',
+        description: 'En uso normal, guarda la configuración (la valida primero, mostrando errores en el cuadro inferior si los hay). Acá está <strong>bloqueado</strong> para no crear datos reales. Al apretar <strong>Finalizar</strong> se cierra el tour y el modal demo.', side: 'left' }
+    ];
+
+    this.esperarSelectores(
+      ['#tour-config-modal-almacen', '#tour-config-modal-fila-codigo', '#tour-config-modal-save'],
+      3000
+    ).then(() => {
+      const driveSteps = this.guidedTourHost.buildSteps(pasos);
+      if (driveSteps.length === 0) {
+        return;
+      }
+      const inst: Driver = driver({
+        showProgress: true,
+        nextBtnText: 'Siguiente',
+        prevBtnText: 'Anterior',
+        doneBtnText: 'Finalizar',
+        allowClose: true,
+        overlayOpacity: 0.55,
+        stagePadding: 6,
+        steps: driveSteps as DriveStep[],
+        onDestroyed: () => {
+          this.tourCrearConfig = undefined;
+          this.tourDemoConfigModalRef?.dismiss();
+        }
+      });
+      inst.drive();
+      this.tourCrearConfig = inst;
+    });
+  }
+
+  /**
+   * Llena el formulario con datos plausibles para el tour demo.
+   * Se elige el primer almacén disponible (el selector del form lo permite).
+   */
+  private prepararConfigDemo(): void {
+    this.tourDemoActivo = true;
+    this.modoEdicionConfig = false;
+    this.configSeleccionada = null;
+    this.configModalValidacion = null;
+
+    const almacenDemo = this.almacenes[0];
+    this.almacenConfigForm.reset({
+      almacenId: almacenDemo?.id ?? '',
+      nombre: 'Configuración DEMO',
+    });
+    this.resetEstanteriasRowsFromConfig(undefined);
+    // Pre-cargamos valores tipográficos en la primera fila para que se entiendan los campos.
+    const primera = this.estanteriasRows.at(0) as FormGroup | undefined;
+    primera?.patchValue({ codigo: 'E1', cantidadEstantes: 4, divisionesEstante: 'A,B,C' });
+    // Valores plausibles del bloque "agregar varias iguales".
+    this.variasCantidad = 3;
+    this.variasNumeroInicial = 2;
+    this.variasEstantes = 4;
+    this.variasDivisiones = 'A,B,C';
+  }
+
+  /** Limpia estado de demo cuando se cierra el modal o termina el tour. */
+  private finalizarTourCrearConfig(): void {
+    this.tourCrearConfig?.destroy();
+    this.tourCrearConfig = undefined;
+    this.tourDemoConfigModalRef = undefined;
+    this.tourDemoActivo = false;
+    this.configModalValidacion = null;
+  }
+
+  /** Polling de selectores DOM con timeout. */
+  private esperarSelectores(selectores: string[], timeoutMs = 2500, intervalMs = 60): Promise<void> {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const tick = () => {
+        const todos = selectores.every((sel) => !!document.querySelector(sel));
+        if (todos || Date.now() - start >= timeoutMs) {
+          resolve();
+          return;
+        }
+        setTimeout(tick, intervalMs);
+      };
+      tick();
+    });
+  }
+
   eliminarConfig(config: AlmacenConfig): void {
+    if (this.tourDemoActivo) {
+      return;
+    }
     if (confirm(`¿Está seguro de que desea eliminar la configuración del almacén "${config.almacen.nombre}"?`)) {
       this.almacenConfigService.deleteConfig(config.id).subscribe({
         next: () => {
@@ -379,16 +554,4 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
     return `${d.codigo}-${d.orden}`;
   }
 
-  iniciarTourConfigAlmacenes(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-config-almacenes-title', title: 'Configuración de almacenes', description: 'Aquí definís estanterías, cantidad de estantes y sectores por almacén. Esa estructura alimenta validaciones y la vista 3D.', side: 'bottom' },
-      { selector: '#tour-config-almacenes-actions', title: 'Alta', description: 'Creá una configuración nueva o abrí el modal desde cada tarjeta para editar.', side: 'bottom' },
-      { selector: '#tour-config-almacenes-cards', title: 'Listado', description: 'Cada almacén muestra resumen de estanterías o un aviso si aún no está configurado.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 }

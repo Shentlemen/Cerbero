@@ -888,4 +888,23 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
 .website-item i {
   font-size: 0.9rem;
   flex-shrink: 0;
-} 
+}
+
+/* Modo DEMO (tour de creación): header con franja de aviso y botón Guardar bloqueado. */
+.modal-header.proveedor-form-modal-header--demo {
+  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+  border-bottom: 2px dashed #f97316;
+  color: #7c2d12;
+}
+.modal-header.proveedor-form-modal-header--demo .modal-title {
+  color: #7c2d12;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.modal-btn-primario.modal-btn-primario--demo {
+  background-color: #f8e4cc !important;
+  color: #7c2d12 !important;
+  border-color: #f97316 !important;
+  cursor: not-allowed;
+  opacity: 0.9;
+}

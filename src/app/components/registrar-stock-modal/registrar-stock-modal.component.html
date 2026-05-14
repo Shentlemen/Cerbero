@@ -1,14 +1,18 @@
-<div class="modal-header">
+<div class="modal-header" id="tour-stock-modal-header" [class.registrar-stock-header--demo]="tourDemoActivo">
   <h4 class="modal-title">
-    <i class="fas fa-box me-2"></i>
-    Registrar Stock
+    <ng-container *ngIf="tourDemoActivo; else tituloRegistroNormal">
+      <i class="fas fa-graduation-cap me-2"></i>Stock DEMO — Tour de registro
+    </ng-container>
+    <ng-template #tituloRegistroNormal>
+      <i class="fas fa-box me-2"></i>Registrar Stock
+    </ng-template>
   </h4>
   <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
 </div>
 <div class="modal-body">
   <form [formGroup]="stockForm" (ngSubmit)="guardar()">
     
-    <div class="form-card mb-4">
+    <div class="form-card mb-4" id="tour-stock-modal-card-compra">
       <div class="form-card-header">
         <h6 class="form-card-title">
           <i class="fas fa-shopping-cart me-2"></i>
@@ -17,7 +21,7 @@
       </div>
       <div class="form-card-body">
         <div class="row">
-          <div class="col-md-6 mb-3">
+          <div class="col-md-6 mb-3" id="tour-stock-modal-compra">
             <label for="compraId" class="form-label">Compra (Opcional)</label>
             <div class="position-relative">
               <input type="text" class="form-control" id="compraSearch"
@@ -38,7 +42,7 @@
             </div>
           </div>
           
-          <div class="col-md-6 mb-3">
+          <div class="col-md-6 mb-3" id="tour-stock-modal-item">
             <label for="itemId" class="form-label">Ítem de la Compra (Opcional)</label>
             <div class="position-relative">
               <input type="text" class="form-control" id="itemSearch"
@@ -65,7 +69,7 @@
       </div>
     </div>
 
-    <div class="form-card mb-4">
+    <div class="form-card mb-4" id="tour-stock-modal-card-ubicacion">
       <div class="form-card-header">
         <h6 class="form-card-title">
           <i class="fas fa-map-marker-alt me-2"></i>
@@ -74,7 +78,7 @@
       </div>
       <div class="form-card-body">
         <div class="row">
-          <div class="col-md-7 mb-3">
+          <div class="col-md-7 mb-3" id="tour-stock-modal-almacen">
             <label for="almacenId" class="form-label">Almacén *</label>
             <select class="form-select" id="almacenId" formControlName="almacenId">
               <option value="">Sin selección</option>
@@ -84,7 +88,7 @@
               <small *ngIf="stockForm.get('almacenId')?.errors?.['required']">El almacén es requerido</small>
             </div>
           </div>
-          <div class="col-md-5 mb-3">
+          <div class="col-md-5 mb-3" id="tour-stock-modal-estanteria">
             <label for="estanteria" class="form-label">Estantería *</label>
             <select class="form-select" id="estanteria" formControlName="estanteria">
               <option value="">Sin selección</option>
@@ -97,7 +101,7 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-md-6 mb-3">
+          <div class="col-md-6 mb-3" id="tour-stock-modal-estante">
             <label for="estante" class="form-label">Estante *</label>
             <select class="form-select" id="estante" formControlName="estante">
               <option value="">Sin selección</option>
@@ -108,7 +112,7 @@
               <small *ngIf="stockForm.get('estante')?.errors?.['invalidEstante']">Seleccione un estante válido</small>
             </div>
           </div>
-          <div class="col-md-6 mb-3">
+          <div class="col-md-6 mb-3" id="tour-stock-modal-division">
             <label for="division" class="form-label">Sección (Opcional)</label>
             <select class="form-select" id="division" formControlName="division">
               <option value="">Sin sección</option>
@@ -119,7 +123,7 @@
       </div>
     </div>
 
-    <div class="form-card">
+    <div class="form-card" id="tour-stock-modal-card-detalles">
       <div class="form-card-header">
         <h6 class="form-card-title">
           <i class="fas fa-info-circle me-2"></i>
@@ -128,11 +132,11 @@
       </div>
       <div class="form-card-body">
         <div class="row">
-          <div class="col-md-4 mb-3">
+          <div class="col-md-4 mb-3" id="tour-stock-modal-cantidad">
             <label for="cantidad" class="form-label">Cantidad *</label>
             <input type="number" class="form-control" id="cantidad" formControlName="cantidad" min="1" placeholder="1" required>
           </div>
-          <div class="col-md-8 mb-3">
+          <div class="col-md-8 mb-3" id="tour-stock-modal-numero">
             <label for="numero" class="form-label">
               {{ tieneItemDeCompraSeleccionado() ? 'Número (Opcional)' : 'Número' }}
             </label>
@@ -148,7 +152,7 @@
               <small *ngIf="stockForm.get('numero')?.errors?.['maxlength']">Máximo 50 caracteres</small>
             </div>
           </div>
-          <div class="col-md-12 mb-3">
+          <div class="col-md-12 mb-3" id="tour-stock-modal-descripcion">
             <label for="descripcion" class="form-label">
               {{ tieneItemDeCompraSeleccionado() ? 'Descripción (Opcional)' : 'Descripción' }}
             </label>
@@ -174,12 +178,18 @@
     </div>
   </form>
 </div>
-<div class="modal-footer">
+<div class="modal-footer" id="tour-stock-modal-footer">
   <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">
-    <i class="fas fa-times me-1"></i>Cancelar
+    <i class="fas fa-times me-1"></i>{{ tourDemoActivo ? 'Cerrar tour' : 'Cancelar' }}
   </button>
-  <button type="button" class="btn modal-btn-primario" (click)="guardar()" [disabled]="!isFormValid() || guardando">
-    <i class="fas" [ngClass]="guardando ? 'fa-spinner fa-spin' : 'fa-save'" class="me-1"></i>
-    {{ guardando ? 'Guardando...' : 'Registrar' }}
+  <button
+    type="button"
+    id="tour-stock-modal-save"
+    class="btn modal-btn-primario"
+    [class.modal-btn-primario--demo]="tourDemoActivo"
+    (click)="guardar()"
+    [disabled]="tourDemoActivo || !isFormValid() || guardando">
+    <i class="fas" [ngClass]="tourDemoActivo ? 'fa-lock' : (guardando ? 'fa-spinner fa-spin' : 'fa-save')" class="me-1"></i>
+    {{ tourDemoActivo ? 'Modo DEMO' : (guardando ? 'Guardando...' : 'Registrar') }}
   </button>
 </div>

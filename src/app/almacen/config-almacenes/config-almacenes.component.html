@@ -9,9 +9,6 @@
     </h2>
     <p class="text-muted">Configure cada estantería (niveles y sectores pueden variar entre estanterías).</p>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided align-self-start" (click)="iniciarTourConfigAlmacenes()">
-      <i class="fas fa-route"></i> Tour guiado
-    </button>
   </div>
   
   <div class="controls-section mb-4" id="tour-config-almacenes-actions">
@@ -89,7 +86,7 @@
               </div>
               <div class="mt-3">
                 <button 
-                  class="btn btn-sm btn-danger" 
+                  class="btn btn-sm btn-danger btn-eliminar-config" 
                   (click)="eliminarConfig(config)">
                   <i class="fas fa-trash me-1"></i>
                   Eliminar Configuración
@@ -114,16 +111,21 @@
   </div>
 
   <ng-template #configModal let-modal>
-    <div class="modal-header">
+    <div class="modal-header" id="tour-config-modal-header" [class.config-modal-header--demo]="tourDemoActivo">
       <h4 class="modal-title">
-        <i class="fas fa-warehouse me-2 text-dark"></i>
-        {{modoEdicionConfig ? 'Editar' : 'Nueva'}} Configuración de Almacén
+        <ng-container *ngIf="tourDemoActivo; else tituloConfigNormal">
+          <i class="fas fa-graduation-cap me-2"></i>Config DEMO — Tour de creación
+        </ng-container>
+        <ng-template #tituloConfigNormal>
+          <i class="fas fa-warehouse me-2 text-dark"></i>
+          {{modoEdicionConfig ? 'Editar' : 'Nueva'}} Configuración de Almacén
+        </ng-template>
       </h4>
       <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
     </div>
     <div class="modal-body">
       <form [formGroup]="almacenConfigForm">
-        <div class="mb-3">
+        <div class="mb-3" id="tour-config-modal-almacen">
           <label for="almacenId" class="form-label">Almacén <span class="text-danger">*</span></label>
           <select 
             id="almacenId" 
@@ -140,7 +142,7 @@
           </div>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" id="tour-config-modal-nombre">
           <label for="nombre" class="form-label">Nombre Personalizado (Opcional)</label>
           <input 
             type="text" 
@@ -152,24 +154,24 @@
         </div>
 
         <hr>
-        <h6 class="mb-2"><i class="fas fa-layer-group me-2"></i>Estanterías</h6>
+        <h6 class="mb-2" id="tour-config-modal-estanterias-title"><i class="fas fa-layer-group me-2"></i>Estanterías</h6>
         <p class="small text-muted">Una fila por estantería. Puede repetir configuración con «Agregar varias iguales».</p>
 
-        <div formArrayName="estanteriasRows">
-          <div *ngFor="let grp of estanteriasRows.controls; let i = index" [formGroupName]="i" class="row g-2 align-items-end mb-2 border rounded p-2 bg-light">
-            <div class="col-md-3">
+        <div formArrayName="estanteriasRows" id="tour-config-modal-filas">
+          <div *ngFor="let grp of estanteriasRows.controls; let i = index; let first = first" [formGroupName]="i" class="row g-2 align-items-end mb-2 border rounded p-2 bg-light">
+            <div class="col-md-3" [attr.id]="first ? 'tour-config-modal-fila-codigo' : null">
               <label class="form-label small mb-0">Código</label>
               <input type="text" class="form-control form-control-sm" formControlName="codigo" placeholder="E1">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3" [attr.id]="first ? 'tour-config-modal-fila-estantes' : null">
               <label class="form-label small mb-0">Estantes</label>
               <input type="number" class="form-control form-control-sm" formControlName="cantidadEstantes" min="1">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4" [attr.id]="first ? 'tour-config-modal-fila-sectores' : null">
               <label class="form-label small mb-0">Sectores</label>
               <input type="text" class="form-control form-control-sm" formControlName="divisionesEstante" placeholder="A,B,C">
             </div>
-            <div class="col-md-2 text-end">
+            <div class="col-md-2 text-end" [attr.id]="first ? 'tour-config-modal-fila-quitar' : null">
               <button type="button" class="btn btn-outline-danger btn-sm" (click)="eliminarFilaEstanteria(i)" title="Quitar">
                 <i class="fas fa-times"></i>
               </button>
@@ -178,32 +180,32 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2 mb-4">
-          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="agregarFilaEstanteria()">
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="tour-config-modal-agregar-fila" (click)="agregarFilaEstanteria()">
             <i class="fas fa-plus me-1"></i> Fila
           </button>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-3" id="tour-config-modal-varias-card">
           <div class="card-body py-2">
             <div class="small fw-semibold mb-2">Agregar varias con la misma configuración</div>
             <div class="row g-2 align-items-end">
-              <div class="col-6 col-md-2">
+              <div class="col-6 col-md-2" id="tour-config-modal-varias-cantidad">
                 <label class="form-label small mb-0">Cantidad</label>
                 <input type="number" class="form-control form-control-sm" [(ngModel)]="variasCantidad" [ngModelOptions]="{standalone: true}" min="1" max="200">
               </div>
-              <div class="col-6 col-md-2">
+              <div class="col-6 col-md-2" id="tour-config-modal-varias-inicial">
                 <label class="form-label small mb-0">Nº inicial</label>
                 <input type="number" class="form-control form-control-sm" [(ngModel)]="variasNumeroInicial" [ngModelOptions]="{standalone: true}" min="1">
               </div>
-              <div class="col-6 col-md-2">
+              <div class="col-6 col-md-2" id="tour-config-modal-varias-estantes">
                 <label class="form-label small mb-0">Estantes c/u</label>
                 <input type="number" class="form-control form-control-sm" [(ngModel)]="variasEstantes" [ngModelOptions]="{standalone: true}" min="1">
               </div>
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-4" id="tour-config-modal-varias-sectores">
                 <label class="form-label small mb-0">Sectores</label>
                 <input type="text" class="form-control form-control-sm" [(ngModel)]="variasDivisiones" [ngModelOptions]="{standalone: true}" placeholder="A,B,C">
               </div>
-              <div class="col-12 col-md-2">
+              <div class="col-12 col-md-2" id="tour-config-modal-varias-add">
                 <button type="button" class="btn btn-outline-primary btn-sm w-100" (click)="agregarVariasEstanteriasIguales()">
                   Añadir
                 </button>
@@ -214,7 +216,7 @@
         </div>
       </form>
     </div>
-    <div class="modal-footer config-almacen-modal-footer-stack">
+    <div class="modal-footer config-almacen-modal-footer-stack" id="tour-config-modal-footer">
       <div *ngIf="configModalValidacion" class="config-almacen-modal-validacion">
         <div
           class="alert mb-0 py-2 px-3 small"
@@ -230,15 +232,18 @@
         </div>
       </div>
       <div class="config-almacen-modal-footer-actions">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">{{ tourDemoActivo ? 'Cerrar tour' : 'Cancelar' }}</button>
         <button
           type="button"
+          id="tour-config-modal-save"
           class="btn btn-sm modal-btn-primario"
-          [class.modal-btn-primario--valid]="almacenConfigForm.valid"
-          [class.modal-btn-primario--invalid]="!almacenConfigForm.valid"
+          [class.modal-btn-primario--valid]="!tourDemoActivo && almacenConfigForm.valid"
+          [class.modal-btn-primario--invalid]="!tourDemoActivo && !almacenConfigForm.valid"
+          [class.modal-btn-primario--demo]="tourDemoActivo"
+          [disabled]="tourDemoActivo"
           (click)="guardarConfig()">
-          <i class="fas fa-save" aria-hidden="true"></i>
-          Guardar
+          <i class="fas" [ngClass]="tourDemoActivo ? 'fa-lock' : 'fa-save'" aria-hidden="true"></i>
+          {{ tourDemoActivo ? 'Modo DEMO' : 'Guardar' }}
         </button>
       </div>
     </div>

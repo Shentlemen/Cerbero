@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -6,8 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { User, CreateUserRequest, UpdateUserRequest } from '../interfaces/auth.interface';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-user-management',
@@ -16,7 +15,7 @@ import type { Driver } from 'driver.js';
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.css']
 })
-export class UserManagementComponent implements OnInit {
+export class UserManagementComponent implements OnInit, OnDestroy {
   users: User[] = [];
   userForm: FormGroup;
   filterForm: FormGroup;
@@ -33,7 +32,7 @@ export class UserManagementComponent implements OnInit {
   userToDelete: User | null = null;
   showEstadoDialog = false;
   userToToggle: User | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   /** Validación cliente y errores API dentro del modal usuario (mismo criterio que compras/proveedores). */
   usuarioModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
@@ -55,7 +54,7 @@ export class UserManagementComponent implements OnInit {
     private fb: FormBuilder,
     private modalService: NgbModal,
     private notificationService: NotificationService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.filterForm = this.fb.group({
       search: ['']
@@ -128,6 +127,22 @@ export class UserManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUsers();
+    this.tourCleanup = this.tourRegistry.register('user-management', [{
+      id: 'user-management-overview',
+      title: 'Tour de usuarios Cerbero',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-users-title', title: 'Usuarios Cerbero', description: 'Alta, edición y desactivación de cuentas con roles funcionales (almacén, compras, GM, etc.).', side: 'bottom' },
+        { selector: '#tour-users-nuevo', title: 'Nuevo usuario', description: 'Abre el formulario en pantalla con usuario, correo, nombre y asignación de rol.', side: 'left' },
+        { selector: '#tour-users-filters', title: 'Filtros', description: 'Búsqueda libre y recortes por estado o rol para encontrar cuentas rápido.', side: 'bottom' },
+        { selector: '#tour-users-table', title: 'Tabla', description: 'Editá datos, cambiá estado activo/inactivo o eliminá según políticas de seguridad.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadUsers(): void {
@@ -490,17 +505,4 @@ export class UserManagementComponent implements OnInit {
     return currentUser?.id === user.id;
   }
 
-  iniciarTourUsuariosCerbero(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-users-title', title: 'Usuarios Cerbero', description: 'Alta, edición y desactivación de cuentas con roles funcionales (almacén, compras, GM, etc.).', side: 'bottom' },
-      { selector: '#tour-users-nuevo', title: 'Nuevo usuario', description: 'Abre el formulario en pantalla con usuario, correo, nombre y asignación de rol.', side: 'left' },
-      { selector: '#tour-users-filters', title: 'Filtros', description: 'Búsqueda libre y recortes por estado o rol para encontrar cuentas rápido.', side: 'bottom' },
-      { selector: '#tour-users-table', title: 'Tabla', description: 'Editá datos, cambiá estado activo/inactivo o eliminá según políticas de seguridad.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

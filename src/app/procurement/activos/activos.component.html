@@ -128,10 +128,6 @@
         </div>
       </div>
       <div class="actions d-flex align-items-center flex-wrap activos-header-actions">
-        <button type="button" class="btn btn-outline-secondary btn-tour-activos" (click)="iniciarTourInventario()">
-          <i class="fas fa-route me-2"></i>
-          Tour guiado
-        </button>
         <button id="activos-tour-new-btn" type="button" class="btn btn-sm btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
           Nuevo Activo
@@ -430,7 +426,7 @@
             </div>
 
             <!-- Primera fila: Tipo de Activo y Clasificación -->
-            <div class="row mb-3">
+            <div class="row mb-3" id="activos-tour-modal-tipo-clasificacion">
               <div class="col-md-6">
                 <label class="form-label">Tipo de Activo</label>
                 <select id="activos-tour-modal-tipo" class="form-select" formControlName="idTipoActivo">
@@ -446,7 +442,7 @@
                   Al seleccionar un tipo de activo, el usuario responsable se asignará automáticamente
                 </small>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-6" id="activos-tour-modal-clasificacion">
                 <label class="form-label">Clasificación de INFO</label>
                 <select class="form-select" formControlName="clasificacionDeINFO">
                   <option value="">Seleccione una clasificación</option>
@@ -461,7 +457,7 @@
             </div>
 
             <!-- Segunda fila: Criticidad y Estado -->
-            <div class="row mb-3">
+            <div class="row mb-3" id="activos-tour-modal-criticidad-estado">
               <div class="col-md-6">
                 <label class="form-label">Criticidad</label>
                 <select class="form-select" formControlName="criticidad">
@@ -558,7 +554,7 @@
                   Lista desplegable bajo el campo (como en almacenes / Registrar stock). Al elegir una compra se cargarán los ítems de esa compra.
                 </small>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-6" id="activos-tour-modal-item">
                 <label class="form-label">Item</label>
                 <select class="form-select" formControlName="idItem" [class.disabled-field]="isItemDisabled()">
                   <option value="">Seleccione un item</option>
@@ -582,7 +578,7 @@
             </div>
 
             <!-- Cuarta fila: Entrega y Ubicación -->
-            <div class="row mb-3">
+            <div class="row mb-3" id="activos-tour-modal-entrega-ubicacion">
               <div class="col-md-6">
                 <label class="form-label">Entrega</label>
                 <select class="form-select" formControlName="idEntrega" [class.disabled-field]="isEntregaDisabled()">
@@ -663,7 +659,7 @@
             </div>
 
             <!-- Quinta fila: Responsable y ID Secundario -->
-            <div class="row mb-3">
+            <div class="row mb-3" id="activos-tour-modal-responsable-id">
               <div class="col-md-6">
                 <label class="form-label">Responsable</label>
                 <select class="form-select" formControlName="idUsuario" [class.disabled-field]="isUsuarioDisabled()">
@@ -689,7 +685,7 @@
             </div>
 
             <!-- Sexta fila: Servicio de Garantía y Fecha Fin Garantía -->
-            <div class="row mb-3">
+            <div class="row mb-3" id="activos-tour-modal-garantia">
               <div class="col-md-6">
                 <label class="form-label" for="activoModalServicioGarantiaSearch">Servicio de Garantía</label>
                 <input type="hidden" formControlName="idServicioGarantia" />
@@ -772,7 +768,7 @@
             </div>
 
             <!-- Activos Relacionados -->
-            <div class="row mb-3">
+            <div class="row mb-3" id="activos-tour-modal-relacionados">
               <div class="col-md-12">
                 <label class="form-label" for="activoModalRelacionadosSearch">Activos Relacionados</label>
                 <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">

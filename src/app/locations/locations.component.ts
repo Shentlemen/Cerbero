@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,8 +7,7 @@ import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-locations',
@@ -22,25 +21,40 @@ import type { Driver } from 'driver.js';
   templateUrl: './locations.component.html',
   styleUrls: ['./locations.component.css']
 })
-export class LocationsComponent implements OnInit {
+export class LocationsComponent implements OnInit, OnDestroy {
   ubicaciones: UbicacionDTO[] = [];
   subnets: SubnetDTO[] = [];
   loading: boolean = false;
   error: string | null = null;
   showConfirmDialog = false;
   ubicacionToDelete: UbicacionDTO | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private ubicacionesService: UbicacionesService,
     private subnetService: SubnetService,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {}
 
   ngOnInit() {
     console.log('Iniciando componente LocationsComponent');
     this.cargarSubnets();
+    this.tourCleanup = this.tourRegistry.register('locations', [{
+      id: 'locations-overview',
+      title: 'Tour de ubicaciones',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-locations-title', title: 'Ubicaciones físicas', description: 'Catálogo jerárquico (gerencia, oficina, piso, puerta) usado en activos y stock.', side: 'bottom' },
+        { selector: '#tour-locations-nueva', title: 'Nueva ubicación', description: 'Alta o edición mediante el selector de ubicación y validación de subred asociada si aplica.', side: 'left' },
+        { selector: '#tour-locations-table', title: 'Listado', description: 'Editá o eliminá ubicaciones; los cambios impactan asignaciones de equipos.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   openNewLocationModal() {
@@ -168,16 +182,4 @@ export class LocationsComponent implements OnInit {
     );
   }
 
-  iniciarTourUbicaciones(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-locations-title', title: 'Ubicaciones físicas', description: 'Catálogo jerárquico (gerencia, oficina, piso, puerta) usado en activos y stock.', side: 'bottom' },
-      { selector: '#tour-locations-nueva', title: 'Nueva ubicación', description: 'Alta o edición mediante el selector de ubicación y validación de subred asociada si aplica.', side: 'left' },
-      { selector: '#tour-locations-table', title: 'Listado', description: 'Editá o eliminá ubicaciones; los cambios impactan asignaciones de equipos.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

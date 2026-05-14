@@ -28,8 +28,7 @@ import { NetworkInfoService } from '../../services/network-info.service';
 import { forkJoin, firstValueFrom } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-stock-almacen',
@@ -103,7 +102,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   /** Listado derecho ordenado (se recalcula al cambiar búsqueda, selección o datos; evita reordenar 300+ filas en cada CD) */
   private itemsListadoOrdenados: any[] = [];
 
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   /** Paginación del listado (mejora rendimiento con muchos equipos) */
   listadoPage = 1;
@@ -131,7 +130,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private networkInfoService: NetworkInfoService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {}
 
   ngOnInit(): void {
@@ -143,6 +142,18 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       this.almacenId = id ? parseInt(id, 10) : null;
       this.cargarDatos();
     });
+    this.tourCleanup = this.tourRegistry.register('stock-almacen', [{
+      id: 'stock-almacen-overview',
+      title: 'Tour de stock del almacén',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-stock-almacen-title', title: 'Stock del almacén', description: 'Vista detallada por almacén: métricas, árbol de ubicaciones y tabla de ítems.', side: 'bottom' },
+        { selector: '#tour-stock-almacen-toolbar', title: 'Herramientas', description: 'Buscador con resaltado, registro de stock (si tenés permiso) e impresión/PDF del almacén activo.', side: 'bottom' },
+        { selector: '#tour-stock-almacen-kpis', title: 'Resumen', description: 'Contadores de la vista actual (unidades, ítems visibles, estanterías y estantes).', side: 'bottom' },
+        { selector: '#tour-stock-almacen-tree', title: 'Ubicaciones', description: 'Navegá por estantería y estante para filtrar el listado de la derecha.', side: 'right' },
+        { selector: '#tour-stock-almacen-listado', title: 'Listado', description: 'Filas paginadas con acciones de edición, transferencia o reactivación según el tipo de registro.', side: 'top' }
+      ]
+    }]);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -169,9 +180,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy(): void {
-    // Limpiar estado
     this.cerrarDropdown();
-    this.pageTour?.destroy();
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   cargarDatos(): void {
@@ -2066,21 +2077,4 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     );
   }
 
-  iniciarTourStockDetalle(): void {
-    if (this.embedStock) {
-      return;
-    }
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-stock-almacen-title', title: 'Stock del almacén', description: 'Vista detallada por almacén: métricas, árbol de ubicaciones y tabla de ítems.', side: 'bottom' },
-      { selector: '#tour-stock-almacen-toolbar', title: 'Herramientas', description: 'Buscador con resaltado, registro de stock (si tenés permiso) e impresión/PDF del almacén activo.', side: 'bottom' },
-      { selector: '#tour-stock-almacen-kpis', title: 'Resumen', description: 'Contadores de la vista actual (unidades, ítems visibles, estanterías y estantes).', side: 'bottom' },
-      { selector: '#tour-stock-almacen-tree', title: 'Ubicaciones', description: 'Navegá por estantería y estante para filtrar el listado de la derecha.', side: 'right' },
-      { selector: '#tour-stock-almacen-listado', title: 'Listado', description: 'Filas paginadas con acciones de edición, transferencia o reactivación según el tipo de registro.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

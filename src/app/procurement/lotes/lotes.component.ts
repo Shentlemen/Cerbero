@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -8,8 +8,7 @@ import { LotesService, LoteDTO } from '../../services/lotes.service';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/servicios-garantia.service';
 import { ComprasService, CompraDTO } from '../../services/compras.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-lotes',
@@ -19,7 +18,7 @@ import type { Driver } from 'driver.js';
   styleUrls: ['./lotes.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class LotesComponent implements OnInit {
+export class LotesComponent implements OnInit, OnDestroy {
   lotesList: LoteDTO[] = [];
   lotesFiltrados: LoteDTO[] = [];
   proveedoresList: ProveedorDTO[] = [];
@@ -38,7 +37,7 @@ export class LotesComponent implements OnInit {
   loteSeleccionado: LoteDTO | null = null;
   showConfirmDialog = false;
   loteToDelete: number | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private lotesService: LotesService,
@@ -47,7 +46,7 @@ export class LotesComponent implements OnInit {
     private comprasService: ComprasService,
     private fb: FormBuilder,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -71,6 +70,22 @@ export class LotesComponent implements OnInit {
     this.loadProveedores();
     this.loadServiciosGarantia();
     this.loadCompras();
+    this.tourCleanup = this.tourRegistry.register('lotes', [{
+      id: 'lotes-overview',
+      title: 'Tour de lotes',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-lotes-header', title: 'Lotes', description: 'Agrupación de ítems dentro de una compra: proveedor, garantía y descripción operativa.', side: 'bottom' },
+        { selector: '#tour-lotes-stats', title: 'Total', description: 'Conteo de lotes listados tras filtros.', side: 'bottom' },
+        { selector: '#tour-lotes-nueva', title: 'Nuevo lote', description: 'Definí compra asociada y metadatos del lote antes de registrar entregas o stock.', side: 'left' },
+        { selector: '#tour-lotes-table', title: 'Tabla', description: 'Editá o eliminá lotes según permisos.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadCompras(): void {
@@ -286,17 +301,4 @@ export class LotesComponent implements OnInit {
     this.loteToDelete = null;
   }
 
-  iniciarTourLotes(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-lotes-header', title: 'Lotes', description: 'Agrupación de ítems dentro de una compra: proveedor, garantía y descripción operativa.', side: 'bottom' },
-      { selector: '#tour-lotes-stats', title: 'Total', description: 'Conteo de lotes listados tras filtros.', side: 'bottom' },
-      { selector: '#tour-lotes-nueva', title: 'Nuevo lote', description: 'Definí compra asociada y metadatos del lote antes de registrar entregas o stock.', side: 'left' },
-      { selector: '#tour-lotes-table', title: 'Tabla', description: 'Editá o eliminá lotes según permisos.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

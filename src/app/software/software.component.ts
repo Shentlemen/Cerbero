@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SoftwareService, SoftwareDTO, PaginatedSoftwareResponse, SoftwarePaginationParams, SoftwareCounters } from '../services/software.service';
@@ -10,8 +10,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-software',
@@ -26,7 +25,7 @@ import type { Driver } from 'driver.js';
   templateUrl: './software.component.html',
   styleUrls: ['./software.component.css']
 })
-export class SoftwareComponent implements OnInit {
+export class SoftwareComponent implements OnInit, OnDestroy {
   softwareList: SoftwareDTO[] = [];
   loading: boolean = true;
   searchTerm: string = '';
@@ -65,20 +64,45 @@ export class SoftwareComponent implements OnInit {
   showConfirmDialog: boolean = false;
   showConfirmDialogMultiple: boolean = false;
   softwareToDelete: SoftwareDTO | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private softwareService: SoftwareService,
     private router: Router,
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     // Ya no necesitamos búsqueda reactiva, se maneja directamente en filterSoftware
   }
 
   ngOnInit(): void {
     this.loadSoftwarePaginated();
+    this.tourCleanup = this.tourRegistry.register('software', [{
+      id: 'software-overview',
+      title: 'Tour de software',
+      icon: 'fa-route',
+      beforeStart: () => this.resetScroll(),
+      afterEnd: () => this.resetScroll(),
+      steps: [
+        { selector: '#tour-software-title', title: 'Software instalado', description: 'Inventario agregado de aplicaciones detectadas en los equipos. Podés clasificar y auditar uso.', side: 'bottom' },
+        { selector: '#tour-software-tabs', title: 'Vistas', description: 'Total, ocultos, prohibidos, drivers y licenciados: cada pestaña aplica un filtro rápido sobre la base.', side: 'bottom' },
+        { selector: '#tour-software-search', title: 'Búsqueda', description: 'Buscá por nombre o editor para acotar la tabla.', side: 'bottom' },
+        { selector: '#tour-software-multiselect', title: 'Selección múltiple', description: 'Activá el modo para marcar varios ítems y aplicar visibilidad, prohibido, driver o borrado en lote (según permisos).', side: 'bottom' },
+        { selector: '#tour-software-table', title: 'Listado', description: 'Revisá versiones, equipos afectados y acciones por fila. La paginación está abajo del listado.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
+  }
+
+  private resetScroll(): void {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }
 
   get pagedSoftwareList(): SoftwareDTO[] {
@@ -823,28 +847,4 @@ export class SoftwareComponent implements OnInit {
     }
   }
 
-  iniciarTourSoftware(): void {
-    if (this.loading) {
-      return;
-    }
-    this.pageTour?.destroy();
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-software-title', title: 'Software instalado', description: 'Inventario agregado de aplicaciones detectadas en los equipos. Podés clasificar y auditar uso.', side: 'bottom' },
-      { selector: '#tour-software-tabs', title: 'Vistas', description: 'Total, ocultos, prohibidos, drivers y licenciados: cada pestaña aplica un filtro rápido sobre la base.', side: 'bottom' },
-      { selector: '#tour-software-search', title: 'Búsqueda', description: 'Buscá por nombre o editor para acotar la tabla.', side: 'bottom' },
-      { selector: '#tour-software-multiselect', title: 'Selección múltiple', description: 'Activá el modo para marcar varios ítems y aplicar visibilidad, prohibido, driver o borrado en lote (según permisos).', side: 'bottom' },
-      { selector: '#tour-software-table', title: 'Listado', description: 'Revisá versiones, equipos afectados y acciones por fila. La paginación está abajo del listado.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps, () => {
-      window.scrollTo({ top: 0, behavior: 'auto' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 }

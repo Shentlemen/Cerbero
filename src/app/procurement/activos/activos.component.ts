@@ -1,4 +1,4 @@
-import { Component, OnInit, TemplateRef, ViewEncapsulation, ViewChild, ChangeDetectorRef, Inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewEncapsulation, ViewChild, ChangeDetectorRef, Inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
@@ -38,6 +38,7 @@ import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { driver, type Driver, type DriveStep } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 type PdfHardwareRemoteDep =
   | 'bios'
@@ -82,10 +83,11 @@ interface PdfExportSection {
   styleUrls: ['./activos.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class ActivosComponent implements OnInit {
+export class ActivosComponent implements OnInit, OnDestroy {
   private inventoryTour?: Driver;
   private inventoryTourZoomSuspendCount = 0;
   private inventoryTourOpenedActivoModal = false;
+  private tourCleanup?: () => void;
   private static readonly PDF_KEY_REMOTE_DEP: Partial<
     Record<string, PdfHardwareRemoteDep>
   > = {
@@ -441,6 +443,7 @@ export class ActivosComponent implements OnInit {
     private changeDetectorRef: ChangeDetectorRef,
     public permissionsService: PermissionsService,
     private notificationService: NotificationService,
+    private tourRegistry: TourRegistryService,
     @Inject(DOCUMENT) private documentRef: Document
   ) {
     this.activoForm = this.fb.group({
@@ -544,9 +547,32 @@ export class ActivosComponent implements OnInit {
 
     // Actualizar validaciones iniciales
     this.updateValidationRules();
+
+    this.tourCleanup = this.tourRegistry.register('activos', [
+      {
+        id: 'activos-inventario-overview',
+        title: 'Tour de inventario de activos',
+        icon: 'fa-route',
+        run: () => this.runTourInventario(),
+      },
+      {
+        id: 'activos-alta-modal',
+        title: 'Cómo dar de alta un activo',
+        icon: 'fa-plus-circle',
+        description: 'Abre el modal de creación y recorre los campos.',
+        run: () => this.runTourAltaActivo(),
+      },
+    ]);
   }
 
-  iniciarTourInventario(): void {
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
+    this.inventoryTour?.destroy();
+    this.inventoryTour = undefined;
+  }
+
+  private runTourInventario(): void {
     this.inventoryTourOpenedActivoModal = false;
     const steps: DriveStep[] = [];
     const addStep = (selector: string, title: string, description: string, side: 'top' | 'bottom' | 'left' | 'right' = 'bottom') => {
@@ -571,7 +597,7 @@ export class ActivosComponent implements OnInit {
     addStep(
       '#activos-tour-new-btn',
       'Nuevo Activo',
-      'Este botón abre el modal para crear activos individuales o por rango.',
+      'Abre el modal para crear activos individuales o por rango. Si querés ver los campos del formulario, elegí «Cómo dar de alta un activo» en el menú del perro.',
       'bottom',
     );
     addStep(
@@ -593,86 +619,275 @@ export class ActivosComponent implements OnInit {
       'left'
     );
 
-    // Paso especial: abrir modal y continuar dentro del formulario.
-    steps.push({
-      element: '#activos-tour-new-btn',
-      popover: {
-        title: 'Vamos al formulario',
-        description: 'Al continuar, se abrirá el modal para mostrarte los campos más importantes.',
-        side: 'bottom',
-        align: 'start',
-        onNextClick: () => {
-          this.inventoryTourOpenedActivoModal = true;
-          void this.abrirModal(this.activoModalTemplate).then(
-            () => this.inventoryTourAdvanceWhenModalCreationModeListo(),
-            () => this.inventoryTourAdvanceWhenModalCreationModeListo()
-          );
-        }
-      }
-    });
-    steps.push({
-      element: '#activos-tour-modal-creation-mode',
-      onHighlighted: () => this.inventoryTourRefreshHighlightAfterLayout(),
-      popover: {
-        title: 'Individual o por rango',
-        description:
-          'Individual: un solo número de activo en el campo correspondiente. ' +
-          'Rango: indicá número inicial y final con el mismo formato (por ejemplo PC14000 a PC14005, o 100 a 105). ' +
-          'Se crearán tantos activos como números incluya el rango; tipo, compra, ítem, entrega y demás datos comunes se aplican a todos. ' +
-          'Si el rango es muy grande, el sistema avisa porque el proceso puede tardar.',
-        side: 'bottom',
-        align: 'start'
-      }
-    });
-    steps.push({
-      element: '#activos-tour-modal-name',
-      onHighlighted: () => this.inventoryTourRefreshHighlightAfterLayout(),
-      popover: {
-        title: 'Número de Activo',
-        description: 'Este campo identifica al equipo y se valida que no esté duplicado.',
-        side: 'bottom',
-        align: 'start'
-      }
-    });
-    steps.push({
-      element: '#activos-tour-modal-tipo',
-      popover: {
-        title: 'Tipo de Activo',
-        description: 'Define clasificación operativa y ayuda a autocompletar responsable según reglas del sistema.',
-        side: 'bottom',
-        align: 'start'
-      }
-    });
-    steps.push({
-      element: '#activos-tour-modal-compra',
-      popover: {
-        title: 'Compra e ítems',
-        description: 'Primero elegís la compra; luego se habilitan ítem y entrega asociados.',
-        side: 'bottom',
-        align: 'start'
-      }
-    });
-    steps.push({
-      element: '#activos-tour-modal-save',
-      popover: {
-        title: 'Guardar',
-        description:
-          'Cuando el formulario está completo, este botón registra el alta o las modificaciones.',
-        side: 'top',
-        align: 'start',
-        onNextClick: () => {
-          this.modalService.dismissAll();
-          this.inventoryTourOpenedActivoModal = false;
-          this.changeDetectorRef.detectChanges();
-          this.inventoryTourAdvanceWhenVisibleSelector('#activos-tour-table');
-        }
-      }
-    });
-
     if (steps.length === 0) {
       return;
     }
 
+    this.startInventoryDriver(steps);
+  }
+
+  /**
+   * Selectores que el sub-tour de alta de activo necesita ver en el DOM.
+   * Tener la lista centralizada nos sirve para el polling de espera y para
+   * el filtrado final de pasos.
+   */
+  private static readonly ALTA_ACTIVO_TOUR_SELECTORS = [
+    '#activos-tour-modal-creation-mode',
+    '#activos-tour-modal-name',
+    '#activos-tour-modal-tipo-clasificacion',
+    '#activos-tour-modal-criticidad-estado',
+    '#activos-tour-modal-compra',
+    '#activos-tour-modal-item',
+    '#activos-tour-modal-entrega-ubicacion',
+    '#activos-tour-modal-responsable-id',
+    '#activos-tour-modal-garantia',
+    '#activos-tour-modal-relacionados',
+    '#activos-tour-modal-save'
+  ];
+
+  private runTourAltaActivo(): void {
+    this.inventoryTour?.destroy();
+    this.modalService.dismissAll();
+    this.inventoryTourOpenedActivoModal = true;
+    // Forzamos modo Individual y pestaña principal antes de abrir el modal:
+    // así #activos-tour-modal-name se renderiza desde el primer frame y el
+    // ngbNavContent ('1') queda activo para que todos los campos vivan en el
+    // DOM cuando arranque el tour.
+    this.creationMode = 'single';
+    this.activeTab = '1';
+    void this.abrirModal(this.activoModalTemplate).then(
+      () => this.waitForModalAndStartTour(),
+      () => this.waitForModalAndStartTour()
+    );
+  }
+
+  /**
+   * Espera a que el modal de alta esté completamente montado en el DOM antes
+   * de armar los pasos. `abrirModal` resuelve su promesa apenas pide a
+   * NgbModal abrirlo, pero el contenido vive dentro de un `ng-template
+   * ngbNavContent` y se renderiza recién cuando NgbNav decide activarlo.
+   * Si filtramos por selector antes de eso, los IDs nuevos se pierden y el
+   * tour queda con menos pasos de los esperados.
+   *
+   * El polling chequea TODOS los selectores que el tour necesita; mientras
+   * tanto, también intenta forzar la pestaña "Datos del activo" haciendo
+   * click programático en el `ngbNavLink` por si NgbNav no la montó solo.
+   * Techo de ~3 segundos para no colgar la UI si algún selector
+   * definitivamente no está.
+   */
+  private waitForModalAndStartTour(): void {
+    const maxAttempts = 60;
+    let attempts = 0;
+    let navClicked = false;
+    const checkAndRun = () => {
+      attempts++;
+      if (this.creationMode !== 'single') {
+        this.creationMode = 'single';
+      }
+      if (this.activeTab !== '1') {
+        this.activeTab = '1';
+      }
+      this.changeDetectorRef.detectChanges();
+
+      // Si el modal-body ya está pero el contenido del nav todavía no,
+      // forzamos un click sobre el `ngbNavLink` la primera vez para montar
+      // el ng-template del nav (mitiga timings donde [(activeId)] no
+      // propaga el render inmediatamente).
+      const modalBody = this.documentRef.querySelector('#activos-tour-modal-root');
+      const navContentMounted = !!this.documentRef.querySelector('#activos-tour-modal-tipo-clasificacion');
+      if (modalBody && !navContentMounted && !navClicked) {
+        const navLink = modalBody.querySelector('a[ngbnavlink], a.nav-link') as HTMLElement | null;
+        if (navLink) {
+          navLink.click();
+          navClicked = true;
+        }
+      }
+
+      const allPresent = ActivosComponent.ALTA_ACTIVO_TOUR_SELECTORS.every(
+        sel => !!this.documentRef.querySelector(sel)
+      );
+      if (allPresent || attempts >= maxAttempts) {
+        this.startTourAltaActivoSteps();
+        return;
+      }
+      window.setTimeout(checkAndRun, 50);
+    };
+    checkAndRun();
+  }
+
+  private startTourAltaActivoSteps(): void {
+    // Defensivo: por si el usuario cambió a "Rango" antes de entrar al tour,
+    // volvemos a forzar single y damos un detectChanges para que el campo
+    // "#activos-tour-modal-name" esté en el DOM al filtrar.
+    if (this.creationMode !== 'single') {
+      this.creationMode = 'single';
+    }
+    this.changeDetectorRef.detectChanges();
+
+    const stepHighlightRefresh = () => this.inventoryTourRefreshHighlightAfterLayout();
+
+    const allSteps: DriveStep[] = [
+      {
+        element: '#activos-tour-modal-creation-mode',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '1. Individual o por rango',
+          description:
+            'Primero decidís cómo crear los activos. <strong>Individual</strong>: un solo número de activo. ' +
+            '<strong>Rango</strong>: número inicial y final con el mismo formato (ej. PC14000 a PC14005, o 100 a 105) y el sistema crea todos los activos del rango con datos comunes. ' +
+            'Si el rango es muy grande, te avisa porque la operación puede tardar.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-name',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '2. Número de Activo',
+          description:
+            'Identificador único del equipo (ej. PC14000, IMP123, 14000). El sistema valida que no esté duplicado: si ya existe, te lo marca en rojo. ' +
+            'En modo Rango, este campo se reemplaza por "Número Inicial" y "Número Final".',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-tipo-clasificacion',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '3. Tipo de Activo y Clasificación',
+          description:
+            '<strong>Tipo de Activo</strong> define la categoría operativa (PC, impresora, monitor, etc.) y, según las reglas del sistema, autocompleta el responsable más abajo. ' +
+            '<strong>Clasificación de INFO</strong> indica la sensibilidad de la información (Confidencial, No confidencial o Pública).',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-criticidad-estado',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '4. Criticidad y Estado',
+          description:
+            '<strong>Criticidad</strong> (Alta / Media / Baja) refleja qué tan crítico es el equipo para la operación. ' +
+            '<strong>Estado</strong> (Activo / Inactivo / Mantenimiento) indica la situación operativa actual del equipo.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-compra',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '5. Compra',
+          description:
+            'Escribí en el campo para buscar la compra por número o descripción y elegí una de la lista. ' +
+            'Al seleccionar una compra se habilitan los campos de Ítem y Entrega asociados a esa compra.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-item',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '6. Ítem de la compra',
+          description:
+            'Una vez seleccionada la compra, este desplegable lista los ítems disponibles para esa compra. ' +
+            'Elegir el ítem habilita el campo Entrega con las entregas correspondientes a ese ítem.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-entrega-ubicacion',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '7. Entrega y Ubicación',
+          description:
+            '<strong>Entrega</strong>: una vez elegido el ítem, aparecen las entregas concretas (lote físico) asociadas. ' +
+            '<strong>Ubicación</strong>: campo de búsqueda libre por gerencia, oficina o ciudad para asignar dónde queda físicamente el activo. Es opcional.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-responsable-id',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '8. Responsable e ID Secundario',
+          description:
+            '<strong>Responsable</strong>: persona a cargo del equipo. Cuando el tipo de activo tiene una regla de asignación automática, este campo se llena solo y queda bloqueado. ' +
+            '<strong>ID Secundario</strong>: identificador alternativo (serie, código interno, etiqueta) para referenciar el equipo desde otros sistemas.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-garantia',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '9. Servicio de Garantía y Fecha Fin',
+          description:
+            '<strong>Servicio de Garantía</strong>: buscás al proveedor que da soporte/garantía (por nombre comercial, razón social o RUC) y lo seleccionás del listado. ' +
+            '<strong>Fecha Fin Garantía</strong>: día en que vence la cobertura. Útil para programar renovaciones y filtrar equipos próximos a quedar fuera de garantía.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-relacionados',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '10. Activos Relacionados',
+          description:
+            'Sirve para vincular este activo con otros (por ejemplo, un monitor y su CPU, o una impresora con su servidor). ' +
+            'Podés agregar varios buscando por número de equipo, ID de activo o ID secundario. La relación queda visible desde el detalle del equipo.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#activos-tour-modal-save',
+        onHighlighted: stepHighlightRefresh,
+        popover: {
+          title: '11. Guardar',
+          description:
+            'Cuando el formulario está completo y sin errores, este botón registra el alta (o las modificaciones si estás editando un activo existente). ' +
+            'En modo Rango, esta acción crea todos los activos del rango en una sola operación.',
+          side: 'top',
+          align: 'start'
+        }
+      }
+    ];
+
+    const missing: string[] = [];
+    const steps = allSteps.filter(s => {
+      const sel = s.element as string;
+      const exists = !!this.documentRef.querySelector(sel);
+      if (!exists) {
+        missing.push(sel);
+      }
+      return exists;
+    });
+
+    if (missing.length > 0) {
+      // Útil en desarrollo para detectar selectores que no se renderizaron
+      // todavía en el modal cuando arrancó el tour.
+      console.warn('[ActivosTour] selectores no encontrados en el modal:', missing);
+    }
+
+    if (steps.length === 0) {
+      this.modalService.dismissAll();
+      this.inventoryTourOpenedActivoModal = false;
+      return;
+    }
+
+    this.startInventoryDriver(steps);
+  }
+
+  private startInventoryDriver(steps: DriveStep[]): void {
     this.inventoryTour?.destroy();
     this.suspenderZoomGlobalParaTour();
     this.inventoryTour = driver({
@@ -686,11 +901,20 @@ export class ActivosComponent implements OnInit {
       prevBtnText: 'Anterior',
       doneBtnText: 'Finalizar',
       onDestroyed: () => {
-        if (this.inventoryTourOpenedActivoModal) {
+        const wasModalTour = this.inventoryTourOpenedActivoModal;
+        if (wasModalTour) {
           this.modalService.dismissAll();
           this.inventoryTourOpenedActivoModal = false;
         }
         this.restaurarZoomGlobalTrasTour();
+        // El tour del listado salta de paso en paso por toda la página y
+        // suele terminar con la tabla/PDF scrolleados; al cerrar lo dejamos
+        // arriba para que la siguiente acción del usuario arranque limpia.
+        // En el sub-tour del modal evitamos tocar el scroll del listado de
+        // fondo: el modal era el contexto, no el listado.
+        if (!wasModalTour) {
+          this.resetScrollToTop();
+        }
       },
       steps
     });
@@ -707,6 +931,27 @@ export class ActivosComponent implements OnInit {
     if (this.inventoryTourZoomSuspendCount === 0) {
       this.documentRef.body.classList.remove('no-global-zoom');
     }
+  }
+
+  /**
+   * Vuelve la pantalla al inicio cuando termina el tour.
+   *
+   * Lo posponemos dos frames porque al cerrar el tour quitamos la clase
+   * `body.no-global-zoom`, lo que restaura el `zoom: 0.8` global y reescala
+   * el documento. Scrollear en el mismo tick que ese cambio cancela el
+   * smooth (e incluso, en algunos casos, el browser decide ignorar el
+   * `scrollTo`). Esperar al layout asentado evita ambos problemas.
+   */
+  private resetScrollToTop(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {
+          window.scrollTo(0, 0);
+        }
+      });
+    });
   }
 
   /** driver.js puede medir antes de que el modal termine layout; repetir refresh evita el “globo centrado”. */

@@ -20,8 +20,7 @@ import { AlmacenConfig, estanteriasOrdenadas } from '../interfaces/almacen-confi
 import { forkJoin } from 'rxjs';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { AuthService } from '../services/auth.service';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-almacen-3d-demo',
@@ -51,7 +50,7 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
   transferiendoItemId: string | number | null = null;
   reactivandoItemId: string | number | null = null;
 
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private modalService: NgbModal,
@@ -65,7 +64,7 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
     private biosService: BiosService,
     private networkInfoService: NetworkInfoService,
     private authService: AuthService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {}
 
   ngOnInit(): void {
@@ -95,10 +94,22 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
         console.error('Error al cargar almacenes/config:', err);
       }
     });
+    this.tourCleanup = this.tourRegistry.register('almacen-3d-demo', [{
+      id: 'almacen-3d-overview',
+      title: 'Tour de la vista 3D',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-almacen-3d-title', title: 'Vista 3D', description: 'Exploración visual del almacén según la configuración de estanterías y el stock cargado.', side: 'bottom' },
+        { selector: '#tour-almacen-3d-selector', title: 'Almacén y layout', description: 'Elegí el almacén, abrí edición de layout si necesitás ajustar posiciones en escena, y guardá cuando corresponda.', side: 'bottom' },
+        { selector: '#tour-almacen-3d-layout-editor', title: 'Editor de layout', description: 'Ajustes numéricos de X, Z y rotación; usá «Aplicar al 3D» para ver el resultado sin cerrar el panel.', side: 'left' },
+        { selector: '#tour-almacen-3d-canvas', title: 'Escena 3D', description: 'Seleccioná cajas para ver contenido, transferir o reactivar según permisos.', side: 'top' }
+      ]
+    }]);
   }
 
   ngOnDestroy(): void {
-    this.pageTour?.destroy();
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   compareAlmacenes(a: any, b: any): boolean {
@@ -745,18 +756,5 @@ export class Almacen3DDemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  iniciarTourAlmacen3dDemo(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-almacen-3d-title', title: 'Vista 3D', description: 'Exploración visual del almacén según la configuración de estanterías y el stock cargado.', side: 'bottom' },
-      { selector: '#tour-almacen-3d-selector', title: 'Almacén y layout', description: 'Elegí el almacén, abrí edición de layout si necesitás ajustar posiciones en escena, y guardá cuando corresponda.', side: 'bottom' },
-      { selector: '#tour-almacen-3d-layout-editor', title: 'Editor de layout', description: 'Ajustes numéricos de X, Z y rotación; usá «Aplicar al 3D» para ver el resultado sin cerrar el panel.', side: 'left' },
-      { selector: '#tour-almacen-3d-canvas', title: 'Escena 3D', description: 'Seleccioná cajas para ver contenido, transferir o reactivar según permisos.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubnetService, SubnetDTO, SubnetCoordinatesDTO } from '../services/subnet.service';
@@ -7,8 +7,7 @@ import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 // Extendemos la interfaz SubnetDTO para incluir las propiedades adicionales
 interface ExtendedSubnet extends SubnetDTO {
@@ -33,7 +32,7 @@ declare module 'leaflet' {
   templateUrl: './subnets.component.html',
   styleUrls: ['./subnets.component.css']
 })
-export class SubnetsComponent implements OnInit, AfterViewInit {
+export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   subnets: ExtendedSubnet[] = [];
   private map: L.Map | undefined;
   private markerClusterGroup: L.MarkerClusterGroup | undefined;
@@ -53,15 +52,26 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
     lat: -34.9011,
     lng: -56.1645
   };
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private subnetService: SubnetService,
     private permissionsService: PermissionsService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {}
 
   ngOnInit(): void {
+    this.tourCleanup = this.tourRegistry.register('subnets', [{
+      id: 'subnets-overview',
+      title: 'Tour de subredes',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-subnets-header', title: 'Subredes', description: 'Definición de VLANs y datos para ubicar equipos en el plano (IP, máscara, coordenadas).', side: 'bottom' },
+        { selector: '#tour-subnets-toolbar', title: 'Resumen', description: 'Contador de registros cargados y estado de la operación.', side: 'bottom' },
+        { selector: '#tour-subnets-table', title: 'Tabla editable', description: 'In-line: nombre, IP, máscara y datos del mapa; guardá cambios desde cada fila si tenés permiso.', side: 'top' },
+        { selector: '#tour-subnets-map', title: 'Mapa', description: 'Vista Leaflet con agregación de marcadores según coordenadas guardadas.', side: 'top' }
+      ]
+    }]);
     this.loadResources()
       .then(() => this.initMap())
       .then(() => this.loadSubnets())
@@ -371,17 +381,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit {
     return this.permissionsService.canManageSubnets();
   }
 
-  iniciarTourSubredes(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-subnets-header', title: 'Subredes', description: 'Definición de VLANs y datos para ubicar equipos en el plano (IP, máscara, coordenadas).', side: 'bottom' },
-      { selector: '#tour-subnets-toolbar', title: 'Resumen', description: 'Contador de registros cargados y estado de la operación.', side: 'bottom' },
-      { selector: '#tour-subnets-table', title: 'Tabla editable', description: 'In-line: nombre, IP, máscara y datos del mapa; guardá cambios desde cada fila si tenés permiso.', side: 'top' },
-      { selector: '#tour-subnets-map', title: 'Mapa', description: 'Vista Leaflet con agregación de marcadores según coordenadas guardadas.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 } 

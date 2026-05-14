@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ConfigService } from '../services/config.service';
@@ -6,8 +6,7 @@ import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -22,7 +21,7 @@ interface ApiResponse<T> {
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css'
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit, OnDestroy {
   isSyncing = false;
   syncResult: any = null;
   syncMessage: string = '';
@@ -40,7 +39,7 @@ export class SettingsComponent {
   comparisonError: string | null = null;
   
   private apiUrl: string;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private http: HttpClient,
@@ -48,9 +47,27 @@ export class SettingsComponent {
     private modalService: NgbModal,
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/sync`;
+  }
+
+  ngOnInit(): void {
+    this.tourCleanup = this.tourRegistry.register('settings', [{
+      id: 'settings-overview',
+      title: 'Tour de configuración',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-settings-title', title: 'Configuración', description: 'Herramientas de mantenimiento de bajo nivel (solo GM). Usalas con criterio.', side: 'bottom' },
+        { selector: '#tour-settings-ocs', title: 'Reset OCS', description: 'Vuelve a importar hardware, software y dispositivos desde OCS; preserva usuarios y alertas Cerbero.', side: 'top' },
+        { selector: '#tour-settings-reset-ocs', title: 'Botón de reseteo', description: 'Abre confirmación explícita antes de ejecutar el proceso largo de limpieza e importación.', side: 'left' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   // Verificar si el usuario tiene permisos para acceder a settings
@@ -224,16 +241,4 @@ export class SettingsComponent {
     }
   }
 
-  iniciarTourConfiguracion(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-settings-title', title: 'Configuración', description: 'Herramientas de mantenimiento de bajo nivel (solo GM). Usalas con criterio.', side: 'bottom' },
-      { selector: '#tour-settings-ocs', title: 'Reset OCS', description: 'Vuelve a importar hardware, software y dispositivos desde OCS; preserva usuarios y alertas Cerbero.', side: 'top' },
-      { selector: '#tour-settings-reset-ocs', title: 'Botón de reseteo', description: 'Abre confirmación explícita antes de ejecutar el proceso largo de limpieza e importación.', side: 'left' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 }

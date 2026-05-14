@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -6,8 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { EntregasService, EntregaDTO } from '../../services/entregas.service';
 import { LotesService, LoteDTO } from '../../services/lotes.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-entregas',
@@ -17,7 +16,7 @@ import type { Driver } from 'driver.js';
   styleUrls: ['./entregas.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class EntregasComponent implements OnInit {
+export class EntregasComponent implements OnInit, OnDestroy {
   entregasList: EntregaDTO[] = [];
   entregasFiltradas: EntregaDTO[] = [];
   lotesList: LoteDTO[] = [];
@@ -33,14 +32,14 @@ export class EntregasComponent implements OnInit {
   modoEdicion = false;
   showConfirmDialog = false;
   entregaToDelete: number | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private entregasService: EntregasService,
     private lotesService: LotesService,
     private fb: FormBuilder,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.filterForm = this.fb.group({
       descripcion: [''],
@@ -61,6 +60,22 @@ export class EntregasComponent implements OnInit {
   ngOnInit(): void {
     this.loadEntregas();
     this.loadLotes();
+    this.tourCleanup = this.tourRegistry.register('entregas', [{
+      id: 'entregas-overview',
+      title: 'Tour de entregas',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-entregas-header', title: 'Entregas', description: 'Registro de entregas de ítems de compra hacia almacén u otras ubicaciones lógicas.', side: 'bottom' },
+        { selector: '#tour-entregas-stats', title: 'Total', description: 'Contador rápido de entregas cargadas en la vista actual.', side: 'bottom' },
+        { selector: '#tour-entregas-nueva', title: 'Nueva entrega', description: 'Alta con vínculo a lote y fechas asociadas.', side: 'left' },
+        { selector: '#tour-entregas-table', title: 'Tabla', description: 'Consultá y editá entregas existentes.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadLotes(): void {
@@ -253,17 +268,4 @@ export class EntregasComponent implements OnInit {
     return new Date(fecha).toLocaleDateString('es-ES');
   }
 
-  iniciarTourEntregas(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-entregas-header', title: 'Entregas', description: 'Registro de entregas de ítems de compra hacia almacén u otras ubicaciones lógicas.', side: 'bottom' },
-      { selector: '#tour-entregas-stats', title: 'Total', description: 'Contador rápido de entregas cargadas en la vista actual.', side: 'bottom' },
-      { selector: '#tour-entregas-nueva', title: 'Nueva entrega', description: 'Alta con vínculo a lote y fechas asociadas.', side: 'left' },
-      { selector: '#tour-entregas-table', title: 'Tabla', description: 'Consultá y editá entregas existentes.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

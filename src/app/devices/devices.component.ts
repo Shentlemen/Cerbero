@@ -17,8 +17,7 @@ import { forkJoin } from 'rxjs';
 import { FormControl } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -44,6 +43,41 @@ interface DeviceType {
 export class DevicesComponent implements OnInit, OnDestroy {
   devices: NetworkInfoDTO[] = [];
   filteredDevices: NetworkInfoDTO[] = [];
+  /**
+   * Página actual ya cortada. Lo guardamos como propiedad y la actualizamos
+   * desde `updatePagedDevices()` cada vez que cambia el filtro, el orden o la
+   * página. Antes era un getter, lo que hacía que Angular llamara a `slice()`
+   * en cada ciclo de change detection y volviera a renderizar toda la tabla.
+   */
+  pagedDevices: NetworkInfoDTO[] = [];
+  /**
+   * Configuración visual (icono, colores) ya resuelta para cada dispositivo
+   * visible. Se actualiza junto con `pagedDevices`. El template lee de acá
+   * directamente para no llamar a funciones costosas en cada CD.
+   */
+  pagedDeviceTypes: DeviceType[] = [];
+  /**
+   * Conteos precalculados por tipo. Antes el template llamaba a
+   * `getDeviceCount(type)` 15 veces por cada ciclo de change detection y
+   * cada llamada filtraba todos los dispositivos con `normalize('NFD')`.
+   * Se recalcula sólo cuando cambia `devices`.
+   */
+  deviceCountsByType: { [type: string]: number } = { all: 0 };
+  /**
+   * Cache de iconos por tipo de dispositivo. `getDeviceTypeConfig` aplica
+   * `toLowerCase().normalize('NFD').replace(...)` para comparar nombres y eso
+   * se ejecutaba para cada fila en cada CD; ahora lo hacemos una sola vez por
+   * tipo y reutilizamos el resultado.
+   */
+  private deviceTypeCache = new Map<string, DeviceType>();
+  /**
+   * Cache de permisos. Las llamadas a `permissionsService` aparecen en el
+   * template (`canManageDevices`, `canManageDeviceStates`) y se evaluaban
+   * múltiples veces por fila por cada CD; el resultado no cambia durante la
+   * vida del componente, así que las computamos una vez.
+   */
+  private _canManageDevicesCache?: boolean;
+  private _canManageDeviceStatesCache?: boolean;
   errorMessage: string | null = null;
   loading: boolean = true;
   
@@ -90,7 +124,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
 
   /** Búsqueda por MAC (literal o solo hex) o por IP */
   macSearchControl = new FormControl('');
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private networkInfoService: NetworkInfoService,
@@ -103,7 +137,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
     private estadoDispositivoService: EstadoDispositivoService,
     private authService: AuthService,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.macSearchControl.valueChanges.subscribe(value => {
       this.aplicarFiltroBusqueda(value || '');
@@ -112,10 +146,37 @@ export class DevicesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarDispositivos();
+    this.tourCleanup = this.tourRegistry.register('devices', [{
+      id: 'devices-overview',
+      title: 'Tour de dispositivos',
+      icon: 'fa-route',
+      beforeStart: () => this.resetScroll(),
+      afterEnd: () => this.resetScroll(),
+      steps: [
+        { selector: '#tour-devices-title', title: 'Dispositivos de red', description: 'Periféricos y equipo activo de red excluyendo bajas y stock en almacén.', side: 'bottom' },
+        { selector: '#tour-devices-filters', title: 'Tipos', description: 'Filtrá por categoría: impresoras, switches, APs, etc.', side: 'bottom' },
+        { selector: '#tour-devices-search', title: 'Búsqueda', description: 'Buscá por MAC o dirección IP.', side: 'bottom' },
+        {
+          selector: '#tour-devices-table',
+          title: 'Tabla',
+          description:
+            'Hacé clic en los encabezados para ordenar. Cada fila abre el detalle; con permisos, al final de la fila tenés acciones (baja, almacén, transferir, eliminar).',
+          side: 'bottom'
+        },
+        { selector: '#tour-devices-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+      ]
+    }]);
+  }
+
+  private resetScroll(): void {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }
 
   ngOnDestroy(): void {
-    this.pageTour?.destroy();
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   cargarDispositivos(): void {
@@ -139,14 +200,15 @@ export class DevicesComponent implements OnInit, OnDestroy {
           this.devices = response.dispositivos.data.filter((device: NetworkInfoDTO) => 
             !macsEnBaja.includes(device.mac) && !macsEnAlmacen.includes(device.mac)
           );
-          
+          this.recomputeDeviceCounts();
           this.applyFilter();
           this.checkQueryParams();
         } else {
           this.errorMessage = response.dispositivos.message || 'Error al cargar los dispositivos';
           this.devices = [];
           this.filteredDevices = [];
-          this.collectionSize = 0;
+          this.recomputeDeviceCounts();
+          this.updatePagedDevices();
         }
         this.loading = false;
       },
@@ -155,7 +217,8 @@ export class DevicesComponent implements OnInit, OnDestroy {
         this.errorMessage = 'Error al cargar los dispositivos. Por favor, intente nuevamente.';
         this.devices = [];
         this.filteredDevices = [];
-        this.collectionSize = 0;
+        this.recomputeDeviceCounts();
+        this.updatePagedDevices();
         this.loading = false;
       }
     });
@@ -187,8 +250,8 @@ export class DevicesComponent implements OnInit, OnDestroy {
     if (this.sortColumn) {
       this.applySorting();
     }
-    
-    this.collectionSize = this.filteredDevices.length;
+
+    this.updatePagedDevices();
   }
 
   // Método para ordenar los datos
@@ -233,6 +296,8 @@ export class DevicesComponent implements OnInit, OnDestroy {
       }
       return 0;
     });
+
+    this.updatePagedDevices();
   }
 
   // Método para comparar direcciones IP correctamente
@@ -272,8 +337,25 @@ export class DevicesComponent implements OnInit, OnDestroy {
     return result;
   }
 
-  // Obtener configuración de color para un tipo de dispositivo
+  /**
+   * Devuelve la configuración visual (icono, colores) para un tipo de
+   * dispositivo. Memoizada por tipo crudo: el template llama a esta función
+   * en cada celda de cada fila y, sin cache, ejecutaba dos `normalize('NFD')`
+   * más un `.find()` lineal sobre 14 tipos en cada ciclo de change detection.
+   */
   getDeviceTypeConfig(type: string): DeviceType {
+    const key = type ?? '';
+    const cached = this.deviceTypeCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    const resolved = this.resolveDeviceTypeConfig(type);
+    this.deviceTypeCache.set(key, resolved);
+    return resolved;
+  }
+
+  private resolveDeviceTypeConfig(type: string): DeviceType {
     if (!type) {
       return {
         name: 'Desconocido',
@@ -283,14 +365,13 @@ export class DevicesComponent implements OnInit, OnDestroy {
         icon: 'fa-question-circle'
       };
     }
-    
-    const deviceType = this.deviceTypes.find(dt => 
-      dt.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
-      type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+    const normalizedTarget = type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const deviceType = this.deviceTypes.find(dt =>
+      dt.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === normalizedTarget
     );
-    
-    // Si no encuentra el tipo, usar un color por defecto
-    return deviceType || {
+
+    return deviceType ?? {
       name: type,
       color: '#6c757d',
       backgroundColor: '#f8f9fa',
@@ -339,12 +420,66 @@ export class DevicesComponent implements OnInit, OnDestroy {
       this.errorMessage = 'No se puede ver los detalles del dispositivo: MAC address no disponible';
     }
   }
-  
-  // Getter para obtener los dispositivos paginados
-  get pagedDevices(): NetworkInfoDTO[] {
+
+  /**
+   * Recalcula `pagedDevices` y `collectionSize`. Llamar manualmente cada vez
+   * que cambien `filteredDevices`, `page` o `pageSize`. Evita el getter que
+   * antes corría en cada ciclo de change detection.
+   *
+   * También precomputa `pagedDeviceTypes`: la configuración visual de cada
+   * dispositivo visible. El template lee de ahí en lugar de invocar
+   * `getDeviceIcon`/`getDeviceTypeConfig` en cada binding por cada CD.
+   */
+  private updatePagedDevices(): void {
+    this.collectionSize = this.filteredDevices.length;
     const start = (this.page - 1) * this.pageSize;
     const end = this.page * this.pageSize;
-    return this.filteredDevices.slice(start, end);
+    this.pagedDevices = this.filteredDevices.slice(start, end);
+    this.pagedDeviceTypes = this.pagedDevices.map(d => this.getDeviceTypeConfig(d.type));
+  }
+
+  /**
+   * Recalcula el conteo de dispositivos por tipo. Sólo se llama cuando
+   * cambia la lista cruda (`this.devices`). Antes el template ejecutaba 15
+   * filtros con `normalize('NFD')` por cada ciclo de change detection.
+   */
+  private recomputeDeviceCounts(): void {
+    const counts: { [type: string]: number } = { all: this.devices.length };
+    for (const dt of this.deviceTypes) {
+      counts[dt.name] = 0;
+    }
+    const normalize = (s: string): string =>
+      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const typeKeyByNormalized = new Map<string, string>();
+    for (const dt of this.deviceTypes) {
+      typeKeyByNormalized.set(normalize(dt.name), dt.name);
+    }
+    for (const device of this.devices) {
+      if (!device.type) {
+        continue;
+      }
+      const key = typeKeyByNormalized.get(normalize(device.type));
+      if (key) {
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+    }
+    this.deviceCountsByType = counts;
+  }
+
+  /** Handler de `(pageChange)` del componente de paginación. */
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.updatePagedDevices();
+  }
+
+  /** trackBy estable: mantiene el DOM al re-renderizar la lista. */
+  trackByDeviceMac(_index: number, device: NetworkInfoDTO): string {
+    return device.mac ?? `${_index}`;
+  }
+
+  /** trackBy para la lista estática de tipos de dispositivo. */
+  trackByTypeName(_index: number, deviceType: DeviceType): string {
+    return deviceType.name;
   }
 
   private checkQueryParams(): void {
@@ -599,13 +734,21 @@ export class DevicesComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Métodos de permisos
+  // Métodos de permisos (memoizados: el template los invoca varias veces por
+  // fila y por ciclo de change detection; el resultado no cambia en runtime).
   canManageDevices(): boolean {
-    return this.permissionsService.canManageAssets(); // Usar el mismo permiso por ahora
+    if (this._canManageDevicesCache === undefined) {
+      this._canManageDevicesCache = this.permissionsService.canManageAssets();
+    }
+    return this._canManageDevicesCache;
   }
 
   canManageDeviceStates(): boolean {
-    return this.permissionsService.isGM() || this.permissionsService.isAdmin();
+    if (this._canManageDeviceStatesCache === undefined) {
+      this._canManageDeviceStatesCache =
+        this.permissionsService.isGM() || this.permissionsService.isAdmin();
+    }
+    return this._canManageDeviceStatesCache;
   }
 
   /** Columnas actuales de la tabla (nombre, IP, MAC, tipo, descripción [, acciones]). */
@@ -674,8 +817,8 @@ export class DevicesComponent implements OnInit, OnDestroy {
   }
 
   private actualizarPaginacion(): void {
-    this.collectionSize = this.filteredDevices.length;
     this.page = 1;
+    this.updatePagedDevices();
   }
 
   // Método para limpiar todos los filtros de búsqueda
@@ -767,31 +910,4 @@ export class DevicesComponent implements OnInit, OnDestroy {
     );
   }
 
-  iniciarTourDispositivos(): void {
-    this.pageTour?.destroy();
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-devices-title', title: 'Dispositivos de red', description: 'Periféricos y equipo activo de red excluyendo bajas y stock en almacén.', side: 'bottom' },
-      { selector: '#tour-devices-filters', title: 'Tipos', description: 'Filtrá por categoría: impresoras, switches, APs, etc.', side: 'bottom' },
-      { selector: '#tour-devices-search', title: 'Búsqueda', description: 'Buscá por MAC o dirección IP.', side: 'bottom' },
-      {
-        selector: '#tour-devices-table',
-        title: 'Tabla',
-        description:
-          'Hacé clic en los encabezados para ordenar. Cada fila abre el detalle; con permisos, al final de la fila tenés acciones (baja, almacén, transferir, eliminar).',
-        side: 'bottom'
-      },
-      { selector: '#tour-devices-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps, () => {
-      window.scrollTo({ top: 0, behavior: 'auto' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

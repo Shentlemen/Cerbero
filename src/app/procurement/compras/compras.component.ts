@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -19,12 +19,19 @@ import { CurrencyMaskDirective } from '../../shared/directives/currency-mask.dir
 // Importaciones para PDF
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
+import { GuidedTourHostService, type GuidedTourStepDef } from '../../services/guided-tour-host.service';
+import { driver, type DriveStep, type Driver } from 'driver.js';
 
 interface CompraConTipo extends CompraDTO {
   tipoCompraDescripcion?: string;
   tipoCompraAbreviado?: string;
+}
+
+/** Paso del tour DEMO con posibilidad de cambiar de pestaña antes de mostrarse. */
+interface DemoStepDef extends GuidedTourStepDef {
+  /** Pestaña del modal (`activeTab`) en la que debe estar el modal para este paso. */
+  tab?: string;
 }
 
 @Component({
@@ -35,7 +42,7 @@ interface CompraConTipo extends CompraDTO {
   styleUrls: ['./compras.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class ComprasComponent implements OnInit {
+export class ComprasComponent implements OnInit, OnDestroy {
   comprasList: CompraConTipo[] = [];
   comprasFiltradas: CompraConTipo[] = [];
   lotesPorCompra: { [key: number]: LoteDTO[] } = {};
@@ -65,7 +72,7 @@ export class ComprasComponent implements OnInit {
   lotesDetalles: LoteDTO[] = [];
   entregasDetalles: EntregaDTO[] = [];
   isCompactView: boolean = true;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
   proveedoresFiltrados: { [key: number]: ProveedorDTO[] } = {};
   // serviciosGarantiaFiltrados: { [key: number]: ServicioGarantiaDTO[] } = {};
   proveedorSearchValues: { [key: number]: string } = {};
@@ -95,6 +102,12 @@ export class ComprasComponent implements OnInit {
   compraModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
 
   @ViewChild('detallesModal') detallesModal!: TemplateRef<any>;
+  @ViewChild('compraModal') compraModalTpl!: TemplateRef<any>;
+
+  private tourCompra?: Driver;
+  private tourDemoModalRef?: { close: () => void; dismiss: () => void; result: Promise<unknown> };
+  /** Bandera que el modal de compra usa para mostrar que está en modo demo y bloquear el guardado. */
+  tourDemoActivo = false;
 
   constructor(
     private comprasService: ComprasService,
@@ -108,6 +121,7 @@ export class ComprasComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private permissionsService: PermissionsService,
     private remitosService: RemitosService,
+    private tourRegistry: TourRegistryService,
     private guidedTourHost: GuidedTourHostService
     // private pliegosService: PliegosService // Eliminar
   ) {
@@ -183,6 +197,44 @@ export class ComprasComponent implements OnInit {
   ngOnInit(): void {
     this.loadData();
     this.loadProveedores(); // Asegurar que se ejecute primero
+    const tours = [
+      {
+        id: 'compras-overview',
+        title: 'Tour de compras',
+        icon: 'fa-route',
+        steps: [
+          { selector: '#tour-compras-title', title: 'Compras', description: 'Registro de adquisiciones: moneda, tipo, lotes, ítems y entregas vinculados al inventario Cerbero.', side: 'bottom' as const },
+          { selector: '#tour-compras-filters', title: 'Filtro por moneda', description: 'Acotá la lista por USD o UYU; “Todos” muestra el universo cargado.', side: 'bottom' as const },
+          { selector: '#tour-compras-nueva', title: 'Nueva compra', description: 'Alta o edición en modal con ítems, proveedor y documentos según tus permisos.', side: 'left' as const },
+          { selector: '#tour-compras-search-row', title: 'Búsqueda y tipo', description: 'Buscá por número de compra y refiná con chips de tipo de compra.', side: 'bottom' as const },
+          { selector: '#tour-compras-table', title: 'Tabla', description: 'Ordená columnas y usá acciones por fila para ver detalle, editar o eliminar.', side: 'top' as const }
+        ]
+      },
+      {
+        id: 'compras-ver-detalle',
+        title: 'Cómo ver el detalle de una compra',
+        icon: 'fa-eye',
+        description: 'Abre la primera compra de la lista y recorre las secciones del modal de detalle.',
+        run: () => this.runTourVerCompra(),
+      },
+      ...(this.canManagePurchases()
+        ? [{
+            id: 'compras-crear-detalle',
+            title: 'Cómo crear una compra',
+            icon: 'fa-plus-circle',
+            description: 'Abre el modal con una compra DEMO pre-cargada y recorre las 4 pestañas (datos, ítems, entregas y documentos).',
+            run: () => this.runTourCrearCompra(),
+          }]
+        : []),
+    ];
+    this.tourCleanup = this.tourRegistry.register('compras', tours);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
+    this.tourCompra?.destroy();
+    this.tourCompra = undefined;
   }
 
   loadData(): Promise<void> {
@@ -562,6 +614,10 @@ export class ComprasComponent implements OnInit {
   }
 
   guardarCompra(): void {
+    if (this.tourDemoActivo) {
+      this.tourDemoModalRef?.dismiss();
+      return;
+    }
     if (!this.compraForm.valid) {
       this.compraForm.markAllAsTouched();
       const lineas = this.armarLineasValidacionCompraPrincipal();
@@ -1907,18 +1963,422 @@ export class ComprasComponent implements OnInit {
     return montoTotal - subtotal;
   }
 
-  iniciarTourCompras(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-compras-title', title: 'Compras', description: 'Registro de adquisiciones: moneda, tipo, lotes, ítems y entregas vinculados al inventario Cerbero.', side: 'bottom' },
-      { selector: '#tour-compras-filters', title: 'Filtro por moneda', description: 'Acotá la lista por USD o UYU; “Todos” muestra el universo cargado.', side: 'bottom' },
-      { selector: '#tour-compras-nueva', title: 'Nueva compra', description: 'Alta o edición en modal con ítems, proveedor y documentos según tus permisos.', side: 'left' },
-      { selector: '#tour-compras-search-row', title: 'Búsqueda y tipo', description: 'Buscá por número de compra y refiná con chips de tipo de compra.', side: 'bottom' },
-      { selector: '#tour-compras-table', title: 'Tabla', description: 'Ordená columnas y usá acciones por fila para ver detalle, editar o eliminar.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
+  private elegirCompraParaTour(): CompraConTipo | null {
+    if (this.comprasFiltradas.length > 0) {
+      return this.comprasFiltradas[0];
     }
+    if (this.comprasList.length > 0) {
+      return this.comprasList[0];
+    }
+    return null;
   }
+
+  private esperarSelectores(
+    selectores: string[],
+    timeoutMs: number = 2500,
+    intervalMs: number = 60
+  ): Promise<string[]> {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const tick = () => {
+        const presentes = selectores.filter((sel) => document.querySelector(sel));
+        if (presentes.length === selectores.length || Date.now() - start >= timeoutMs) {
+          resolve(presentes);
+          return;
+        }
+        setTimeout(tick, intervalMs);
+      };
+      tick();
+    });
+  }
+
+  private buildModalSteps(pasos: GuidedTourStepDef[]): DriveStep[] {
+    return pasos
+      .filter((p) => !!document.querySelector(p.selector))
+      .map((p) => ({
+        element: p.selector,
+        popover: {
+          title: p.title,
+          description: p.description,
+          side: (p.side ?? 'bottom') as 'top' | 'bottom' | 'left' | 'right',
+          align: 'start'
+        }
+      }));
+  }
+
+  private runTourVerCompra(): void {
+    this.tourCompra?.destroy();
+    this.tourCompra = undefined;
+    this.modalService.dismissAll();
+
+    const compra = this.elegirCompraParaTour();
+    if (!compra) {
+      this.error = 'Necesitás al menos una compra cargada para ver este tour.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isCompactView = false;
+    this.verDetallesCompra(compra);
+
+    const pasos: GuidedTourStepDef[] = [
+      {
+        selector: '#tour-compras-detalles-header',
+        title: 'Detalle de la compra',
+        description:
+          'Abrís el detalle con el ícono de <strong>ojo</strong> en la fila de cada compra. Acá tenés todo en modo lectura: datos generales, ítems, entregas y documentos.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-compras-detalles-toggle',
+        title: 'Vista compacta / detallada',
+        description:
+          '<strong>Detallada</strong> muestra todas las secciones expandidas (ideal para revisar a fondo). <strong>Compacta</strong> resume la información para ver más datos sin scroll.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-compras-detalles-pdf',
+        title: 'Exportar a PDF',
+        description:
+          'Genera un PDF con el detalle completo de la compra (datos, ítems, entregas y documentos). Sirve para enviar a proveedores o archivar.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-compras-detalles-main-info',
+        title: 'Resumen principal',
+        description:
+          'Nombre de la compra, descripción, moneda y <strong>monto total</strong>. Si hay ítems cargados, también ves el desglose de <strong>subtotal e IVA</strong>.',
+        side: 'top'
+      },
+      {
+        selector: '#tour-compras-detalles-info-compra',
+        title: 'Información de la compra',
+        description:
+          'Tipo de compra, número, año y fechas de <strong>apertura</strong> y <strong>adjudicación</strong>. Estos campos identifican unívocamente la compra dentro del sistema.',
+        side: 'top'
+      },
+      {
+        selector: '#tour-compras-detalles-items',
+        title: 'Ítems de la compra',
+        description:
+          'Listado de ítems (lotes) con cantidad, precio unitario, moneda, meses de garantía, proveedor y servicio de garantía. Cada ítem se cuenta como una línea del PDF.',
+        side: 'top'
+      },
+      {
+        selector: '#tour-compras-detalles-entregas',
+        title: 'Entregas',
+        description:
+          'Recorrido de las entregas asociadas a los ítems: cuántas unidades, fecha de entrega y fecha de fin de garantía. Si todavía no hay entregas, esta sección queda vacía.',
+        side: 'top'
+      },
+      {
+        selector: '#tour-compras-detalles-documentos',
+        title: 'Documentos adjuntos',
+        description:
+          'Acá ves los documentos cargados (remitos, facturas, contratos, etc.). Desde cada uno podés <strong>visualizarlo</strong> o <strong>descargarlo</strong>.',
+        side: 'top'
+      }
+    ];
+
+    setTimeout(() => {
+      const modalSteps = this.buildModalSteps(pasos);
+      if (modalSteps.length === 0) {
+        this.modalService.dismissAll();
+        return;
+      }
+      const inst = this.guidedTourHost.startTour(modalSteps, () => {
+        this.modalService.dismissAll();
+      });
+      if (inst) {
+        this.tourCompra = inst;
+      }
+    }, 320);
+  }
+
+  /**
+   * Tour de creación de compra completo. Abre el modal con una compra DEMO en memoria
+   * (sin tocar backend) y recorre las 4 pestañas, cambiando de pestaña dinámicamente
+   * entre pasos mediante `onDeselected` del paso previo.
+   */
+  private runTourCrearCompra(): void {
+    this.tourCompra?.destroy();
+    this.tourCompra = undefined;
+    this.modalService.dismissAll();
+
+    if (!this.canManagePurchases()) {
+      return;
+    }
+
+    if (this.tiposCompraList.length === 0) {
+      this.error = 'No hay tipos de compra cargados para mostrar el tour.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.prepararCompraDemo();
+    this.tourDemoModalRef = this.modalService.open(this.compraModalTpl, {
+      size: 'xl',
+      backdrop: 'static',
+      windowClass: 'compra-form-modal-window'
+    });
+    this.tourDemoModalRef.result.then(
+      () => this.finalizarTourDemo(),
+      () => this.finalizarTourDemo()
+    );
+
+    const pasos: DemoStepDef[] = [
+      // ---------- PESTAÑA 1: DATOS ----------
+      { tab: '1', selector: '#tour-compras-edit-header', title: 'Crear compra (DEMO)',
+        description: 'Acá creás una compra desde cero. El header naranja indica que estás en <strong>modo DEMO</strong>: el botón Guardar está bloqueado para que puedas explorar sin riesgo.', side: 'bottom' },
+      { tab: '1', selector: '#tour-compras-edit-tabs', title: 'Las 4 pestañas',
+        description: 'El formulario se divide en <strong>Datos</strong>, <strong>Ítems</strong>, <strong>Entregas</strong> y <strong>Documentos</strong>. Las vamos a recorrer una por una.', side: 'bottom' },
+      { tab: '1', selector: '#tour-compras-edit-row-identidad', title: 'Tipo, Número y Año',
+        description: '<strong>Tipo de compra</strong> (licitación, compra directa, etc.), <strong>número</strong> identificador y <strong>año</strong>. Los tres son obligatorios y permiten ubicar la compra rápidamente.', side: 'top' },
+      { tab: '1', selector: '#tour-compras-edit-row-monetario', title: 'Valor dólar, moneda y monto',
+        description: 'El <strong>valor del dólar</strong> es obligatorio: lo usamos para convertir entre USD y UYU cuando un ítem está en una moneda distinta. El <strong>monto total</strong> se calcula automáticamente sumando ítems + IVA.', side: 'top' },
+      { tab: '1', selector: '#tour-compras-edit-row-nombre', title: 'Nombre de la compra',
+        description: 'Texto libre que aparece en la tabla y en el PDF. Conviene un nombre descriptivo (por ejemplo "Compra de impresoras Q2").', side: 'top' },
+      { tab: '1', selector: '#tour-compras-edit-row-fechas', title: 'Fechas de apertura y adjudicación',
+        description: 'Marcadores del ciclo de la compra: <strong>apertura</strong> (cuando empezó el proceso) y <strong>adjudicación</strong> (cuando se decidió a quién comprarle).', side: 'top' },
+
+      // ---------- PESTAÑA 2: ÍTEMS ----------
+      { tab: '2', selector: '#tour-compras-edit-tab-items', title: 'Pestaña «Ítems»',
+        description: 'Cada compra se desglosa en <strong>ítems</strong> (lotes). Es el corazón económico: ahí defi­nís qué se compra, a qué precio y con qué garantía.', side: 'bottom' },
+      { tab: '2', selector: '#tour-compras-edit-item-card', title: 'Tarjeta de un ítem',
+        description: 'Cada ítem es una tarjeta independiente. Podés agregar tantas como necesites; cada una se ordena con su número (Ítem 1, Ítem 2, ...) y se puede eliminar con el botón de la basura.', side: 'top' },
+      { tab: '2', selector: '#tour-compras-edit-item-row-nombre', title: 'Nombre y cantidad',
+        description: '<strong>Nombre del ítem</strong> describe qué se compra (ej. "Notebook Dell Latitude 5440"). <strong>Cantidad</strong> es cuántas unidades; ambos son obligatorios.', side: 'bottom' },
+      { tab: '2', selector: '#tour-compras-edit-item-row-proveedor', title: 'Proveedor y servicio de garantía',
+        description: '<strong>Proveedor</strong>: quién vende el ítem. <strong>Servicio de garantía</strong>: quién responde por la garantía (puede ser el mismo proveedor o un tercero). Ambos campos buscan dinámicamente al tipear.', side: 'bottom' },
+      { tab: '2', selector: '#tour-compras-edit-item-row-precio', title: 'Garantía, precio, moneda e IVA',
+        description: '<strong>Meses de garantía</strong> definen la duración de la cobertura. <strong>Precio unitario</strong>, <strong>moneda</strong> (USD/UYU) e <strong>IVA</strong> (% por defecto 22) se combinan con la cantidad para calcular el total del ítem.', side: 'top' },
+      { tab: '2', selector: '#tour-compras-edit-item-row-calculo', title: 'Cálculo automático del ítem',
+        description: 'Mientras completás precio y cantidad, ves el <strong>subtotal, IVA y total</strong> del ítem en USD y UYU automáticamente. Estos totales suman al monto total de la compra.', side: 'top' },
+      { tab: '2', selector: '#tour-compras-edit-items-add', title: 'Agregar ítem',
+        description: 'Botón verde para sumar otro ítem a la compra. Una sola compra puede tener varios ítems con monedas y proveedores distintos.', side: 'left' },
+
+      // ---------- PESTAÑA 3: ENTREGAS ----------
+      { tab: '3', selector: '#tour-compras-edit-tab-entregas', title: 'Pestaña «Entregas»',
+        description: 'Una vez definidos los ítems, registrás <strong>cuándo y cuántas unidades</strong> se entregaron. Un mismo ítem puede tener entregas parciales hasta completar la cantidad total.', side: 'bottom' },
+      { tab: '3', selector: '#tour-compras-edit-entrega-card', title: 'Tarjeta de entrega',
+        description: 'Cada entrega es independiente. Podés tener tantas como necesites (por ejemplo, 3 entregas de 2 notebooks cada una para un ítem de 6).', side: 'top' },
+      { tab: '3', selector: '#tour-compras-edit-entrega-row-item', title: 'Ítem y cantidad',
+        description: '<strong>Ítem</strong>: a cuál de los ítems de la compra corresponde esta entrega. <strong>Cantidad</strong>: cuántas unidades llegaron en esta entrega puntual.', side: 'bottom' },
+      { tab: '3', selector: '#tour-compras-edit-entrega-row-fechas', title: 'Fecha de entrega y fin de garantía',
+        description: '<strong>Fecha de entrega</strong>: cuándo llegó. <strong>Fecha fin garantía</strong>: se calcula automáticamente sumando los meses de garantía del ítem; igual la podés ajustar manualmente.', side: 'top' },
+      { tab: '3', selector: '#tour-compras-edit-entrega-row-obs', title: 'Observación',
+        description: 'Texto libre opcional para anotaciones sobre la entrega (ej. "Falta un cable", "Entrega parcial pendiente de OC adicional").', side: 'top' },
+      { tab: '3', selector: '#tour-compras-edit-entregas-add', title: 'Agregar entrega',
+        description: 'Botón para registrar otra entrega. Útil para entregas escalonadas o cuando el proveedor manda en tandas.', side: 'left' },
+
+      // ---------- PESTAÑA 4: DOCUMENTOS ----------
+      { tab: '4', selector: '#tour-compras-edit-tab-documentos', title: 'Pestaña «Documentos»',
+        description: 'Acá adjuntás respaldo: <strong>remitos, facturas, contratos, pliegos</strong> y cualquier otro archivo asociado a la compra.', side: 'bottom' },
+      { tab: '4', selector: '#tour-compras-edit-doc-fields', title: 'Subir un documento',
+        description: 'Seleccioná el archivo (PDF, JPG, PNG, DOC, DOCX) y agregale una <strong>descripción</strong> opcional para identificarlo después.', side: 'top' },
+      { tab: '4', selector: '#tour-compras-edit-doc-upload-btn', title: 'Botón Subir Documento',
+        description: 'Confirma la carga. Mientras se sube se deshabilita el botón. Se admiten varios documentos por compra.', side: 'top' },
+      { tab: '4', selector: '#tour-compras-edit-doc-list', title: 'Lista de documentos cargados',
+        description: 'Acá se acumulan los archivos subidos, con opciones para <strong>visualizar</strong>, <strong>descargar</strong> o <strong>eliminar</strong> cada uno. En esta demo está vacía.', side: 'top' },
+
+      // ---------- VOLVER A TAB 1 PARA FOOTER ----------
+      { tab: '1', selector: '#tour-compras-edit-footer', title: 'Validaciones y avisos',
+        description: 'Si al guardar falta algo obligatorio, el pie del modal muestra un <strong>aviso amarillo o rojo</strong> con la lista exacta de campos a corregir.', side: 'top' },
+      { tab: '1', selector: '#tour-compras-edit-save', title: 'Guardar / Actualizar',
+        description: 'Confirma la creación. En modo normal el botón pasa de <strong>Guardar</strong> (alta) a <strong>Actualizar</strong> (edición). En esta demo está bloqueado para evitar que se guarde algo de prueba en el sistema.', side: 'top' }
+    ];
+
+    this.esperarSelectores(
+      [
+        '#tour-compras-edit-header',
+        '#tour-compras-edit-tabs',
+        '#tour-compras-edit-row-identidad',
+        '#tour-compras-edit-save'
+      ],
+      3000
+    ).then(() => this.iniciarTourDemoConPestañas(pasos));
+  }
+
+  /**
+   * Construye e inicia un driver.js que cambia de pestaña en función de la dirección de
+   * navegación (Siguiente/Anterior), evitando que `onDeselected` dispare cambios cruzados.
+   * Se intercepta `onNextClick` / `onPrevClick` globales para sincronizar `activeTab`
+   * ANTES de que driver.js resuelva el selector del paso destino.
+   */
+  private iniciarTourDemoConPestañas(pasos: DemoStepDef[]): void {
+    const driveSteps: DriveStep[] = pasos.map((p) => ({
+      element: p.selector,
+      popover: {
+        title: p.title,
+        description: p.description,
+        side: (p.side ?? 'bottom') as 'top' | 'bottom' | 'left' | 'right',
+        align: 'start'
+      }
+    }));
+
+    if (driveSteps.length === 0) {
+      this.finalizarTourDemo();
+      this.modalService.dismissAll();
+      return;
+    }
+
+    const aplicarTabDe = (idx: number): void => {
+      const tab = pasos[idx]?.tab;
+      if (tab && this.activeTab !== tab) {
+        this.activeTab = tab;
+        this.cdr.detectChanges();
+      }
+    };
+
+    this.guidedTourHost.suspendGlobalZoom();
+
+    const inst: Driver = driver({
+      allowClose: true,
+      overlayClickBehavior: () => undefined,
+      allowKeyboardControl: false,
+      showProgress: true,
+      animate: false,
+      smoothScroll: false,
+      stagePadding: 10,
+      overlayOpacity: 0.6,
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Anterior',
+      doneBtnText: 'Finalizar',
+      onNextClick: () => {
+        const cur = inst.getActiveIndex() ?? 0;
+        const next = cur + 1;
+        if (next < driveSteps.length) {
+          aplicarTabDe(next);
+        }
+        inst.moveNext();
+      },
+      onPrevClick: () => {
+        const cur = inst.getActiveIndex() ?? 0;
+        const prev = cur - 1;
+        if (prev < 0) {
+          return;
+        }
+        aplicarTabDe(prev);
+        inst.movePrevious();
+      },
+      onDestroyed: () => {
+        this.tourDemoModalRef?.dismiss();
+        this.finalizarTourDemo();
+        this.guidedTourHost.restoreGlobalZoom();
+      },
+      steps: driveSteps
+    });
+
+    this.tourCompra = inst;
+    aplicarTabDe(0);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        inst.drive();
+      });
+    });
+  }
+
+  /**
+   * Pre-llena el formulario de compra con datos ficticios para el tour, sin tocar el backend.
+   * Forzamos `modoEdicion = true` para que aparezcan las 4 pestañas y la bandera `tourDemoActivo`
+   * bloquea el botón Guardar/Actualizar mientras dure el tour.
+   */
+  private prepararCompraDemo(): void {
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().split('T')[0];
+    const enUnMes = new Date(hoy.getTime() + 30 * 86400000).toISOString().split('T')[0];
+    const enDosAnios = new Date(hoy.getTime() + 730 * 86400000).toISOString().split('T')[0];
+
+    this.tourDemoActivo = true;
+    this.modoEdicion = true;
+    this.activeTab = '1';
+    this.compraModalValidacion = null;
+
+    this.compraForm.reset();
+    this.compraForm.patchValue({
+      idCompra: -1,
+      numeroCompra: 'DEMO-001',
+      idTipoCompra: this.tiposCompraList[0].idTipoCompra,
+      moneda: 'USD',
+      descripcion: 'Compra DEMO para tutorial',
+      fechaInicio: fechaHoy,
+      fechaFinal: enUnMes,
+      monto: 12500,
+      valorDolar: 42.50,
+      ano: hoy.getFullYear()
+    });
+
+    this.itemsFormArray.clear();
+    this.itemsFormArray.push(this.fb.group({
+      nombreItem: ['Notebook DEMO', Validators.required],
+      descripcion: ['Equipo de demostración para el tour'],
+      cantidad: [5, [Validators.required, Validators.min(1)]],
+      mesesGarantia: [12, [Validators.required, Validators.min(0)]],
+      idProveedor: [null, Validators.required],
+      idServicioGarantia: [null, Validators.required],
+      idItem: [-101],
+      precioUnitario: [1500, [Validators.required, Validators.min(0.01)]],
+      monedaPrecio: ['USD', Validators.required],
+      porcentajeIva: [22.00, [Validators.required, Validators.min(0), Validators.max(100)]]
+    }));
+    this.itemsFormArray.push(this.fb.group({
+      nombreItem: ['Monitor 24" DEMO', Validators.required],
+      descripcion: ['Monitor para demostración'],
+      cantidad: [10, [Validators.required, Validators.min(1)]],
+      mesesGarantia: [24, [Validators.required, Validators.min(0)]],
+      idProveedor: [null, Validators.required],
+      idServicioGarantia: [null, Validators.required],
+      idItem: [-102],
+      precioUnitario: [300, [Validators.required, Validators.min(0.01)]],
+      monedaPrecio: ['USD', Validators.required],
+      porcentajeIva: [22.00, [Validators.required, Validators.min(0), Validators.max(100)]]
+    }));
+
+    this.lotesDeLaCompra = [
+      {
+        idItem: -101, nombreItem: 'Notebook DEMO', descripcion: 'Equipo de demostración para el tour',
+        cantidad: 5, mesesGarantia: 12, idProveedor: 0, idServicioGarantia: 0, idCompra: -1,
+        precioUnitario: 1500, monedaPrecio: 'USD', porcentajeIva: 22
+      } as unknown as LoteDTO,
+      {
+        idItem: -102, nombreItem: 'Monitor 24" DEMO', descripcion: 'Monitor para demostración',
+        cantidad: 10, mesesGarantia: 24, idProveedor: 0, idServicioGarantia: 0, idCompra: -1,
+        precioUnitario: 300, monedaPrecio: 'USD', porcentajeIva: 22
+      } as unknown as LoteDTO
+    ];
+
+    this.entregasFormArray.clear();
+    this.entregasFormArray.push(this.fb.group({
+      idEntrega: [-201],
+      idItem: [-101, Validators.required],
+      cantidad: [3, [Validators.required, Validators.min(1)]],
+      descripcion: ['Primera entrega parcial DEMO'],
+      fechaPedido: [fechaHoy, Validators.required],
+      fechaFinGarantia: [enDosAnios, Validators.required]
+    }));
+
+    this.documentosCompra = [];
+    this.descripcionDocumento = '';
+
+    this.cdr.detectChanges();
+  }
+
+  private finalizarTourDemo(): void {
+    if (!this.tourDemoActivo) {
+      return;
+    }
+    this.tourDemoActivo = false;
+    this.modoEdicion = false;
+    this.compraForm.reset();
+    this.itemsFormArray.clear();
+    this.entregasFormArray.clear();
+    this.lotesDeLaCompra = [];
+    this.idItemsOriginales = [];
+    this.idEntregasOriginales = [];
+    this.documentosCompra = [];
+    this.compraModalValidacion = null;
+    this.tourDemoModalRef = undefined;
+    this.cdr.detectChanges();
+  }
+
 } 

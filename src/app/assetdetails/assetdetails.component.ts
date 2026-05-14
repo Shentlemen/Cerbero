@@ -35,6 +35,7 @@ import { StorageDetailsComponent } from '../storage-details/storage-details.comp
 import { VideoDetailsComponent } from '../video-details/video-details.component';
 import { SoftwareDetailsComponent } from '../software-details/software-details.component';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import { TourRegistryService } from '../services/tour-registry.service';
 import type { Driver, DriveStep } from 'driver.js';
 
 interface Asset {
@@ -113,6 +114,7 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   showDeleteHistorialDialog = false;
   historialPendienteEliminar: UbicacionHistorialDTO | null = null;
   private pageTour?: Driver;
+  private tourCleanup?: () => void;
   private returnToAssetsAfterTour = false;
   private readonly loadedComponentTabs = new Set<string>();
   private readonly loadingComponentTabs = new Set<string>();
@@ -148,6 +150,7 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
     private subnetService: SubnetService,
     public permissionsService: PermissionsService,
     private guidedTourHost: GuidedTourHostService,
+    private tourRegistry: TourRegistryService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -158,6 +161,12 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.tourCleanup = this.tourRegistry.register('asset-details', [{
+      id: 'assetdetails-overview',
+      title: 'Tour del detalle del equipo',
+      icon: 'fa-route',
+      run: () => this.iniciarTourDetalleActivo(),
+    }]);
     this.route.paramMap.subscribe(params => {
       const idParam = params.get('id');
       if (idParam) {
@@ -214,7 +223,10 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
     this.pageTour?.destroy();
+    this.pageTour = undefined;
   }
 
   changeTab(tab: string): void {
@@ -950,21 +962,33 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
     requestAnimationFrame(apply);
   }
 
-  /** Reencuadrar pestañas al inicio visible; un solo refresco delegado en GuidedTourHostService. */
+  /**
+   * Asegura que la franja de pestañas técnicas quede visible para el spotlight.
+   *
+   * Antes usábamos `block: 'start'`, que empujaba las pestañas al borde superior
+   * del viewport aunque ya fueran visibles, ocultando la cabecera y dando la
+   * sensación de que la página estaba scrolleada hacia abajo. `block: 'nearest'`
+   * solo desplaza si el elemento no entra completo en pantalla, así no se mueve
+   * cuando la página ya está al inicio (cabecera + pestañas a la vista).
+   */
   private repositionTourTechnicalTabs(driverInst?: Driver): void {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const main = document.querySelector('.main-content');
-    if (main instanceof HTMLElement) {
-      main.scrollTop = 0;
+    const tabsEl = document.querySelector('#tour-assetdetails-tabs');
+    if (tabsEl instanceof HTMLElement && !this.isElementFullyVisible(tabsEl)) {
+      tabsEl.scrollIntoView({
+        behavior: 'auto',
+        block: 'nearest',
+        inline: 'nearest'
+      });
     }
-    document.querySelector('#tour-assetdetails-tabs')?.scrollIntoView({
-      behavior: 'auto',
-      block: 'start',
-      inline: 'nearest'
-    });
     this.guidedTourHost.refreshPopoverLayout(driverInst);
+  }
+
+  /** True si el elemento entra completo (vertical) en el viewport actual. */
+  private isElementFullyVisible(el: HTMLElement): boolean {
+    const rect = el.getBoundingClientRect();
+    const viewportHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    return rect.top >= 0 && rect.bottom <= viewportHeight;
   }
 
   /** Cambio instantáneo de pestaña para el tour (sin animación fade de changeTab). */
@@ -1124,11 +1148,26 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
       );
     }
 
-    steps.push(
-      ...this.guidedTourHost.buildSteps([
-        { selector: '#tour-assetdetails-print', title: 'Exportar PDF', description: 'Genera un reporte técnico completo del activo.', side: 'left' }
-      ])
-    );
+    // Último paso: el botón de exportar PDF está arriba a la derecha de la
+    // ficha. Si dejamos que driver.js lo encuadre automáticamente, lo lleva
+    // al centro del viewport y la página queda scrolleada hacia abajo
+    // mostrando un espacio en blanco arriba. Forzamos el scroll al top
+    // (donde el botón vive naturalmente) y refrescamos el popover.
+    if (document.querySelector('#tour-assetdetails-print')) {
+      steps.push({
+        element: '#tour-assetdetails-print',
+        popover: {
+          title: 'Exportar PDF',
+          description: 'Genera un reporte técnico completo del activo.',
+          side: 'left',
+          align: 'start'
+        },
+        onHighlighted: (_el, _step, opts) => {
+          this.scrollAssetDetailsViewportToTop();
+          this.guidedTourHost.refreshPopoverLayout(opts.driver);
+        }
+      });
+    }
     const inst = this.guidedTourHost.startTour(steps, () => {
       window.scrollTo({ top: 0, behavior: 'auto' });
       document.documentElement.scrollTop = 0;

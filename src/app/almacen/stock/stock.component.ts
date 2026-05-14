@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -14,8 +14,7 @@ import { NotificationContainerComponent } from '../../components/notification-co
 import { AlmacenConfigService } from '../../services/almacen-config.service';
 import { AlmacenConfig, defEstanteria, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
 import { firstValueFrom } from 'rxjs';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-ubicaciones',
@@ -30,7 +29,7 @@ import type { Driver } from 'driver.js';
   templateUrl: './stock.component.html',
   styleUrls: ['./stock.component.css']
 })
-export class UbicacionesComponent implements OnInit {
+export class UbicacionesComponent implements OnInit, OnDestroy {
   stock: StockAlmacen[] = [];
   stockFiltrado: StockAlmacen[] = [];
   almacenes: Almacen[] = [];
@@ -78,7 +77,7 @@ export class UbicacionesComponent implements OnInit {
   estanteriasDisponibles: string[] = [];
   estantesDisponibles: string[] = [];
   divisionesDisponibles: string[] = [];
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private stockAlmacenService: StockAlmacenService,
@@ -93,7 +92,7 @@ export class UbicacionesComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.stockForm = this.fb.group({
       compraId: ['', Validators.required],
@@ -129,6 +128,22 @@ export class UbicacionesComponent implements OnInit {
     this.stockForm.get('estanteria')?.valueChanges.subscribe(() => {
       this.actualizarOpcionesPorEstanteriaSeleccionada();
     });
+
+    this.tourCleanup = this.tourRegistry.register('stock', [{
+      id: 'stock-overview',
+      title: 'Tour de stock global',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-stock-title', title: 'Stock global', description: 'Vista unificada de ítems en almacén: compra, ubicación física (estantería/estante) y cantidades.', side: 'bottom' },
+        { selector: '#tour-stock-search', title: 'Búsqueda', description: 'Buscá por número de equipo, código de stock o nombre de almacén.', side: 'bottom' },
+        { selector: '#tour-stock-table', title: 'Tabla', description: 'Altas y movimientos desde las acciones de cada fila o el botón de registrar stock.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   private actualizarOpcionesPorEstanteriaSeleccionada(): void {
@@ -913,16 +928,4 @@ export class UbicacionesComponent implements OnInit {
     return itemName.toLowerCase().includes(termino);
   }
 
-  iniciarTourStockAlmacen(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-stock-title', title: 'Stock global', description: 'Vista unificada de ítems en almacén: compra, ubicación física (estantería/estante) y cantidades.', side: 'bottom' },
-      { selector: '#tour-stock-search', title: 'Búsqueda', description: 'Buscá por número de equipo, código de stock o nombre de almacén.', side: 'bottom' },
-      { selector: '#tour-stock-table', title: 'Tabla', description: 'Altas y movimientos desde las acciones de cada fila o el botón de registrar stock.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

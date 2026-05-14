@@ -88,3 +88,21 @@
   padding: 0.4em 0.6em;
 }
 
+/* Modo DEMO del modal "Nueva Configuración" */
+:host ::ng-deep .modal-header.config-modal-header--demo {
+  background: linear-gradient(135deg, #fff4e0 0%, #ffe2b0 100%);
+  border-bottom: 2px dashed #ff9800;
+}
+
+:host ::ng-deep .modal-header.config-modal-header--demo .modal-title,
+:host ::ng-deep .modal-header.config-modal-header--demo .modal-title i {
+  color: #b15a00 !important;
+}
+
+:host ::ng-deep .modal-btn-primario--demo {
+  background: #f5f5f5 !important;
+  color: #6c757d !important;
+  border: 1px dashed #adb5bd !important;
+  cursor: not-allowed !important;
+}
+

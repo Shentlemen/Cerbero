@@ -1,12 +1,11 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -16,7 +15,7 @@ import type { Driver } from 'driver.js';
   styleUrls: ['./usuarios.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class UsuariosComponent implements OnInit {
+export class UsuariosComponent implements OnInit, OnDestroy {
   usuariosList: UsuarioDTO[] = [];
   usuariosFiltrados: UsuarioDTO[] = [];
   filterForm: FormGroup;
@@ -32,13 +31,13 @@ export class UsuariosComponent implements OnInit {
   usuarioSeleccionado: UsuarioDTO | null = null;
   showConfirmDialog = false;
   usuarioToDelete: number | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private usuariosService: UsuariosService,
     private fb: FormBuilder,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.filterForm = this.fb.group({
       nombre: [''],
@@ -63,6 +62,21 @@ export class UsuariosComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarUsuarios();
+    this.tourCleanup = this.tourRegistry.register('usuarios', [{
+      id: 'personas-org-overview',
+      title: 'Tour de personas',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-proc-personas-title', title: 'Personas de organización', description: 'Directorio de personas reales (cédula, unidad, cargo) usado para responsables en activos y compras — distinto de usuarios de login Cerbero.', side: 'bottom' },
+        { selector: '#tour-proc-personas-nuevo', title: 'Alta', description: 'Registrá una persona para vincularla después en tipos de activo o formularios.', side: 'left' },
+        { selector: '#tour-proc-personas-table', title: 'Tabla', description: 'Editá datos o eliminá registros; ordená por columnas disponibles.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   cargarUsuarios(): void {
@@ -272,16 +286,4 @@ export class UsuariosComponent implements OnInit {
     }
   }
 
-  iniciarTourPersonasOrganizacion(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-proc-personas-title', title: 'Personas de organización', description: 'Directorio de personas reales (cédula, unidad, cargo) usado para responsables en activos y compras — distinto de usuarios de login Cerbero.', side: 'bottom' },
-      { selector: '#tour-proc-personas-nuevo', title: 'Alta', description: 'Registrá una persona para vincularla después en tipos de activo o formularios.', side: 'left' },
-      { selector: '#tour-proc-personas-table', title: 'Tabla', description: 'Editá datos o eliminá registros; ordená por columnas disponibles.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

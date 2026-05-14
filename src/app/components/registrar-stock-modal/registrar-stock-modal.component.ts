@@ -46,6 +46,8 @@ const numeroODescripcionSiSinItemValidator: ValidatorFn = (group: AbstractContro
 export class RegistrarStockModalComponent implements OnInit {
   @Input() almacenIdPreseleccionado?: number;
   @Input() ubicacionPreseleccionada?: { estanteria: string; estante: string; division: string };
+  /** Si está activo, el modal entra en modo demo: pre-llena datos y bloquea el guardado. */
+  @Input() tourDemoActivo = false;
 
   stockForm: FormGroup;
   almacenes: Almacen[] = [];
@@ -112,10 +114,20 @@ export class RegistrarStockModalComponent implements OnInit {
         this.comprasFiltradas = [...compras];
       }
 
-      const almacenInicial = this.almacenIdPreseleccionado ?? '';
+      let almacenInicial: number | '' = this.almacenIdPreseleccionado ?? '';
+      if (this.tourDemoActivo && !almacenInicial && this.almacenes.length > 0) {
+        almacenInicial = Number(this.almacenes[0].id);
+      }
       this.stockForm.patchValue({ almacenId: almacenInicial });
-      if (this.almacenIdPreseleccionado) {
-        this.cargarConfiguracionAlmacen(this.almacenIdPreseleccionado);
+      if (almacenInicial) {
+        this.cargarConfiguracionAlmacen(Number(almacenInicial));
+      }
+      if (this.tourDemoActivo) {
+        this.stockForm.patchValue({
+          cantidad: 2,
+          numero: 'PC14563',
+          descripcion: 'Equipo de demostración para el tutorial'
+        });
       }
       this.stockForm.get('almacenId')?.valueChanges.subscribe(almacenId => {
         if (almacenId) {
@@ -174,6 +186,16 @@ export class RegistrarStockModalComponent implements OnInit {
               division: this.ubicacionPreseleccionada.division
             }, { emitEvent: false });
             this.actualizarOpcionesPorEstanteriaSeleccionada();
+          } else if (this.tourDemoActivo && this.estanteriasDisponibles.length > 0) {
+            this.stockForm.patchValue({ estanteria: this.estanteriasDisponibles[0] }, { emitEvent: false });
+            this.actualizarOpcionesPorEstanteriaSeleccionada();
+            if (this.estantesDisponibles.length > 0) {
+              this.stockForm.patchValue({ estante: this.estantesDisponibles[0] }, { emitEvent: false });
+              this.actualizarOpcionesPorEstanteriaSeleccionada();
+            }
+            if (this.divisionesDisponibles.length > 0) {
+              this.stockForm.patchValue({ division: this.divisionesDisponibles[0] }, { emitEvent: false });
+            }
           }
         } else {
           this.configAlmacenActual = null;
@@ -336,6 +358,10 @@ export class RegistrarStockModalComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.tourDemoActivo) {
+      this.activeModal.dismiss();
+      return;
+    }
     this.stockForm.markAllAsTouched();
     if (!this.isFormValid() || this.guardando) return;
     this.guardando = true;

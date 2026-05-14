@@ -1,12 +1,11 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-tipos-compra',
@@ -16,7 +15,7 @@ import type { Driver } from 'driver.js';
   styleUrls: ['./tipos-compra.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class TiposCompraComponent implements OnInit {
+export class TiposCompraComponent implements OnInit, OnDestroy {
   tiposCompraList: TipoDeCompraDTO[] = [];
   tiposCompraFiltrados: TipoDeCompraDTO[] = [];
   tipoCompraForm: FormGroup;
@@ -31,13 +30,13 @@ export class TiposCompraComponent implements OnInit {
   tipoCompraSeleccionado: TipoDeCompraDTO | null = null;
   showConfirmDialog = false;
   tipoCompraToDelete: number | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private tiposCompraService: TiposCompraService,
     private fb: FormBuilder,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.tipoCompraForm = this.fb.group({
       descripcion: ['', Validators.required],
@@ -47,6 +46,21 @@ export class TiposCompraComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadTiposCompra();
+    this.tourCleanup = this.tourRegistry.register('tipos-compra', [{
+      id: 'tipos-compra-overview',
+      title: 'Tour de tipos de compra',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-tipos-compra-title', title: 'Tipos de compra', description: 'Clasificación para filtros y etiquetas en órdenes de compra (descripción y abreviatura opcional).', side: 'bottom' },
+        { selector: '#tour-tipos-compra-nuevo', title: 'Nuevo tipo', description: 'Alta desde modal; luego aparecerá en chips de compras.', side: 'left' },
+        { selector: '#tour-tipos-compra-table', title: 'Tabla', description: 'Editá o eliminá tipos existentes.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadTiposCompra(): void {
@@ -212,16 +226,4 @@ export class TiposCompraComponent implements OnInit {
     this.tipoCompraToDelete = null;
   }
 
-  iniciarTourTiposCompra(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-tipos-compra-title', title: 'Tipos de compra', description: 'Clasificación para filtros y etiquetas en órdenes de compra (descripción y abreviatura opcional).', side: 'bottom' },
-      { selector: '#tour-tipos-compra-nuevo', title: 'Nuevo tipo', description: 'Alta desde modal; luego aparecerá en chips de compras.', side: 'left' },
-      { selector: '#tour-tipos-compra-table', title: 'Tabla', description: 'Editá o eliminá tipos existentes.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

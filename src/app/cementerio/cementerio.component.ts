@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -19,8 +19,7 @@ import { FormularioBajaModalComponent, DatosBaja } from '../components/formulari
 import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-cementerio',
@@ -30,7 +29,7 @@ import type { Driver } from 'driver.js';
   styleUrls: ['./cementerio.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class CementerioComponent implements OnInit {
+export class CementerioComponent implements OnInit, OnDestroy {
 
   equiposEnBaja: any[] = [];
   equiposFiltrados: any[] = [];
@@ -65,7 +64,7 @@ export class CementerioComponent implements OnInit {
   editingObservacionesId: string | number | null = null;
   editingObservacionesValue: string = '';
   updatingObservaciones: boolean = false;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private hardwareService: HardwareService,
@@ -78,7 +77,7 @@ export class CementerioComponent implements OnInit {
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
@@ -88,6 +87,29 @@ export class CementerioComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadItemsEnBaja();
+    this.tourCleanup = this.tourRegistry.register('cementerio', [{
+      id: 'cementerio-overview',
+      title: 'Tour del cementerio',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-cementerio-title', title: 'Cementerio', description: 'Equipos y dispositivos dados de baja operativamente; no aparecen en inventario activo.', side: 'bottom' },
+        { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Alterná entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
+        { selector: '#tour-cementerio-search', title: 'Búsqueda', description: 'Filtrá por nombre para ubicar un registro.', side: 'bottom' },
+        { selector: '#tour-cementerio-table', title: 'Tabla', description: 'Cada fila trae sus acciones: imprimir baja, transferir y reactivar (según permisos). También podés editar observaciones en línea.', side: 'top' },
+        { selector: '.imprimir-baja-btn', title: 'Imprimir baja',
+          description: 'Genera el <strong>formulario F-890 de baja</strong> del equipo para archivo/firma. Sólo aparece en filas de tipo <em>Equipo</em>.', side: 'top' },
+        { selector: '.transferir-btn', title: 'Transferir',
+          description: '<strong>Saca al equipo del cementerio</strong> y lo manda al almacén que elijas (regular o laboratorio). El historial de baja queda registrado.', side: 'top' },
+        { selector: '.reactivar-btn', title: 'Reactivar',
+          description: 'Devuelve el equipo o dispositivo al <strong>inventario activo</strong>. Pide confirmación antes de volverlo a poner en circulación.', side: 'top' },
+        { selector: '#tour-cementerio-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadItemsEnBaja(): void {
@@ -834,18 +856,4 @@ export class CementerioComponent implements OnInit {
     );
   }
 
-  iniciarTourCementerio(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-cementerio-title', title: 'Cementerio', description: 'Equipos y dispositivos dados de baja operativamente; no aparecen en inventario activo.', side: 'bottom' },
-      { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Alterná entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
-      { selector: '#tour-cementerio-search', title: 'Búsqueda', description: 'Filtrá por nombre para ubicar un registro.', side: 'bottom' },
-      { selector: '#tour-cementerio-table', title: 'Tabla', description: 'Reactivá, transferí o editá observaciones según permisos.', side: 'top' },
-      { selector: '#tour-cementerio-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

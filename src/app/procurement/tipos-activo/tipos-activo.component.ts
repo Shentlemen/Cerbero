@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -6,8 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../../services/tour-registry.service';
 
 @Component({
   selector: 'app-tipos-activo',
@@ -16,7 +15,7 @@ import type { Driver } from 'driver.js';
   templateUrl: './tipos-activo.component.html',
   styleUrls: ['./tipos-activo.component.css']
 })
-export class TiposActivoComponent implements OnInit {
+export class TiposActivoComponent implements OnInit, OnDestroy {
   @ViewChild('tipoActivoModal') tipoActivoModal: any;
 
   tiposActivoList: TipoDeActivoDTO[] = [];
@@ -34,14 +33,14 @@ export class TiposActivoComponent implements OnInit {
   tipoActivoSeleccionado: TipoDeActivoDTO | null = null;
   showConfirmDialog = false;
   tipoActivoToDelete: number | null = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private tiposActivoService: TiposActivoService,
     private usuariosService: UsuariosService,
     private modalService: NgbModal,
     private fb: FormBuilder,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.tipoActivoForm = this.fb.group({
       descripcion: ['', [Validators.required]],
@@ -52,6 +51,21 @@ export class TiposActivoComponent implements OnInit {
   ngOnInit(): void {
     this.cargarUsuarios();
     this.cargarTiposActivo();
+    this.tourCleanup = this.tourRegistry.register('tipos-activo', [{
+      id: 'tipos-activo-overview',
+      title: 'Tour de tipos de activo',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-tipos-activo-title', title: 'Tipos de activo', description: 'Catálogo usado al dar de alta equipos en inventario Cerbero; cada tipo puede tener usuario responsable por defecto.', side: 'bottom' },
+        { selector: '#tour-tipos-activo-nuevo', title: 'Nuevo tipo', description: 'Creá descripción y vinculá el usuario responsable automático en altas.', side: 'left' },
+        { selector: '#tour-tipos-activo-table', title: 'Listado', description: 'Editá o eliminá tipos; impacta formularios de activos y reglas de asignación.', side: 'top' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   cargarUsuarios(): void {
@@ -216,16 +230,4 @@ export class TiposActivoComponent implements OnInit {
     this.tipoActivoToDelete = null;
   }
 
-  iniciarTourTiposActivo(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-tipos-activo-title', title: 'Tipos de activo', description: 'Catálogo usado al dar de alta equipos en inventario Cerbero; cada tipo puede tener usuario responsable por defecto.', side: 'bottom' },
-      { selector: '#tour-tipos-activo-nuevo', title: 'Nuevo tipo', description: 'Creá descripción y vinculá el usuario responsable automático en altas.', side: 'left' },
-      { selector: '#tour-tipos-activo-table', title: 'Listado', description: 'Editá o eliminá tipos; impacta formularios de activos y reglas de asignación.', side: 'top' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 } 

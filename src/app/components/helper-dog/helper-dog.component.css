@@ -27,6 +27,33 @@
   border-color: #2196F3;
 }
 
+/* Cuando hay tours en la sección actual el perro hace un pulso sutil
+   para indicar al usuario que se puede clickear. */
+.helper-dog-image.has-tours {
+  border-color: rgba(102, 126, 234, 0.7);
+  animation: dogPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dogPulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                0 0 0 0 rgba(102, 126, 234, 0.45);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                0 0 0 12px rgba(102, 126, 234, 0);
+  }
+}
+
+/* Mientras el menú radial está abierto desactivamos el pulso (sería ruidoso)
+   y damos al perro un anillo permanente para indicar estado activo. */
+.helper-dog.menu-open .helper-dog-image {
+  animation: none;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+              0 0 0 4px rgba(102, 126, 234, 0.25);
+}
+
 .helper-dog-image.bounce {
   animation: bounce 0.6s ease-in-out;
 }
@@ -511,4 +538,154 @@
   }
   
 
-} 
+}
+
+/* =========================================================================
+   Menú radial de tours
+   ========================================================================= */
+
+/* Badge contador sobre el perro: cantidad de tours disponibles. */
+.tour-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  z-index: 2;
+  pointer-events: none;
+  animation: badgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Capa raíz del menú radial: ocupa el centro del perro como origen polar. */
+.radial-menu {
+  position: absolute;
+  top: 50px;   /* mitad de la imagen (100px) */
+  left: 50px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Cada slot lleva el translate radial; el botón interno hace el scale al hover.
+   Separar los transforms evita conflictos entre posicionamiento y feedback.
+   La animación de entrada sale "desde el perro" (escala 0 + opacity 0) para
+   que se sienta que las burbujas brotan del icono y no aparecen lejos. */
+.radial-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(0, 0);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: radialSlotIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: 0 0;
+}
+
+@keyframes radialSlotIn {
+  from { opacity: 0; scale: 0.4; }
+  to   { opacity: 1; scale: 1; }
+}
+
+.radial-item {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px; /* centra el botón sobre la coord polar */
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.radial-item:hover {
+  transform: scale(1.12);
+  background: linear-gradient(135deg, #7b8df0 0%, #8a5fbf 100%);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.45);
+}
+
+.radial-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px rgba(102, 126, 234, 0.6);
+}
+
+.radial-item:active {
+  transform: scale(0.95);
+}
+
+/* Etiqueta al lado del botón radial. Aparece en hover/focus para no
+   ensuciar la pantalla cuando el menú se abre. */
+.radial-label {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  background: rgba(30, 30, 40, 0.92);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.radial-label::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: rgba(30, 30, 40, 0.92);
+}
+
+.radial-item:hover .radial-label,
+.radial-item:focus-visible .radial-label {
+  opacity: 1;
+  transform: translateY(-50%) translateX(2px);
+}
+
+/* Responsive: en mobile reducimos el radio y el tamaño de cada botón. */
+@media (max-width: 768px) {
+  .radial-menu {
+    top: 40px;
+    left: 40px;
+  }
+  .radial-item {
+    width: 48px;
+    height: 48px;
+    margin: -24px 0 0 -24px;
+    font-size: 16px;
+  }
+  .radial-label {
+    display: none; /* en pantallas chicas se confía en el title nativo */
+  }
+}

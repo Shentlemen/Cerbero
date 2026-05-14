@@ -5,9 +5,6 @@
       <div class="title-wrapper flex-grow-1">
         <h1 id="tour-proveedores-title"><i class="fas fa-industry"></i> Gestión de Proveedores</h1>
       </div>
-      <button type="button" class="btn btn-sm btn-outline-secondary btn-tour-guided align-self-start" (click)="iniciarTourProveedores()">
-        <i class="fas fa-route"></i> Tour guiado
-      </button>
       </div>
       <div class="actions" *ngIf="canManageProviders()">
         <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-proveedores-nuevo" (click)="abrirModal(proveedorModal)">
@@ -177,14 +174,19 @@
 
 <!-- Modal para crear/editar proveedor -->
 <ng-template #proveedorModal let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Proveedor</h4>
+  <div class="modal-header" id="tour-prov-edit-header" [class.proveedor-form-modal-header--demo]="tourDemoActivo">
+    <h4 class="modal-title">
+      <ng-container *ngIf="tourDemoActivo; else tituloProvNormal">
+        <i class="fas fa-graduation-cap me-2"></i>Proveedor DEMO — Tour de creación
+      </ng-container>
+      <ng-template #tituloProvNormal>{{modoEdicion ? 'Editar' : 'Nuevo'}} Proveedor</ng-template>
+    </h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
-  <div class="modal-body">
-    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs">
+  <div class="modal-body" id="tour-prov-edit-body">
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs" id="tour-prov-edit-tabs">
       <li [ngbNavItem]="1">
-        <a ngbNavLink>Datos del proveedor</a>
+        <a ngbNavLink id="tour-prov-edit-tab-datos">Datos del proveedor</a>
         <ng-template ngbNavContent>
           <div class="proveedor-card">
             <div class="proveedor-card-header">
@@ -195,7 +197,7 @@
             </div>
             <div class="proveedor-card-body">
               <form [formGroup]="proveedorForm">
-                <div class="row">
+                <div class="row" id="tour-prov-edit-row-nombres">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
                       <i class="fas fa-building me-1"></i>Nombre
@@ -212,7 +214,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="row">
+                <div class="row" id="tour-prov-edit-row-rut-web">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
                       <i class="fas fa-id-card me-1"></i>RUT
@@ -229,7 +231,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="row">
+                <div class="row" id="tour-prov-edit-row-web-venta">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
                       <i class="fas fa-shopping-cart me-1"></i>Sitio Web de Ventas
@@ -240,7 +242,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="row">
+                <div class="row" id="tour-prov-edit-row-contacto-empresa">
                   <div class="col-md-6 mb-3">
                     <label class="form-label">
                       <i class="fas fa-envelope me-1"></i>Correo de Contacto
@@ -260,7 +262,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="row">
+                <div class="row" id="tour-prov-edit-row-direccion">
                   <div class="col-12 mb-3">
                     <label class="form-label">
                       <i class="fas fa-map-marker-alt me-1"></i>Dirección
@@ -271,7 +273,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="row">
+                <div class="row" id="tour-prov-edit-row-observaciones">
                   <div class="col-12 mb-3">
                     <label class="form-label">
                       <i class="fas fa-comment me-1"></i>Observaciones
@@ -285,18 +287,19 @@
         </ng-template>
       </li>
       <li [ngbNavItem]="2">
-        <a ngbNavLink>Contactos</a>
+        <a ngbNavLink id="tour-prov-edit-tab-contactos">Contactos</a>
         <ng-template ngbNavContent>
           <div *ngIf="contactosCargados">
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2" id="tour-prov-edit-contactos-toolbar">
               <h6 class="mb-0">Contactos del proveedor <span class="text-danger">*</span></h6>
-              <button class="btn btn-success btn-sm" (click)="agregarContacto()">
+              <button class="btn btn-success btn-sm" id="tour-prov-edit-contactos-add" (click)="agregarContacto()">
                 <i class="fas fa-plus"></i> Agregar contacto
               </button>
             </div>
 
             <div class="contactos-cards-container">
-              <div *ngFor="let contacto of contactosControls; let i = index" [formGroup]="contacto" class="contacto-card">
+              <div *ngFor="let contacto of contactosControls; let i = index" [formGroup]="contacto" class="contacto-card"
+                   [attr.id]="i === 0 ? 'tour-prov-edit-contacto-card' : null">
                 <div class="contacto-card-header">
                   <h6 class="mb-0">
                     <i class="fas fa-user me-2"></i>
@@ -308,7 +311,7 @@
                 </div>
                 
                 <div class="contacto-card-body">
-                  <div class="row">
+                  <div class="row" [attr.id]="i === 0 ? 'tour-prov-edit-contacto-row-nombre' : null">
                     <div class="col-md-6 mb-3">
                       <label class="form-label">
                         <i class="fas fa-user me-1"></i>Nombre <span class="text-danger">*</span>
@@ -327,7 +330,7 @@
                     </div>
                   </div>
                   
-                  <div class="row">
+                  <div class="row" [attr.id]="i === 0 ? 'tour-prov-edit-contacto-row-email' : null">
                     <div class="col-md-6 mb-3">
                       <label class="form-label">
                         <i class="fas fa-envelope me-1"></i>Email
@@ -346,7 +349,7 @@
                     </div>
                   </div>
                   
-                  <div class="row">
+                  <div class="row" [attr.id]="i === 0 ? 'tour-prov-edit-contacto-row-obs' : null">
                     <div class="col-12 mb-3">
                       <label class="form-label">
                         <i class="fas fa-comment me-1"></i>Observaciones
@@ -374,7 +377,7 @@
     </ul>
     <div [ngbNavOutlet]="nav"></div>
   </div>
-  <div class="modal-footer proveedor-form-modal-footer-stack">
+  <div class="modal-footer proveedor-form-modal-footer-stack" id="tour-prov-edit-footer">
     <div *ngIf="proveedorModalValidacion" class="proveedor-form-modal-validacion">
       <div
         class="alert mb-0 py-2 px-3 small"
@@ -390,14 +393,21 @@
       </div>
     </div>
     <div class="proveedor-form-modal-footer-actions">
-      <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">{{ tourDemoActivo ? 'Cerrar tour' : 'Cancelar' }}</button>
       <button
         type="button"
         class="btn btn-sm modal-btn-primario"
+        id="tour-prov-edit-save"
         (click)="guardarProveedor()"
-        [class.modal-btn-primario--valid]="proveedorForm.valid"
-        [class.modal-btn-primario--invalid]="!proveedorForm.valid">
-        {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+        [disabled]="tourDemoActivo"
+        [title]="tourDemoActivo ? 'En modo DEMO no se guardan cambios' : ''"
+        [class.modal-btn-primario--valid]="proveedorForm.valid && !tourDemoActivo"
+        [class.modal-btn-primario--invalid]="!proveedorForm.valid && !tourDemoActivo"
+        [class.modal-btn-primario--demo]="tourDemoActivo">
+        <ng-container *ngIf="tourDemoActivo; else textoGuardarProv">
+          <i class="fas fa-lock me-1"></i>Modo DEMO
+        </ng-container>
+        <ng-template #textoGuardarProv>{{ modoEdicion ? 'Actualizar' : 'Guardar' }}</ng-template>
       </button>
     </div>
   </div>

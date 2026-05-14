@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -21,7 +21,7 @@ import { catchError, of } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 import type { DriveStep } from 'driver.js';
 
 @Component({
@@ -32,7 +32,7 @@ import type { DriveStep } from 'driver.js';
   styleUrls: ['./assets.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class AssetsComponent implements OnInit {
+export class AssetsComponent implements OnInit, OnDestroy {
 
   assetsList: any[] = [];
   assetsFiltrados: any[] = [];
@@ -44,7 +44,7 @@ export class AssetsComponent implements OnInit {
   pageSize = 20;
   collectionSize = 0;
   loading: boolean = true; // Agregar propiedad loading
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   totalAssets: number = 0; // Declaración de la propiedad
   pcCount: number = 0;     // Declaración de la propiedad
@@ -85,7 +85,8 @@ export class AssetsComponent implements OnInit {
     private estadoEquipoService: EstadoEquipoService,
     private authService: AuthService,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private guidedTourHost: GuidedTourHostService,
+    private tourRegistry: TourRegistryService
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -118,6 +119,34 @@ export class AssetsComponent implements OnInit {
         });
       }
     });
+
+    // Registramos el tour en el helper-dog (menú radial). El closure mantiene
+    // acceso a `this.pagedAssets` / `this.router` para el paso final.
+    this.tourCleanup = this.tourRegistry.register('assets', [
+      {
+        id: 'terminales-overview',
+        title: 'Tour de inventario',
+        icon: 'fa-route',
+        description: 'Recorrido general de la pantalla de terminales.',
+        buildSteps: () => this.buildTourTerminales(),
+        // Al cerrar/finalizar el tour la pantalla suele quedar scrolleada
+        // sobre la tabla o el botón de PDF; la volvemos al inicio para que
+        // la próxima interacción del usuario arranque desde arriba.
+        afterEnd: () => this.resetScrollToTop(),
+      },
+      {
+        id: 'terminales-detalle',
+        title: 'Cómo entrar al detalle de un equipo',
+        icon: 'fa-microchip',
+        description: 'Abre la ficha del primer activo y recorre sus pestañas.',
+        run: () => this.runTourDetalleEquipo(),
+      },
+    ]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   private applyFilterFromParams(filterType: string, filterValue: string): void {
@@ -913,8 +942,12 @@ export class AssetsComponent implements OnInit {
     );
   }
 
-  iniciarTourTerminales(): void {
-    this.pageTour?.destroy();
+  /**
+   * Arma los pasos del tour de Inventario de Terminales.
+   * Se invoca desde el `TourRegistryService` cuando el usuario elige el tour
+   * en el menú radial del helper-dog.
+   */
+  private buildTourTerminales(): DriveStep[] {
     const steps: DriveStep[] = [];
 
     steps.push(
@@ -943,28 +976,50 @@ export class AssetsComponent implements OnInit {
       steps.push({
         element: '#tour-assets-table',
         popover: {
-          title: 'Entrar al detalle de un equipo',
-          description: 'Ahora vamos a abrir un activo para ver su ficha y hacer un paseo por las pestañas (General, BIOS, CPU, Unidades, Memoria, etc.).',
+          title: 'Tabla de equipos',
+          description: 'Cada fila es un terminal. Para recorrer la ficha de detalle, elegí «Cómo entrar al detalle de un equipo» en el menú del perro.',
           side: 'top',
-          align: 'start',
-          onNextClick: (_el, _step, ctx) => {
-            const firstAsset = this.pagedAssets[0] || this.assetsFiltrados[0];
-            if (firstAsset?.id) {
-              sessionStorage.setItem('cerbero:start-asset-details-tour', '1');
-              sessionStorage.setItem('cerbero:return-to-assets-after-details-tour', '1');
-              this.pageTour?.destroy();
-              this.router.navigate(['/menu/asset-details', firstAsset.id]);
-              return;
-            }
-            ctx.driver.moveNext();
-          }
+          align: 'start'
         }
       });
     }
 
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
+    return steps;
+  }
+
+  private runTourDetalleEquipo(): void {
+    const firstAsset = this.pagedAssets[0] || this.assetsFiltrados[0];
+    if (!firstAsset?.id) {
+      this.notificationService.showInfo(
+        'Detalle de equipo',
+        'No hay equipos disponibles para abrir el detalle. Ajustá los filtros e intentá de nuevo.'
+      );
+      return;
     }
+    sessionStorage.setItem('cerbero:start-asset-details-tour', '1');
+    sessionStorage.setItem('cerbero:return-to-assets-after-details-tour', '1');
+    this.router.navigate(['/menu/asset-details', firstAsset.id]);
+  }
+
+  /**
+   * Vuelve la pantalla al inicio cuando el tour finaliza.
+   *
+   * El host del tour aplica `body.no-global-zoom` para suspender el `zoom: 0.8`
+   * global durante el recorrido y lo restaura justo después de llamar a
+   * `afterEnd`. Si scrolleamos en el mismo tick, ese cambio de escala cancela
+   * el smooth y a veces el browser decide quedarse donde estaba. Esperamos
+   * dos frames para que el layout vuelva a su escala normal y recién entonces
+   * disparamos el scroll.
+   */
+  private resetScrollToTop(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {
+          window.scrollTo(0, 0);
+        }
+      });
+    });
   }
 }

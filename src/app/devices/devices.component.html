@@ -8,9 +8,6 @@
         <h1 id="tour-devices-title"><i class="fas fa-network-wired"></i> Dispositivos de Red</h1>
         
         <div class="d-flex align-items-center gap-2 ms-auto">
-          <button type="button" class="btn btn-outline-secondary btn-sm btn-tour-guided" (click)="iniciarTourDispositivos()">
-            <i class="fas fa-route"></i> Tour guiado
-          </button>
           <!-- Botón de imprimir/exportar PDF -->
           <button 
             class="btn btn-primary btn-sm print-btn" 
@@ -29,24 +26,24 @@
       <div class="filters-container" id="tour-devices-filters">
         <button 
           class="filter-btn" 
-          [class.active]="isFilterActive('all')"
+          [class.active]="activeFilter === 'all'"
           (click)="applyFilter('all')">
           <i class="fas fa-th-large"></i>
           <span>Todos</span>
-          <span class="count">({{getDeviceCount('all')}})</span>
+          <span class="count">({{ deviceCountsByType['all'] || 0 }})</span>
         </button>
         
         <button 
-          *ngFor="let deviceType of deviceTypes" 
+          *ngFor="let deviceType of deviceTypes; trackBy: trackByTypeName" 
           class="filter-btn" 
-          [class.active]="isFilterActive(deviceType.name)"
+          [class.active]="activeFilter === deviceType.name"
           [style.--device-color]="deviceType.color"
           [style.--device-bg-color]="deviceType.backgroundColor"
           [style.--device-border-color]="deviceType.borderColor"
           (click)="applyFilter(deviceType.name)">
           <i class="fas" [ngClass]="deviceType.icon" [style.color]="deviceType.color"></i>
-          <span>{{deviceType.name}}</span>
-          <span class="count">({{getDeviceCount(deviceType.name)}})</span>
+          <span>{{ deviceType.name }}</span>
+          <span class="count">({{ deviceCountsByType[deviceType.name] || 0 }})</span>
         </button>
       </div>
     </div>
@@ -147,12 +144,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let device of pagedDevices" class="device-row" (click)="verDetallesDevice(device)">
+          <tr *ngFor="let device of pagedDevices; let i = index; trackBy: trackByDeviceMac" class="device-row" (click)="verDetallesDevice(device)">
             <td>
               <div class="device-name">
                 <i class="fas" 
-                   [ngClass]="getDeviceIcon(device).icon"
-                   [style.color]="getDeviceIcon(device).color"></i>
+                   [ngClass]="pagedDeviceTypes[i].icon"
+                   [style.color]="pagedDeviceTypes[i].color"></i>
                 <span>{{ device.name }}</span>
               </div>
             </td>
@@ -164,9 +161,9 @@
             </td>
             <td>
               <span class="type-badge" 
-                    [style.background-color]="getDeviceTypeConfig(device.type).backgroundColor"
-                    [style.color]="getDeviceTypeConfig(device.type).color"
-                    [style.border-color]="getDeviceTypeConfig(device.type).borderColor">
+                    [style.background-color]="pagedDeviceTypes[i].backgroundColor"
+                    [style.color]="pagedDeviceTypes[i].color"
+                    [style.border-color]="pagedDeviceTypes[i].borderColor">
                 {{ device.type }}
               </span>
             </td>
@@ -240,7 +237,8 @@
     <!-- Paginación -->
     <div *ngIf="!loading && !errorMessage && collectionSize > pageSize" class="pagination-container">
       <ngb-pagination
-        [(page)]="page"
+        [page]="page"
+        (pageChange)="onPageChange($event)"
         [pageSize]="pageSize"
         [collectionSize]="collectionSize"
         [boundaryLinks]="true"

@@ -1,16 +1,46 @@
-<div class="helper-dog">
-  <!-- Mascota / acceso futuro a tutoriales por contexto (driver.js vía HelperService / registry). -->
+<div class="helper-dog" [class.menu-open]="showRadialMenu">
+  <!-- Mascota / acceso a tutoriales por contexto (driver.js vía TourRegistryService). -->
   <div class="helper-dog-container">
     <div class="speech-bubble woof-message" *ngIf="showWoofMessage">
       <div class="woof-content">
         <span class="woof-text">WOOF!</span>
       </div>
     </div>
+
+    <!-- Menú radial: un botón por cada tour disponible en la sección actual. -->
+    <div class="radial-menu" *ngIf="showRadialMenu" role="menu" aria-label="Tours guiados disponibles">
+      <div
+        *ngFor="let tour of availableTours; let i = index; trackBy: trackByTour"
+        class="radial-slot"
+        [style.transform]="getRadialTransform(i, availableTours.length)"
+        [style.transition-delay.ms]="i * 40">
+        <button
+          type="button"
+          class="radial-item"
+          role="menuitem"
+          (click)="onTourClick(tour, $event)"
+          [attr.aria-label]="tour.title"
+          [title]="tour.title">
+          <i class="fas" [ngClass]="tour.icon || 'fa-route'"></i>
+          <span class="radial-label">{{ tour.title }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Badge contador: indica al usuario que el perro tiene tours para esta pantalla. -->
+    <span
+      *ngIf="availableTours.length > 0 && !showRadialMenu"
+      class="tour-badge"
+      [attr.aria-label]="availableTours.length + ' tours disponibles'">
+      {{ availableTours.length }}
+    </span>
+
     <img
       src="assets/awoo-awoo-shoppe.gif"
       alt="Asistente"
       class="helper-dog-image"
       [class.bounce]="isBouncing"
-      (click)="onDogClick()">
+      [class.has-tours]="availableTours.length > 0 && !showRadialMenu"
+      (click)="onDogClick($event)">
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
@@ -20,7 +20,7 @@ import { AuthService } from '../services/auth.service';
 import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
 import { MaintenanceService } from '../services/maintenance.service';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 import type { DriveStep } from 'driver.js';
 
 declare var bootstrap: any;
@@ -45,7 +45,7 @@ interface ApiResponse<T> {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('chartModal', { static: true }) chartModal!: TemplateRef<any>;
   
   pieChartOptions: any;
@@ -64,7 +64,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   expandedChartTitle: string = '';
   expandedChartOptions: any = null;
   private activeModalRef: any = null;
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   private typeMap: Record<string, string> = {
     '0': 'PC',
@@ -88,7 +88,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private authService: AuthService,
     private estadoDispositivoService: EstadoDispositivoService,
     private maintenanceService: MaintenanceService,
-    private guidedTourHost: GuidedTourHostService
+    private guidedTourHost: GuidedTourHostService,
+    private tourRegistry: TourRegistryService
   ) {}
 
   private getResponsiveFontSize(base: number): number {
@@ -100,6 +101,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.registerDashboardTour();
     this.loadAlertas();
     forkJoin({
       hardware: this.hardwareService.getActiveHardware(),
@@ -1221,8 +1223,33 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
   }
 
-  iniciarTourPanel(): void {
-    this.pageTour?.destroy();
+  /**
+   * Registra el tour de Panel de Control en el helper-dog (menú radial).
+   * Los hooks `beforeStart`/`afterEnd` resetean el scroll para que el spotlight
+   * del primer/último step no quede contra el final de la página.
+   */
+  private registerDashboardTour(): void {
+    this.tourCleanup = this.tourRegistry.register('dashboard', [
+      {
+        id: 'panel-overview',
+        title: 'Tour del panel',
+        icon: 'fa-route',
+        description: 'Recorrido por las secciones del panel de control.',
+        buildSteps: () => this.buildTourPanel(),
+        beforeStart: () => this.resetScroll(),
+        afterEnd: () => this.resetScroll(),
+      },
+    ]);
+  }
+
+  private resetScroll(): void {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
+
+  /** Arma los pasos del tour del Panel (overview → acciones → alertas). */
+  private buildTourPanel(): DriveStep[] {
     const steps = this.guidedTourHost.buildSteps([
       {
         selector: '#tour-dashboard-title',
@@ -1240,10 +1267,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       }
     ]);
 
-    const actionSteps = this.buildDashboardActionsSteps();
-    steps.push(...actionSteps);
+    steps.push(...this.buildDashboardActionsSteps());
 
-    const alertsSteps = this.guidedTourHost.buildSteps([
+    steps.push(...this.guidedTourHost.buildSteps([
       {
         selector: '#tour-dashboard-alerts',
         title: 'Alertas recientes',
@@ -1251,22 +1277,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           'Debajo tenés la lista de alertas detectadas (hardware, disco, red, software, etc.) y los filtros por tipo para enfocarte en lo urgente.',
         side: 'top'
       }
-    ]);
-    steps.push(...alertsSteps);
+    ]));
 
-    // Evita iniciar el tour ya scrolleado hacia abajo.
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    const inst = this.guidedTourHost.startTour(steps, () => {
-      window.scrollTo({ top: 0, behavior: 'auto' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-    if (inst) {
-      this.pageTour = inst;
-    }
+    return steps;
   }
 
   private buildDashboardActionsSteps(): DriveStep[] {
@@ -1308,8 +1321,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           align: 'start'
         },
         onHighlighted: () => {
+          // Scroll arriba ante cada paso; driver.js reposiciona el popover solo.
           window.scrollTo({ top: 0, behavior: 'auto' });
-          this.guidedTourHost.refreshPopoverLayout(this.pageTour);
         }
       });
     }
@@ -1325,11 +1338,15 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         },
         onHighlighted: () => {
           window.scrollTo({ top: 0, behavior: 'auto' });
-          this.guidedTourHost.refreshPopoverLayout(this.pageTour);
         }
       });
     }
 
     return steps;
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 }

@@ -18,8 +18,7 @@ import { TransferirEquipoModalComponent } from '../components/transferir-equipo-
 import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { GuidedTourHostService } from '../services/guided-tour-host.service';
-import type { Driver } from 'driver.js';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-almacen-laboratorio',
@@ -65,7 +64,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
   editingObservacionesValue: string = '';
   updatingObservaciones: boolean = false;
 
-  private pageTour?: Driver;
+  private tourCleanup?: () => void;
 
   constructor(
     private hardwareService: HardwareService,
@@ -79,7 +78,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
     private modalService: NgbModal,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
@@ -89,10 +88,27 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadItemsEnAlmacen();
+    this.tourCleanup = this.tourRegistry.register('almacen-laboratorio', [{
+      id: 'almacen-laboratorio-overview',
+      title: 'Tour del almacén laboratorio',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-almacen-lab-title', title: 'Almacén laboratorio', description: 'Equipos y dispositivos en almacén (distinto del cementerio): pendientes de ubicación operativa.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Filtrá por todos, solo equipos o solo dispositivos de red.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Cada fila muestra los datos del equipo o dispositivo y, según tus permisos, los botones de acción a la derecha.', side: 'top' },
+        { selector: '.transferir-btn', title: 'Transferir',
+          description: 'Mueve el equipo a <strong>otro almacén</strong> (cementerio o almacén regular). Útil cuando ya está listo para asignarse o cuando se debe dar de baja.', side: 'top' },
+        { selector: '.reactivar-btn', title: 'Reactivar',
+          description: 'Pone el equipo o dispositivo <strong>nuevamente activo</strong> en la lista de inventario. Pide confirmación antes de aplicar el cambio.', side: 'top' },
+        { selector: '#tour-almacen-lab-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+      ]
+    }]);
   }
 
   ngOnDestroy(): void {
-    this.pageTour?.destroy();
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadItemsEnAlmacen(): void {
@@ -877,19 +893,5 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     );
   }
 
-  iniciarTourAlmacenLaboratorio(): void {
-    this.pageTour?.destroy();
-    const steps = this.guidedTourHost.buildSteps([
-      { selector: '#tour-almacen-lab-title', title: 'Almacén laboratorio', description: 'Equipos y dispositivos en almacén (distinto del cementerio): pendientes de ubicación operativa.', side: 'bottom' },
-      { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Filtrá por todos, solo equipos o solo dispositivos de red.', side: 'bottom' },
-      { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
-      { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Transferencias, reactivación y observaciones según permisos.', side: 'top' },
-      { selector: '#tour-almacen-lab-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
-    ]);
-    const inst = this.guidedTourHost.startTour(steps);
-    if (inst) {
-      this.pageTour = inst;
-    }
-  }
 }
 
