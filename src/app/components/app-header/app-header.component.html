@@ -22,10 +22,14 @@
       <div class="user-info">
         <div class="user-details">
           <span class="user-name" (click)="goToProfile()" title="Ver perfil">
-            {{ currentUser.firstName }} {{ currentUser.lastName }}
+            {{ displayName }}
           </span>
-          <span class="badge" [class]="getRoleClass(effectiveRole)" [title]="roleBadgeTitle">
-            {{ getRoleLabel(effectiveRole) }}
+          <span
+            class="role-badge"
+            [ngClass]="getRoleBadgeClass(effectiveRole)"
+            [title]="roleBadgeTitle || getRoleLabel(effectiveRole)">
+            <i class="fas role-badge-icon" [ngClass]="getRoleIcon(effectiveRole)" aria-hidden="true"></i>
+            <span class="role-badge-label">{{ getRoleLabel(effectiveRole) }}</span>
           </span>
         </div>
         <button type="button" class="btn-logout" (click)="logout()" title="Cerrar sesión">

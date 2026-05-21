@@ -1,12 +1,15 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { ConfigService } from '../services/config.service';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { TourRegistryService } from '../services/tour-registry.service';
+import { SessionIdleService } from '../services/session-idle.service';
+import { OcsDuplicatesAlertService } from '../services/ocs-duplicates-alert.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -27,11 +30,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
   syncMessage: string = '';
   error: string | null = null;
   
-  // Propiedades para duplicados
+  // Propiedades para duplicados Cerbero
   isSearchingDuplicates = false;
   duplicatesResult: any[] = [];
   duplicatesError: string | null = null;
   isDeleting: boolean = false;
+
+  // Propiedades para duplicados OCS (solo consulta)
+  isSearchingOcsDuplicates = false;
+  ocsDuplicatesResult: any[] | null = null;
+  ocsDuplicatesError: string | null = null;
   
   // Propiedades para comparación de bases de datos
   isComparingDatabases = false;
@@ -40,6 +48,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   
   private apiUrl: string;
   private tourCleanup?: () => void;
+  private routeSub?: { unsubscribe(): void };
 
   constructor(
     private http: HttpClient,
@@ -47,7 +56,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private modalService: NgbModal,
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private sessionIdle: SessionIdleService,
+    private route: ActivatedRoute,
+    private ocsDuplicatesAlert: OcsDuplicatesAlertService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/sync`;
   }
@@ -63,9 +75,26 @@ export class SettingsComponent implements OnInit, OnDestroy {
         { selector: '#tour-settings-reset-ocs', title: 'Botón de reseteo', description: 'Abre confirmación explícita antes de ejecutar el proceso largo de limpieza e importación.', side: 'left' }
       ]
     }]);
+
+    this.routeSub = this.route.queryParamMap.subscribe((params) => {
+      if (params.get('focus') === 'ocs-duplicates') {
+        setTimeout(() => {
+          this.scrollToOcsDuplicatesSection();
+          if (params.get('runSearch') === '1' && !this.isSearchingOcsDuplicates) {
+            void this.buscarDuplicadosOcs();
+          }
+        }, 350);
+      }
+    });
+  }
+
+  private scrollToOcsDuplicatesSection(): void {
+    const el = document.getElementById('ocs-duplicates-section');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
     this.tourCleanup?.();
     this.tourCleanup = undefined;
   }
@@ -123,6 +152,37 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  async buscarDuplicadosOcs() {
+    this.isSearchingOcsDuplicates = true;
+    this.ocsDuplicatesError = null;
+    this.ocsDuplicatesResult = null;
+
+    try {
+      const response = await this.http
+        .get<ApiResponse<any[]>>(`${this.apiUrl}/duplicates/ocs`)
+        .toPromise();
+
+      if (response && response.success) {
+        this.ocsDuplicatesResult = response.data || [];
+        this.notificationService.showSuccessMessage(
+          `Búsqueda en OCS completada. Se encontraron ${this.ocsDuplicatesResult.length} grupos de duplicados`
+        );
+        this.ocsDuplicatesAlert.refresh(false);
+      } else {
+        this.ocsDuplicatesError = response?.message || 'Error al buscar duplicados en OCS';
+        this.notificationService.showError('Error al Buscar Duplicados en OCS', this.ocsDuplicatesError);
+      }
+    } catch (err: any) {
+      this.ocsDuplicatesError = err.message || 'Error durante la búsqueda de duplicados en OCS';
+      this.notificationService.showError(
+        'Error al Buscar Duplicados en OCS',
+        'No se pudo completar la búsqueda: ' + err.message
+      );
+    } finally {
+      this.isSearchingOcsDuplicates = false;
+    }
+  }
+
   async buscarDuplicados() {
     this.isSearchingDuplicates = true;
     this.duplicatesError = null;
@@ -149,7 +209,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
         }
         
         // Mostrar notificación de éxito
-        this.notificationService.showSuccessMessage(`Búsqueda completada. Se encontraron ${this.duplicatesResult.length} grupos de duplicados`);
+        this.notificationService.showSuccessMessage(
+          `Búsqueda en Cerbero completada. Se encontraron ${this.duplicatesResult.length} grupos de duplicados`
+        );
       } else {
         this.duplicatesError = response?.message || 'Error al buscar duplicados';
         console.error('Error en la respuesta:', this.duplicatesError);
@@ -173,7 +235,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   async eliminarDuplicado(hardwareId: number, hardwareName: string) {
     if (this.isDeleting) return;
     
-    const confirmacion = confirm(`¿Está seguro de que desea eliminar el duplicado "${hardwareName}" (ID: ${hardwareId})?\n\nEsta acción eliminará TODOS los datos relacionados con este hardware de la base de datos y NO se puede deshacer.`);
+    const confirmacion = confirm(
+      `¿Eliminar el duplicado "${hardwareName}" (ID: ${hardwareId}) de la base Cerbero?\n\n` +
+        'Se borrarán todos los datos relacionados con ese hardware en Cerbero. Esta acción NO se puede deshacer.'
+    );
     
     if (!confirmacion) return;
     
@@ -202,6 +267,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  probarAvisoInactividad(): void {
+    this.sessionIdle.simulateIdleWarningForTest();
+  }
+
+  probarCierreInactividad(): void {
+    if (!confirm('¿Simular cierre de sesión por inactividad ahora? Serás redirigido al login.')) {
+      return;
+    }
+    this.sessionIdle.simulateIdleLogoutForTest();
+  }
+
   async compararBasesDatos() {
     // ✅ VERIFICAR PERMISOS antes de proceder
     if (!this.canAccessSettings()) {
@@ -224,8 +300,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.comparisonResult = response.data;
         console.log('Resultados de comparación obtenidos:', this.comparisonResult);
         
-        // Mostrar notificación de éxito
-        this.notificationService.showSuccessMessage(`Comparación completada. Se encontraron ${this.comparisonResult.soloEnOCS.length} equipos solo en OCS y ${this.comparisonResult.soloEnCerbero.length} solo en Cerbero. Los equipos sincronizados no se muestran.`);
+        const a = this.comparisonResult.analisis;
+        const dupOcs = a?.totalDuplicadosOCS ?? 0;
+        const diff = a?.diferenciaTotal ?? 0;
+        this.notificationService.showSuccessMessage(
+          `Comparación OCS vs Cerbero: ${this.comparisonResult.soloEnOCS.length} solo en OCS, ` +
+            `${this.comparisonResult.soloEnCerbero.length} solo en Cerbero, ` +
+            `${dupOcs} grupo(s) duplicado(s) en OCS. Diferencia de nombres únicos: ${diff >= 0 ? '+' : ''}${diff}.`
+        );
       } else {
         throw new Error(response?.message || 'Error al comparar las bases de datos');
       }

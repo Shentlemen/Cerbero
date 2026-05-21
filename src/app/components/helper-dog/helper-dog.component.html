@@ -7,6 +7,23 @@
       </div>
     </div>
 
+    <!-- Un solo globo cómic a la vez (cola si hay tickets + OCS al login). -->
+    <button
+      type="button"
+      class="speech-bubble comic-bubble"
+      [class.comic-bubble--tickets]="comicBubbleKind === 'tickets'"
+      [class.comic-bubble--ocs]="comicBubbleKind === 'ocs'"
+      [class.comic-bubble--by-badge]="comicBubbleByBadge"
+      *ngIf="showComicBubble"
+      (click)="onComicBubbleClick($event)"
+      (mouseenter)="onComicBubbleMouseEnter()"
+      (mouseleave)="onComicBubbleMouseLeave()"
+      [attr.aria-label]="comicBubbleText">
+      <span class="comic-bubble-title">{{ comicBubbleTitle }}</span>
+      <p class="comic-bubble-text">{{ comicBubbleText }}</p>
+      <span class="comic-bubble-queue" *ngIf="comicBubbleQueueLabel">{{ comicBubbleQueueLabel }}</span>
+    </button>
+
     <!-- Menú radial: un botón por cada tour disponible en la sección actual. -->
     <div class="radial-menu" *ngIf="showRadialMenu" role="menu" aria-label="Tours guiados disponibles">
       <div
@@ -35,14 +52,28 @@
       {{ availableTours.length }}
     </span>
 
+    <!-- Duplicados en OCS (solo GM): naranja, abre Configuración → duplicados OCS. -->
+    <button
+      *ngIf="ocsDuplicadosGrupos > 0"
+      type="button"
+      class="ocs-dup-badge"
+      [class.ocs-dup-badge--expanded]="showRadialMenu"
+      [attr.aria-label]="ocsDuplicadosGrupos + ' grupos de equipos duplicados en OCS. Click para ver mensaje e ir a Configuración.'"
+      [title]="ocsDuplicadosGrupos + ' duplicados en OCS — clic para detalle y Configuración'"
+      (click)="onOcsDupBadgeClick($event)">
+      <i class="fas fa-clone" aria-hidden="true"></i>
+      <span class="ocs-dup-badge-count">{{ ocsDuplicadosGrupos > 9 ? '9+' : ocsDuplicadosGrupos }}</span>
+    </button>
+
     <!-- Badge de tickets no leídos: rojo, pulsa para llamar la atención. Click navega a /menu/tickets. -->
     <button
       *ngIf="ticketsNoLeidos > 0"
       type="button"
       class="tickets-badge"
+      [class.tickets-badge--expanded]="showRadialMenu"
       [attr.aria-label]="ticketsNoLeidos + ' tickets nuevos en tu bandeja. Click para ver.'"
       [title]="ticketsNoLeidos + ' tickets nuevos en tu bandeja'"
-      (click)="irATickets($event)">
+      (click)="onTicketsBadgeClick($event)">
       <i class="fas fa-exclamation" aria-hidden="true"></i>
       <span class="tickets-badge-count">{{ ticketsNoLeidos > 9 ? '9+' : ticketsNoLeidos }}</span>
     </button>

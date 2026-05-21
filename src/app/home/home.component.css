@@ -133,6 +133,11 @@
   z-index: 4; /* Asegura que esté por encima de otros elementos */
 }
 
+.login-idle-notice {
+  border-color: #e67e22;
+  background-color: #fff8f0;
+}
+
 .login-info-notice {
   color: #1e293b;
   background-color: #f4e4d8;

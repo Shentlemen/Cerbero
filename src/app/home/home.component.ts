@@ -25,6 +25,8 @@ export class HomeComponent implements OnInit {
   errorMessage: string = '';
   /** Aviso tras registro exitoso (cuenta esperando habilitación). */
   registrationNotice = false;
+  /** Aviso tras cierre automático por inactividad. */
+  idleLogoutNotice = false;
 
   constructor(
     private router: Router,
@@ -108,6 +110,15 @@ export class HomeComponent implements OnInit {
     const pendiente = this.route.snapshot.queryParamMap.get('cuentaPendiente');
     if (pendiente === '1') {
       this.registrationNotice = true;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true
+      });
+    }
+
+    if (this.route.snapshot.queryParamMap.get('sesionExpirada') === 'inactividad') {
+      this.idleLogoutNotice = true;
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {},

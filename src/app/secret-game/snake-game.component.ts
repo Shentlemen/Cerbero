@@ -23,13 +23,13 @@ const BASE_TICK_MS = 140;
 type Dir = { x: number; y: number };
 
 @Component({
-  selector: 'app-secret-game',
+  selector: 'app-snake-game',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './secret-game.component.html',
-  styleUrls: ['./secret-game.component.css']
+  templateUrl: './snake-game.component.html',
+  styleUrls: ['./arcade-shared.css']
 })
-export class SecretGameComponent implements AfterViewInit, OnDestroy {
+export class SnakeGameComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
   readonly gridW = GRID_W;

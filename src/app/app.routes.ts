@@ -24,7 +24,17 @@ export const routes: Routes = [
   {
     path: 'secret-game',
     loadComponent: () =>
-      import('./secret-game/secret-game.component').then((m) => m.SecretGameComponent)
+      import('./secret-game/secret-game-hub.component').then((m) => m.SecretGameHubComponent)
+  },
+  {
+    path: 'secret-game/snake',
+    loadComponent: () =>
+      import('./secret-game/snake-game.component').then((m) => m.SnakeGameComponent)
+  },
+  {
+    path: 'secret-game/arkanoid',
+    loadComponent: () =>
+      import('./secret-game/arkanoid-game.component').then((m) => m.ArkanoidGameComponent)
   },
   {
     path: 'register',

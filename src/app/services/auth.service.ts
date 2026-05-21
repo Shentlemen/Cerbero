@@ -1,10 +1,13 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, throwError, switchMap } from 'rxjs';
 import { LoginRequest, AuthResponse, User, CreateUserRequest, UpdateUserRequest, UpdateProfileRequest } from '../interfaces/auth.interface';
 import { environment } from '../../environments/environment';
 import { PermissionsService } from './permissions.service';
 import { Router } from '@angular/router';
+import { SessionIdleService } from './session-idle.service';
+import { OcsDuplicatesAlertService } from './ocs-duplicates-alert.service';
+import { UnreadTicketsService } from './unread-tickets.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +21,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private permissionsService: PermissionsService,
-    private router: Router
+    private router: Router,
+    private injector: Injector
   ) {
     this.loadUserFromStorage();
     // Iniciar monitoreo automático de tokens
@@ -35,9 +39,26 @@ export class AuthService {
             this.currentUserSubject.next(response.user);
             // Update permissions service
             this.permissionsService.setCurrentUser(response.user);
+            this.notifyHelperDogLoginChecks();
           }
         })
       );
+  }
+
+  /** Globos del helper-dog al iniciar sesión (tickets + duplicados OCS). */
+  private notifyHelperDogLoginChecks(): void {
+    queueMicrotask(() => {
+      try {
+        this.injector.get(UnreadTicketsService).scheduleLoginCheck();
+      } catch {
+        /* opcional */
+      }
+      try {
+        this.injector.get(OcsDuplicatesAlertService).scheduleLoginCheck();
+      } catch {
+        /* opcional */
+      }
+    });
   }
 
   /**
@@ -123,6 +144,7 @@ export class AuthService {
             localStorage.setItem('refreshToken', response.refreshToken);
             this.currentUserSubject.next(response.user);
             this.permissionsService.setCurrentUser(response.user);
+            this.notifyHelperDogLoginChecks();
           }
         }),
         catchError(error => {
@@ -244,16 +266,27 @@ export class AuthService {
 
   // Método para iniciar el monitoreo automático de tokens
   startTokenMonitoring(): void {
-    // Verificar cada 5 minutos si el token está próximo a expirar
     setInterval(() => {
+      if (!this.shouldAutoRefreshToken()) {
+        return;
+      }
       if (this.isTokenExpiringSoon() && this.getRefreshToken()) {
-        console.log('Token próximo a expirar, renovando automáticamente...');
         this.refreshToken().subscribe({
-          next: () => console.log('Token renovado automáticamente'),
-          error: (error) => console.error('Error renovando token automáticamente:', error)
+          error: () => {
+            /* logout ya manejado en refreshToken */
+          }
         });
       }
-    }, 5 * 60 * 1000); // 5 minutos
+    }, 5 * 60 * 1000);
+  }
+
+  /** No renovar JWT si el usuario lleva 1+ h sin actividad (cierre por inactividad). */
+  private shouldAutoRefreshToken(): boolean {
+    try {
+      return this.injector.get(SessionIdleService).shouldAllowTokenRefresh();
+    } catch {
+      return true;
+    }
   }
 
   private loadUserFromStorage(): void {
@@ -275,6 +308,7 @@ export class AuthService {
         };
         this.currentUserSubject.next(user);
         this.permissionsService.setCurrentUser(user);
+        this.notifyHelperDogLoginChecks();
       } catch (error) {
         console.error('Error decoding token:', error);
         this.logout();

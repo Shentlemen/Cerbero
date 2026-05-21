@@ -80,6 +80,30 @@
   color: #0d6efd;
 }
 
+.info-box-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-box-content p,
+.info-box-content ul {
+  margin-bottom: 0;
+}
+
+.compare-help-list {
+  padding-left: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.compare-help-list li {
+  margin-bottom: 0.35rem;
+}
+
+.compare-help-note {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
 .sync-button {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;

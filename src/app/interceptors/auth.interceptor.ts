@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../services/auth.service';
 import { MaintenanceService } from '../services/maintenance.service';
+import { SessionIdleService } from '../services/session-idle.service';
 
 export function AuthInterceptor(request: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> {
   const router = inject(Router);
@@ -38,6 +39,13 @@ export function AuthInterceptor(request: HttpRequest<unknown>, next: HttpHandler
         Authorization: `Bearer ${token}`
       }
     });
+    if (!isPublicUrl) {
+      try {
+        inject(SessionIdleService).extendSession();
+      } catch {
+        /* servicio no disponible aún */
+      }
+    }
   }
 
   return next(request).pipe(

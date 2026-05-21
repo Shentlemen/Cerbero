@@ -3,12 +3,15 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter, Subscription } from 'rxjs';
 import { MaintenanceOverlayComponent } from './components/maintenance-overlay/maintenance-overlay.component';
+import { SessionIdleWarningComponent } from './components/session-idle-warning/session-idle-warning.component';
 import { ModalBackdropFixService } from './services/modal-backdrop-fix.service';
+import { SessionIdleService } from './services/session-idle.service';
+import { OcsDuplicatesAlertService } from './services/ocs-duplicates-alert.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, MaintenanceOverlayComponent],
+  imports: [CommonModule, RouterOutlet, MaintenanceOverlayComponent, SessionIdleWarningComponent],
   template: `
     <div class="app-container">
       <main class="main-content">
@@ -16,6 +19,7 @@ import { ModalBackdropFixService } from './services/modal-backdrop-fix.service';
       </main>
     </div>
     <app-maintenance-overlay></app-maintenance-overlay>
+    <app-session-idle-warning></app-session-idle-warning>
   `,
   styles: [`
     .app-container {
@@ -36,7 +40,9 @@ export class AppComponent implements OnDestroy {
 
   constructor(
     private modalBackdropFixService: ModalBackdropFixService,
-    private router: Router
+    private router: Router,
+    _sessionIdle: SessionIdleService,
+    _ocsDuplicatesAlert: OcsDuplicatesAlertService
   ) {
     this.routerSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))

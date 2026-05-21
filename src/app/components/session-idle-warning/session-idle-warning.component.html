@@ -1,0 +1,13 @@
+<div class="idle-overlay" *ngIf="warningVisible$ | async" role="alertdialog" aria-labelledby="idle-title" aria-modal="true">
+  <div class="idle-dialog">
+    <h2 id="idle-title">Sesión por inactividad</h2>
+    <p class="idle-msg">
+      No detectamos actividad en Cerbero. Tu sesión se cerrará automáticamente en
+      <strong>{{ formatTime((secondsLeft$ | async) ?? 0) }}</strong>.
+    </p>
+    <p class="idle-hint">Si seguís trabajando, hacé clic en el botón para continuar.</p>
+    <div class="idle-actions">
+      <button type="button" class="btn-stay" (click)="stayConnected()">Seguir conectado</button>
+    </div>
+  </div>
+</div>

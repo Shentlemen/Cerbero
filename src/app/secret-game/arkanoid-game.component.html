@@ -1,15 +1,20 @@
-<div class="crt no-global-zoom-context">
+<div class="crt no-global-zoom-context arkanoid-theme">
   <div class="crt-layout">
     <div class="game-column">
       <header class="cab">
-        <h1>CERBERO ARCADE</h1>
-        <p class="sub">Snake — flechas para mover</p>
+        <h1>ARKANOID</h1>
+        <p class="sub" *ngIf="levelRoundLabel">
+          {{ levelRoundLabel }} · {{ levelTitle }} · ← → o A D
+        </p>
+        <p class="sub" *ngIf="!levelRoundLabel">← → o A D · barra espaciadora para lanzar</p>
         <p class="cab-back">
-          <a routerLink="/login" class="link-login">← Volver al login</a>
+          <a routerLink="/secret-game" class="link-login">← Elegir juego</a>
+          ·
+          <a routerLink="/login" class="link-login">Login</a>
         </p>
       </header>
 
-      <div class="marco">
+      <div class="marco marco-arkanoid">
         <canvas #canvas class="pantalla"></canvas>
       </div>
 
@@ -18,18 +23,26 @@
           <span>PUNTOS</span>
           <strong>{{ score }}</strong>
         </div>
-        <div class="actions" *ngIf="!playing && !gameOver">
-          <button type="button" class="btn arc" (click)="startGame()">INICIAR</button>
+        <div class="score-line">
+          <span>NIVEL</span>
+          <strong>{{ level }}</strong>
         </div>
-        <p class="hint" *ngIf="playing && !gameOver">Usá las flechas del teclado</p>
+        <div class="score-line">
+          <span>VIDAS</span>
+          <strong>{{ lives }}</strong>
+        </div>
+        <div class="actions" *ngIf="!playing && !gameOver">
+          <button type="button" class="btn arc arkanoid-btn" (click)="startGame()">INICIAR</button>
+        </div>
+        <p class="hint" *ngIf="playing && !gameOver && ballOnPaddle">Espacio para soltar la pelota</p>
+        <p class="hint" *ngIf="playing && !gameOver && !ballOnPaddle">Mové la paleta</p>
       </div>
-
     </div>
 
-    <aside class="ranking-column" aria-label="Ranking global top 20">
+    <aside class="ranking-column ranking-arkanoid" aria-label="Ranking Arkanoid top 20">
       <div class="ranking-header">
         <h2>HALL OF FAME</h2>
-        <p class="ranking-sub">Top 20 · servidor</p>
+        <p class="ranking-sub">Top 20 · Arkanoid</p>
         <button type="button" class="btn ghost sm" (click)="loadLeaderboard()" [disabled]="leaderboardLoading">
           Actualizar
         </button>
@@ -55,9 +68,9 @@
 </div>
 
 <div class="arcade-overlay" *ngIf="gameOver">
-  <div class="arcade-dialog">
+  <div class="arcade-dialog arkanoid-dialog">
     <h3>Fin de partida</h3>
-    <p>Puntuación: <strong>{{ score }}</strong></p>
+    <p>Puntuación: <strong>{{ score }}</strong> · Nivel {{ level }}</p>
 
     <p *ngIf="!rankCheckComplete" class="arcade-dialog-hint">Comprobando si entrás al ranking…</p>
 
@@ -68,7 +81,7 @@
         <input type="text" [(ngModel)]="playerName" maxlength="12" placeholder="AAA" />
       </label>
       <div class="arcade-dialog-btns">
-        <button type="button" class="btn arc" (click)="saveScore()" [disabled]="submitLoading">
+        <button type="button" class="btn arc arkanoid-btn" (click)="saveScore()" [disabled]="submitLoading">
           {{ submitLoading ? 'Guardando…' : 'Guardar' }}
         </button>
         <button type="button" class="btn ghost" (click)="closeGameOver()" [disabled]="submitLoading">Cerrar</button>
@@ -77,12 +90,15 @@
 
     <ng-container *ngIf="rankCheckComplete && !qualifiesForRank">
       <p class="arcade-dialog-hint muted">Tu puntaje no alcanza para el ranking (top 20).</p>
-      <p class="arcade-dialog-hint muted tiny" *ngIf="leaderboardError">
-        (Además hubo un error al cargar el ranking: revisá migración SQL y que el backend esté arriba.)
-      </p>
       <div class="arcade-dialog-btns">
-        <button type="button" class="btn arc" (click)="closeGameOver()">Cerrar</button>
+        <button type="button" class="btn arc arkanoid-btn" (click)="closeGameOver()">Cerrar</button>
       </div>
     </ng-container>
   </div>
+</div>
+
+<div class="arcade-overlay level-overlay" *ngIf="levelBanner">
+  <p class="level-banner">{{ levelRoundLabel }}</p>
+  <p class="level-banner-name">{{ levelTitle }}</p>
+  <p class="level-banner-sub">Nivel {{ level }}</p>
 </div>

@@ -9,6 +9,9 @@
       Su cuenta fue registrada correctamente. Debe esperar a que un administrador del sistema habilite su usuario
       antes de poder iniciar sesión.
     </div>
+    <div *ngIf="idleLogoutNotice" class="login-info-notice login-idle-notice">
+      Su sesión se cerró automáticamente por inactividad (1 hora sin uso). Inicie sesión nuevamente para continuar.
+    </div>
     <form class="login-form" (ngSubmit)="onSubmit()">
         <input
           type="text"

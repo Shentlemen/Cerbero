@@ -6,14 +6,24 @@
   transition: all 0.3s ease;
 }
 
+/*
+ * Escala del asistente (perro + burbujas + menú radial + badges).
+ * Proporciones basadas en diseño original a 100px. Si cambiás --dog-size,
+ * actualizá DOG_SIZE_PX en helper-dog.component.ts (getRadialTransform).
+ */
 .helper-dog-container {
+  --dog-size: 124px;
+  --dog-half: calc(var(--dog-size) / 2);
+  --bubble-stack-offset: 18px;
+  --bubble-above-dog: var(--dog-size);
+  --bubble-ocs-above: calc(var(--dog-size) + var(--bubble-stack-offset));
   position: relative;
   display: inline-block;
 }
 
 .helper-dog-image {
-  width: 100px; /* Aumentado de 80px a 100px */
-  height: 100px; /* Aumentado de 80px a 100px */
+  width: var(--dog-size);
+  height: var(--dog-size);
   cursor: pointer;
   border-radius: 50%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -87,7 +97,7 @@
 /* Burbuja de mensaje principal */
 .speech-bubble {
   position: absolute;
-  bottom: 100px; /* Mantener la misma distancia del perro */
+  bottom: var(--bubble-above-dog);
   left: 0;
   width: 300px;
   max-width: 350px;
@@ -157,6 +167,155 @@
   border-top-color: #e0e0e0;
 }
 
+/* Globo estilo cómic: aviso duplicados OCS (sale del perro) */
+.comic-bubble {
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  appearance: none;
+  display: block;
+  border: 3px solid #1a1a1a;
+  border-radius: 18px 22px 20px 16px / 16px 20px 18px 22px;
+  box-shadow: 4px 4px 0 #1a1a1a, 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: comicBubblePop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* Globos cómic compartidos (posición única; cola en TS evita apilar varios). */
+.comic-bubble.comic-bubble--ocs,
+.comic-bubble.comic-bubble--tickets,
+.comic-bubble.ocs-dup-bubble {
+  width: min(280px, calc(100vw - 48px));
+  min-width: 200px;
+  max-width: 280px;
+  padding: 12px 14px 14px;
+  bottom: var(--bubble-ocs-above);
+  left: 8px;
+  right: auto;
+  margin-bottom: 0;
+  z-index: 5;
+  outline: none;
+}
+
+.comic-bubble.comic-bubble--ocs,
+.comic-bubble.ocs-dup-bubble {
+  background: #fffbeb;
+}
+
+.comic-bubble.comic-bubble--tickets {
+  background: #fef2f2;
+}
+
+.comic-bubble.comic-bubble--ocs .comic-bubble-title,
+.comic-bubble.ocs-dup-bubble .comic-bubble-title {
+  color: #b45309;
+}
+
+.comic-bubble.comic-bubble--tickets .comic-bubble-title {
+  color: #b91c1c;
+}
+
+/* Sin recuadro azul de focus/hover global (Bootstrap o highlight del helper) */
+.comic-bubble.comic-bubble--ocs:hover,
+.comic-bubble.comic-bubble--ocs:focus,
+.comic-bubble.comic-bubble--ocs:focus-visible,
+.comic-bubble.comic-bubble--ocs:active,
+.comic-bubble.comic-bubble--tickets:hover,
+.comic-bubble.comic-bubble--tickets:focus,
+.comic-bubble.comic-bubble--tickets:focus-visible,
+.comic-bubble.comic-bubble--tickets:active {
+  outline: none;
+  box-shadow: 4px 4px 0 #1a1a1a, 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.comic-bubble.comic-bubble--ocs::after,
+.comic-bubble.comic-bubble--tickets::after,
+.comic-bubble.ocs-dup-bubble::after {
+  border-top-color: #1a1a1a;
+  left: 28px;
+  bottom: -12px;
+  border-left-width: 12px;
+  border-right-width: 12px;
+  border-top-width: 12px;
+}
+
+.comic-bubble.comic-bubble--ocs::before,
+.comic-bubble.ocs-dup-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: 22px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 14px solid #fffbeb;
+  z-index: 1;
+}
+
+.comic-bubble.comic-bubble--tickets::before {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: 22px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 14px solid #fef2f2;
+  z-index: 1;
+}
+
+.comic-bubble-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.comic-bubble-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: #292524;
+}
+
+.comic-bubble.comic-bubble--ocs:hover,
+.comic-bubble.ocs-dup-bubble:hover {
+  background: #fef3c7;
+  transform: translateY(-2px);
+}
+
+.comic-bubble.comic-bubble--tickets:hover {
+  background: #fee2e2;
+  transform: translateY(-2px);
+}
+
+.comic-bubble-queue {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #57534e;
+  letter-spacing: 0.02em;
+}
+
+@keyframes comicBubblePop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.85) rotate(-2deg);
+  }
+  70% {
+    transform: translateY(-4px) scale(1.03) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
 @keyframes slideInRight {
   from {
     opacity: 0;
@@ -215,7 +374,7 @@
 /* Panel de sugerencias inteligentes */
 .suggestions-panel {
   position: absolute;
-  bottom: 100px; /* Mantener la misma distancia del perro */
+  bottom: var(--bubble-above-dog);
   left: 0;
   width: 350px;
   max-height: 400px;
@@ -380,9 +539,8 @@
     left: -50px;
   }
   
-  .helper-dog-image {
-    width: 80px; /* Aumentado de 60px a 80px para móviles */
-    height: 80px; /* Aumentado de 60px a 80px para móviles */
+  .helper-dog-container {
+    --dog-size: 100px;
   }
   
 
@@ -410,7 +568,7 @@
 /* Panel de ayuda contextual */
 .contextual-help-panel {
   position: absolute;
-  bottom: 100px; /* Mantener la misma distancia del perro */
+  bottom: var(--bubble-above-dog);
   left: 0;
   width: 350px;
   max-height: 400px;
@@ -544,25 +702,26 @@
    Menú radial de tours
    ========================================================================= */
 
-/* Badge contador sobre el perro: cantidad de tours disponibles. */
+/* Badge contador sobre el perro: cantidad de tours (mismo tamaño que tickets-badge). */
 .tour-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  min-width: 22px;
-  height: 22px;
+  top: -6px;
+  right: -6px;
+  min-width: 28px;
+  height: 28px;
   padding: 0 6px;
-  border-radius: 11px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  z-index: 2;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.45);
+  z-index: 3;
   pointer-events: none;
   animation: badgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -619,6 +778,112 @@
   line-height: 1;
 }
 
+/* Mismo momento que se abren los tours: el badge rojo crece como el naranja (OCS). */
+.tickets-badge--expanded,
+.helper-dog.menu-open .tickets-badge {
+  animation: none;
+  transform: scale(1.22);
+  min-width: 32px;
+  height: 32px;
+  font-size: 12px;
+  z-index: 6;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.75), 0 0 0 3px rgba(239, 68, 68, 0.28);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    min-width 0.3s ease,
+    height 0.3s ease;
+}
+
+.helper-dog.menu-open .tickets-badge .fa-exclamation {
+  font-size: 11px;
+}
+
+.helper-dog.menu-open .tickets-badge-count {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Badge naranja: duplicados por nombre en base OCS (GM). Abajo-derecha del perro. */
+.ocs-dup-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.55);
+  z-index: 3;
+  cursor: pointer;
+  user-select: none;
+  animation: ocsDupPulse 1.6s ease-in-out infinite;
+  outline: none;
+}
+
+.ocs-dup-badge:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.75);
+}
+
+/* Mismo momento que se abren los tours: el badge naranja crece para invitar al clic */
+.ocs-dup-badge--expanded,
+.helper-dog.menu-open .ocs-dup-badge {
+  animation: none;
+  transform: scale(1.22);
+  min-width: 32px;
+  height: 32px;
+  font-size: 12px;
+  z-index: 6;
+  box-shadow: 0 3px 12px rgba(217, 119, 6, 0.75), 0 0 0 3px rgba(245, 158, 11, 0.28);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    min-width 0.3s ease,
+    height 0.3s ease;
+}
+
+.helper-dog.menu-open .ocs-dup-badge .fa-clone {
+  font-size: 11px;
+}
+
+.helper-dog.menu-open .ocs-dup-badge-count {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ocs-dup-badge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.ocs-dup-badge .fa-clone {
+  font-size: 10px;
+}
+
+.ocs-dup-badge-count {
+  font-size: 12px;
+  line-height: 1;
+}
+
+@keyframes ocsDupPulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.55),
+                0 0 0 0 rgba(245, 158, 11, 0.5);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.55),
+                0 0 0 10px rgba(245, 158, 11, 0);
+  }
+}
+
 @keyframes ticketsPulse {
   0%, 100% {
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.55),
@@ -633,8 +898,8 @@
 /* Capa raíz del menú radial: ocupa el centro del perro como origen polar. */
 .radial-menu {
   position: absolute;
-  top: 50px;   /* mitad de la imagen (100px) */
-  left: 50px;
+  top: var(--dog-half);
+  left: var(--dog-half);
   width: 0;
   height: 0;
   pointer-events: none;
@@ -662,21 +927,30 @@
 
 .radial-item {
   position: relative;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px; /* centra el botón sobre la coord polar */
-  border: 3px solid #fff;
+  width: calc(var(--dog-size) * 0.4);
+  height: calc(var(--dog-size) * 0.4);
+  margin: calc(var(--dog-size) * -0.2) 0 0 calc(var(--dog-size) * -0.2);
+  border: 2px solid #fff;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  font-size: 18px;
+  font-size: calc(var(--dog-size) * 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   pointer-events: auto;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
+    width 0.3s ease, height 0.3s ease, margin 0.3s ease, font-size 0.3s ease;
+}
+
+.helper-dog.menu-open .radial-item {
+  width: calc(var(--dog-size) * 0.46);
+  height: calc(var(--dog-size) * 0.46);
+  margin: calc(var(--dog-size) * -0.23) 0 0 calc(var(--dog-size) * -0.23);
+  font-size: calc(var(--dog-size) * 0.16);
+  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
 }
 
 .radial-item:hover {
@@ -738,10 +1012,17 @@
     left: 40px;
   }
   .radial-item {
-    width: 48px;
-    height: 48px;
-    margin: -24px 0 0 -24px;
-    font-size: 16px;
+    width: 36px;
+    height: 36px;
+    margin: -18px 0 0 -18px;
+    font-size: 12px;
+  }
+
+  .helper-dog.menu-open .radial-item {
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    font-size: 13px;
   }
   .radial-label {
     display: none; /* en pantallas chicas se confía en el title nativo */

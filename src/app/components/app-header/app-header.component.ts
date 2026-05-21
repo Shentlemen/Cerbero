@@ -40,6 +40,17 @@ export class AppHeaderComponent implements OnInit {
     return '';
   }
 
+  /** Nombre visible en el header: mayúsculas, Orbitron en CSS. */
+  get displayName(): string {
+    const u = this.currentUser;
+    if (!u) {
+      return '';
+    }
+    const parts = [u.firstName, u.lastName].filter((p) => (p || '').trim().length > 0);
+    const raw = parts.length > 0 ? parts.join(' ') : u.username || '';
+    return raw.trim().toLocaleUpperCase('es-UY');
+  }
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -96,16 +107,44 @@ export class AppHeaderComponent implements OnInit {
     }
   }
 
-  getRoleClass(role: string): string {
-    switch (role) {
+  getRoleBadgeClass(role: string): string {
+    const key = (role || 'default').toUpperCase();
+    const known = [
+      'GM',
+      'ADMIN',
+      'USER',
+      'ALMACEN',
+      'INVENTARIO',
+      'COMPRAS',
+      'GESTION_EQUIP',
+      'IMPRESION',
+      'GARANTIA'
+    ];
+    return known.includes(key) ? `role-badge--${key.toLowerCase()}` : 'role-badge--default';
+  }
+
+  getRoleIcon(role: string): string {
+    switch ((role || '').toUpperCase()) {
       case 'GM':
-        return 'bg-danger';
+        return 'fa-crown';
       case 'ADMIN':
-        return 'bg-warning text-dark';
+        return 'fa-user-shield';
       case 'USER':
-        return 'bg-secondary';
+        return 'fa-user';
+      case 'ALMACEN':
+        return 'fa-warehouse';
+      case 'INVENTARIO':
+        return 'fa-boxes-stacked';
+      case 'COMPRAS':
+        return 'fa-cart-shopping';
+      case 'GESTION_EQUIP':
+        return 'fa-laptop-code';
+      case 'IMPRESION':
+        return 'fa-print';
+      case 'GARANTIA':
+        return 'fa-screwdriver-wrench';
       default:
-        return 'bg-info text-dark';
+        return 'fa-id-badge';
     }
   }
 

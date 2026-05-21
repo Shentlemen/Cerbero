@@ -4,6 +4,16 @@ import { Router, NavigationEnd } from '@angular/router';
 import { HelperService, HelpTip, UserBehavior, SmartSuggestion } from '../../services/helper.service';
 import { TourDefinition, TourRegistryService } from '../../services/tour-registry.service';
 import { UnreadTicketsService } from '../../services/unread-tickets.service';
+import { OcsDuplicatesAlertService } from '../../services/ocs-duplicates-alert.service';
+import {
+  COMIC_BUBBLE_FIRST_LOGIN_MS,
+  COMIC_BUBBLE_MS
+} from '../../services/helper-dog-bubble.constants';
+import {
+  ComicBubbleKind,
+  ComicBubblePayload,
+  COMIC_BUBBLE_KIND_PRIORITY
+} from './helper-dog-comic-bubble';
 import { filter, Subscription } from 'rxjs';
 
 @Component({
@@ -14,6 +24,9 @@ import { filter, Subscription } from 'rxjs';
   styleUrls: ['./helper-dog.component.css']
 })
 export class HelperDogComponent implements OnInit, OnDestroy {
+  /** Debe coincidir con --dog-size en helper-dog.component.css (escala del menú radial). */
+  private static readonly DOG_SIZE_PX = 124;
+
   @Input() currentSection: string = '';
 
   currentTip?: HelpTip;
@@ -21,6 +34,14 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   userLevel: 'beginner' | 'intermediate' | 'advanced' = 'beginner';
   contextualHelpText = '';
   showWoofMessage = false;
+  /** Globo cómic activo (cola: un aviso a la vez). */
+  showComicBubble = false;
+  comicBubbleTitle = '';
+  comicBubbleText = '';
+  comicBubbleKind: ComicBubbleKind = 'tickets';
+  comicBubbleByBadge = false;
+  /** Total de avisos en la cola (incluye el que se está mostrando). */
+  comicBubbleQueueTotal = 0;
   isBouncing = false;
   highlightedElement: HTMLElement | null = null;
   /** Tours del registry para la sección actual. Render del menú radial. */
@@ -29,14 +50,23 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   showRadialMenu = false;
   /** Tickets no leídos en la bandeja del usuario; alimenta el badge rojo del perro. */
   ticketsNoLeidos = 0;
+  /** Grupos de nombres duplicados en OCS (solo GM real). Badge naranja del perro. */
+  ocsDuplicadosGrupos = 0;
   private routerSubscription: Subscription;
   private userLevelSubscription: Subscription;
   private suggestionsSubscription: Subscription;
   private toursSubscription: Subscription;
   private unreadSubscription?: Subscription;
+  private ocsDupSubscription?: Subscription;
   private sessionStartTime: Date;
   private lastActionTime: Date;
   private woofTimeoutId: number | null = null;
+  private comicBubbleTimeoutId: number | null = null;
+  private comicBubbleHovering = false;
+  private comicBubbleFirstLoginDismiss = false;
+  private readonly comicBubbleQueue: ComicBubblePayload[] = [];
+  private lastOcsDupNotificationText: string | null = null;
+  private lastTicketsNotificationText: string | null = null;
   private bounceTimeoutId: number | null = null;
   /**
    * Listener nativo de mousemove instalado fuera de la zona Angular para no
@@ -52,7 +82,8 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     private tourRegistry: TourRegistryService,
     private hostRef: ElementRef<HTMLElement>,
     private zone: NgZone,
-    private unreadTicketsService: UnreadTicketsService
+    private unreadTicketsService: UnreadTicketsService,
+    private ocsDuplicatesAlertService: OcsDuplicatesAlertService
   ) {
     this.sessionStartTime = new Date();
     this.lastActionTime = new Date();
@@ -84,9 +115,45 @@ export class HelperDogComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Badge de tickets no leídos (LABORATORIO para GM/Admin, área del rol para los demás).
     this.unreadSubscription = this.unreadTicketsService.unreadCount$.subscribe((count) => {
       this.ticketsNoLeidos = count;
+      if (count > 0) {
+        this.lastTicketsNotificationText = this.unreadTicketsService.buildBubbleMessage(count);
+        const loginBubbleText = this.unreadTicketsService.consumeLoginBubbleRequest();
+        if (loginBubbleText) {
+          this.enqueueComicBubble({
+            kind: 'tickets',
+            title: 'Tickets en tu bandeja',
+            text: loginBubbleText,
+            firstLogin: true,
+            anchoredByBadge: false
+          });
+        }
+      } else {
+        this.lastTicketsNotificationText = null;
+        this.clearComicQueueForKind('tickets');
+      }
+    });
+
+    this.ocsDupSubscription = this.ocsDuplicatesAlertService.summary$.subscribe((summary) => {
+      this.ocsDuplicadosGrupos = summary?.groupCount ?? 0;
+      if (summary && summary.groupCount > 0) {
+        this.lastOcsDupNotificationText =
+          this.ocsDuplicatesAlertService.buildBubbleMessage(summary);
+        const loginBubbleText = this.ocsDuplicatesAlertService.consumeLoginBubbleRequest();
+        if (loginBubbleText) {
+          this.enqueueComicBubble({
+            kind: 'ocs',
+            title: 'Duplicados en OCS',
+            text: loginBubbleText,
+            firstLogin: true,
+            anchoredByBadge: false
+          });
+        }
+      } else {
+        this.lastOcsDupNotificationText = null;
+        this.clearComicQueueForKind('ocs');
+      }
     });
   }
 
@@ -101,6 +168,7 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     // Cerrar el menú radial si el click cayó fuera del helper.
     if (this.showRadialMenu && target && !this.hostRef.nativeElement.contains(target)) {
       this.showRadialMenu = false;
+      this.dismissComicBubble(false);
     }
   }
 
@@ -134,9 +202,15 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     if (this.unreadSubscription) {
       this.unreadSubscription.unsubscribe();
     }
-
+    if (this.ocsDupSubscription) {
+      this.ocsDupSubscription.unsubscribe();
+    }
     this.recordSessionEnd();
 
+    if (this.comicBubbleTimeoutId !== null) {
+      window.clearTimeout(this.comicBubbleTimeoutId);
+      this.comicBubbleTimeoutId = null;
+    }
     if (this.woofTimeoutId !== null) {
       window.clearTimeout(this.woofTimeoutId);
       this.woofTimeoutId = null;
@@ -194,14 +268,19 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   }
 
   private isInteractiveElement(element: HTMLElement): boolean {
+    // No resaltar controles del propio asistente (globo, badges, tours).
+    if (element.closest('.helper-dog')) {
+      return false;
+    }
+
     const interactiveSelectors = [
       'button', 'a', 'input', 'select', 'textarea',
       '[role="button"]', '[role="link"]', '[role="tab"]',
       '.btn', '.button', '.nav-link', '.dropdown-toggle',
       '[data-toggle]', '[data-target]', '[data-bs-toggle]'
     ];
-    
-    return interactiveSelectors.some(selector => 
+
+    return interactiveSelectors.some(selector =>
       element.matches(selector) || element.closest(selector)
     );
   }
@@ -273,8 +352,19 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     this.triggerBounce();
 
     if (this.availableTours.length === 0) {
-      // Sin tours en esta sección: comportamiento amistoso original.
       this.showRadialMenu = false;
+      if (this.showComicBubble) {
+        this.dismissComicBubble(false);
+        return;
+      }
+      if (this.showWoofMessage) {
+        this.showWoofMessage = false;
+        if (this.woofTimeoutId !== null) {
+          window.clearTimeout(this.woofTimeoutId);
+          this.woofTimeoutId = null;
+        }
+        return;
+      }
       this.showWoof();
       return;
     }
@@ -284,7 +374,13 @@ export class HelperDogComponent implements OnInit, OnDestroy {
       window.clearTimeout(this.woofTimeoutId);
       this.woofTimeoutId = null;
     }
+
+    const openingMenu = !this.showRadialMenu;
     this.showRadialMenu = !this.showRadialMenu;
+
+    if (!openingMenu) {
+      this.dismissComicBubble(false);
+    }
   }
 
   /** Ejecuta el tour elegido y cierra el menú radial. */
@@ -294,11 +390,53 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     this.tourRegistry.runTour(tour.id);
   }
 
-  /** Click en el badge de tickets no leídos: va directo a la bandeja. */
-  irATickets(event?: MouseEvent): void {
+  /** Clic en badge rojo: globo y bandeja de tickets. */
+  onTicketsBadgeClick(event?: MouseEvent): void {
     event?.stopPropagation();
     this.showRadialMenu = false;
-    this.router.navigate(['/menu/tickets']);
+
+    const text =
+      this.unreadTicketsService.getBubbleMessage() ?? this.lastTicketsNotificationText;
+    if (text) {
+      this.enqueueComicBubble(
+        {
+          kind: 'tickets',
+          title: 'Tickets en tu bandeja',
+          text,
+          firstLogin: false,
+          anchoredByBadge: true
+        },
+        true
+      );
+    }
+
+    void this.router.navigate(['/menu/tickets']);
+  }
+
+  /** Clic en badge naranja (OCS): globo y Configuración. */
+  onOcsDupBadgeClick(event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.showRadialMenu = false;
+
+    const text =
+      this.ocsDuplicatesAlertService.getBubbleMessage() ??
+      this.lastOcsDupNotificationText;
+    if (text) {
+      this.enqueueComicBubble(
+        {
+          kind: 'ocs',
+          title: 'Duplicados en OCS',
+          text,
+          firstLogin: false,
+          anchoredByBadge: true
+        },
+        true
+      );
+    }
+
+    void this.router.navigate(['/menu/settings'], {
+      queryParams: { focus: 'ocs-duplicates', runSearch: '1' }
+    });
   }
 
   /**
@@ -311,11 +449,9 @@ export class HelperDogComponent implements OnInit, OnDestroy {
    * abre apenas lo necesario para no superponer botones.
    */
   getRadialTransform(index: number, total: number): string {
-    // Radio polar al centro de cada botón. El perro mide 100px (radio 50)
-    // y cada botón 56px (radio 28); con radius=92 quedan ~14px de aire
-    // entre el borde del perro y el botón. Crece un poco con más tours
-    // para que no se compriman al achicar la separación angular.
-    const radius = total <= 2 ? 92 : total === 3 ? 96 : 102;
+    // Órbita proporcional a --dog-size (base 100px: 92 / 96 / 102).
+    const orbitRatio = total <= 2 ? 0.92 : total === 3 ? 0.96 : 1.02;
+    const radius = Math.round(HelperDogComponent.DOG_SIZE_PX * orbitRatio);
     // Separación angular entre centros de botones.
     // A radio 92, un botón cubre ~36° de arco; usar 46°-48° deja ~10-12°
     // de aire angular entre vecinos (lectura cómoda, sin amontonarse).
@@ -336,6 +472,9 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   onEscape(): void {
     if (this.showRadialMenu) {
       this.showRadialMenu = false;
+      this.dismissComicBubble(false);
+    } else if (this.showComicBubble) {
+      this.dismissComicBubble(false);
     }
   }
 
@@ -351,6 +490,7 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   }
 
   private showWoof(): void {
+    this.dismissComicBubble(false);
     this.showWoofMessage = true;
     if (this.woofTimeoutId !== null) {
       window.clearTimeout(this.woofTimeoutId);
@@ -359,6 +499,180 @@ export class HelperDogComponent implements OnInit, OnDestroy {
       this.showWoofMessage = false;
       this.woofTimeoutId = null;
     }, 1400);
+  }
+
+  /**
+   * Cola de globos: un solo cartel visible; tickets antes que OCS.
+   * Evita apilar varios globos encima del perro.
+   */
+  private enqueueComicBubble(payload: ComicBubblePayload, immediate = false): void {
+    if (immediate) {
+      if (this.showComicBubble && this.comicBubbleKind !== payload.kind) {
+        const suspended: ComicBubblePayload = {
+          kind: this.comicBubbleKind,
+          title: this.comicBubbleTitle,
+          text: this.comicBubbleText,
+          firstLogin: this.comicBubbleFirstLoginDismiss,
+          anchoredByBadge: this.comicBubbleByBadge
+        };
+        this.comicBubbleQueue.push(suspended);
+      }
+      this.comicBubbleQueue.splice(
+        0,
+        this.comicBubbleQueue.length,
+        ...this.comicBubbleQueue.filter((q) => q.kind !== payload.kind)
+      );
+      this.comicBubbleQueue.sort(
+        (a, b) => COMIC_BUBBLE_KIND_PRIORITY[a.kind] - COMIC_BUBBLE_KIND_PRIORITY[b.kind]
+      );
+      this.closeComicBubbleVisual();
+      this.comicBubbleQueue.unshift(payload);
+      this.presentNextComicBubble();
+      return;
+    }
+
+    if (this.showComicBubble && this.comicBubbleKind === payload.kind) {
+      this.comicBubbleTitle = payload.title;
+      this.comicBubbleText = payload.text;
+      this.comicBubbleByBadge = payload.anchoredByBadge;
+      this.comicBubbleFirstLoginDismiss = payload.firstLogin;
+      this.scheduleComicBubbleClose(
+        payload.firstLogin ? COMIC_BUBBLE_FIRST_LOGIN_MS : COMIC_BUBBLE_MS
+      );
+      this.syncComicQueueTotal();
+      return;
+    }
+
+    this.comicBubbleQueue.splice(
+      0,
+      this.comicBubbleQueue.length,
+      ...this.comicBubbleQueue.filter((q) => q.kind !== payload.kind),
+      payload
+    );
+    this.comicBubbleQueue.sort(
+      (a, b) => COMIC_BUBBLE_KIND_PRIORITY[a.kind] - COMIC_BUBBLE_KIND_PRIORITY[b.kind]
+    );
+
+    if (!this.showComicBubble) {
+      this.presentNextComicBubble();
+    } else {
+      this.syncComicQueueTotal();
+    }
+  }
+
+  private presentNextComicBubble(): void {
+    const next = this.comicBubbleQueue.shift();
+    if (!next) {
+      this.closeComicBubbleVisual();
+      return;
+    }
+    this.showWoofMessage = false;
+    if (this.woofTimeoutId !== null) {
+      window.clearTimeout(this.woofTimeoutId);
+      this.woofTimeoutId = null;
+    }
+    this.comicBubbleKind = next.kind;
+    this.comicBubbleTitle = next.title;
+    this.comicBubbleText = next.text;
+    this.comicBubbleByBadge = next.anchoredByBadge;
+    this.comicBubbleFirstLoginDismiss = next.firstLogin;
+    this.showComicBubble = true;
+    this.syncComicQueueTotal();
+    this.triggerBounce();
+    this.scheduleComicBubbleClose(
+      next.firstLogin ? COMIC_BUBBLE_FIRST_LOGIN_MS : COMIC_BUBBLE_MS
+    );
+  }
+
+  private syncComicQueueTotal(): void {
+    this.comicBubbleQueueTotal =
+      (this.showComicBubble ? 1 : 0) + this.comicBubbleQueue.length;
+  }
+
+  private clearComicQueueForKind(kind: ComicBubbleKind): void {
+    for (let i = this.comicBubbleQueue.length - 1; i >= 0; i--) {
+      if (this.comicBubbleQueue[i].kind === kind) {
+        this.comicBubbleQueue.splice(i, 1);
+      }
+    }
+    if (this.showComicBubble && this.comicBubbleKind === kind) {
+      this.dismissComicBubble(true);
+    } else {
+      this.syncComicQueueTotal();
+    }
+  }
+
+  /** @param advance Si true, muestra el siguiente aviso en cola. */
+  private dismissComicBubble(advance: boolean): void {
+    this.closeComicBubbleVisual();
+    if (advance) {
+      this.presentNextComicBubble();
+    } else {
+      this.comicBubbleQueue.length = 0;
+      this.comicBubbleQueueTotal = 0;
+    }
+  }
+
+  private closeComicBubbleVisual(): void {
+    this.showComicBubble = false;
+    this.comicBubbleTitle = '';
+    this.comicBubbleText = '';
+    this.comicBubbleByBadge = false;
+    this.comicBubbleFirstLoginDismiss = false;
+    this.comicBubbleHovering = false;
+    if (this.comicBubbleTimeoutId !== null) {
+      window.clearTimeout(this.comicBubbleTimeoutId);
+      this.comicBubbleTimeoutId = null;
+    }
+  }
+
+  private scheduleComicBubbleClose(delayMs?: number): void {
+    const dismissMs =
+      delayMs ??
+      (this.comicBubbleFirstLoginDismiss ? COMIC_BUBBLE_FIRST_LOGIN_MS : COMIC_BUBBLE_MS);
+    if (this.comicBubbleTimeoutId !== null) {
+      window.clearTimeout(this.comicBubbleTimeoutId);
+    }
+    this.comicBubbleTimeoutId = window.setTimeout(() => {
+      if (!this.comicBubbleHovering) {
+        this.dismissComicBubble(true);
+      }
+    }, dismissMs);
+  }
+
+  onComicBubbleMouseEnter(): void {
+    this.comicBubbleHovering = true;
+    if (this.comicBubbleTimeoutId !== null) {
+      window.clearTimeout(this.comicBubbleTimeoutId);
+      this.comicBubbleTimeoutId = null;
+    }
+  }
+
+  onComicBubbleMouseLeave(): void {
+    this.comicBubbleHovering = false;
+    if (this.showComicBubble) {
+      this.scheduleComicBubbleClose();
+    }
+  }
+
+  onComicBubbleClick(event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.comicBubbleKind === 'tickets') {
+      void this.router.navigate(['/menu/tickets']);
+    } else {
+      void this.router.navigate(['/menu/settings'], {
+        queryParams: { focus: 'ocs-duplicates', runSearch: '1' }
+      });
+    }
+    this.dismissComicBubble(true);
+  }
+
+  get comicBubbleQueueLabel(): string {
+    if (this.comicBubbleQueueTotal <= 1) {
+      return '';
+    }
+    const current = this.comicBubbleQueueTotal - this.comicBubbleQueue.length;
+    return `${current} de ${this.comicBubbleQueueTotal}`;
   }
 
   trackByTour(_index: number, tour: TourDefinition): string {

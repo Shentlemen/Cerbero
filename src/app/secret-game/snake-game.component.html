@@ -1,0 +1,90 @@
+<div class="crt no-global-zoom-context">
+  <div class="crt-layout">
+    <div class="game-column">
+      <header class="cab">
+        <h1>CERBERO ARCADE</h1>
+        <p class="sub">Snake — flechas para mover</p>
+        <p class="cab-back">
+          <a routerLink="/secret-game" class="link-login">← Elegir juego</a>
+          ·
+          <a routerLink="/login" class="link-login">Login</a>
+        </p>
+      </header>
+
+      <div class="marco">
+        <canvas #canvas class="pantalla"></canvas>
+      </div>
+
+      <div class="panel">
+        <div class="score-line">
+          <span>PUNTOS</span>
+          <strong>{{ score }}</strong>
+        </div>
+        <div class="actions" *ngIf="!playing && !gameOver">
+          <button type="button" class="btn arc" (click)="startGame()">INICIAR</button>
+        </div>
+        <p class="hint" *ngIf="playing && !gameOver">Usá las flechas del teclado</p>
+      </div>
+
+    </div>
+
+    <aside class="ranking-column" aria-label="Ranking global top 20">
+      <div class="ranking-header">
+        <h2>HALL OF FAME</h2>
+        <p class="ranking-sub">Top 20 · servidor</p>
+        <button type="button" class="btn ghost sm" (click)="loadLeaderboard()" [disabled]="leaderboardLoading">
+          Actualizar
+        </button>
+      </div>
+
+      <p class="ranking-err" *ngIf="leaderboardError">No se pudo cargar el ranking (¿backend y migración?).</p>
+
+      <ol class="ranking-list" *ngIf="!leaderboardLoading && leaderboard.length">
+        <li *ngFor="let h of leaderboard">
+          <span class="rank">{{ h.rank }}</span>
+          <span class="nom">{{ h.playerName }}</span>
+          <span class="pts">{{ h.score }}</span>
+        </li>
+      </ol>
+
+      <p class="ranking-empty" *ngIf="!leaderboardLoading && !leaderboard.length && !leaderboardError">
+        Todavía no hay puntajes. ¡Sé el primero!
+      </p>
+
+      <p class="ranking-loading" *ngIf="leaderboardLoading">Cargando…</p>
+    </aside>
+  </div>
+</div>
+
+<div class="arcade-overlay" *ngIf="gameOver">
+  <div class="arcade-dialog">
+    <h3>Fin de partida</h3>
+    <p>Puntuación: <strong>{{ score }}</strong></p>
+
+    <p *ngIf="!rankCheckComplete" class="arcade-dialog-hint">Comprobando si entrás al ranking…</p>
+
+    <ng-container *ngIf="rankCheckComplete && qualifiesForRank">
+      <p class="arcade-dialog-hint">¡Entraste al top 20! Dejá tu nombre.</p>
+      <label>
+        <span>Nombre (máx. 12)</span>
+        <input type="text" [(ngModel)]="playerName" maxlength="12" placeholder="AAA" />
+      </label>
+      <div class="arcade-dialog-btns">
+        <button type="button" class="btn arc" (click)="saveScore()" [disabled]="submitLoading">
+          {{ submitLoading ? 'Guardando…' : 'Guardar' }}
+        </button>
+        <button type="button" class="btn ghost" (click)="closeGameOver()" [disabled]="submitLoading">Cerrar</button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="rankCheckComplete && !qualifiesForRank">
+      <p class="arcade-dialog-hint muted">Tu puntaje no alcanza para el ranking (top 20).</p>
+      <p class="arcade-dialog-hint muted tiny" *ngIf="leaderboardError">
+        (Además hubo un error al cargar el ranking: revisá migración SQL y que el backend esté arriba.)
+      </p>
+      <div class="arcade-dialog-btns">
+        <button type="button" class="btn arc" (click)="closeGameOver()">Cerrar</button>
+      </div>
+    </ng-container>
+  </div>
+</div>

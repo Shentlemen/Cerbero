@@ -1,0 +1,78 @@
+.arkanoid-theme.crt {
+  background: radial-gradient(ellipse at center, #1a1530 0%, #0a0818 70%);
+  color: #d1c4e9;
+}
+
+.arkanoid-theme .cab h1 {
+  color: #b39ddb;
+  text-shadow: 0 0 10px rgba(179, 157, 219, 0.5);
+}
+
+.marco-arkanoid {
+  border-color: #5e35b1;
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.6),
+    0 0 28px rgba(126, 87, 202, 0.25);
+}
+
+.ranking-arkanoid {
+  border-color: #5e35b1;
+  background: rgba(20, 10, 40, 0.5);
+}
+
+.ranking-arkanoid .ranking-header h2 {
+  color: #b39ddb;
+}
+
+.btn.arkanoid-btn {
+  background: #5e35b1;
+  border-color: #9575cd;
+}
+
+.btn.arkanoid-btn:hover:not(:disabled) {
+  background: #7e57c2;
+}
+
+.arkanoid-dialog {
+  border-color: #7e57c2;
+  background: #1a1530;
+}
+
+.level-overlay {
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.level-banner-emoji {
+  margin: 0 0 8px;
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.level-banner {
+  margin: 0;
+  font-size: 2.2rem;
+  letter-spacing: 0.25em;
+  color: #e1bee7;
+  text-shadow: 0 0 20px rgba(179, 157, 219, 0.8);
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+}
+
+.level-banner-name {
+  margin: 10px 0 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #ce93d8;
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+}
+
+.level-banner-sub {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
+  color: #b39ddb;
+  font-family: "Courier New", Courier, monospace;
+}
