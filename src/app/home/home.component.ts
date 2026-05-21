@@ -122,7 +122,27 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  /** Easter egg: usuario `GameOn` (sin importar mayúsculas) y contraseña vacía → juego oculto. */
+  onUsernameEnter(ev: Event): void {
+    const kev = ev as KeyboardEvent;
+    if (this.esEntradaJuegoOculto()) {
+      kev.preventDefault();
+      void this.router.navigate(['/secret-game']);
+    }
+  }
+
+  private esEntradaJuegoOculto(): boolean {
+    const u = (this.username || '').trim();
+    const p = (this.password || '').trim();
+    return u.toLowerCase() === 'gameon' && p.length === 0;
+  }
+
   onSubmit(): void {
+    if (this.esEntradaJuegoOculto()) {
+      void this.router.navigate(['/secret-game']);
+      return;
+    }
+
     if (this.username && this.password) {
       this.loading = true;
       this.loginError = false;

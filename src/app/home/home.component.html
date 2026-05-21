@@ -10,8 +10,14 @@
       antes de poder iniciar sesión.
     </div>
     <form class="login-form" (ngSubmit)="onSubmit()">
-        <input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required>
-        <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required>
+        <input
+          type="text"
+          placeholder="Usuario"
+          [(ngModel)]="username"
+          name="username"
+          required
+          (keydown.enter)="onUsernameEnter($event)">
+        <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password">
         <button type="submit" [disabled]="loading">
             <span *ngIf="loading">Iniciando sesión...</span>
             <span *ngIf="!loading">Iniciar Sesión</span>

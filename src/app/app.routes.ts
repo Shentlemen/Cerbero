@@ -22,6 +22,11 @@ export const routes: Routes = [
     component: HomeComponent
   },
   {
+    path: 'secret-game',
+    loadComponent: () =>
+      import('./secret-game/secret-game.component').then((m) => m.SecretGameComponent)
+  },
+  {
     path: 'register',
     loadComponent: () =>
       import('./register/register.component').then((m) => m.RegisterComponent)
