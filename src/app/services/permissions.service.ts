@@ -69,6 +69,16 @@ export class PermissionsService {
     return this.currentUser?.role === 'GM';
   }
 
+  /** Sesión es ADMIN real (sin importar simulación). */
+  isRealAdmin(): boolean {
+    return this.currentUser?.role === 'ADMIN';
+  }
+
+  /** Sesión real es GM o ADMIN (sin importar simulación). */
+  isRealGmOrAdmin(): boolean {
+    return this.isRealGM() || this.isRealAdmin();
+  }
+
   getViewAsRole(): string | null {
     return this.viewAsRole;
   }

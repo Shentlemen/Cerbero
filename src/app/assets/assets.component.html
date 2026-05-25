@@ -130,13 +130,13 @@
     <!-- Filtro de búsqueda arriba de la tabla -->
     <div class="row mb-3">
       <div class="col-12">
-        <input 
-          type="text" 
-          class="form-control" 
+        <input
+          type="text"
+          class="form-control"
           id="tour-assets-search"
-          placeholder="Buscar" 
-          title="Nombre de equipo o dirección IP"
-          [formControl]="nombreEquipoControl" 
+          placeholder="Buscar por equipo, IP o usuario"
+          title="Filtra por nombre de equipo, dirección IP o último usuario conectado"
+          [formControl]="nombreEquipoControl"
           style="max-width: 320px;"
           autocomplete="off">
       </div>

@@ -264,6 +264,35 @@
   background: #f8f9fa;
 }
 
+/* Filas clickables: toda la fila lleva al detalle del ticket. */
+.tickets-table .tickets-row-clickable {
+  cursor: pointer;
+}
+
+.tickets-table .tickets-row-clickable:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: -2px;
+}
+
+/* Columna de acciones compacta; la papelera (btn-danger btn-sm) no debe inflar la fila. */
+.tickets-table .tickets-col-actions {
+  width: 56px;
+  white-space: nowrap;
+}
+
+/*
+ * Estilo de la papelera dentro de la tabla.
+ * En reposo aprovechamos el estilo global de styles.css (transparente con borde negro).
+ * Solo pisamos el `:hover/:focus-visible`, que el global pinta de negro, para usar el rojo
+ * Bootstrap (`#dc3545`) que ya usa el resto de la app en los botones de eliminar.
+ */
+.tickets-table .btn-danger:hover,
+.tickets-table .btn-danger:focus-visible {
+  background: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
 .tickets-table thead th {
   position: sticky;
   top: 0;

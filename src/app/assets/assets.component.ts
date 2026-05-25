@@ -171,7 +171,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Método para aplicar búsqueda rápida (nombre de equipo e IP)
+  // Método para aplicar búsqueda rápida (nombre de equipo, IP y último usuario conectado)
   private aplicarFiltroNombre(termino: string): void {
     const t = (termino || '').trim().toLowerCase();
     if (!t) {
@@ -181,7 +181,10 @@ export class AssetsComponent implements OnInit, OnDestroy {
       this.assetsFiltrados = assetsPorTipo.filter(asset => {
         const name = (asset.name || '').toLowerCase();
         const ip = (asset.ipAddr || '').toLowerCase();
-        return name.includes(t) || ip.includes(t);
+        // `userid` en la tabla hardware (OCS) guarda el último usuario logueado al equipo.
+        // Suele venir como "DOMINIO\usuario", así que comparamos sobre todo el string.
+        const usuario = (asset.userid || '').toLowerCase();
+        return name.includes(t) || ip.includes(t) || usuario.includes(t);
       });
       this.actualizarPaginacion();
     }
@@ -954,7 +957,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       ...this.guidedTourHost.buildSteps([
         { selector: '#tour-assets-title', title: 'Inventario de terminales', description: 'Listado de equipos detectados por inventario (OCS). Desde acá accedés al detalle de cada terminal.', side: 'bottom' },
         { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Acotá la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
-        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo o dirección IP.', side: 'bottom' },
+        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP o último usuario conectado (campo USERID de OCS).', side: 'bottom' },
         { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual.', side: 'left' }
       ])
     );

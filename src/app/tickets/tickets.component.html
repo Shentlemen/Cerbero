@@ -143,13 +143,18 @@
                     <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
                   </span>
                 </th>
-                <th scope="col" class="text-end"></th>
+                <th *ngIf="canDeleteTickets()" scope="col" class="text-end tickets-col-actions">
+                  <span class="visually-hidden">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let ticket of ticketsAreaVista"
-                  class="generic-row"
-                  [class.tickets-row--no-leido]="esNoLeido(ticket.id)">
+                  class="generic-row tickets-row-clickable"
+                  tabindex="0"
+                  [class.tickets-row--no-leido]="esNoLeido(ticket.id)"
+                  (click)="abrirDetalle(ticket.id)"
+                  (keydown)="onRowKeyDown($event, ticket.id)">
                 <td><strong>{{ ticket.codigo }}</strong></td>
                 <td>
                   <span class="tickets-title-text">{{ ticket.titulo }}</span>
@@ -158,6 +163,7 @@
                     class="tickets-attach-pill"
                     [routerLink]="['/menu/tickets', ticket.id]"
                     fragment="adjuntos"
+                    (click)="$event.stopPropagation()"
                     [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s) - click para verlos'"
                     [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
                     <i class="fas fa-paperclip" aria-hidden="true"></i>
@@ -170,10 +176,15 @@
                 <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
                 <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ getPrioridadLabel(ticket.prioridad) }}</span></td>
                 <td>{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td class="text-end">
-                  <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
-                    Abrir
-                  </a>
+                <td *ngIf="canDeleteTickets()" class="text-end tickets-col-actions">
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    title="Eliminar ticket"
+                    aria-label="Eliminar ticket"
+                    (click)="eliminarTicket(ticket, $event)">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -265,13 +276,18 @@
                     <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
                   </span>
                 </th>
-                <th scope="col" class="text-end"></th>
+                <th *ngIf="canDeleteTickets()" scope="col" class="text-end tickets-col-actions">
+                  <span class="visually-hidden">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let ticket of ticketsMisCreadosVista"
-                  class="generic-row"
-                  [class.tickets-row--no-leido]="esNoLeido(ticket.id)">
+                  class="generic-row tickets-row-clickable"
+                  tabindex="0"
+                  [class.tickets-row--no-leido]="esNoLeido(ticket.id)"
+                  (click)="abrirDetalle(ticket.id)"
+                  (keydown)="onRowKeyDown($event, ticket.id)">
                 <td><strong>{{ ticket.codigo }}</strong></td>
                 <td>
                   <span class="tickets-title-text">{{ ticket.titulo }}</span>
@@ -280,6 +296,7 @@
                     class="tickets-attach-pill"
                     [routerLink]="['/menu/tickets', ticket.id]"
                     fragment="adjuntos"
+                    (click)="$event.stopPropagation()"
                     [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s) - click para verlos'"
                     [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
                     <i class="fas fa-paperclip" aria-hidden="true"></i>
@@ -292,10 +309,15 @@
                 <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
                 <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ getPrioridadLabel(ticket.prioridad) }}</span></td>
                 <td>{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td class="text-end">
-                  <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
-                    Abrir
-                  </a>
+                <td *ngIf="canDeleteTickets()" class="text-end tickets-col-actions">
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    title="Eliminar ticket"
+                    aria-label="Eliminar ticket"
+                    (click)="eliminarTicket(ticket, $event)">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -389,11 +411,17 @@
                     <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
                   </span>
                 </th>
-                <th scope="col" class="text-end"></th>
+                <th *ngIf="canDeleteTickets()" scope="col" class="text-end tickets-col-actions">
+                  <span class="visually-hidden">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let ticket of ticketsCerradosVista" class="generic-row">
+              <tr *ngFor="let ticket of ticketsCerradosVista"
+                  class="generic-row tickets-row-clickable"
+                  tabindex="0"
+                  (click)="abrirDetalle(ticket.id)"
+                  (keydown)="onRowKeyDown($event, ticket.id)">
                 <td><strong>{{ ticket.codigo }}</strong></td>
                 <td>
                   <span class="tickets-title-text">{{ ticket.titulo }}</span>
@@ -402,6 +430,7 @@
                     class="tickets-attach-pill"
                     [routerLink]="['/menu/tickets', ticket.id]"
                     fragment="adjuntos"
+                    (click)="$event.stopPropagation()"
                     [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s) - click para verlos'"
                     [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
                     <i class="fas fa-paperclip" aria-hidden="true"></i>
@@ -414,10 +443,15 @@
                 <td><span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span></td>
                 <td><span [class]="getPrioridadClass(ticket.prioridad)">{{ getPrioridadLabel(ticket.prioridad) }}</span></td>
                 <td>{{ (ticket.fechaCierre || ticket.fechaActualizacion) | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td class="text-end">
-                  <a [routerLink]="['/menu/tickets', ticket.id]" class="btn btn-info btn-sm">
-                    Abrir
-                  </a>
+                <td *ngIf="canDeleteTickets()" class="text-end tickets-col-actions">
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    title="Eliminar ticket"
+                    aria-label="Eliminar ticket"
+                    (click)="eliminarTicket(ticket, $event)">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -425,6 +459,40 @@
         </div>
       </div>
     </section>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación al eliminar un ticket (mismo patrón que proveedores/compras) -->
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tickets-confirm-title">
+    <div id="tickets-confirm-title" class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Estás seguro que querés eliminar el ticket
+      <strong>{{ ticketToDelete?.codigo || ('#' + (ticketToDelete?.id || '')) }}</strong>?
+      <br />
+      Se borrarán también sus comentarios, historial, lecturas y archivos adjuntos.
+      Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button
+        type="button"
+        class="confirm-dialog-button cancel"
+        [disabled]="eliminando"
+        (click)="cancelarEliminacion()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="confirm-dialog-button confirm"
+        [disabled]="eliminando"
+        (click)="confirmarEliminacion()">
+        <i class="fas" [ngClass]="eliminando ? 'fa-spinner fa-spin me-2' : 'fa-trash-alt me-2'" aria-hidden="true"></i>
+        {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
+      </button>
+    </div>
   </div>
 </div>
 

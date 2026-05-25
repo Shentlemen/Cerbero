@@ -240,6 +240,18 @@ export class TicketsService {
     );
   }
 
+  /**
+   * Borrado total del ticket (incluye comentarios, historial, lecturas y archivos adjuntos).
+   * El backend rechaza si el rol efectivo no es GM/Admin; aun así, el frontend oculta el
+   * botón a roles que no corresponden para no exponer la operación.
+   */
+  eliminarTicket(ticketId: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(
+      `${this.apiUrl}/${ticketId}`,
+      { params: this.withVistaComo() }
+    );
+  }
+
   /** URL para previsualizar inline (img / iframe). El backend valida permisos via JWT. */
   getAdjuntoVerUrl(adjuntoId: number): string {
     return `${this.apiUrl}/adjuntos/${adjuntoId}/ver`;

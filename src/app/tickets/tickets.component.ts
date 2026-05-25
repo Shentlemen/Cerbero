@@ -85,6 +85,15 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   @ViewChild('ticketNuevoModal') ticketNuevoModalTpl!: TemplateRef<unknown>;
 
+  /**
+   * Diálogo de confirmación al eliminar (mismo patrón que proveedores/compras):
+   * `showConfirmDialog` controla la visibilidad del overlay, `ticketToDelete` guarda el
+   * ticket pendiente de borrar para poder mostrar su código en el mensaje.
+   */
+  showConfirmDialog = false;
+  ticketToDelete: Ticket | null = null;
+  eliminando = false;
+
   /** Modal nuevo ticket (mismo flujo que el antiguo ticket-create). */
   creandoTicket = false;
   /** Avisos de validación o error API dentro del modal (no solo toast detrás del backdrop). */
@@ -561,6 +570,85 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   esUsuarioRolGeneral(): boolean {
     return this.permissionsService.isUser();
+  }
+
+  /**
+   * Solo GM o ADMIN (rol efectivo) pueden borrar tickets. Si un GM activa "ver como" un rol
+   * sin permiso, pierde el botón hasta volver a su rol normal: evita eliminar sin querer
+   * mientras se simula otro perfil.
+   */
+  canDeleteTickets(): boolean {
+    return this.permissionsService.isGMOrAdmin();
+  }
+
+  /**
+   * Click en cualquier parte de la fila → abrir el detalle. Los elementos hijos que ya
+   * navegan o ejecutan acciones (papelera, pill de adjuntos) usan `stopPropagation` para
+   * no disparar este handler dos veces.
+   */
+  abrirDetalle(ticketId: number): void {
+    this.router.navigate(['/menu/tickets', ticketId]);
+  }
+
+  onRowKeyDown(event: KeyboardEvent, ticketId: number): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.abrirDetalle(ticketId);
+    }
+  }
+
+  /**
+   * Click en la papelera de una fila: pre-arma la confirmación.
+   * El borrado real se ejecuta desde {@link confirmarEliminacion}.
+   */
+  eliminarTicket(ticket: Ticket, event: Event): void {
+    event.stopPropagation();
+    if (!this.canDeleteTickets()) return;
+    this.ticketToDelete = ticket;
+    this.showConfirmDialog = true;
+  }
+
+  /**
+   * Borrado definitivo del ticket (comentarios, historial, lecturas y archivos adjuntos).
+   * El backend re-valida el rol; aquí confiamos en que la papelera solo aparece para GM/Admin.
+   */
+  confirmarEliminacion(): void {
+    if (!this.ticketToDelete || this.eliminando) return;
+    const ticket = this.ticketToDelete;
+    const codigo = ticket.codigo || `#${ticket.id}`;
+    this.eliminando = true;
+    this.ticketsService.eliminarTicket(ticket.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.showSuccessMessage(`Ticket ${codigo} eliminado.`);
+          this.actualizarTodo();
+        } else {
+          this.notificationService.showError(
+            'Error',
+            response.message || 'No se pudo eliminar el ticket.'
+          );
+        }
+        this.cerrarConfirmacion();
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error',
+          error?.error?.message || 'No se pudo eliminar el ticket.'
+        );
+        this.cerrarConfirmacion();
+      }
+    });
+  }
+
+  cancelarEliminacion(): void {
+    if (this.eliminando) return;
+    this.cerrarConfirmacion();
+  }
+
+  private cerrarConfirmacion(): void {
+    this.showConfirmDialog = false;
+    this.ticketToDelete = null;
+    this.eliminando = false;
   }
 
   getEstadoLabel(estado: TicketEstado): string {

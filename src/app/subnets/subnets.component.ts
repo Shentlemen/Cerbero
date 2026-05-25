@@ -1,13 +1,30 @@
 import { Component, OnDestroy, OnInit, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SubnetService, SubnetDTO, SubnetCoordinatesDTO } from '../services/subnet.service';
+import {
+  SubnetService,
+  SubnetDTO,
+  SubnetCoordinatesDTO,
+  ipv4MatchesSubnet
+} from '../services/subnet.service';
+import { HardwareService } from '../services/hardware.service';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { TourRegistryService } from '../services/tour-registry.service';
+
+/** Fila reducida de hardware que mostramos en el modal de equipos por subred. */
+interface SubnetHardwareRow {
+  id: number;
+  name: string;
+  ipAddr: string;
+  osName: string;
+  type: string;
+  userid: string;
+  lastcome: string | null;
+}
 
 // Extendemos la interfaz SubnetDTO para incluir las propiedades adicionales
 interface ExtendedSubnet extends SubnetDTO {
@@ -48,16 +65,30 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   public pageSize: number = 10;
   public collectionSize: number = 0;
 
+  /** Búsqueda en la tabla por nombre, id o netId. */
+  public searchTerm: string = '';
+
   private montevideoCenter = {
     lat: -34.9011,
     lng: -56.1645
   };
   private tourCleanup?: () => void;
 
+  // Modal "Ver equipos de la subred"
+  public hardwareModalOpen = false;
+  public hardwareModalSubnet: ExtendedSubnet | null = null;
+  public hardwareModalRows: SubnetHardwareRow[] = [];
+  public hardwareModalLoading = false;
+  public hardwareModalError: string | null = null;
+  public hardwareModalSearch = '';
+  /** Cache local para no recargar el listado completo en cada apertura. */
+  private hardwareCache: any[] | null = null;
+
   constructor(
     private subnetService: SubnetService,
     private permissionsService: PermissionsService,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private hardwareService: HardwareService
   ) {}
 
   ngOnInit(): void {
@@ -137,11 +168,57 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Getter para obtener las subredes paginadas
+  /**
+   * Subredes filtradas por el buscador (nombre, id, netId, máscara, tag).
+   * La búsqueda es case-insensitive e ignora acentos/diéresis para que
+   * "limon" matchee con "Limón" y "ANIO" con "año".
+   */
+  get filteredSubnets(): ExtendedSubnet[] {
+    const q = this.normalizeForSearch(this.searchTerm);
+    if (!q) {
+      return this.subnets;
+    }
+    return this.subnets.filter((s) => {
+      const fields = [s.name, s.id, s.netId, s.mask, s.tag];
+      return fields.some((v) => this.normalizeForSearch(v).includes(q));
+    });
+  }
+
+  /**
+   * Normaliza un valor para búsqueda: lo pasa a string, le quita acentos
+   * (NFD + strip de marcas diacríticas), recorta espacios y baja a minúsculas.
+   */
+  private normalizeForSearch(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+  }
+
+  /** Subredes visibles con paginación aplicada al resultado filtrado. */
   get pagedSubnets(): ExtendedSubnet[] {
+    const filtered = this.filteredSubnets;
+    if (this.collectionSize !== filtered.length) {
+      this.collectionSize = filtered.length;
+    }
     const start = (this.page - 1) * this.pageSize;
     const end = this.page * this.pageSize;
-    return this.subnets.slice(start, end);
+    return filtered.slice(start, end);
+  }
+
+  /** Reset de la página actual al cambiar la búsqueda (evita quedar en una página inexistente). */
+  onSearchChange(): void {
+    this.page = 1;
+    this.collectionSize = this.filteredSubnets.length;
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchChange();
   }
 
   isValidCoordinates(subnet: ExtendedSubnet): boolean {
@@ -379,6 +456,104 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   canManageSubnets(): boolean {
     return this.permissionsService.canManageSubnets();
+  }
+
+  /** Abre el modal y carga (o reusa) el listado de hardware para esta subred. */
+  openHardwareModal(subnet: ExtendedSubnet): void {
+    this.hardwareModalOpen = true;
+    this.hardwareModalSubnet = subnet;
+    this.hardwareModalError = null;
+    this.hardwareModalSearch = '';
+    this.hardwareModalRows = [];
+
+    if (this.hardwareCache) {
+      this.applyHardwareFilter();
+      return;
+    }
+
+    this.hardwareModalLoading = true;
+    this.hardwareService.getHardware().subscribe({
+      next: (list) => {
+        this.hardwareCache = Array.isArray(list) ? list : [];
+        this.applyHardwareFilter();
+        this.hardwareModalLoading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar hardware para subred:', err);
+        this.hardwareModalError = 'No se pudo cargar el listado de equipos.';
+        this.hardwareModalLoading = false;
+      }
+    });
+  }
+
+  closeHardwareModal(): void {
+    this.hardwareModalOpen = false;
+    this.hardwareModalSubnet = null;
+    this.hardwareModalRows = [];
+    this.hardwareModalError = null;
+    this.hardwareModalSearch = '';
+  }
+
+  refreshHardwareModal(): void {
+    if (!this.hardwareModalSubnet) {
+      return;
+    }
+    this.hardwareCache = null;
+    this.openHardwareModal(this.hardwareModalSubnet);
+  }
+
+  private applyHardwareFilter(): void {
+    const subnet = this.hardwareModalSubnet;
+    const all = this.hardwareCache ?? [];
+    if (!subnet) {
+      this.hardwareModalRows = [];
+      return;
+    }
+    const filtered = all.filter((h) => ipv4MatchesSubnet(h?.ipAddr, subnet));
+    this.hardwareModalRows = filtered.map((h) => ({
+      id: h.id,
+      name: h.name ?? '',
+      ipAddr: h.ipAddr ?? '',
+      osName: h.osName ?? '',
+      type: h.type ?? '',
+      userid: h.userid ?? '',
+      lastcome: h.lastCome ?? h.lastcome ?? null
+    }));
+    // Orden por IP ascendente para una lectura natural.
+    this.hardwareModalRows.sort((a, b) => this.compareIpv4(a.ipAddr, b.ipAddr));
+  }
+
+  /** Comparador IPv4 octeto a octeto; strings vacíos al final. */
+  private compareIpv4(a: string, b: string): number {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
+    const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
+    for (let i = 0; i < 4; i++) {
+      const da = pa[i] ?? 0;
+      const db = pb[i] ?? 0;
+      if (da !== db) return da - db;
+    }
+    return 0;
+  }
+
+  /** Lista visible: aplica el buscador de texto sobre las filas ya filtradas por subred. */
+  get filteredHardwareRows(): SubnetHardwareRow[] {
+    const q = this.hardwareModalSearch.trim().toLowerCase();
+    if (!q) return this.hardwareModalRows;
+    return this.hardwareModalRows.filter((r) =>
+      [r.name, r.ipAddr, r.osName, r.type, r.userid]
+        .filter((v): v is string => !!v)
+        .some((v) => v.toLowerCase().includes(q))
+    );
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.hardwareModalOpen) {
+      this.closeHardwareModal();
+    }
   }
 
   ngOnDestroy(): void {

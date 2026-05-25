@@ -31,8 +31,11 @@ export const OCS_DUP_LOGIN_BUBBLE_MS = COMIC_BUBBLE_MS;
 export const OCS_DUP_LOGIN_BUBBLE_FIRST_MS = COMIC_BUBBLE_FIRST_LOGIN_MS;
 
 /**
- * Aviso global para GM: equipos con nombre repetido en la base OCS.
- * Alimenta el badge del helper-dog y un globo de texto al iniciar sesión (una vez por pestaña).
+ * Aviso global para GM y ADMIN: equipos con nombre repetido en la base OCS.
+ * Alimenta el badge naranja del helper-dog y un globo de texto al iniciar sesión
+ * (una vez por pestaña). El gate usa el rol EFECTIVO: si un GM activa "ver como"
+ * un rol sin permiso (p. ej. USER), el badge desaparece hasta que vuelva a su
+ * rol; al volver, el polling se reanuda automáticamente.
  */
 @Injectable({ providedIn: 'root' })
 export class OcsDuplicatesAlertService implements OnDestroy {
@@ -45,6 +48,7 @@ export class OcsDuplicatesAlertService implements OnDestroy {
   private pollSub?: Subscription;
   private authSub?: Subscription;
   private routerSub?: Subscription;
+  private viewAsSub?: Subscription;
   private loginRetryTimers: number[] = [];
   /** Ventana tras login: los reintentos también pueden disparar el globo inicial. */
   private loginCheckUntil = 0;
@@ -59,7 +63,7 @@ export class OcsDuplicatesAlertService implements OnDestroy {
     private router: Router
   ) {
     this.authSub = this.authService.currentUser$.subscribe((user) => {
-      if (user && this.isSessionGm()) {
+      if (user && this.isSessionGmOrAdmin()) {
         this.startPolling();
         this.scheduleLoginCheck();
       } else {
@@ -72,19 +76,37 @@ export class OcsDuplicatesAlertService implements OnDestroy {
       }
     });
 
+    // Si un GM activa/desactiva "ver como otro rol", reaccionamos en vivo:
+    // - simula rol sin permiso → detenemos polling y limpiamos badge
+    // - vuelve a su rol → reanudamos polling y refrescamos
+    this.viewAsSub = this.permissionsService.viewAs$.subscribe(() => {
+      if (this.isSessionGmOrAdmin()) {
+        this.startPolling();
+        this.refresh(false);
+      } else {
+        this.clearLoginRetries();
+        this.stopPolling();
+        this.loginBubblePending = false;
+        this.summarySubject.next(null);
+      }
+    });
+
     this.routerSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         const path = e.urlAfterRedirects || e.url;
-        if (path.includes('/menu') && this.isSessionGm()) {
+        if (path.includes('/menu') && this.isSessionGmOrAdmin()) {
           this.refresh(false);
         }
       });
   }
 
-  /** GM con sesión activa (rol real, no simulación). */
-  private isSessionGm(): boolean {
-    return this.permissionsService.isRealGM();
+  /**
+   * GM o ADMIN según el rol EFECTIVO (respeta "ver como" del GM).
+   * Así, un GM que simula USER pierde la alerta hasta que vuelva a su rol.
+   */
+  private isSessionGmOrAdmin(): boolean {
+    return this.permissionsService.isGMOrAdmin();
   }
 
   /**
@@ -92,7 +114,7 @@ export class OcsDuplicatesAlertService implements OnDestroy {
    * del menú aún no están listos (el servicio antes solo se activaba al abrir Configuración).
    */
   scheduleLoginCheck(): void {
-    if (!this.isSessionGm()) {
+    if (!this.isSessionGmOrAdmin()) {
       return;
     }
     this.clearLoginRetries();
@@ -139,7 +161,7 @@ export class OcsDuplicatesAlertService implements OnDestroy {
 
   /** Refresco inmediato; tras login puede dejar pendiente el globo cómic si hay duplicados. */
   refresh(showLoginBubble = false): void {
-    if (!this.isSessionGm() || !this.authService.getToken()) {
+    if (!this.isSessionGmOrAdmin() || !this.authService.getToken()) {
       this.summarySubject.next(null);
       return;
     }
@@ -229,5 +251,6 @@ export class OcsDuplicatesAlertService implements OnDestroy {
     this.stopPolling();
     this.authSub?.unsubscribe();
     this.routerSub?.unsubscribe();
+    this.viewAsSub?.unsubscribe();
   }
 }

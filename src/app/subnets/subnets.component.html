@@ -31,8 +31,27 @@
       <div class="subnets-toolbar" id="tour-subnets-toolbar">
         <span class="subnets-count">
           <strong>{{ collectionSize }}</strong>
-          <span class="text-muted">subredes</span>
+          <span class="text-muted">{{ searchTerm.trim() ? 'coinciden' : 'subredes' }}</span>
         </span>
+        <div class="subnets-search">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar por nombre, ID o Net ID…"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchChange()">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              *ngIf="searchTerm"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="table-container subnets-table-container" id="tour-subnets-table">
@@ -108,39 +127,48 @@
                   max="180">
               </td>
               <td class="subnets-actions-cell">
-                <div *ngIf="canManageSubnets()" class="subnets-actions">
+                <div class="subnets-actions">
                   <button
-                    *ngIf="!subnet.hasCoordinates"
                     type="button"
-                    class="btn btn-primary btn-sm"
-                    (click)="saveCoordinates(subnet)"
-                    [disabled]="!isValidCoordinates(subnet) || loading">
-                    <i class="fas fa-save"></i> Guardar
+                    class="btn btn-info btn-sm"
+                    (click)="openHardwareModal(subnet)"
+                    title="Ver equipos de esta subred">
+                    <i class="fas fa-desktop"></i> Equipos
                   </button>
-                  <button
-                    *ngIf="subnet.hasCoordinates && !subnet.editing"
-                    type="button"
-                    class="btn btn-warning btn-sm text-white"
-                    (click)="editCoordinates(subnet)"
-                    [disabled]="loading">
-                    <i class="fas fa-edit"></i> Editar
-                  </button>
-                  <button
-                    *ngIf="subnet.hasCoordinates && subnet.editing"
-                    type="button"
-                    class="btn btn-success btn-sm"
-                    (click)="updateCoordinates(subnet)"
-                    [disabled]="!isValidCoordinates(subnet) || loading">
-                    <i class="fas fa-check"></i> Actualizar
-                  </button>
-                  <button
-                    *ngIf="subnet.editing"
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm"
-                    (click)="cancelEdit(subnet)"
-                    [disabled]="loading">
-                    <i class="fas fa-times"></i> Cancelar
-                  </button>
+                  <ng-container *ngIf="canManageSubnets()">
+                    <button
+                      *ngIf="!subnet.hasCoordinates"
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      (click)="saveCoordinates(subnet)"
+                      [disabled]="!isValidCoordinates(subnet) || loading">
+                      <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button
+                      *ngIf="subnet.hasCoordinates && !subnet.editing"
+                      type="button"
+                      class="btn btn-warning btn-sm text-white"
+                      (click)="editCoordinates(subnet)"
+                      [disabled]="loading">
+                      <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button
+                      *ngIf="subnet.hasCoordinates && subnet.editing"
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      (click)="updateCoordinates(subnet)"
+                      [disabled]="!isValidCoordinates(subnet) || loading">
+                      <i class="fas fa-check"></i> Actualizar
+                    </button>
+                    <button
+                      *ngIf="subnet.editing"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      (click)="cancelEdit(subnet)"
+                      [disabled]="loading">
+                      <i class="fas fa-times"></i> Cancelar
+                    </button>
+                  </ng-container>
                 </div>
                 <span *ngIf="!canManageSubnets()" class="read-only-badge">
                   <i class="fas fa-eye"></i> Solo lectura
@@ -172,6 +200,121 @@
         Mapa de subredes
       </h2>
       <div id="map" class="subnets-map"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Equipos de la subred -->
+<div *ngIf="hardwareModalOpen"
+     class="subnet-hw-modal-backdrop"
+     (click)="closeHardwareModal()"
+     role="presentation">
+  <div class="subnet-hw-modal"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="subnetHwModalTitle"
+       (click)="$event.stopPropagation()">
+    <header class="subnet-hw-modal-header">
+      <div>
+        <h2 id="subnetHwModalTitle" class="subnet-hw-modal-title">
+          <i class="fas fa-network-wired me-2"></i>
+          {{ hardwareModalSubnet?.name || 'Subred' }}
+        </h2>
+        <p class="subnet-hw-modal-meta">
+          <span class="badge bg-secondary">Net ID {{ hardwareModalSubnet?.netId }}</span>
+          <span *ngIf="hardwareModalSubnet?.mask" class="badge bg-light text-dark border">
+            Máscara {{ hardwareModalSubnet?.mask }}
+          </span>
+          <span *ngIf="hardwareModalSubnet?.id" class="badge bg-light text-dark border">
+            ID {{ hardwareModalSubnet?.id }}
+          </span>
+        </p>
+      </div>
+      <button type="button"
+              class="btn btn-sm btn-light"
+              (click)="closeHardwareModal()"
+              aria-label="Cerrar">
+        <i class="fas fa-times"></i>
+      </button>
+    </header>
+
+    <div class="subnet-hw-modal-toolbar">
+      <div class="input-group input-group-sm subnet-hw-search">
+        <span class="input-group-text"><i class="fas fa-search"></i></span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por nombre, IP, SO, usuario…"
+          [(ngModel)]="hardwareModalSearch"
+          [disabled]="hardwareModalLoading">
+      </div>
+      <div class="subnet-hw-modal-counters">
+        <span class="badge bg-info text-dark">
+          <i class="fas fa-desktop me-1"></i>
+          {{ hardwareModalRows.length }} en subred
+        </span>
+        <span *ngIf="hardwareModalSearch && filteredHardwareRows.length !== hardwareModalRows.length"
+              class="badge bg-warning text-dark">
+          {{ filteredHardwareRows.length }} coinciden
+        </span>
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="refreshHardwareModal()"
+                [disabled]="hardwareModalLoading"
+                title="Recargar listado de hardware">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="hardwareModalError" class="alert alert-danger m-3 mb-2 py-2">
+      <i class="fas fa-exclamation-circle me-2"></i>{{ hardwareModalError }}
+    </div>
+
+    <div *ngIf="hardwareModalLoading" class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando equipos…</span>
+      </div>
+      <p class="mt-2 text-muted small mb-0">Cargando equipos…</p>
+    </div>
+
+    <div *ngIf="!hardwareModalLoading && !hardwareModalError" class="subnet-hw-modal-body">
+      <div *ngIf="!hardwareModalSubnet?.mask"
+           class="alert alert-warning py-2 mb-3 small">
+        Esta subred no tiene <strong>máscara</strong> definida, por lo que no se puede filtrar
+        equipos por IP. Editá la subred y agregá la máscara (ej. <code>255.255.255.0</code>).
+      </div>
+
+      <div *ngIf="filteredHardwareRows.length === 0 && hardwareModalSubnet?.mask"
+           class="empty-state text-center py-4 text-muted">
+        <i class="fas fa-inbox fa-2x mb-2"></i>
+        <p class="mb-0">No hay equipos cuya IP coincida con esta subred.</p>
+      </div>
+
+      <div *ngIf="filteredHardwareRows.length > 0" class="table-responsive">
+        <table class="table table-sm table-hover align-middle subnet-hw-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>IP</th>
+              <th>Sistema operativo</th>
+              <th>Tipo</th>
+              <th>Usuario</th>
+              <th>Último contacto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of filteredHardwareRows">
+              <td class="subnet-hw-name">{{ h.name || '—' }}</td>
+              <td class="mono-cell">{{ h.ipAddr || '—' }}</td>
+              <td>{{ h.osName || '—' }}</td>
+              <td>{{ h.type || '—' }}</td>
+              <td>{{ h.userid || '—' }}</td>
+              <td>{{ h.lastcome ? (h.lastcome | date:'short') : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>

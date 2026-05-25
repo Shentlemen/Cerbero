@@ -52,9 +52,9 @@
       {{ availableTours.length }}
     </span>
 
-    <!-- Duplicados en OCS (solo GM): naranja, abre Configuración → duplicados OCS. -->
+    <!-- Duplicados en OCS (solo GM o ADMIN reales): naranja, abre Configuración → duplicados OCS. -->
     <button
-      *ngIf="ocsDuplicadosGrupos > 0"
+      *ngIf="ocsDuplicadosGrupos > 0 && canSeeOcsDuplicateAlerts()"
       type="button"
       class="ocs-dup-badge"
       [class.ocs-dup-badge--expanded]="showRadialMenu"

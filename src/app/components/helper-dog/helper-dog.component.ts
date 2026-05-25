@@ -5,6 +5,7 @@ import { HelperService, HelpTip, UserBehavior, SmartSuggestion } from '../../ser
 import { TourDefinition, TourRegistryService } from '../../services/tour-registry.service';
 import { UnreadTicketsService } from '../../services/unread-tickets.service';
 import { OcsDuplicatesAlertService } from '../../services/ocs-duplicates-alert.service';
+import { PermissionsService } from '../../services/permissions.service';
 import {
   COMIC_BUBBLE_FIRST_LOGIN_MS,
   COMIC_BUBBLE_MS
@@ -58,6 +59,7 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   private toursSubscription: Subscription;
   private unreadSubscription?: Subscription;
   private ocsDupSubscription?: Subscription;
+  private viewAsSubscription?: Subscription;
   private sessionStartTime: Date;
   private lastActionTime: Date;
   private woofTimeoutId: number | null = null;
@@ -83,7 +85,8 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     private hostRef: ElementRef<HTMLElement>,
     private zone: NgZone,
     private unreadTicketsService: UnreadTicketsService,
-    private ocsDuplicatesAlertService: OcsDuplicatesAlertService
+    private ocsDuplicatesAlertService: OcsDuplicatesAlertService,
+    private permissionsService: PermissionsService
   ) {
     this.sessionStartTime = new Date();
     this.lastActionTime = new Date();
@@ -155,6 +158,15 @@ export class HelperDogComponent implements OnInit, OnDestroy {
         this.clearComicQueueForKind('ocs');
       }
     });
+
+    // Si un GM cambia "ver como otro rol" y pierde permiso de ver alertas OCS,
+    // descartamos el globo cómic que pudiera estar visible para esa categoría.
+    this.viewAsSubscription = this.permissionsService.viewAs$.subscribe(() => {
+      if (!this.canSeeOcsDuplicateAlerts()) {
+        this.lastOcsDupNotificationText = null;
+        this.clearComicQueueForKind('ocs');
+      }
+    });
   }
 
   @HostListener('document:click', ['$event'])
@@ -204,6 +216,9 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     }
     if (this.ocsDupSubscription) {
       this.ocsDupSubscription.unsubscribe();
+    }
+    if (this.viewAsSubscription) {
+      this.viewAsSubscription.unsubscribe();
     }
     this.recordSessionEnd();
 
@@ -673,6 +688,15 @@ export class HelperDogComponent implements OnInit, OnDestroy {
     }
     const current = this.comicBubbleQueueTotal - this.comicBubbleQueue.length;
     return `${current} de ${this.comicBubbleQueueTotal}`;
+  }
+
+  /**
+   * Badge naranja de duplicados OCS: solo se muestra cuando el rol EFECTIVO
+   * (incluye la simulación "ver como" de un GM) es GM o ADMIN. Si un GM activa
+   * la vista como USER, el badge se oculta hasta que vuelva a su rol normal.
+   */
+  canSeeOcsDuplicateAlerts(): boolean {
+    return this.permissionsService.isGMOrAdmin();
   }
 
   trackByTour(_index: number, tour: TourDefinition): string {

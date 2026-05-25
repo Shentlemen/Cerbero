@@ -31,11 +31,22 @@
           <span>VIDAS</span>
           <strong>{{ lives }}</strong>
         </div>
+        <div class="score-line power-line" *ngIf="activePowerLabel">
+          <span>PODER</span>
+          <strong class="power-tag">{{ activePowerLabel }}</strong>
+        </div>
         <div class="actions" *ngIf="!playing && !gameOver">
           <button type="button" class="btn arc arkanoid-btn" (click)="startGame()">INICIAR</button>
         </div>
-        <p class="hint" *ngIf="playing && !gameOver && ballOnPaddle">Espacio para soltar la pelota</p>
-        <p class="hint" *ngIf="playing && !gameOver && !ballOnPaddle">Mové la paleta</p>
+        <p class="hint" *ngIf="playing && !gameOver && ballOnPaddle">
+          Espacio para soltar{{ hasCatch ? ' (Catch activo)' : '' }}
+        </p>
+        <p class="hint" *ngIf="playing && !gameOver && !ballOnPaddle && hasLaser">
+          Espacio = láser · ← → paleta
+        </p>
+        <p class="hint" *ngIf="playing && !gameOver && !ballOnPaddle && !hasLaser">
+          Mové la paleta · atrapá cápsulas (C L D M)
+        </p>
       </div>
     </div>
 
