@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
@@ -10,6 +10,8 @@ import { PermissionsService } from '../../services/permissions.service';
 import { TourRegistryService } from '../../services/tour-registry.service';
 import { GuidedTourHostService } from '../../services/guided-tour-host.service';
 import { driver, type DriveStep, type Driver } from 'driver.js';
+
+type ProveedorSortColumn = 'nombre' | 'nombreComercial' | 'rut' | 'direccion';
 
 /** Paso del tour DEMO con cambio de pestaña por número (proveedor usa `activeTab: number`). */
 interface ProveedorDemoStep {
@@ -23,7 +25,7 @@ interface ProveedorDemoStep {
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule],
   templateUrl: './proveedores.component.html',
   styleUrls: ['./proveedores.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -31,12 +33,12 @@ interface ProveedorDemoStep {
 export class ProveedoresComponent implements OnInit, OnDestroy {
   proveedoresList: ProveedorDTO[] = [];
   proveedoresFiltrados: ProveedorDTO[] = [];
-  filterForm: FormGroup;
   proveedorForm: FormGroup;
-  sortColumn: string = '';
+  searchTerm = '';
+  sortColumn: ProveedorSortColumn = 'nombreComercial';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 20;
+  pageSize = 25;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -76,10 +78,6 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
     private guidedTourHost: GuidedTourHostService
   ) {
     this.fb = fb;
-    this.filterForm = this.fb.group({
-      nombre: [''],
-      nombreComercial: ['']
-    });
 
     this.proveedorForm = this.fb.group({
       nombre: [''], // Solo nombre comercial es obligatorio
@@ -93,11 +91,6 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
       webVenta: ['', [Validators.pattern(/^https?:\/\/.+/)]]
     });
     this.contactosFormArray = this.fb.array([]);
-
-    // Suscribirse a cambios en el formulario de filtro
-    this.filterForm.valueChanges.subscribe(() => {
-      this.aplicarFiltros();
-    });
 
     this.proveedorForm.valueChanges.subscribe(() => this.limpiarFeedbackProveedorModal());
     this.contactosFormArray.valueChanges.subscribe(() => this.limpiarFeedbackProveedorModal());
@@ -132,8 +125,8 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
         steps: [
           { selector: '#tour-proveedores-title', title: 'Proveedores', description: 'Directorio de proveedores con datos comerciales y contactos asociados a compras.', side: 'bottom' as const },
           { selector: '#tour-proveedores-nuevo', title: 'Nuevo proveedor', description: 'Alta rápida con pestañas de datos y contactos (si tenés permiso de gestión).', side: 'left' as const },
-          { selector: '#tour-proveedores-search', title: 'Búsqueda', description: 'Filtrá por nombre comercial sin recargar la página.', side: 'bottom' as const },
-          { selector: '#tour-proveedores-table', title: 'Listado', description: 'Ordená columnas, editá o eliminá; podés ver contactos en modal.', side: 'top' as const }
+          { selector: '#tour-proveedores-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por nombre, nombre comercial, RUT, correo o teléfono.', side: 'bottom' as const },
+          { selector: '#tour-proveedores-table', title: 'Listado', description: 'Ordená por columna, navegá con paginación, editá o eliminá; podés ver contactos en modal.', side: 'top' as const }
         ],
         afterEnd: () => this.resetScrollToTop()
       },
@@ -176,12 +169,11 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
   loadProveedores(): void {
     this.loading = true;
     this.error = null;
-    
+
     this.proveedoresService.getProveedores().subscribe({
       next: (proveedores) => {
         this.proveedoresList = proveedores;
-        this.proveedoresFiltrados = [...this.proveedoresList];
-        this.collectionSize = this.proveedoresFiltrados.length;
+        this.aplicarFiltrosYOrden();
         this.loading = false;
       },
       error: (error) => {
@@ -194,36 +186,90 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
 
   get pagedProveedores(): ProveedorDTO[] {
     const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.proveedoresFiltrados.slice(startItem, endItem);
+    return this.proveedoresFiltrados.slice(startItem, startItem + this.pageSize);
   }
 
-  sortData(column: string): void {
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
+  }
+
+  sortData(column: ProveedorSortColumn): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.ordenarLista(this.proveedoresFiltrados);
+  }
 
-    this.proveedoresFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof ProveedorDTO];
-      let valueB = b[column as keyof ProveedorDTO];
+  getSortIcon(column: ProveedorSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
 
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
+  isSortActive(column: ProveedorSortColumn): boolean {
+    return this.sortColumn === column;
+  }
 
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+  private aplicarFiltrosYOrden(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.proveedoresFiltrados = term
+      ? this.proveedoresList.filter((p) => this.matchesSearch(p, term))
+      : [...this.proveedoresList];
+    this.ordenarLista(this.proveedoresFiltrados);
+    this.collectionSize = this.proveedoresFiltrados.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
+  }
 
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
+  private matchesSearch(p: ProveedorDTO, term: string): boolean {
+    const haystack = [
+      p.nombre,
+      p.nombreComercial,
+      p.rut,
+      p.direccion,
+      p.correoContacto,
+      p.telefonoContacto,
+      p.webEmpresa,
+      p.webVenta
+    ]
+      .map((v) => (v ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return haystack.includes(term);
+  }
+
+  private ordenarLista(lista: ProveedorDTO[]): void {
+    const col = this.sortColumn;
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      const valA = this.getSortValue(a, col);
+      const valB = this.getSortValue(b, col);
+      return valA.localeCompare(valB, 'es', { sensitivity: 'base' }) * mult;
     });
+  }
+
+  private getSortValue(p: ProveedorDTO, col: ProveedorSortColumn): string {
+    const value = p[col];
+    return (value ?? '').toString().trim().toLowerCase();
   }
 
   abrirModal(modal: any, proveedor?: ProveedorDTO): void {
@@ -508,29 +554,6 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
         this.contactosService.crearContacto(contacto).subscribe();
       }
     }
-  }
-
-  aplicarFiltros(): void {
-    const filtros = this.filterForm.value;
-    
-    this.proveedoresFiltrados = this.proveedoresList.filter(proveedor => {
-      let cumpleFiltros = true;
-
-      if (filtros.nombre && proveedor.nombre) {
-        cumpleFiltros = cumpleFiltros && 
-          proveedor.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
-      }
-
-      if (filtros.nombreComercial && proveedor.nombreComercial) {
-        cumpleFiltros = cumpleFiltros && 
-          proveedor.nombreComercial.toLowerCase().includes(filtros.nombreComercial.toLowerCase());
-      }
-
-      return cumpleFiltros;
-    });
-
-    this.collectionSize = this.proveedoresFiltrados.length;
-    this.page = 1;
   }
 
   eliminarProveedor(id: number): void {

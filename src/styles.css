@@ -1466,6 +1466,46 @@ ngb-pagination.custom-pagination {
 }
 
 /*
+ * Toolbar de búsqueda en listas Cerbero: sin anillo/highlight azul de Bootstrap.
+ */
+.list-toolbar .search-input,
+.locations-toolbar .search-input {
+  transition: border-color 0.15s ease;
+}
+
+.list-toolbar .search-input:hover,
+.list-toolbar .search-input:focus,
+.list-toolbar .search-input:focus-visible,
+.locations-toolbar .search-input:hover,
+.locations-toolbar .search-input:focus,
+.locations-toolbar .search-input:focus-visible {
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.list-toolbar .search-clear-btn,
+.list-toolbar .search-clear-btn:hover,
+.list-toolbar .search-clear-btn:focus,
+.list-toolbar .search-clear-btn:focus-visible,
+.locations-toolbar .search-clear-btn,
+.locations-toolbar .search-clear-btn:hover,
+.locations-toolbar .search-clear-btn:focus,
+.locations-toolbar .search-clear-btn:focus-visible {
+  color: #94a3b8 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.list-toolbar .search-clear-btn:hover,
+.locations-toolbar .search-clear-btn:hover {
+  color: #475569 !important;
+}
+
+/*
  * Inventario terminales + dispositivos: misma cabecera y cuerpo.
  * Usar junto con generic-table o assets-table (clase extra en la <table>).
  */

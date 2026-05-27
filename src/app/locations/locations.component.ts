@@ -5,9 +5,19 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { UbicacionesService } from '../services/ubicaciones.service';
 import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { SubnetService, SubnetDTO } from '../services/subnet.service';
-import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModule, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
 import { TourRegistryService } from '../services/tour-registry.service';
+
+type UbicacionSortColumn =
+  | 'nombreGerencia'
+  | 'nombreOficina'
+  | 'piso'
+  | 'numeroPuerta'
+  | 'ciudad'
+  | 'departamento'
+  | 'direccion'
+  | 'interno';
 
 @Component({
   selector: 'app-locations',
@@ -16,18 +26,28 @@ import { TourRegistryService } from '../services/tour-registry.service';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    NgbModule
+    NgbModule,
+    NgbPaginationModule
   ],
   templateUrl: './locations.component.html',
   styleUrls: ['./locations.component.css']
 })
 export class LocationsComponent implements OnInit, OnDestroy {
   ubicaciones: UbicacionDTO[] = [];
+  ubicacionesFiltradas: UbicacionDTO[] = [];
   subnets: SubnetDTO[] = [];
-  loading: boolean = false;
+  loading = false;
   error: string | null = null;
   showConfirmDialog = false;
   ubicacionToDelete: UbicacionDTO | null = null;
+
+  searchTerm = '';
+  page = 1;
+  pageSize = 25;
+  collectionSize = 0;
+  sortColumn: UbicacionSortColumn = 'nombreGerencia';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   private tourCleanup?: () => void;
 
   constructor(
@@ -38,7 +58,6 @@ export class LocationsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    console.log('Iniciando componente LocationsComponent');
     this.cargarSubnets();
     this.tourCleanup = this.tourRegistry.register('locations', [{
       id: 'locations-overview',
@@ -47,7 +66,8 @@ export class LocationsComponent implements OnInit, OnDestroy {
       steps: [
         { selector: '#tour-locations-title', title: 'Ubicaciones físicas', description: 'Catálogo jerárquico (gerencia, oficina, piso, puerta) usado en activos y stock.', side: 'bottom' },
         { selector: '#tour-locations-nueva', title: 'Nueva ubicación', description: 'Alta o edición mediante el selector de ubicación y validación de subred asociada si aplica.', side: 'left' },
-        { selector: '#tour-locations-table', title: 'Listado', description: 'Editá o eliminá ubicaciones; los cambios impactan asignaciones de equipos.', side: 'top' }
+        { selector: '#tour-locations-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por cualquier dato visible de la ubicación.', side: 'bottom' },
+        { selector: '#tour-locations-table', title: 'Listado', description: 'Ordená por columna, navegá con paginación, editá o eliminá ubicaciones.', side: 'top' }
       ]
     }]);
   }
@@ -58,24 +78,21 @@ export class LocationsComponent implements OnInit, OnDestroy {
   }
 
   openNewLocationModal() {
-    const modalRef = this.modalService.open(LocationSelectorModalComponent, { 
+    const modalRef = this.modalService.open(LocationSelectorModalComponent, {
       size: 'lg',
       backdrop: 'static',
       keyboard: false
     });
-    
+
     modalRef.componentInstance.isAssignmentMode = false;
-    
+
     modalRef.result.then(
       (result) => {
-        console.log('Modal cerrado con resultado:', result);
         if (result) {
           this.cargarUbicaciones();
         }
       },
-      (reason) => {
-        console.log('Modal cerrado por:', reason);
-      }
+      () => {}
     );
   }
 
@@ -90,27 +107,118 @@ export class LocationsComponent implements OnInit, OnDestroy {
   }
 
   cargarUbicaciones() {
-    console.log('Iniciando carga de ubicaciones...');
     this.loading = true;
     this.error = null;
-    
+
     this.ubicacionesService.getUbicacionesData().subscribe({
       next: (ubicaciones) => {
-        console.log('Ubicaciones recibidas del servidor:', ubicaciones);
         this.ubicaciones = ubicaciones;
-        console.log('Número de ubicaciones cargadas:', ubicaciones.length);
+        this.aplicarFiltrosYOrden();
         this.loading = false;
       },
-      error: (error) => {
-        console.error('Error al cargar ubicaciones:', error);
+      error: () => {
         this.error = 'Error al cargar las ubicaciones. Por favor, intente nuevamente.';
         this.loading = false;
       }
     });
   }
 
+  get pagedUbicaciones(): UbicacionDTO[] {
+    const start = (this.page - 1) * this.pageSize;
+    return this.ubicacionesFiltradas.slice(start, start + this.pageSize);
+  }
+
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
+  }
+
+  sortData(column: UbicacionSortColumn): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.page = 1;
+    this.ordenarLista(this.ubicacionesFiltradas);
+  }
+
+  getSortIcon(column: UbicacionSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  isSortActive(column: UbicacionSortColumn): boolean {
+    return this.sortColumn === column;
+  }
+
+  private aplicarFiltrosYOrden(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.ubicacionesFiltradas = term
+      ? this.ubicaciones.filter((u) => this.matchesSearch(u, term))
+      : [...this.ubicaciones];
+    this.ordenarLista(this.ubicacionesFiltradas);
+    this.collectionSize = this.ubicacionesFiltradas.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
+  }
+
+  private matchesSearch(u: UbicacionDTO, term: string): boolean {
+    const haystack = [
+      u.nombreGerencia,
+      u.nombreOficina,
+      u.piso,
+      u.numeroPuerta,
+      u.ciudad,
+      u.departamento,
+      u.direccion,
+      u.interno,
+      this.getSubnetName(u.idSubnet ?? undefined)
+    ]
+      .map((v) => (v ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return haystack.includes(term);
+  }
+
+  private ordenarLista(lista: UbicacionDTO[]): void {
+    const col = this.sortColumn;
+    const dir = this.sortDirection;
+    lista.sort((a, b) => {
+      const valA = this.getSortValue(a, col);
+      const valB = this.getSortValue(b, col);
+      const cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+      return dir === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  private getSortValue(u: UbicacionDTO, col: UbicacionSortColumn): string {
+    return (u[col] ?? '').toString().trim();
+  }
+
   getSubnetName(idSubnet?: number): string {
     return this.subnets.find(s => s.pk === idSubnet)?.name || 'N/A';
+  }
+
+  displayValue(value: string | null | undefined): string {
+    const v = value?.trim();
+    return v ? v : 'N/A';
   }
 
   confirmarEliminar(ubicacion: UbicacionDTO) {
@@ -124,7 +232,6 @@ export class LocationsComponent implements OnInit, OnDestroy {
       this.ubicacionesService.eliminarUbicacionData(this.ubicacionToDelete.id).subscribe({
         next: (response) => {
           if (response.success) {
-            console.log('Ubicación eliminada exitosamente');
             this.cargarUbicaciones();
             this.showConfirmDialog = false;
             this.ubicacionToDelete = null;
@@ -168,18 +275,14 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
     modalRef.componentInstance.ubicacion = ubicacion;
     modalRef.componentInstance.isAssignmentMode = false;
-    
+
     modalRef.result.then(
       (result) => {
         if (result) {
-          console.log('Ubicación actualizada exitosamente');
           this.cargarUbicaciones();
         }
       },
-      (reason) => {
-        console.log('Modal cerrado por:', reason);
-      }
+      () => {}
     );
   }
-
-} 
+}

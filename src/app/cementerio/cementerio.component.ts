@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
@@ -21,6 +21,8 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TourRegistryService } from '../services/tour-registry.service';
 
+type CementerioSortColumn = 'tipo' | 'nombre' | 'fecha' | 'usuario';
+
 @Component({
   selector: 'app-cementerio',
   standalone: true,
@@ -39,17 +41,15 @@ export class CementerioComponent implements OnInit, OnDestroy {
   
   // Paginación
   page = 1;
-  pageSize = 20;
+  pageSize = 25;
   collectionSize = 0;
 
-  // Filtro de búsqueda
-  nombreEquipoControl = new FormControl('');
-  
-  // Filtro por tipo (todos, equipos, dispositivos)
+  // Búsqueda y filtros
+  searchTerm = '';
   filtroTipo: 'todos' | 'equipos' | 'dispositivos' = 'todos';
 
-  // Ordenamiento
-  sortColumn: 'tipo' | 'nombre' | 'fecha' | 'usuario' | '' = '';
+  // Ordenamiento (por defecto: nombre ascendente)
+  sortColumn: CementerioSortColumn = 'nombre';
   sortDirection: 'asc' | 'desc' = 'asc';
 
   // Reactivación
@@ -78,12 +78,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private modalService: NgbModal,
     private tourRegistry: TourRegistryService
-  ) {
-    // Suscribirse a cambios en el filtro de nombre
-    this.nombreEquipoControl.valueChanges.subscribe(value => {
-      this.aplicarFiltroNombre(value || '');
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadItemsEnBaja();
@@ -166,8 +161,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
           }).filter((dispositivo: any) => dispositivo.mac); // Solo incluir si tiene MAC
         }
         
-        // Aplicar filtros iniciales
-        this.aplicarFiltros();
+        this.aplicarFiltrosYOrden();
         this.loading = false;
       },
       error: (error) => {
@@ -181,17 +175,22 @@ export class CementerioComponent implements OnInit, OnDestroy {
     });
   }
 
-  private aplicarFiltroNombre(nombre: string): void {
-    this.aplicarFiltros();
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
   }
 
   /**
-   * Aplica todos los filtros (tipo y nombre)
+   * Aplica filtros (tipo y búsqueda) y ordena la lista.
    */
-  private aplicarFiltros(): void {
+  private aplicarFiltrosYOrden(): void {
     let itemsFiltrados: any[] = [];
 
-    // Primero filtrar por tipo
     if (this.filtroTipo === 'equipos') {
       itemsFiltrados = [...this.equiposEnBaja];
     } else if (this.filtroTipo === 'dispositivos') {
@@ -200,25 +199,26 @@ export class CementerioComponent implements OnInit, OnDestroy {
       itemsFiltrados = [...this.equiposEnBaja, ...this.dispositivosEnBaja];
     }
 
-    // Luego filtrar por nombre si hay búsqueda
-    const nombreBusqueda = this.nombreEquipoControl.value?.trim() || '';
-    if (nombreBusqueda) {
-      itemsFiltrados = itemsFiltrados.filter(item => 
-        (item.name || item.mac || '').toLowerCase().includes(nombreBusqueda.toLowerCase())
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
+      itemsFiltrados = itemsFiltrados.filter((item) =>
+        (item.name || item.mac || '').toLowerCase().includes(term)
       );
     }
 
+    this.ordenarLista(itemsFiltrados);
     this.equiposFiltrados = itemsFiltrados;
-    this.actualizarPaginacion();
+    this.collectionSize = itemsFiltrados.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
   }
 
-  /**
-   * Cambia el filtro por tipo
-   */
   filtrarPorTipo(tipo: 'todos' | 'equipos' | 'dispositivos'): void {
     this.filtroTipo = tipo;
-    this.page = 1; // Resetear a la primera página
-    this.aplicarFiltros();
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
   }
 
   /**
@@ -242,12 +242,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
     return this.equiposEnBaja.length + this.dispositivosEnBaja.length;
   }
 
-  private actualizarPaginacion(): void {
-    this.collectionSize = this.equiposFiltrados.length;
-    this.page = 1;
-  }
-
-  ordenarPor(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): void {
+  sortData(columna: CementerioSortColumn): void {
     if (this.sortColumn === columna) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -255,30 +250,44 @@ export class CementerioComponent implements OnInit, OnDestroy {
       this.sortDirection = 'asc';
     }
     this.page = 1;
+    this.ordenarLista(this.equiposFiltrados);
   }
 
-  isSortedBy(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): boolean {
+  isSortActive(columna: CementerioSortColumn): boolean {
     return this.sortColumn === columna;
   }
 
-  getSortIcon(columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): string {
+  getSortIcon(columna: CementerioSortColumn): string {
     if (this.sortColumn !== columna) return 'fa-sort';
     return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
   }
 
-  private getListaOrdenada(): any[] {
-    const lista = [...this.equiposFiltrados];
+  private ordenarLista(lista: any[]): void {
     const col = this.sortColumn;
-    if (!col) return lista;
-    return lista.sort((a, b) => {
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
       const valA = this.getValorOrdenamiento(a, col);
       const valB = this.getValorOrdenamiento(b, col);
-      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
-      return this.sortDirection === 'asc' ? cmp : -cmp;
+      let cmp: number;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        cmp = valA - valB;
+      } else {
+        cmp = String(valA).localeCompare(String(valB), 'es', { sensitivity: 'base' });
+      }
+      return cmp * mult;
     });
   }
 
-  private getValorOrdenamiento(item: any, columna: 'tipo' | 'nombre' | 'fecha' | 'usuario'): string | number {
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  private getValorOrdenamiento(item: any, columna: CementerioSortColumn): string | number {
     switch (columna) {
       case 'tipo':
         return (item.tipo || '').toString();
@@ -294,10 +303,8 @@ export class CementerioComponent implements OnInit, OnDestroy {
   }
 
   get pagedEquipos(): any[] {
-    const listaOrdenada = this.getListaOrdenada();
     const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return listaOrdenada.slice(startItem, endItem);
+    return this.equiposFiltrados.slice(startItem, startItem + this.pageSize);
   }
 
   verDetallesEquipo(equipo: any): void {
@@ -518,8 +525,8 @@ export class CementerioComponent implements OnInit, OnDestroy {
           this.dispositivosEnBaja = this.dispositivosEnBaja.filter(d => d.mac !== dispositivo.mac);
           this.equiposFiltrados = this.equiposFiltrados.filter(d => d.mac !== dispositivo.mac);
           
-          this.actualizarPaginacion();
-          
+          this.aplicarFiltrosYOrden();
+
           this.notificationService.showSuccessMessage(
             `Dispositivo "${dispositivo.name || dispositivo.mac}" reactivado exitosamente.`
           );
@@ -558,8 +565,8 @@ export class CementerioComponent implements OnInit, OnDestroy {
           this.equiposEnBaja = this.equiposEnBaja.filter(e => e.id !== equipo.id);
           this.equiposFiltrados = this.equiposFiltrados.filter(e => e.id !== equipo.id);
           
-          this.actualizarPaginacion();
-          
+          this.aplicarFiltrosYOrden();
+
           this.notificationService.showSuccessMessage(
             `Equipo "${equipo.name}" reactivado exitosamente.`
           );
@@ -812,8 +819,8 @@ export class CementerioComponent implements OnInit, OnDestroy {
     // Información del filtro aplicado
     doc.setFontSize(10);
     let filtroTexto = 'Todos los items';
-    if (this.nombreEquipoControl.value) {
-      filtroTexto = `Búsqueda: ${this.nombreEquipoControl.value}`;
+    if (this.searchTerm.trim()) {
+      filtroTexto = `Búsqueda: ${this.searchTerm.trim()}`;
     }
     doc.text(filtroTexto, 14, 28);
     

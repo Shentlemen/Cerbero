@@ -1,0 +1,104 @@
+<div class="location-selector-modal">
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-map-marker-alt me-2"></i>
+      <ng-container *ngIf="ubicacion?.id; else tituloNueva">Editar ubicación</ng-container>
+      <ng-template #tituloNueva>Nueva ubicación</ng-template>
+    </h4>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="activeModal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body">
+    <form [formGroup]="ubicacionForm">
+      <div class="form-card mb-3">
+        <div class="form-card-header">
+          <h6 class="form-card-title">
+            <i class="fas fa-building me-2"></i>
+            Datos de la ubicación
+          </h6>
+        </div>
+        <div class="form-card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="loc-nombreGerencia">Gerencia</label>
+              <input id="loc-nombreGerencia" type="text" class="form-control" formControlName="nombreGerencia" autocomplete="organization">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="loc-nombreOficina">Oficina</label>
+              <input id="loc-nombreOficina" type="text" class="form-control" formControlName="nombreOficina" autocomplete="off">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="loc-ciudad">Ciudad <span class="text-danger">*</span></label>
+              <input id="loc-ciudad" type="text" class="form-control" formControlName="ciudad" autocomplete="address-level2">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="loc-departamento">Departamento <span class="text-danger">*</span></label>
+              <input id="loc-departamento" type="text" class="form-control" formControlName="departamento" autocomplete="address-level1">
+            </div>
+            <div class="col-12 mb-3">
+              <label class="form-label" for="loc-direccion">Dirección <span class="text-muted fw-normal">(opcional)</span></label>
+              <input id="loc-direccion" type="text" class="form-control" formControlName="direccion" autocomplete="street-address">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label" for="loc-piso">Piso</label>
+              <input id="loc-piso" type="text" class="form-control" formControlName="piso" autocomplete="off">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label" for="loc-numeroPuerta">Número de puerta</label>
+              <input id="loc-numeroPuerta" type="text" class="form-control" formControlName="numeroPuerta" autocomplete="off">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label" for="loc-interno">Interno</label>
+              <input id="loc-interno" type="text" class="form-control" formControlName="interno" autocomplete="off">
+            </div>
+            <div class="col-12 mb-0">
+              <label class="form-label" for="loc-subnet-search">Subnet <span class="text-muted fw-normal">(opcional)</span></label>
+              <div class="position-relative">
+                <input
+                  id="loc-subnet-search"
+                  type="text"
+                  class="form-control"
+                  placeholder="Escriba para filtrar subnets..."
+                  (input)="filtrarSubnets($event)"
+                  (focus)="mostrarTodasSubnets()"
+                  (blur)="cerrarDropdown()"
+                  [value]="subnetFiltro"
+                  autocomplete="off">
+                <div *ngIf="subnetsFiltradas.length > 0 && mostrarDropdown" class="items-dropdown">
+                  <div
+                    *ngFor="let subnet of subnetsFiltradas"
+                    class="item-option"
+                    (click)="seleccionarSubnet(subnet)">
+                    <span class="subnet-line-name">{{ subnet.name }}</span>
+                    <span class="subnet-line-id text-muted">— {{ subnet.id }}</span>
+                  </div>
+                </div>
+              </div>
+              <div *ngIf="subnetSeleccionada" class="mt-2 small text-muted">
+                <i class="fas fa-check-circle text-success me-1"></i>
+                Seleccionada: <strong>{{ subnetSeleccionada.name }} — {{ subnetSeleccionada.id }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn modal-btn-primario"
+      [class.modal-btn-primario--valid]="ubicacionForm.valid"
+      [class.modal-btn-primario--invalid]="!ubicacionForm.valid"
+      (click)="guardarUbicacion()"
+      [disabled]="!ubicacionForm.valid">
+      <i class="fas fa-save me-1"></i>
+      {{ ubicacion?.id ? 'Guardar cambios' : 'Guardar ubicación' }}
+    </button>
+  </div>
+</div>

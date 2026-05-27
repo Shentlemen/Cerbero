@@ -1,4 +1,4 @@
-<div class="generic-container">
+<div class="generic-container activos-page">
   <!-- Contenedor de notificaciones -->
   <app-notification-container></app-notification-container>
   
@@ -147,11 +147,6 @@
   </div>
 
   <div class="content-section">
-    <div class="row mb-3">
-      <div class="col-12">
-        <input id="activos-tour-search" type="text" class="form-control" placeholder="Buscar" [formControl]="numeroCompraControl" style="max-width: 360px;">
-      </div>
-    </div>
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -164,70 +159,110 @@
         <p class="mt-2">Cargando activos...</p>
       </div>
 
-      <div id="activos-tour-table" class="table-responsive" *ngIf="!loading && !error">
-        <table class="generic-table">
-          <thead>
-            <tr>
-              <th (click)="sortData('numeroCompra')" [class.active]="sortColumn === 'numeroCompra'">
-                <div class="th-content">
-                  <span>Compra</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'numeroCompra' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'numeroCompra' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'numeroCompra'
-                  }"></i>
-                </div>
-              </th>
-              <th>
-                <div class="th-content">
-                  <span>Número de Activo</span>
-                </div>
-              </th>
-              <th (click)="sortData('idUsuario')" [class.active]="sortColumn === 'idUsuario'">
-                <div class="th-content">
-                  <span>Responsable</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idUsuario' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idUsuario' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idUsuario'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('idUbicacion')" [class.active]="sortColumn === 'idUbicacion'">
-                <div class="th-content">
-                  <span>Ubicación</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'idUbicacion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'idUbicacion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'idUbicacion'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('criticidad')" [class.active]="sortColumn === 'criticidad'">
-                <div class="th-content">
-                  <span>Criticidad</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'criticidad' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'criticidad' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'criticidad'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('estado')" [class.active]="sortColumn === 'estado'">
-                <div class="th-content">
-                  <span>Estado</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'estado' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'estado' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'estado'
-                  }"></i>
-                </div>
-              </th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let activo of pagedActivos" class="activo-row">
+      <ng-container *ngIf="!loading && !error">
+        <div class="list-toolbar" id="activos-tour-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por compra, número de activo o ID..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="activos.length > 0">
+            <span *ngIf="collectionSize === activos.length">
+              {{ activos.length }} activos
+            </span>
+            <span *ngIf="collectionSize !== activos.length">
+              {{ collectionSize }} de {{ activos.length }} activos
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
+
+        <div id="activos-tour-table" class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('numeroCompra')"
+                  (click)="sortData('numeroCompra')"
+                  title="Ordenar por compra">
+                  <div class="th-content">
+                    <span>Compra</span>
+                    <i class="fas" [ngClass]="getSortIcon('numeroCompra')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('name')"
+                  (click)="sortData('name')"
+                  title="Ordenar por número de activo">
+                  <div class="th-content">
+                    <span>Número de Activo</span>
+                    <i class="fas" [ngClass]="getSortIcon('name')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('idUsuario')"
+                  (click)="sortData('idUsuario')"
+                  title="Ordenar por responsable">
+                  <div class="th-content">
+                    <span>Responsable</span>
+                    <i class="fas" [ngClass]="getSortIcon('idUsuario')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('idUbicacion')"
+                  (click)="sortData('idUbicacion')"
+                  title="Ordenar por ubicación">
+                  <div class="th-content">
+                    <span>Ubicación</span>
+                    <i class="fas" [ngClass]="getSortIcon('idUbicacion')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('criticidad')"
+                  (click)="sortData('criticidad')"
+                  title="Ordenar por criticidad">
+                  <div class="th-content">
+                    <span>Criticidad</span>
+                    <i class="fas" [ngClass]="getSortIcon('criticidad')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('estado')"
+                  (click)="sortData('estado')"
+                  title="Ordenar por estado">
+                  <div class="th-content">
+                    <span>Estado</span>
+                    <i class="fas" [ngClass]="getSortIcon('estado')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let activo of pagedActivos" class="generic-row">
               <td>
                 <span class="compra-link" (click)="verDetallesCompra(activo.idNumeroCompra, compraModal)">
                   {{getNombreCompraFormateado(activo.idNumeroCompra)}}
@@ -274,24 +309,30 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
 
-      <div *ngIf="!loading && !error && pagedActivos.length === 0" class="alert alert-info">
-        No hay activos registrados.
-      </div>
-    </div>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
 
-    <div class="pagination-container">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div *ngIf="activos.length === 0" class="alert alert-info">
+          No hay activos registrados.
+        </div>
+
+        <div *ngIf="activos.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay activos que coincidan con los filtros aplicados.
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

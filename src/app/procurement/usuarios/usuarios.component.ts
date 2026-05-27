@@ -1,29 +1,30 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
 import { TourRegistryService } from '../../services/tour-registry.service';
 
+type UsuarioSortColumn = 'cedula' | 'nombre' | 'apellido' | 'cargo' | 'unidad';
+
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './usuarios.component.html',
-  styleUrls: ['./usuarios.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./usuarios.component.css']
 })
 export class UsuariosComponent implements OnInit, OnDestroy {
   usuariosList: UsuarioDTO[] = [];
   usuariosFiltrados: UsuarioDTO[] = [];
-  filterForm: FormGroup;
   usuarioForm: FormGroup;
-  sortColumn: string = '';
+  searchTerm = '';
+  sortColumn: UsuarioSortColumn = 'apellido';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 10;
+  pageSize = 25;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -39,24 +40,12 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     private modalService: NgbModal,
     private tourRegistry: TourRegistryService
   ) {
-    this.filterForm = this.fb.group({
-      nombre: [''],
-      cedula: [''],
-      unidad: [''],
-      cargo: ['']
-    });
-
     this.usuarioForm = this.fb.group({
       cedula: ['', [Validators.required, Validators.pattern('^[0-9]{8,10}$')]],
       nombre: ['', Validators.required],
       apellido: ['', Validators.required],
       cargo: ['', Validators.required],
       unidad: ['', Validators.required]
-    });
-
-    // Suscribirse a cambios en el formulario de filtro
-    this.filterForm.valueChanges.subscribe(() => {
-      this.aplicarFiltros();
     });
   }
 
@@ -69,7 +58,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       steps: [
         { selector: '#tour-proc-personas-title', title: 'Personas de organización', description: 'Directorio de personas reales (cédula, unidad, cargo) usado para responsables en activos y compras — distinto de usuarios de login Cerbero.', side: 'bottom' },
         { selector: '#tour-proc-personas-nuevo', title: 'Alta', description: 'Registrá una persona para vincularla después en tipos de activo o formularios.', side: 'left' },
-        { selector: '#tour-proc-personas-table', title: 'Tabla', description: 'Editá datos o eliminá registros; ordená por columnas disponibles.', side: 'top' }
+        { selector: '#tour-proc-personas-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por cédula, nombre, apellido, cargo o unidad.', side: 'bottom' },
+        { selector: '#tour-proc-personas-table', title: 'Listado', description: 'Ordená por columna, navegá con paginación, editá o eliminá registros.', side: 'top' }
       ]
     }]);
   }
@@ -82,12 +72,11 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   cargarUsuarios(): void {
     this.loading = true;
     this.error = null;
-    
+
     this.usuariosService.getUsuarios().subscribe({
       next: (usuarios) => {
         this.usuariosList = usuarios;
-        this.usuariosFiltrados = [...this.usuariosList];
-        this.collectionSize = this.usuariosFiltrados.length;
+        this.aplicarFiltrosYOrden();
         this.loading = false;
       },
       error: (error) => {
@@ -100,36 +89,88 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   get pagedUsuarios(): UsuarioDTO[] {
     const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.usuariosFiltrados.slice(startItem, endItem);
+    return this.usuariosFiltrados.slice(startItem, startItem + this.pageSize);
   }
 
-  sortData(column: string): void {
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
+  }
+
+  sortData(column: UsuarioSortColumn): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.ordenarLista(this.usuariosFiltrados);
+  }
 
-    this.usuariosFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof UsuarioDTO];
-      let valueB = b[column as keyof UsuarioDTO];
+  getSortIcon(column: UsuarioSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
 
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
+  isSortActive(column: UsuarioSortColumn): boolean {
+    return this.sortColumn === column;
+  }
 
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+  private aplicarFiltrosYOrden(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.usuariosFiltrados = term
+      ? this.usuariosList.filter((u) => this.matchesSearch(u, term))
+      : [...this.usuariosList];
+    this.ordenarLista(this.usuariosFiltrados);
+    this.collectionSize = this.usuariosFiltrados.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
+  }
 
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
+  private matchesSearch(u: UsuarioDTO, term: string): boolean {
+    const haystack = [
+      u.cedula,
+      u.nombre,
+      u.apellido,
+      `${u.nombre} ${u.apellido}`,
+      u.cargo,
+      u.unidad
+    ]
+      .map((v) => (v ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return haystack.includes(term);
+  }
+
+  private ordenarLista(lista: UsuarioDTO[]): void {
+    const col = this.sortColumn;
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      const valA = this.getSortValue(a, col);
+      const valB = this.getSortValue(b, col);
+      return valA.localeCompare(valB, 'es', { sensitivity: 'base' }) * mult;
     });
+  }
+
+  private getSortValue(u: UsuarioDTO, col: UsuarioSortColumn): string {
+    const value = u[col];
+    return (value ?? '').toString().trim().toLowerCase();
   }
 
   abrirModal(modal: any, usuario?: UsuarioDTO): void {
@@ -142,7 +183,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       this.usuarioSeleccionado = null;
       this.usuarioForm.reset();
     }
-    this.modalService.open(modal, { 
+    this.modalService.open(modal, {
       size: 'lg',
       backdrop: true
     });
@@ -151,7 +192,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   guardarUsuario(): void {
     if (this.usuarioForm.valid) {
       const usuarioData = this.usuarioForm.value;
-      
+
       if (this.modoEdicion && this.usuarioSeleccionado) {
         if (!this.usuarioSeleccionado.idUsuario || isNaN(this.usuarioSeleccionado.idUsuario)) {
           this.error = 'ID de usuario no válido';
@@ -162,10 +203,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
           ...usuarioData,
           idUsuario: this.usuarioSeleccionado.idUsuario
         };
-        
+
         this.usuariosService.actualizarUsuario(this.usuarioSeleccionado.idUsuario, usuarioActualizado).subscribe({
-          next: (usuarioActualizado) => {
-            console.log('Usuario actualizado:', usuarioActualizado);
+          next: () => {
             this.cargarUsuarios();
             this.modalService.dismissAll();
             this.error = null;
@@ -177,8 +217,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         });
       } else {
         this.usuariosService.crearUsuario(usuarioData).subscribe({
-          next: (usuarioCreado) => {
-            console.log('Usuario creado:', usuarioCreado);
+          next: () => {
             this.cargarUsuarios();
             this.modalService.dismissAll();
             this.error = null;
@@ -190,46 +229,11 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         });
       }
     } else {
-      // Marcar todos los campos como touched para mostrar los errores
       Object.keys(this.usuarioForm.controls).forEach(key => {
         const control = this.usuarioForm.get(key);
         control?.markAsTouched();
       });
     }
-  }
-
-  aplicarFiltros(): void {
-    const filtros = this.filterForm.value;
-    
-    this.usuariosFiltrados = this.usuariosList.filter(usuario => {
-      let cumpleFiltros = true;
-
-      if (filtros.nombre) {
-        const nombreCompleto = `${usuario.nombre} ${usuario.apellido}`.toLowerCase();
-        cumpleFiltros = cumpleFiltros && 
-          nombreCompleto.includes(filtros.nombre.toLowerCase());
-      }
-
-      if (filtros.cedula) {
-        cumpleFiltros = cumpleFiltros && 
-          usuario.cedula.includes(filtros.cedula);
-      }
-
-      if (filtros.unidad) {
-        cumpleFiltros = cumpleFiltros && 
-          usuario.unidad.toLowerCase().includes(filtros.unidad.toLowerCase());
-      }
-
-      if (filtros.cargo) {
-        cumpleFiltros = cumpleFiltros && 
-          usuario.cargo.toLowerCase().includes(filtros.cargo.toLowerCase());
-      }
-
-      return cumpleFiltros;
-    });
-
-    this.collectionSize = this.usuariosFiltrados.length;
-    this.page = 1;
   }
 
   eliminarUsuario(id: number): void {
@@ -260,30 +264,4 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.showConfirmDialog = false;
     this.usuarioToDelete = null;
   }
-
-  buscarPorCedula(cedula: string): void {
-    if (cedula.trim()) {
-      this.usuariosService.getUsuarioByCedula(cedula).subscribe({
-        next: (usuario) => {
-          this.usuariosFiltrados = usuario ? [usuario] : [];
-          this.collectionSize = this.usuariosFiltrados.length;
-          this.page = 1;
-          this.error = null;
-        },
-        error: (error) => {
-          if (error.status === 404) {
-            this.usuariosFiltrados = [];
-            this.collectionSize = 0;
-            this.error = 'No se encontró ningún usuario con esa cédula';
-          } else {
-            console.error('Error al buscar usuario por cédula:', error);
-            this.error = error.message || 'Error al buscar el usuario. Por favor, intente nuevamente.';
-          }
-        }
-      });
-    } else {
-      this.cargarUsuarios();
-    }
-  }
-
-} 
+}

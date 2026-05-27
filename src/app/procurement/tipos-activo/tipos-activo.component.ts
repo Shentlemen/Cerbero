@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -8,10 +8,12 @@ import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo
 import { UsuariosService, UsuarioDTO } from '../../services/usuarios.service';
 import { TourRegistryService } from '../../services/tour-registry.service';
 
+type TipoActivoSortColumn = 'idActivo' | 'descripcion' | 'usuario';
+
 @Component({
   selector: 'app-tipos-activo',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './tipos-activo.component.html',
   styleUrls: ['./tipos-activo.component.css']
 })
@@ -22,10 +24,11 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
   tiposActivoFiltrados: TipoDeActivoDTO[] = [];
   usuariosList: UsuarioDTO[] = [];
   tipoActivoForm: FormGroup;
-  sortColumn: string = '';
+  searchTerm = '';
+  sortColumn: TipoActivoSortColumn = 'descripcion';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 10;
+  pageSize = 25;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -58,7 +61,8 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
       steps: [
         { selector: '#tour-tipos-activo-title', title: 'Tipos de activo', description: 'Catálogo usado al dar de alta equipos en inventario Cerbero; cada tipo puede tener usuario responsable por defecto.', side: 'bottom' },
         { selector: '#tour-tipos-activo-nuevo', title: 'Nuevo tipo', description: 'Creá descripción y vinculá el usuario responsable automático en altas.', side: 'left' },
-        { selector: '#tour-tipos-activo-table', title: 'Listado', description: 'Editá o eliminá tipos; impacta formularios de activos y reglas de asignación.', side: 'top' }
+        { selector: '#tour-tipos-activo-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por ID, descripción o usuario responsable.', side: 'bottom' },
+        { selector: '#tour-tipos-activo-table', title: 'Listado', description: 'Ordená por columna, navegá con paginación, editá o eliminá tipos.', side: 'top' }
       ]
     }]);
   }
@@ -91,11 +95,10 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
     this.tiposActivoService.getTiposActivo().subscribe({
       next: (data) => {
         this.tiposActivoList = data;
-        this.tiposActivoFiltrados = [...this.tiposActivoList];
-        this.collectionSize = this.tiposActivoFiltrados.length;
+        this.aplicarFiltrosYOrden();
         this.loading = false;
       },
-      error: (error) => {
+      error: () => {
         this.error = 'Error al cargar los tipos de activo';
         this.loading = false;
       }
@@ -103,45 +106,108 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
   }
 
   get pagedTiposActivo(): TipoDeActivoDTO[] {
-    const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.tiposActivoFiltrados.slice(startItem, endItem);
+    const start = (this.page - 1) * this.pageSize;
+    return this.tiposActivoFiltrados.slice(start, start + this.pageSize);
   }
 
-  sortData(column: string): void {
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
+  }
+
+  sortData(column: TipoActivoSortColumn): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.ordenarLista(this.tiposActivoFiltrados);
+  }
 
-    this.tiposActivoFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof TipoDeActivoDTO];
-      let valueB = b[column as keyof TipoDeActivoDTO];
+  getSortIcon(column: TipoActivoSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
 
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
+  isSortActive(column: TipoActivoSortColumn): boolean {
+    return this.sortColumn === column;
+  }
 
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+  private aplicarFiltrosYOrden(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.tiposActivoFiltrados = term
+      ? this.tiposActivoList.filter((t) => this.matchesSearch(t, term))
+      : [...this.tiposActivoList];
+    this.ordenarLista(this.tiposActivoFiltrados);
+    this.collectionSize = this.tiposActivoFiltrados.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
+  }
 
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
+  private matchesSearch(t: TipoDeActivoDTO, term: string): boolean {
+    const haystack = [
+      t.idActivo?.toString(),
+      t.descripcion,
+      t.nombre,
+      this.getNombreUsuario(t.idUsuario)
+    ]
+      .map((v) => (v ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return haystack.includes(term);
+  }
+
+  private ordenarLista(lista: TipoDeActivoDTO[]): void {
+    const col = this.sortColumn;
+    const dir = this.sortDirection;
+    const mult = dir === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      let cmp: number;
+      if (col === 'idActivo') {
+        cmp = (a.idActivo ?? 0) - (b.idActivo ?? 0);
+      } else {
+        const valA = this.getSortValueTexto(a, col);
+        const valB = this.getSortValueTexto(b, col);
+        cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
       }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
+      return cmp * mult;
     });
+  }
+
+  private getSortValueTexto(t: TipoDeActivoDTO, col: Exclude<TipoActivoSortColumn, 'idActivo'>): string {
+    switch (col) {
+      case 'descripcion':
+        return (t.descripcion ?? '').trim();
+      case 'usuario':
+        return this.getNombreUsuario(t.idUsuario).toLowerCase();
+      default:
+        return '';
+    }
   }
 
   openNewTipoActivoModal(): void {
     this.modoEdicion = false;
     this.tipoActivoSeleccionado = null;
     this.tipoActivoForm.reset();
-    this.modalService.open(this.tipoActivoModal, { 
-      backdrop: false  // Deshabilitar el backdrop
+    this.modalService.open(this.tipoActivoModal, {
+      backdrop: false
     });
   }
 
@@ -152,8 +218,8 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
       descripcion: tipo.descripcion,
       idUsuario: tipo.idUsuario
     });
-    this.modalService.open(this.tipoActivoModal, { 
-      backdrop: false  // Deshabilitar el backdrop
+    this.modalService.open(this.tipoActivoModal, {
+      backdrop: false
     });
   }
 
@@ -168,8 +234,7 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
 
         tipoActivo.idActivo = this.tipoActivoSeleccionado.idActivo;
         this.tiposActivoService.actualizarTipoActivo(this.tipoActivoSeleccionado.idActivo, tipoActivo).subscribe({
-          next: (tipoActualizado) => {
-            console.log('Tipo de activo actualizado:', tipoActualizado);
+          next: () => {
             this.modalService.dismissAll();
             this.cargarTiposActivo();
             this.error = null;
@@ -181,8 +246,7 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
         });
       } else {
         this.tiposActivoService.crearTipoActivo(tipoActivo).subscribe({
-          next: (tipoCreado) => {
-            console.log('Tipo de activo creado:', tipoCreado);
+          next: () => {
             this.modalService.dismissAll();
             this.cargarTiposActivo();
             this.error = null;
@@ -229,5 +293,4 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
     this.showConfirmDialog = false;
     this.tipoActivoToDelete = null;
   }
-
-} 
+}

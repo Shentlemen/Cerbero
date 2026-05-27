@@ -1,4 +1,4 @@
-<div class="generic-container">
+<div class="generic-container tipos-activo-page">
   <div class="header-section">
     <div class="header-content">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
@@ -27,52 +27,120 @@
         <p class="mt-2">Cargando tipos de activo...</p>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="tipos-activo-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Descripción</th>
-              <th>Usuario Responsable</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let tipo of pagedTiposActivo" class="tipos-activo-row">
-              <td>{{tipo.idActivo}}</td>
-              <td>{{tipo.descripcion}}</td>
-              <td>{{getNombreUsuario(tipo.idUsuario)}}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-info btn-sm me-2" (click)="editTipoActivo(tipo)">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-danger btn-sm" (click)="deleteTipoActivo(tipo.idActivo)">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <ng-container *ngIf="!loading && !error">
+        <div class="list-toolbar" id="tour-tipos-activo-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por ID, descripción o usuario responsable..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="tiposActivoList.length > 0">
+            <span *ngIf="collectionSize === tiposActivoList.length">
+              {{ tiposActivoList.length }} tipos de activo
+            </span>
+            <span *ngIf="collectionSize !== tiposActivoList.length">
+              {{ collectionSize }} de {{ tiposActivoList.length }} tipos de activo
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
 
-      <div *ngIf="!loading && !error && pagedTiposActivo.length === 0" class="alert alert-info">
-        No hay tipos de activo registrados.
-      </div>
-    </div>
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('idActivo')"
+                  (click)="sortData('idActivo')"
+                  title="Ordenar por ID">
+                  <div class="th-content">
+                    <span>ID</span>
+                    <i class="fas" [ngClass]="getSortIcon('idActivo')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('descripcion')"
+                  (click)="sortData('descripcion')"
+                  title="Ordenar por descripción">
+                  <div class="th-content">
+                    <span>Descripción</span>
+                    <i class="fas" [ngClass]="getSortIcon('descripcion')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('usuario')"
+                  (click)="sortData('usuario')"
+                  title="Ordenar por usuario responsable">
+                  <div class="th-content">
+                    <span>Usuario Responsable</span>
+                    <i class="fas" [ngClass]="getSortIcon('usuario')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tipo of pagedTiposActivo" class="generic-row">
+                <td>{{ tipo.idActivo }}</td>
+                <td>{{ tipo.descripcion }}</td>
+                <td>{{ getNombreUsuario(tipo.idUsuario) }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn btn-info btn-sm me-2" (click)="editTipoActivo(tipo)">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" (click)="deleteTipoActivo(tipo.idActivo)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-    <div class="pagination-container" *ngIf="collectionSize > pageSize">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
+
+        <div *ngIf="tiposActivoList.length === 0" class="alert alert-info">
+          No hay tipos de activo registrados.
+        </div>
+
+        <div *ngIf="tiposActivoList.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay tipos de activo que coincidan con "{{ searchTerm }}".
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>
@@ -131,4 +199,4 @@
       </button>
     </div>
   </div>
-</div> 
+</div>

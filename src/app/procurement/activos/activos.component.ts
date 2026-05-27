@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewEncapsulation, ViewChild, ChangeDetectorRef, Inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
 import {
   NgbActiveModal,
@@ -39,6 +39,8 @@ import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { driver, type Driver, type DriveStep } from 'driver.js';
 import { TourRegistryService } from '../../services/tour-registry.service';
+
+type ActivoSortColumn = 'numeroCompra' | 'name' | 'idUsuario' | 'idUbicacion' | 'criticidad' | 'estado';
 
 type PdfHardwareRemoteDep =
   | 'bios'
@@ -137,11 +139,12 @@ export class ActivosComponent implements OnInit, OnDestroy {
   
   // Paginación
   page = 1;
-  pageSize = 10;
+  pageSize = 25;
   collectionSize = 0;
-  
-  // Ordenamiento
-  sortColumn: string = '';
+
+  // Búsqueda y ordenamiento
+  searchTerm = '';
+  sortColumn: ActivoSortColumn = 'name';
   sortDirection: 'asc' | 'desc' = 'asc';
   
   // Filtrado
@@ -155,9 +158,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
   estadoInactivoCount: number = 0;
   estadoMantenimientoCount: number = 0;
   totalActivos: number = 0;
-
-  // Control de búsqueda
-  numeroCompraControl: FormControl = new FormControl('');
 
   /**
    * Búsqueda de compra en el modal activo — mismo patrón que Registrar Stock (`stock.component`):
@@ -477,11 +477,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
     this.cargarTiposActivo();
     this.cargarTiposCompra();
     
-    // Suscribirse a cambios en el control de búsqueda
-    this.numeroCompraControl.valueChanges.subscribe(() => {
-      this.aplicarFiltroBusqueda();
-    });
-
     // Suscribirse a cambios en la compra seleccionada
     this.activoForm.get('idNumeroCompra')?.valueChanges.subscribe((raw) => {
       this.onCompraChange(raw);
@@ -1210,6 +1205,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
     }
     const ger = (u.nombreGerencia || '').trim();
     const ofi = (u.nombreOficina || '').trim();
+    const dep = (u.departamento || '').trim();
     const ciu = (u.ciudad || '').trim();
     const base = [ger, ofi].filter(Boolean).join(' — ');
     if (base && ciu) {
@@ -1217,6 +1213,10 @@ export class ActivosComponent implements OnInit, OnDestroy {
     }
     if (base) {
       return base;
+    }
+    const loc = [dep, ciu].filter(Boolean).join(' — ');
+    if (loc) {
+      return loc;
     }
     if (ciu) {
       return ciu;
@@ -1578,7 +1578,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
       next: (activos) => {
         console.log('Activos cargados:', activos);
         this.activos = activos;
-        this.aplicarFiltroBusqueda();
+        this.aplicarTodosLosFiltros();
         this.updateSummary();
         this.loading = false;
       },
@@ -2373,14 +2373,24 @@ export class ActivosComponent implements OnInit, OnDestroy {
 
   filterByCriticidad(criticidad: string): void {
     this.currentFilter = criticidad;
+    this.page = 1;
     this.aplicarTodosLosFiltros();
-    this.updateSummary();
   }
 
   filterByEstado(estado: string): void {
     this.currentEstadoFilter = estado;
+    this.page = 1;
     this.aplicarTodosLosFiltros();
-    this.updateSummary();
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarTodosLosFiltros();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
   }
 
   /**
@@ -2401,65 +2411,97 @@ export class ActivosComponent implements OnInit, OnDestroy {
       lista = lista.filter((a) => (a.estado?.trim().toUpperCase() ?? '') === es);
     }
 
-    const raw = this.numeroCompraControl.value;
-    const valorBusqueda = raw != null ? String(raw).toLowerCase().trim() : '';
-
+    const valorBusqueda = this.searchTerm.trim().toLowerCase();
     if (valorBusqueda) {
-      lista = lista.filter((activo) => {
-        const nombreCompra = this.getNombreCompraFormateado(activo.idNumeroCompra).toLowerCase();
-        const nombreActivo = (activo.name || '').toLowerCase();
-        const coincideCompra = nombreCompra.includes(valorBusqueda);
-        const coincideActivo = nombreActivo.includes(valorBusqueda);
-        const soloDigitos = /^\d+$/.test(valorBusqueda);
-        const coincideIdActivo =
-          soloDigitos && String(activo.idActivo).includes(valorBusqueda);
-        return coincideCompra || coincideActivo || coincideIdActivo;
-      });
+      lista = lista.filter((activo) => this.matchesSearch(activo, valorBusqueda));
     }
 
+    this.ordenarLista(lista);
     this.activosFiltrados = lista;
     this.collectionSize = lista.length;
-    this.page = 1;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
   }
 
-  sortData(column: string): void {
+  private matchesSearch(activo: ActivoDTO, term: string): boolean {
+    const nombreCompra = this.getNombreCompraFormateado(activo.idNumeroCompra).toLowerCase();
+    const nombreActivo = (activo.name || '').toLowerCase();
+    const soloDigitos = /^\d+$/.test(term);
+    const coincideIdActivo = soloDigitos && String(activo.idActivo).includes(term);
+    return (
+      nombreCompra.includes(term) ||
+      nombreActivo.includes(term) ||
+      coincideIdActivo
+    );
+  }
+
+  sortData(column: ActivoSortColumn): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.ordenarLista(this.activosFiltrados);
+  }
 
-    this.activosFiltrados.sort((a, b) => {
-      let valueA: any;
-      let valueB: any;
-      if (column === 'numeroCompra') {
-        const compraA = this.compras.get(a.idNumeroCompra);
-        const compraB = this.compras.get(b.idNumeroCompra);
-        valueA = compraA && compraA.numeroCompra ? compraA.numeroCompra.toLowerCase() : '';
-        valueB = compraB && compraB.numeroCompra ? compraB.numeroCompra.toLowerCase() : '';
-      } else {
-        valueA = a[column as keyof typeof a];
-        valueB = b[column as keyof typeof b];
-        if (valueA === null || valueA === undefined) valueA = '';
-        if (valueB === null || valueB === undefined) valueB = '';
-        if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-        if (typeof valueB === 'string') valueB = valueB.toLowerCase();
-      }
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
+  getSortIcon(column: ActivoSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  isSortActive(column: ActivoSortColumn): boolean {
+    return this.sortColumn === column;
+  }
+
+  private ordenarLista(lista: ActivoDTO[]): void {
+    const col = this.sortColumn;
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      const valA = this.getSortValue(a, col);
+      const valB = this.getSortValue(b, col);
+      return valA.localeCompare(valB, 'es', { sensitivity: 'base' }) * mult;
     });
+  }
+
+  private getSortValue(a: ActivoDTO, col: ActivoSortColumn): string {
+    switch (col) {
+      case 'numeroCompra': {
+        const compra = this.compras.get(a.idNumeroCompra);
+        return (compra?.numeroCompra ?? this.getNombreCompraFormateado(a.idNumeroCompra))
+          .trim()
+          .toLowerCase();
+      }
+      case 'name':
+        return (a.name ?? '').trim().toLowerCase();
+      case 'idUsuario':
+        return this.getUsuarioInfo(a.idUsuario).toLowerCase();
+      case 'idUbicacion':
+        return this.getUbicacionInfo(a.idUbicacion).toLowerCase();
+      case 'criticidad':
+        return (a.criticidad ?? '').trim().toLowerCase();
+      case 'estado':
+        return (a.estado ?? '').trim().toLowerCase();
+      default:
+        return '';
+    }
+  }
+
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
   }
 
   get pagedActivos(): ActivoDTO[] {
     const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.activosFiltrados.slice(startItem, endItem);
+    return this.activosFiltrados.slice(startItem, startItem + this.pageSize);
   }
 
   verDetallesHardware(name: string): void {
@@ -2575,9 +2617,8 @@ export class ActivosComponent implements OnInit, OnDestroy {
       if (this.currentEstadoFilter?.trim()) {
         descFiltros.push(`Estado: ${this.currentEstadoFilter.trim()}`);
       }
-      const q = this.numeroCompraControl.value?.toString().trim();
-      if (q) {
-        descFiltros.push('Búsqueda activa');
+      if (this.searchTerm.trim()) {
+        descFiltros.push(`Búsqueda: ${this.searchTerm.trim()}`);
       }
       const filtroTxt = descFiltros.length ? descFiltros.join(' | ') : 'Todos';
       doc.text(filtroTxt, 14, 26);
@@ -3076,10 +3117,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
     }
     
     return nombreFormateado || 'Sin información';
-  }
-
-  aplicarFiltroBusqueda(): void {
-    this.aplicarTodosLosFiltros();
   }
 
   /**

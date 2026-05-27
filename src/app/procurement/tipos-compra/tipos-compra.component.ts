@@ -1,28 +1,30 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
 import { TourRegistryService } from '../../services/tour-registry.service';
 
+type TipoCompraSortColumn = 'descripcion' | 'abreviado';
+
 @Component({
   selector: 'app-tipos-compra',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './tipos-compra.component.html',
-  styleUrls: ['./tipos-compra.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./tipos-compra.component.css']
 })
 export class TiposCompraComponent implements OnInit, OnDestroy {
   tiposCompraList: TipoDeCompraDTO[] = [];
   tiposCompraFiltrados: TipoDeCompraDTO[] = [];
   tipoCompraForm: FormGroup;
-  sortColumn: string = '';
+  searchTerm = '';
+  sortColumn: TipoCompraSortColumn = 'descripcion';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 11;
+  pageSize = 25;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -53,7 +55,8 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
       steps: [
         { selector: '#tour-tipos-compra-title', title: 'Tipos de compra', description: 'Clasificación para filtros y etiquetas en órdenes de compra (descripción y abreviatura opcional).', side: 'bottom' },
         { selector: '#tour-tipos-compra-nuevo', title: 'Nuevo tipo', description: 'Alta desde modal; luego aparecerá en chips de compras.', side: 'left' },
-        { selector: '#tour-tipos-compra-table', title: 'Tabla', description: 'Editá o eliminá tipos existentes.', side: 'top' }
+        { selector: '#tour-tipos-compra-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por descripción o abreviatura.', side: 'bottom' },
+        { selector: '#tour-tipos-compra-table', title: 'Listado', description: 'Ordená por columna, navegá con paginación, editá o eliminá tipos.', side: 'top' }
       ]
     }]);
   }
@@ -66,12 +69,11 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
   loadTiposCompra(): void {
     this.loading = true;
     this.error = null;
-    
+
     this.tiposCompraService.getTiposCompra().subscribe({
       next: (tiposCompra) => {
         this.tiposCompraList = tiposCompra;
-        this.tiposCompraFiltrados = [...this.tiposCompraList];
-        this.collectionSize = this.tiposCompraFiltrados.length;
+        this.aplicarFiltrosYOrden();
         this.loading = false;
       },
       error: (error) => {
@@ -84,36 +86,83 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
 
   get pagedTiposCompra(): TipoDeCompraDTO[] {
     const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.tiposCompraFiltrados.slice(startItem, endItem);
+    return this.tiposCompraFiltrados.slice(startItem, startItem + this.pageSize);
   }
 
-  sortData(column: string): void {
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
+  }
+
+  sortData(column: TipoCompraSortColumn): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.ordenarLista(this.tiposCompraFiltrados);
+  }
 
-    this.tiposCompraFiltrados.sort((a, b) => {
-      let valueA = a[column as keyof TipoDeCompraDTO];
-      let valueB = b[column as keyof TipoDeCompraDTO];
+  getSortIcon(column: TipoCompraSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
 
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
+  isSortActive(column: TipoCompraSortColumn): boolean {
+    return this.sortColumn === column;
+  }
 
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+  private aplicarFiltrosYOrden(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.tiposCompraFiltrados = term
+      ? this.tiposCompraList.filter((t) => this.matchesSearch(t, term))
+      : [...this.tiposCompraList];
+    this.ordenarLista(this.tiposCompraFiltrados);
+    this.collectionSize = this.tiposCompraFiltrados.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
+  }
 
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
+  private matchesSearch(t: TipoDeCompraDTO, term: string): boolean {
+    const haystack = [t.descripcion, t.abreviado]
+      .map((v) => (v ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return haystack.includes(term);
+  }
+
+  private ordenarLista(lista: TipoDeCompraDTO[]): void {
+    const col = this.sortColumn;
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      const valA = this.getSortValue(a, col);
+      const valB = this.getSortValue(b, col);
+      return valA.localeCompare(valB, 'es', { sensitivity: 'base' }) * mult;
     });
+  }
+
+  private getSortValue(t: TipoDeCompraDTO, col: TipoCompraSortColumn): string {
+    if (col === 'descripcion') {
+      return (t.descripcion ?? '').trim().toLowerCase();
+    }
+    return (t.abreviado ?? '').trim().toLowerCase();
   }
 
   abrirModal(modal: any, tipoCompra?: TipoDeCompraDTO): void {
@@ -129,7 +178,7 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
       this.tipoCompraSeleccionado = null;
       this.tipoCompraForm.reset();
     }
-    this.modalService.open(modal, { 
+    this.modalService.open(modal, {
       size: 'lg',
       backdrop: true
     });
@@ -139,18 +188,17 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
     if (this.tipoCompraForm.valid) {
       const descripcion = this.tipoCompraForm.get('descripcion')?.value;
       const abreviado = this.tipoCompraForm.get('abreviado')?.value;
-      
+
       if (!descripcion || descripcion.trim() === '') {
         this.error = 'La descripción es obligatoria';
         return;
       }
 
-      const tipoCompraData = { 
+      const tipoCompraData = {
         descripcion: descripcion.trim(),
         abreviado: abreviado ? abreviado.trim() : null
       };
-      console.log('Datos a enviar:', tipoCompraData);
-      
+
       if (this.modoEdicion && this.tipoCompraSeleccionado) {
         if (!this.tipoCompraSeleccionado.idTipoCompra || isNaN(this.tipoCompraSeleccionado.idTipoCompra)) {
           this.error = 'ID de tipo de compra no válido';
@@ -162,10 +210,9 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
           abreviado: tipoCompraData.abreviado,
           idTipoCompra: this.tipoCompraSeleccionado.idTipoCompra
         };
-        
+
         this.tiposCompraService.actualizarTipoCompra(this.tipoCompraSeleccionado.idTipoCompra, tipoCompraActualizado).subscribe({
-          next: (tipoActualizado) => {
-            console.log('Tipo de compra actualizado:', tipoActualizado);
+          next: () => {
             this.loadTiposCompra();
             this.modalService.dismissAll();
             this.error = null;
@@ -177,8 +224,7 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
         });
       } else {
         this.tiposCompraService.crearTipoCompra(tipoCompraData).subscribe({
-          next: (tipoCreado) => {
-            console.log('Tipo de compra creado:', tipoCreado);
+          next: () => {
             this.loadTiposCompra();
             this.modalService.dismissAll();
             this.error = null;
@@ -225,5 +271,4 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
     this.showConfirmDialog = false;
     this.tipoCompraToDelete = null;
   }
-
-} 
+}

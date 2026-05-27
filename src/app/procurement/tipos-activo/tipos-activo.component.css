@@ -1,142 +1,81 @@
-/* Estilos específicos para tipos de activo */
-.tipos-activo-container {
-  padding: 2rem;
-  background: #f8f9fa;
-  min-height: 100vh;
+.tipos-activo-page .list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.tipos-activo-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background-color: white;
+.tipos-activo-page .search-input-wrapper {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 480px;
 }
 
-.tipos-activo-table th {
-  background: #f8f9fa;
-  padding: 1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.tipos-activo-page .search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.tipos-activo-table th:hover {
-  background: #edf2f7;
+.tipos-activo-page .search-input {
+  padding-left: 2.5rem;
+  padding-right: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
-.tipos-activo-table th.active {
-  color: #41A1AF;
+.tipos-activo-page .search-clear-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
 }
 
-.tipos-activo-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #edf2f7;
-  color: #2c3e50;
+.tipos-activo-page .search-clear-btn:hover {
+  color: #475569;
 }
 
-.tipos-activo-row {
-  cursor: pointer;
-  transition: all 0.3s ease;
+.tipos-activo-page .list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
 }
 
-.tipos-activo-row:hover {
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+.tipos-activo-page .pagination-container {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
 }
 
-.action-buttons .btn-info {
+.tipos-activo-page .action-buttons .btn-info {
   background: transparent !important;
   border-color: #0ea5e9 !important;
   color: #111827 !important;
 }
 
-.action-buttons .btn-info:hover,
-.action-buttons .btn-info:focus-visible {
+.tipos-activo-page .action-buttons .btn-info:hover,
+.tipos-activo-page .action-buttons .btn-info:focus-visible {
   background: #0284c7 !important;
   border-color: #0284c7 !important;
   color: #ffffff !important;
 }
 
-.action-buttons .btn-warning {
-  background: transparent !important;
-  border-color: #f59e0b !important;
-  color: #111827 !important;
-}
-
-.action-buttons .btn-warning:hover,
-.action-buttons .btn-warning:focus-visible {
-  background: #d97706 !important;
-  border-color: #d97706 !important;
-  color: #ffffff !important;
-}
-
-.action-buttons .btn-danger {
+.tipos-activo-page .action-buttons .btn-danger {
   background: transparent !important;
   border-color: #dc3545 !important;
   color: #111827 !important;
 }
 
-.action-buttons .btn-danger:hover,
-.action-buttons .btn-danger:focus-visible {
+.tipos-activo-page .action-buttons .btn-danger:hover,
+.tipos-activo-page .action-buttons .btn-danger:focus-visible {
   background: #c82333 !important;
   border-color: #bd2130 !important;
   color: #ffffff !important;
 }
-
-/* Estilos para la paginación */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 2rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.custom-pagination ::ng-deep .page-link {
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  padding: 0.5rem 0.75rem;
-  margin: 0 2px;
-  border-radius: 5px;
-  transition: all 0.3s ease;
-}
-
-.custom-pagination ::ng-deep .page-link:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(220,53,69,0.3);
-}
-
-.custom-pagination ::ng-deep .page-item.active .page-link {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: white;
-}
-
-.custom-pagination ::ng-deep .page-item.disabled .page-link {
-  color: #6c757d;
-  background-color: #fff;
-  border-color: #dee2e6;
-}
-
-.custom-pagination ::ng-deep .page-link:focus {
-  box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25);
-}
-
-@media (max-width: 768px) {
-  .tipos-activo-container {
-    padding: 1rem;
-  }
-  
-  .pagination-container {
-    margin-top: 1rem;
-    padding: 0.5rem;
-  }
-} 

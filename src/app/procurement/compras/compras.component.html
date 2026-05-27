@@ -1,4 +1,4 @@
-<div class="generic-container">
+<div class="generic-container compras-page">
   <div class="header-section">
     <div class="header-content">
       <div class="d-flex flex-wrap w-100 justify-content-between align-items-start gap-2 mb-2">
@@ -52,34 +52,6 @@
   </div>
 
   <div class="content-section">
-    <div class="row mb-3" id="tour-compras-search-row">
-      <div class="col-12 d-flex align-items-center gap-3">
-        <div class="search-container" id="tour-compras-search">
-          <input type="text" class="form-control" placeholder="Número de compra" [formControl]="numeroCompraControl" style="max-width: 320px;">
-        </div>
-        
-        <div class="tipo-compra-filters">
-          <button 
-            *ngFor="let tipo of tiposCompraList; let i = index" 
-            class="btn btn-outline-primary btn-sm tipo-compra-filter-btn" 
-            [class.active]="tipoCompraFiltroActivo === tipo.idTipoCompra"
-            [style.--tipo-color]="getTipoColor(i)"
-            [style.--tipo-bg-color]="getTipoBgColor(i)"
-            [style.--tipo-border-color]="getTipoBorderColor(i)"
-            (click)="filtrarPorTipoCompra(tipo.idTipoCompra)">
-            <span>{{tipo.abreviado || tipo.descripcion}}</span>
-            <span class="count">({{getTipoCompraCount(tipo.idTipoCompra)}})</span>
-          </button>
-          
-          <button 
-            *ngIf="tipoCompraFiltroActivo !== null"
-            class="btn btn-outline-secondary btn-sm tipo-compra-filter-btn limpiar-filtro-btn"
-            (click)="filtrarPorTipoCompra(null)">
-            <span>Limpiar filtro</span>
-          </button>
-        </div>
-      </div>
-    </div>
     <div class="table-container" id="tour-compras-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -92,75 +64,133 @@
         <p class="mt-2">Cargando compras...</p>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="generic-table">
-          <thead>
-            <tr>
-              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
-                <div class="th-content">
-                  <span>Compra</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'descripcion'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
-                <div class="th-content">
-                  <span>Descripción</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'descripcion'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('fechaInicio')" [class.active]="sortColumn === 'fechaInicio'">
-                <div class="th-content">
-                  <span>Fecha Apertura</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'fechaInicio' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'fechaInicio' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'fechaInicio'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('fechaFinal')" [class.active]="sortColumn === 'fechaFinal'">
-                <div class="th-content">
-                  <span>Fecha Adjudicación</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'fechaFinal' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'fechaFinal' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'fechaFinal'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('moneda')" [class.active]="sortColumn === 'moneda'">
-                <div class="th-content">
-                  <span>Moneda</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'moneda' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'moneda' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'moneda'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('monto')" [class.active]="sortColumn === 'monto'">
-                <div class="th-content">
-                  <span>Monto</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'monto' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'monto' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'monto'
-                  }"></i>
-                </div>
-              </th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let compra of pagedCompras" class="compra-row">
+      <ng-container *ngIf="!loading && !error">
+        <div class="list-toolbar list-toolbar--compras" id="tour-compras-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por número, descripción o tipo..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="comprasList.length > 0">
+            <span *ngIf="collectionSize === comprasList.length">
+              {{ comprasList.length }} compras
+            </span>
+            <span *ngIf="collectionSize !== comprasList.length">
+              {{ collectionSize }} de {{ comprasList.length }} compras
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
+
+        <div class="tipo-compra-filters-row" id="tour-compras-search-row">
+          <div class="tipo-compra-filters">
+            <button
+              *ngFor="let tipo of tiposCompraList; let i = index"
+              class="btn btn-outline-primary btn-sm tipo-compra-filter-btn"
+              [class.active]="tipoCompraFiltroActivo === tipo.idTipoCompra"
+              [style.--tipo-color]="getTipoColor(i)"
+              [style.--tipo-bg-color]="getTipoBgColor(i)"
+              [style.--tipo-border-color]="getTipoBorderColor(i)"
+              (click)="filtrarPorTipoCompra(tipo.idTipoCompra)">
+              <span>{{ tipo.abreviado || tipo.descripcion }}</span>
+              <span class="count">({{ getTipoCompraCount(tipo.idTipoCompra) }})</span>
+            </button>
+
+            <button
+              *ngIf="tipoCompraFiltroActivo !== null"
+              class="btn btn-outline-secondary btn-sm tipo-compra-filter-btn limpiar-filtro-btn"
+              (click)="filtrarPorTipoCompra(null)">
+              <span>Limpiar filtro tipo</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('numeroCompra')"
+                  (click)="sortData('numeroCompra')"
+                  title="Ordenar por número de compra">
+                  <div class="th-content">
+                    <span>Compra</span>
+                    <i class="fas" [ngClass]="getSortIcon('numeroCompra')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('descripcion')"
+                  (click)="sortData('descripcion')"
+                  title="Ordenar por descripción">
+                  <div class="th-content">
+                    <span>Descripción</span>
+                    <i class="fas" [ngClass]="getSortIcon('descripcion')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('fechaInicio')"
+                  (click)="sortData('fechaInicio')"
+                  title="Ordenar por fecha de apertura">
+                  <div class="th-content">
+                    <span>Fecha Apertura</span>
+                    <i class="fas" [ngClass]="getSortIcon('fechaInicio')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('fechaFinal')"
+                  (click)="sortData('fechaFinal')"
+                  title="Ordenar por fecha de adjudicación">
+                  <div class="th-content">
+                    <span>Fecha Adjudicación</span>
+                    <i class="fas" [ngClass]="getSortIcon('fechaFinal')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('moneda')"
+                  (click)="sortData('moneda')"
+                  title="Ordenar por moneda">
+                  <div class="th-content">
+                    <span>Moneda</span>
+                    <i class="fas" [ngClass]="getSortIcon('moneda')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('monto')"
+                  (click)="sortData('monto')"
+                  title="Ordenar por monto">
+                  <div class="th-content">
+                    <span>Monto</span>
+                    <i class="fas" [ngClass]="getSortIcon('monto')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let compra of pagedCompras" class="generic-row">
               <td>{{getNombreCompraFormateado(compra)}}</td>
               <td>{{compra.descripcion || 'Sin descripción'}}</td>
               <td>{{compra.fechaInicio ? formatearFecha(compra.fechaInicio) : 'No definida'}}</td>
@@ -204,24 +234,30 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
 
-      <div *ngIf="!loading && !error && pagedCompras.length === 0" class="alert alert-info">
-        No hay compras registradas.
-      </div>
-    </div>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
 
-    <div class="pagination-container">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div *ngIf="comprasList.length === 0" class="alert alert-info">
+          No hay compras registradas.
+        </div>
+
+        <div *ngIf="comprasList.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay compras que coincidan con los filtros aplicados.
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

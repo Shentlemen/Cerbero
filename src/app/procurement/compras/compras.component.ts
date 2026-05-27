@@ -28,6 +28,8 @@ interface CompraConTipo extends CompraDTO {
   tipoCompraAbreviado?: string;
 }
 
+type CompraSortColumn = 'numeroCompra' | 'descripcion' | 'fechaInicio' | 'fechaFinal' | 'moneda' | 'monto';
+
 /** Paso del tour DEMO con posibilidad de cambiar de pestaña antes de mostrarse. */
 interface DemoStepDef extends GuidedTourStepDef {
   /** Pestaña del modal (`activeTab`) en la que debe estar el modal para este paso. */
@@ -49,10 +51,11 @@ export class ComprasComponent implements OnInit, OnDestroy {
   tiposCompraList: TipoDeCompraDTO[] = [];
   filterForm: FormGroup;
   compraForm: FormGroup;
-  sortColumn: string = '';
+  searchTerm = '';
+  sortColumn: CompraSortColumn = 'numeroCompra';
   sortDirection: 'asc' | 'desc' = 'asc';
   page = 1;
-  pageSize = 11;
+  pageSize = 25;
   collectionSize = 0;
   loading = false;
   error: string | null = null;
@@ -126,11 +129,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
     // private pliegosService: PliegosService // Eliminar
   ) {
     this.filterForm = this.fb.group({
-      descripcion: [''],
-      moneda: [''],
-      fechaInicio: [''],
-      fechaFinal: [''],
-      numeroCompra: ['']
+      moneda: ['']
     });
 
     this.compraForm = this.fb.group({
@@ -149,9 +148,8 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.itemsFormArray = this.fb.array([]);
     this.entregasFormArray = this.fb.array([]);
 
-    // Suscribirse a cambios en el formulario de filtro
     this.filterForm.valueChanges.subscribe(() => {
-      this.aplicarFiltros();
+      this.aplicarFiltrosYOrden();
     });
 
     this.compraForm.valueChanges.subscribe(() => this.limpiarFeedbackCompraModal());
@@ -206,7 +204,8 @@ export class ComprasComponent implements OnInit, OnDestroy {
           { selector: '#tour-compras-title', title: 'Compras', description: 'Registro de adquisiciones: moneda, tipo, lotes, ítems y entregas vinculados al inventario Cerbero.', side: 'bottom' as const },
           { selector: '#tour-compras-filters', title: 'Filtro por moneda', description: 'Acotá la lista por USD o UYU; “Todos” muestra el universo cargado.', side: 'bottom' as const },
           { selector: '#tour-compras-nueva', title: 'Nueva compra', description: 'Alta o edición en modal con ítems, proveedor y documentos según tus permisos.', side: 'left' as const },
-          { selector: '#tour-compras-search-row', title: 'Búsqueda y tipo', description: 'Buscá por número de compra y refiná con chips de tipo de compra.', side: 'bottom' as const },
+          { selector: '#tour-compras-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por número, descripción o tipo de compra.', side: 'bottom' as const },
+          { selector: '#tour-compras-search-row', title: 'Filtro por tipo', description: 'Refiná con chips de tipo de compra.', side: 'bottom' as const },
           { selector: '#tour-compras-table', title: 'Tabla', description: 'Ordená columnas y usá acciones por fila para ver detalle, editar o eliminar.', side: 'top' as const }
         ]
       },
@@ -256,9 +255,8 @@ export class ComprasComponent implements OnInit, OnDestroy {
           tipoCompraAbreviado: this.getTipoCompraAbreviado(compra.idTipoCompra)
         }));
         
-        this.comprasFiltradas = [...this.comprasList];
-        this.collectionSize = this.comprasFiltradas.length;
-        
+        this.aplicarFiltrosYOrden();
+
         // Cargar lotes para recalcular totales
         this.cargarLotesParaCompras();
         
@@ -372,36 +370,115 @@ export class ComprasComponent implements OnInit, OnDestroy {
 
   get pagedCompras(): CompraConTipo[] {
     const startItem = (this.page - 1) * this.pageSize;
-    const endItem = this.page * this.pageSize;
-    return this.comprasFiltradas.slice(startItem, endItem);
+    return this.comprasFiltradas.slice(startItem, startItem + this.pageSize);
   }
 
-  sortData(column: string): void {
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
+  onSearchTermChange(): void {
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchTermChange();
+  }
+
+  sortData(column: CompraSortColumn): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.ordenarLista(this.comprasFiltradas);
+  }
 
-    this.comprasFiltradas.sort((a, b) => {
-      let valueA = a[column as keyof CompraConTipo];
-      let valueB = b[column as keyof CompraConTipo];
+  getSortIcon(column: CompraSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
 
-      if (valueA === null || valueA === undefined) valueA = '';
-      if (valueB === null || valueB === undefined) valueB = '';
+  isSortActive(column: CompraSortColumn): boolean {
+    return this.sortColumn === column;
+  }
 
-      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
-      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+  private aplicarFiltrosYOrden(): void {
+    const moneda = (this.filterForm.get('moneda')?.value ?? '').toString().trim().toLowerCase();
+    const term = this.searchTerm.trim().toLowerCase();
 
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
+    this.comprasFiltradas = this.comprasList.filter((c) => {
+      if (this.tipoCompraFiltroActivo !== null && c.idTipoCompra !== this.tipoCompraFiltroActivo) {
+        return false;
       }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
+      if (moneda && (c.moneda ?? '').toLowerCase() !== moneda) {
+        return false;
       }
-      return 0;
+      if (term && !this.matchesSearch(c, term)) {
+        return false;
+      }
+      return true;
     });
+
+    this.ordenarLista(this.comprasFiltradas);
+    this.collectionSize = this.comprasFiltradas.length;
+    const maxPage = Math.max(1, Math.ceil(this.collectionSize / this.pageSize) || 1);
+    if (this.page > maxPage) {
+      this.page = maxPage;
+    }
+  }
+
+  private matchesSearch(c: CompraConTipo, term: string): boolean {
+    const haystack = [
+      c.numeroCompra,
+      c.descripcion,
+      c.moneda,
+      c.tipoCompraDescripcion,
+      c.tipoCompraAbreviado,
+      this.getNombreCompraFormateado(c)
+    ]
+      .map((v) => (v ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return haystack.includes(term);
+  }
+
+  private ordenarLista(lista: CompraConTipo[]): void {
+    const col = this.sortColumn;
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      let cmp: number;
+      if (col === 'monto') {
+        cmp = (a.monto ?? 0) - (b.monto ?? 0);
+      } else if (col === 'fechaInicio' || col === 'fechaFinal') {
+        const valA = (a[col] ?? '') as string;
+        const valB = (b[col] ?? '') as string;
+        cmp = valA.localeCompare(valB);
+      } else {
+        const valA = this.getSortValueTexto(a, col);
+        const valB = this.getSortValueTexto(b, col);
+        cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+      }
+      return cmp * mult;
+    });
+  }
+
+  private getSortValueTexto(c: CompraConTipo, col: Exclude<CompraSortColumn, 'monto' | 'fechaInicio' | 'fechaFinal'>): string {
+    if (col === 'numeroCompra') {
+      return (c.numeroCompra ?? '').trim().toLowerCase();
+    }
+    if (col === 'descripcion') {
+      return (c.descripcion ?? '').trim().toLowerCase();
+    }
+    return (c.moneda ?? '').trim().toLowerCase();
   }
 
   abrirModal(modal: any, compra?: CompraConTipo): void {
@@ -826,42 +903,6 @@ export class ComprasComponent implements OnInit, OnDestroy {
       });
   }
 
-  aplicarFiltros(): void {
-    const filtros = this.filterForm.value;
-    
-    this.comprasFiltradas = this.comprasList.filter(compra => {
-      let cumpleFiltros = true;
-
-      if (filtros.numeroCompra && compra.numeroCompra) {
-        cumpleFiltros = cumpleFiltros && compra.numeroCompra.toLowerCase().includes(filtros.numeroCompra.toLowerCase());
-      }
-      if (filtros.descripcion && compra.descripcion) {
-        cumpleFiltros = cumpleFiltros && 
-          compra.descripcion.toLowerCase().includes(filtros.descripcion.toLowerCase());
-      }
-
-      if (filtros.moneda && compra.moneda) {
-        cumpleFiltros = cumpleFiltros && 
-          compra.moneda.toLowerCase().includes(filtros.moneda.toLowerCase());
-      }
-
-      if (filtros.fechaInicio && compra.fechaInicio) {
-        cumpleFiltros = cumpleFiltros && 
-          compra.fechaInicio >= filtros.fechaInicio;
-      }
-
-      if (filtros.fechaFinal && compra.fechaFinal) {
-        cumpleFiltros = cumpleFiltros && 
-          compra.fechaFinal <= filtros.fechaFinal;
-      }
-
-      return cumpleFiltros;
-    });
-
-    this.collectionSize = this.comprasFiltradas.length;
-    this.page = 1;
-  }
-
   eliminarCompra(id: number): void {
     this.compraToDelete = id;
     this.showConfirmDialog = true;
@@ -1009,10 +1050,6 @@ export class ComprasComponent implements OnInit, OnDestroy {
   //   });
   // }
 
-  get numeroCompraControl(): FormControl {
-    return this.filterForm.get('numeroCompra') as FormControl;
-  }
-
   canManagePurchases(): boolean {
     return this.permissionsService.canManagePurchases();
   }
@@ -1027,16 +1064,8 @@ export class ComprasComponent implements OnInit, OnDestroy {
 
   filtrarPorTipoCompra(idTipoCompra: number | null): void {
     this.tipoCompraFiltroActivo = idTipoCompra;
-    
-    if (idTipoCompra === null) {
-      // Mostrar todas las compras
-      this.comprasFiltradas = [...this.comprasList];
-    } else {
-      // Filtrar por tipo de compra específico
-      this.comprasFiltradas = this.comprasList.filter(compra => compra.idTipoCompra === idTipoCompra);
-    }
-    this.collectionSize = this.comprasFiltradas.length;
-    this.page = 1; // Resetear a la primera página
+    this.page = 1;
+    this.aplicarFiltrosYOrden();
   }
 
   getTipoColor(index: number): string {

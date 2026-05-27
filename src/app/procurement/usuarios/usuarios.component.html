@@ -28,101 +28,142 @@
         <p class="mt-2">Cargando usuarios...</p>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="generic-table">
-          <thead>
-            <tr>
-              <th (click)="sortData('cedula')" [class.active]="sortColumn === 'cedula'">
-                <div class="th-content">
-                  <span>Cédula</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'cedula' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'cedula' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'cedula'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
-                <div class="th-content">
-                  <span>Nombre</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'nombre'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('apellido')" [class.active]="sortColumn === 'apellido'">
-                <div class="th-content">
-                  <span>Apellido</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'apellido' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'apellido' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'apellido'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('cargo')" [class.active]="sortColumn === 'cargo'">
-                <div class="th-content">
-                  <span>Cargo</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'cargo' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'cargo' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'cargo'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('unidad')" [class.active]="sortColumn === 'unidad'">
-                <div class="th-content">
-                  <span>Unidad</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'unidad' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'unidad' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'unidad'
-                  }"></i>
-                </div>
-              </th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let usuario of pagedUsuarios">
-              <td>{{usuario.cedula}}</td>
-              <td>{{usuario.nombre}}</td>
-              <td>{{usuario.apellido}}</td>
-              <td>{{usuario.cargo}}</td>
-              <td>{{usuario.unidad}}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-info btn-sm" (click)="abrirModal(usuarioModal, usuario)">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarUsuario(usuario.idUsuario)">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <ng-container *ngIf="!loading && !error">
+        <div class="list-toolbar" id="tour-proc-personas-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por cédula, nombre, apellido, cargo o unidad..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="usuariosList.length > 0">
+            <span *ngIf="collectionSize === usuariosList.length">
+              {{ usuariosList.length }} usuarios
+            </span>
+            <span *ngIf="collectionSize !== usuariosList.length">
+              {{ collectionSize }} de {{ usuariosList.length }} usuarios
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
 
-      <div *ngIf="!loading && !error && pagedUsuarios.length === 0" class="alert alert-info">
-        No hay usuarios registrados.
-      </div>
-    </div>
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('cedula')"
+                  (click)="sortData('cedula')"
+                  title="Ordenar por cédula">
+                  <div class="th-content">
+                    <span>Cédula</span>
+                    <i class="fas" [ngClass]="getSortIcon('cedula')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('nombre')"
+                  (click)="sortData('nombre')"
+                  title="Ordenar por nombre">
+                  <div class="th-content">
+                    <span>Nombre</span>
+                    <i class="fas" [ngClass]="getSortIcon('nombre')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('apellido')"
+                  (click)="sortData('apellido')"
+                  title="Ordenar por apellido">
+                  <div class="th-content">
+                    <span>Apellido</span>
+                    <i class="fas" [ngClass]="getSortIcon('apellido')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('cargo')"
+                  (click)="sortData('cargo')"
+                  title="Ordenar por cargo">
+                  <div class="th-content">
+                    <span>Cargo</span>
+                    <i class="fas" [ngClass]="getSortIcon('cargo')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('unidad')"
+                  (click)="sortData('unidad')"
+                  title="Ordenar por unidad">
+                  <div class="th-content">
+                    <span>Unidad</span>
+                    <i class="fas" [ngClass]="getSortIcon('unidad')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let usuario of pagedUsuarios" class="generic-row">
+                <td>{{ usuario.cedula }}</td>
+                <td>{{ usuario.nombre }}</td>
+                <td>{{ usuario.apellido }}</td>
+                <td>{{ usuario.cargo }}</td>
+                <td>{{ usuario.unidad }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn btn-info btn-sm me-2" (click)="abrirModal(usuarioModal, usuario)">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" (click)="eliminarUsuario(usuario.idUsuario)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-    <div class="pagination-container">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
+
+        <div *ngIf="usuariosList.length === 0" class="alert alert-info">
+          No hay usuarios registrados.
+        </div>
+
+        <div *ngIf="usuariosList.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay usuarios que coincidan con "{{ searchTerm }}".
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>
@@ -192,4 +233,4 @@
       </button>
     </div>
   </div>
-</div> 
+</div>

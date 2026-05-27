@@ -1,3 +1,59 @@
+.proveedores-page .list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.proveedores-page .search-input-wrapper {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 480px;
+}
+
+.proveedores-page .search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.proveedores-page .search-input {
+  padding-left: 2.5rem;
+  padding-right: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.proveedores-page .search-clear-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.proveedores-page .search-clear-btn:hover {
+  color: #475569;
+}
+
+.proveedores-page .list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.proveedores-page .pagination-container {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
 .proveedores-container {
   padding: 2rem;
   background: #f8f9fa;
@@ -530,40 +586,43 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
   opacity: 0.8;
 }
 
-/* Botones de acciones en la tabla (evitar hover negro global) */
-.action-buttons .btn-info {
-  background: #0ea5e9 !important;
+/* Botones de acciones en la tabla (mismo criterio que ubicaciones / tipos-compra) */
+.proveedores-page .action-buttons .btn-info {
+  background: transparent !important;
   border-color: #0ea5e9 !important;
-  color: #ffffff !important;
+  color: #111827 !important;
 }
 
-.action-buttons .btn-info:hover {
+.proveedores-page .action-buttons .btn-info:hover,
+.proveedores-page .action-buttons .btn-info:focus-visible {
   background: #0284c7 !important;
   border-color: #0284c7 !important;
   color: #ffffff !important;
 }
 
-.action-buttons .btn-danger {
-  background: #dc3545 !important;
+.proveedores-page .action-buttons .btn-danger {
+  background: transparent !important;
   border-color: #dc3545 !important;
-  color: #ffffff !important;
+  color: #111827 !important;
 }
 
-.action-buttons .btn-danger:hover {
+.proveedores-page .action-buttons .btn-danger:hover,
+.proveedores-page .action-buttons .btn-danger:focus-visible {
   background: #c82333 !important;
   border-color: #bd2130 !important;
   color: #ffffff !important;
 }
 
-.action-buttons .ver-contactos-btn {
+.proveedores-page .action-buttons .ver-contactos-btn {
   background: transparent !important;
-  border-color: #000000 !important;
-  color: #000000 !important;
+  border-color: #64748b !important;
+  color: #111827 !important;
 }
 
-.action-buttons .ver-contactos-btn:hover {
-  background: #15803d !important;
-  border-color: #15803d !important;
+.proveedores-page .action-buttons .ver-contactos-btn:hover,
+.proveedores-page .action-buttons .ver-contactos-btn:focus-visible {
+  background: #475569 !important;
+  border-color: #475569 !important;
   color: #ffffff !important;
 }
 

@@ -1,261 +1,81 @@
-.usuarios-container {
-  padding: 2rem;
-  background: #f8f9fa;
-  min-height: 100vh;
-}
-
-.header-section {
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 2rem;
-}
-
-.title-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.title-wrapper h1 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.title-wrapper h1 i {
-  color: #212529;
-  font-size: 2rem;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  margin-top: 0.5rem;
-}
-
-.filters-section {
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-}
-
-.filters-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.form-group {
-  margin-bottom: 0;
-}
-
-.form-label {
-  color: #2c3e50;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.form-control {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.75rem;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus {
-  border-color: #41A1AF;
-  box-shadow: 0 0 0 3px rgba(65, 161, 175, 0.1);
-}
-
-.content-section {
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background-color: white;
-}
-
-.table th {
-  background: #f8f9fa;
-  padding: 1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.th-content {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.table th:hover {
-  background: #edf2f7;
-}
-
-.table th.active {
-  color: #41A1AF;
-}
-
-.table td {
-  padding: 1rem;
-  border-bottom: 1px solid #edf2f7;
-  color: #2c3e50;
-}
-
-.table tr {
-  transition: all 0.3s ease;
-}
-
-.table tr:hover {
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-/*
- * Mismo criterio que locations.component / tipos-activo: borde con el color del “relleno” al hover,
- * fondo transparente. Con ViewEncapsulation.None hay que superar styles.css global (.action-buttons .btn-*)
- * usando un scope propio (.usuarios-page …) con mayor especificidad.
- */
-.usuarios-page .action-buttons {
+.usuarios-page .list-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.usuarios-page .search-input-wrapper {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 480px;
+}
+
+.usuarios-page .search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.usuarios-page .search-input {
+  padding-left: 2.5rem;
+  padding-right: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.usuarios-page .search-clear-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.usuarios-page .search-clear-btn:hover {
+  color: #475569;
+}
+
+.usuarios-page .list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.usuarios-page .pagination-container {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
 }
 
 .usuarios-page .action-buttons .btn-info {
   background: transparent !important;
-  border: 1px solid #0ea5e9 !important;
+  border-color: #0ea5e9 !important;
   color: #111827 !important;
-  box-shadow: none !important;
 }
 
 .usuarios-page .action-buttons .btn-info:hover,
 .usuarios-page .action-buttons .btn-info:focus-visible {
   background: #0284c7 !important;
-  border: 1px solid #0284c7 !important;
+  border-color: #0284c7 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 8px rgba(14, 165, 233, 0.35) !important;
-}
-
-.usuarios-page .action-buttons .btn-warning {
-  background: transparent !important;
-  border: 1px solid #f59e0b !important;
-  color: #111827 !important;
-  box-shadow: none !important;
-}
-
-.usuarios-page .action-buttons .btn-warning:hover,
-.usuarios-page .action-buttons .btn-warning:focus-visible {
-  background: #d97706 !important;
-  border: 1px solid #d97706 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.35) !important;
 }
 
 .usuarios-page .action-buttons .btn-danger {
   background: transparent !important;
-  border: 1px solid #dc3545 !important;
+  border-color: #dc3545 !important;
   color: #111827 !important;
-  box-shadow: none !important;
 }
 
 .usuarios-page .action-buttons .btn-danger:hover,
 .usuarios-page .action-buttons .btn-danger:focus-visible {
   background: #c82333 !important;
-  border: 1px solid #bd2130 !important;
+  border-color: #bd2130 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.35) !important;
 }
-
-/* Estilos para el modal */
-.modal-header {
-  background: #f8f9fa;
-  border-radius: 15px 15px 0 0;
-  padding: 1.5rem;
-  border-bottom: 1px solid #edf2f7;
-}
-
-.modal-title {
-  color: #2c3e50;
-  font-weight: 600;
-  font-size: 1.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #edf2f7;
-}
-
-.btn-secondary {
-  background: #e2e8f0;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-  background: #cbd5e0;
-  transform: translateY(-2px);
-}
-
-@media (max-width: 768px) {
-  .usuarios-container {
-    padding: 1rem;
-  }
-
-  .header-section {
-    padding: 1rem;
-  }
-
-  .filters-section {
-    padding: 1rem;
-  }
-
-  .filters-form {
-    grid-template-columns: 1fr;
-  }
-
-  .content-section {
-    padding: 1rem;
-  }
-
-  .usuarios-page .action-buttons {
-    flex-direction: column;
-  }
-} 

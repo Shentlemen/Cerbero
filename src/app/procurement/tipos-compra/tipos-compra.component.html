@@ -1,4 +1,4 @@
-<div class="tipos-compra-container">
+<div class="generic-container tipos-compra-page">
   <div class="header-section">
     <div class="header-content">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <div class="tipos-compra-content">
+  <div class="content-section">
     <div class="table-container" id="tour-tipos-compra-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -28,69 +28,109 @@
         <p class="mt-2">Cargando tipos de compra...</p>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="tipos-compra-table">
-          <thead>
-            <tr>
+      <ng-container *ngIf="!loading && !error">
+        <div class="list-toolbar" id="tour-tipos-compra-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por descripción o abreviatura..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="tiposCompraList.length > 0">
+            <span *ngIf="collectionSize === tiposCompraList.length">
+              {{ tiposCompraList.length }} tipos de compra
+            </span>
+            <span *ngIf="collectionSize !== tiposCompraList.length">
+              {{ collectionSize }} de {{ tiposCompraList.length }} tipos de compra
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
 
-              <th (click)="sortData('descripcion')" [class.active]="sortColumn === 'descripcion'">
-                <div class="th-content">
-                  <span>Descripción</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'descripcion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'descripcion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'descripcion'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('abreviado')" [class.active]="sortColumn === 'abreviado'">
-                <div class="th-content">
-                  <span>Abreviado</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'abreviado' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'abreviado' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'abreviado'
-                  }"></i>
-                </div>
-              </th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let tipoCompra of pagedTiposCompra" class="tipo-compra-row">
-              <td>{{tipoCompra.descripcion}}</td>
-              <td>{{tipoCompra.abreviado || '-'}}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-info btn-sm me-2" (click)="abrirModal(tipoCompraModal, tipoCompra)">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarTipoCompra(tipoCompra.idTipoCompra)">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('descripcion')"
+                  (click)="sortData('descripcion')"
+                  title="Ordenar por descripción">
+                  <div class="th-content">
+                    <span>Descripción</span>
+                    <i class="fas" [ngClass]="getSortIcon('descripcion')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('abreviado')"
+                  (click)="sortData('abreviado')"
+                  title="Ordenar por abreviatura">
+                  <div class="th-content">
+                    <span>Abreviado</span>
+                    <i class="fas" [ngClass]="getSortIcon('abreviado')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tipoCompra of pagedTiposCompra" class="generic-row">
+                <td>{{ tipoCompra.descripcion }}</td>
+                <td>{{ tipoCompra.abreviado || '-' }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn btn-info btn-sm me-2" (click)="abrirModal(tipoCompraModal, tipoCompra)">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" (click)="eliminarTipoCompra(tipoCompra.idTipoCompra)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      <div *ngIf="!loading && !error && pagedTiposCompra.length === 0" class="alert alert-info">
-        No hay tipos de compra registrados.
-      </div>
-    </div>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
 
-    <div class="pagination-container">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div *ngIf="tiposCompraList.length === 0" class="alert alert-info">
+          No hay tipos de compra registrados.
+        </div>
+
+        <div *ngIf="tiposCompraList.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay tipos de compra que coincidan con "{{ searchTerm }}".
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>
@@ -143,4 +183,4 @@
       </button>
     </div>
   </div>
-</div> 
+</div>

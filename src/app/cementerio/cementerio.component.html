@@ -1,4 +1,4 @@
-<div class="cementerio-container">
+<div class="generic-container cementerio-page">
   <!-- Contenedor de notificaciones -->
   <app-notification-container></app-notification-container>
   
@@ -66,83 +66,115 @@
     </div>
   </div>
 
-  <div class="cementerio-content">
-    <!-- Filtro de búsqueda -->
-    <div class="row mb-3" id="tour-cementerio-search">
-      <div class="col-12">
-        <input 
-          type="text" 
-          class="form-control" 
-          placeholder="Buscar por nombre de equipo..." 
-          [formControl]="nombreEquipoControl" 
-          style="max-width: 320px;"
-          data-help="🔍 Busca equipos específicos en el cementerio">
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="loading" class="text-center my-4">
+        <div class="spinner-border text-warning" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando equipos del cementerio...</p>
       </div>
-    </div>
 
-    <!-- Indicador de carga -->
-    <div *ngIf="loading" class="text-center my-4">
-      <div class="spinner-border text-warning" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-2">Cargando equipos del cementerio...</p>
-    </div>
+      <ng-container *ngIf="!loading">
+        <div class="list-toolbar" id="tour-cementerio-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por nombre o MAC..."
+              autocomplete="off"
+              data-help="🔍 Busca equipos específicos en el cementerio">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="getTotalItems() > 0">
+            <span *ngIf="collectionSize === getTotalItems()">
+              {{ getTotalItems() }} registros en baja
+            </span>
+            <span *ngIf="collectionSize !== getTotalItems()">
+              {{ collectionSize }} de {{ getTotalItems() }} registros
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
 
-    <!-- Mensaje cuando no hay equipos -->
-    <div *ngIf="!loading && equiposFiltrados.length === 0" class="empty-state">
-      <i class="fas fa-smile"></i>
-      <h3>¡No hay equipos en el cementerio!</h3>
-      <p>Todos los equipos están activos o en almacén.</p>
-    </div>
-
-    <!-- Tabla de equipos en baja -->
-    <div class="table-container" *ngIf="!loading && equiposFiltrados.length > 0" id="tour-cementerio-table">
-      <table class="cementerio-table">
-        <thead>
-          <tr>
-            <th>
-              <div class="th-content sortable" (click)="ordenarPor('tipo')" title="Ordenar por tipo">
-                <span>Tipo</span>
-                <i class="fas sort-icon" [ngClass]="getSortIcon('tipo')"></i>
-              </div>
-            </th>
-            <th>
-              <div class="th-content sortable" (click)="ordenarPor('nombre')" title="Ordenar por nombre">
-                <span>Nombre</span>
-                <i class="fas sort-icon" [ngClass]="getSortIcon('nombre')"></i>
-              </div>
-            </th>
-            <th>
-              <div class="th-content">
-                <span>Detalles</span>
-              </div>
-            </th>
-            <th>
-              <div class="th-content sortable" (click)="ordenarPor('fecha')" title="Ordenar por fecha">
-                <span>Fecha de Baja</span>
-                <i class="fas sort-icon" [ngClass]="getSortIcon('fecha')"></i>
-              </div>
-            </th>
-            <th>
-              <div class="th-content sortable" (click)="ordenarPor('usuario')" title="Ordenar por usuario">
-                <span>Usuario</span>
-                <i class="fas sort-icon" [ngClass]="getSortIcon('usuario')"></i>
-              </div>
-            </th>
-            <th>
-              <div class="th-content">
-                <span>Observaciones</span>
-              </div>
-            </th>
-            <th *ngIf="canManageAssets()">
-              <div class="th-content">
-                <span>Acciones</span>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of pagedEquipos" class="item-row" [ngClass]="{'equipo-row': item.tipo === 'EQUIPO', 'dispositivo-row': item.tipo === 'DISPOSITIVO'}" (click)="verDetallesItem(item)" data-help="👁️ Haz clic para ver los detalles">
+        <div id="tour-cementerio-table" class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('tipo')"
+                  (click)="sortData('tipo')"
+                  title="Ordenar por tipo">
+                  <div class="th-content">
+                    <span>Tipo</span>
+                    <i class="fas" [ngClass]="getSortIcon('tipo')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('nombre')"
+                  (click)="sortData('nombre')"
+                  title="Ordenar por nombre">
+                  <div class="th-content">
+                    <span>Nombre</span>
+                    <i class="fas" [ngClass]="getSortIcon('nombre')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Detalles</span>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('fecha')"
+                  (click)="sortData('fecha')"
+                  title="Ordenar por fecha de baja">
+                  <div class="th-content">
+                    <span>Fecha de Baja</span>
+                    <i class="fas" [ngClass]="getSortIcon('fecha')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('usuario')"
+                  (click)="sortData('usuario')"
+                  title="Ordenar por usuario">
+                  <div class="th-content">
+                    <span>Usuario</span>
+                    <i class="fas" [ngClass]="getSortIcon('usuario')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Observaciones</span>
+                  </div>
+                </th>
+                <th *ngIf="canManageAssets()">
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let item of pagedEquipos"
+                class="generic-row item-row"
+                [ngClass]="{'equipo-row': item.tipo === 'EQUIPO', 'dispositivo-row': item.tipo === 'DISPOSITIVO'}"
+                (click)="verDetallesItem(item)"
+                data-help="👁️ Haz clic para ver los detalles">
             <td>
               <div class="tipo-badge" [ngClass]="item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo'">
                 <i class="fas" [ngClass]="item.tipo === 'EQUIPO' ? 'fa-desktop' : 'fa-network-wired'"></i>
@@ -255,21 +287,33 @@
             </td>
           </tr>
         </tbody>
-      </table>
-    </div>
+          </table>
+        </div>
 
-    <!-- Paginación -->
-    <div class="pagination-container" *ngIf="!loading && equiposFiltrados.length > 0">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
+
+        <div *ngIf="getTotalItems() === 0" class="empty-state">
+          <i class="fas fa-smile"></i>
+          <h3>¡No hay equipos en el cementerio!</h3>
+          <p>Todos los equipos están activos o en almacén.</p>
+        </div>
+
+        <div *ngIf="getTotalItems() > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay registros que coincidan con los filtros aplicados.
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

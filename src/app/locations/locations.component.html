@@ -1,97 +1,447 @@
-<div class="generic-container">
+<div class="generic-container locations-page">
+
   <div class="header-section">
+
     <div class="header-content">
+
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
+
       <div class="title-wrapper flex-grow-1">
+
         <h1 id="tour-locations-title"><i class="fas fa-map-marker-alt"></i> Ubicaciones</h1>
+
       </div>
+
       </div>
+
       <div class="actions">
+
         <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-locations-nueva" (click)="openNewLocationModal()">
+
           <i class="fas fa-plus me-2"></i>
+
           Nueva Ubicación
+
         </button>
+
       </div>
+
     </div>
+
   </div>
+
   <div class="content-section">
+
     <div class="table-container" id="tour-locations-table">
+
       <div *ngIf="error" class="alert alert-danger">
+
         {{ error }}
+
       </div>
+
+
 
       <div *ngIf="loading" class="text-center p-4">
+
         <div class="spinner-border text-primary" role="status">
+
           <span class="visually-hidden">Cargando...</span>
+
         </div>
+
         <p class="mt-2">Cargando ubicaciones...</p>
+
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="generic-table">
-          <thead>
-            <tr>
-              <th>Gerencia</th>
-              <th>Oficina</th>
-              <th>Piso</th>
-              <th>Puerta</th>
-              <th>Ciudad</th>
-              <th>Departamento</th>
-              <th>Dirección</th>
-              <th>Interno</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let ubicacion of ubicaciones" class="generic-row">
-              <td>{{ubicacion.nombreGerencia}}</td>
-              <td>{{ubicacion.nombreOficina}}</td>
-              <td>{{ubicacion.piso || 'N/A'}}</td>
-              <td>{{ubicacion.numeroPuerta || 'N/A'}}</td>
-              <td>{{ubicacion.ciudad || 'N/A'}}</td>
-              <td>{{ubicacion.departamento || 'N/A'}}</td>
-              <td>{{ubicacion.direccion || 'N/A'}}</td>
-              <td>{{ubicacion.interno || 'N/A'}}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-info btn-sm me-2" (click)="editarUbicacion(ubicacion)">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-danger btn-sm" (click)="confirmarEliminar(ubicacion)">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
 
-      <div *ngIf="!loading && !error && ubicaciones.length === 0" class="alert alert-info">
-        No hay ubicaciones registradas.
-      </div>
+
+      <ng-container *ngIf="!loading && !error">
+
+        <div class="locations-toolbar" id="tour-locations-search">
+
+          <div class="search-input-wrapper">
+
+            <i class="fas fa-search search-icon"></i>
+
+            <input
+
+              type="text"
+
+              class="form-control search-input"
+
+              [(ngModel)]="searchTerm"
+
+              (ngModelChange)="onSearchTermChange()"
+
+              placeholder="Buscar por gerencia, oficina, ciudad, dirección, interno..."
+
+              autocomplete="off">
+
+            <button
+
+              *ngIf="searchTerm"
+
+              type="button"
+
+              class="btn btn-link search-clear-btn"
+
+              (click)="clearSearch()"
+
+              title="Limpiar búsqueda">
+
+              <i class="fas fa-times"></i>
+
+            </button>
+
+          </div>
+
+          <p class="locations-summary mb-0" *ngIf="ubicaciones.length > 0">
+
+            <span *ngIf="collectionSize === ubicaciones.length">
+
+              {{ ubicaciones.length }} ubicaciones
+
+            </span>
+
+            <span *ngIf="collectionSize !== ubicaciones.length">
+
+              {{ collectionSize }} de {{ ubicaciones.length }} ubicaciones
+
+            </span>
+
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+
+          </p>
+
+        </div>
+
+
+
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+
+          <table class="generic-table cerbero-list-table">
+
+            <thead>
+
+              <tr>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('nombreGerencia')"
+
+                  (click)="sortData('nombreGerencia')"
+
+                  title="Ordenar por gerencia">
+
+                  <div class="th-content">
+
+                    <span>Gerencia</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('nombreGerencia')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('nombreOficina')"
+
+                  (click)="sortData('nombreOficina')"
+
+                  title="Ordenar por oficina">
+
+                  <div class="th-content">
+
+                    <span>Oficina</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('nombreOficina')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('piso')"
+
+                  (click)="sortData('piso')"
+
+                  title="Ordenar por piso">
+
+                  <div class="th-content">
+
+                    <span>Piso</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('piso')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('numeroPuerta')"
+
+                  (click)="sortData('numeroPuerta')"
+
+                  title="Ordenar por puerta">
+
+                  <div class="th-content">
+
+                    <span>Puerta</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('numeroPuerta')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('ciudad')"
+
+                  (click)="sortData('ciudad')"
+
+                  title="Ordenar por ciudad">
+
+                  <div class="th-content">
+
+                    <span>Ciudad</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('ciudad')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('departamento')"
+
+                  (click)="sortData('departamento')"
+
+                  title="Ordenar por departamento">
+
+                  <div class="th-content">
+
+                    <span>Departamento</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('departamento')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('direccion')"
+
+                  (click)="sortData('direccion')"
+
+                  title="Ordenar por dirección">
+
+                  <div class="th-content">
+
+                    <span>Dirección</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('direccion')"></i>
+
+                  </div>
+
+                </th>
+
+                <th
+
+                  class="sortable-header"
+
+                  [class.active]="isSortActive('interno')"
+
+                  (click)="sortData('interno')"
+
+                  title="Ordenar por interno">
+
+                  <div class="th-content">
+
+                    <span>Interno</span>
+
+                    <i class="fas" [ngClass]="getSortIcon('interno')"></i>
+
+                  </div>
+
+                </th>
+
+                <th>
+
+                  <div class="th-content">
+
+                    <span>Acciones</span>
+
+                  </div>
+
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              <tr *ngFor="let ubicacion of pagedUbicaciones" class="generic-row">
+
+                <td>{{ displayValue(ubicacion.nombreGerencia) }}</td>
+
+                <td>{{ displayValue(ubicacion.nombreOficina) }}</td>
+
+                <td>{{ displayValue(ubicacion.piso) }}</td>
+
+                <td>{{ displayValue(ubicacion.numeroPuerta) }}</td>
+
+                <td>{{ displayValue(ubicacion.ciudad) }}</td>
+
+                <td>{{ displayValue(ubicacion.departamento) }}</td>
+
+                <td>{{ displayValue(ubicacion.direccion) }}</td>
+
+                <td>{{ displayValue(ubicacion.interno) }}</td>
+
+                <td>
+
+                  <div class="action-buttons">
+
+                    <button class="btn btn-info btn-sm me-2" (click)="editarUbicacion(ubicacion)">
+
+                      <i class="fas fa-edit"></i>
+
+                    </button>
+
+                    <button class="btn btn-danger btn-sm" (click)="confirmarEliminar(ubicacion)">
+
+                      <i class="fas fa-trash-alt"></i>
+
+                    </button>
+
+                  </div>
+
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+
+          <ngb-pagination
+
+            [(page)]="page"
+
+            [pageSize]="pageSize"
+
+            [collectionSize]="collectionSize"
+
+            [boundaryLinks]="true"
+
+            [maxSize]="5"
+
+            [rotate]="true"
+
+            [ellipses]="false"
+
+            class="custom-pagination">
+
+          </ngb-pagination>
+
+        </div>
+
+
+
+        <div *ngIf="ubicaciones.length === 0" class="alert alert-info">
+
+          No hay ubicaciones registradas.
+
+        </div>
+
+
+
+        <div *ngIf="ubicaciones.length > 0 && collectionSize === 0" class="alert alert-info">
+
+          <i class="fas fa-search me-2"></i>
+
+          No hay ubicaciones que coincidan con "{{ searchTerm }}".
+
+        </div>
+
+      </ng-container>
+
     </div>
+
   </div>
+
 </div>
 
+
+
 <!-- Diálogo de confirmación -->
+
 <div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+
   <div class="confirm-dialog">
+
     <div class="confirm-dialog-title">
+
       <i class="fas fa-exclamation-triangle"></i>
+
       Confirmar Eliminación
+
     </div>
+
     <div class="confirm-dialog-message">
+
       ¿Está seguro que desea eliminar la ubicación "{{ubicacionToDelete?.nombreGerencia || ''}} - {{ubicacionToDelete?.nombreOficina}}"?
+
       Si hay activos o equipos/dispositivos de red asignados a esta ubicación, quedarán sin ubicación. Esta acción no se puede deshacer.
+
     </div>
+
     <div class="confirm-dialog-buttons">
+
       <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">
+
         Cancelar
+
       </button>
+
       <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">
+
         Eliminar
+
       </button>
+
     </div>
+
   </div>
-</div> 
+
+</div>
+
+

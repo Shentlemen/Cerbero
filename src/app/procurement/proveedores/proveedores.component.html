@@ -1,4 +1,4 @@
-<div class="generic-container">
+<div class="generic-container proveedores-page">
   <div class="header-section">
     <div class="header-content">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
@@ -16,17 +16,6 @@
   </div>
 
   <div class="content-section">
-    <!-- Campo de búsqueda -->
-    <div class="row mb-3" id="tour-proveedores-search">
-      <div class="col-12 d-flex align-items-center gap-3">
-        <form [formGroup]="filterForm">
-          <div class="search-container">
-            <input type="text" class="form-control" placeholder="Nombre comercial" formControlName="nombreComercial" style="max-width: 320px;">
-          </div>
-        </form>
-      </div>
-    </div>
-
     <div class="table-container" id="tour-proveedores-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -39,58 +28,93 @@
         <p class="mt-2">Cargando proveedores...</p>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading && !error">
-        <table class="generic-table">
-          <thead>
-            <tr>
-              <th (click)="sortData('nombre')" [class.active]="sortColumn === 'nombre'">
-                <div class="th-content">
-                  <span>Nombre</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'nombre' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'nombre' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'nombre'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('nombreComercial')" [class.active]="sortColumn === 'nombreComercial'">
-                <div class="th-content">
-                  <span>Nombre Comercial</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'nombreComercial' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'nombreComercial' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'nombreComercial'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('rut')" [class.active]="sortColumn === 'rut'">
-                <div class="th-content">
-                  <span>RUT</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'rut' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'rut' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'rut'
-                  }"></i>
-                </div>
-              </th>
-              <th (click)="sortData('direccion')" [class.active]="sortColumn === 'direccion'">
-                <div class="th-content">
-                  <span>Dirección</span>
-                  <i class="fas" [ngClass]="{
-                    'fa-sort-up': sortColumn === 'direccion' && sortDirection === 'asc',
-                    'fa-sort-down': sortColumn === 'direccion' && sortDirection === 'desc',
-                    'fa-sort': sortColumn !== 'direccion'
-                  }"></i>
-                </div>
-              </th>
-              <th>Correo de Contacto</th>
-              <th>Teléfono de Contacto</th>
-              <th>Sitio Web</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let proveedor of pagedProveedores" class="proveedor-row">
+      <ng-container *ngIf="!loading && !error">
+        <div class="list-toolbar" id="tour-proveedores-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por nombre, nombre comercial, RUT, correo..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="proveedoresList.length > 0">
+            <span *ngIf="collectionSize === proveedoresList.length">
+              {{ proveedoresList.length }} proveedores
+            </span>
+            <span *ngIf="collectionSize !== proveedoresList.length">
+              {{ collectionSize }} de {{ proveedoresList.length }} proveedores
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
+
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('nombre')"
+                  (click)="sortData('nombre')"
+                  title="Ordenar por nombre">
+                  <div class="th-content">
+                    <span>Nombre</span>
+                    <i class="fas" [ngClass]="getSortIcon('nombre')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('nombreComercial')"
+                  (click)="sortData('nombreComercial')"
+                  title="Ordenar por nombre comercial">
+                  <div class="th-content">
+                    <span>Nombre Comercial</span>
+                    <i class="fas" [ngClass]="getSortIcon('nombreComercial')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('rut')"
+                  (click)="sortData('rut')"
+                  title="Ordenar por RUT">
+                  <div class="th-content">
+                    <span>RUT</span>
+                    <i class="fas" [ngClass]="getSortIcon('rut')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('direccion')"
+                  (click)="sortData('direccion')"
+                  title="Ordenar por dirección">
+                  <div class="th-content">
+                    <span>Dirección</span>
+                    <i class="fas" [ngClass]="getSortIcon('direccion')"></i>
+                  </div>
+                </th>
+                <th>Correo de Contacto</th>
+                <th>Teléfono de Contacto</th>
+                <th>Sitio Web</th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let proveedor of pagedProveedores" class="generic-row">
               <td>{{proveedor.nombre || 'No especificado'}}</td>
               <td>{{proveedor.nombreComercial || 'No especificado'}}</td>
               <td>{{proveedor.rut || 'No especificado'}}</td>
@@ -149,25 +173,31 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
 
-      <div *ngIf="!loading && !error && pagedProveedores.length === 0" class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        No hay proveedores registrados.
-      </div>
-    </div>
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
 
-    <div class="pagination-container">
-      <ngb-pagination
-        [(page)]="page"
-        [pageSize]="pageSize"
-        [collectionSize]="collectionSize"
-        [boundaryLinks]="true"
-        [maxSize]="5"
-        [rotate]="true"
-        [ellipses]="false"
-        class="custom-pagination">
-      </ngb-pagination>
+        <div *ngIf="proveedoresList.length === 0" class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          No hay proveedores registrados.
+        </div>
+
+        <div *ngIf="proveedoresList.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay proveedores que coincidan con "{{ searchTerm }}".
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>
