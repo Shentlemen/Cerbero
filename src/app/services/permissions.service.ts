@@ -176,7 +176,7 @@ export class PermissionsService {
   }
 
   canManageAssets(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can create/edit/delete assets
+    return this.isGMOrAdmin() || this.isInventario();
   }
 
   // Gestión completa de assets en módulos de almacén (stock, 3D, cementerio, lab)
@@ -194,13 +194,13 @@ export class PermissionsService {
     return this.canManageEquipmentStates() && !this.isAlmacen();
   }
 
-  // Eliminación de assets solo para GM/Admin
   canDeleteAssets(): boolean {
-    return this.isGMOrAdmin();
+    return this.isGMOrAdmin() || this.isInventario();
   }
 
+  /** Inventario Cerbero (procurement/activos): alta, edición y baja. */
   canEditAssets(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can create/edit/delete assets
+    return this.isGMOrAdmin() || this.isInventario();
   }
 
   canManagePurchases(): boolean {
@@ -216,7 +216,20 @@ export class PermissionsService {
   }
 
   canAccessConfiguration(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can access configuration menu
+    return this.isGMOrAdmin(); // GM and Admin: configuración completa (subredes, tipos de compra, etc.)
+  }
+
+  /** Ubicaciones, tipos de activo y usuarios responsables: GM, Admin e Inventario. */
+  canAccessLocationsConfiguration(): boolean {
+    return this.isGMOrAdmin() || this.isInventario();
+  }
+
+  canAccessTiposActivoConfiguration(): boolean {
+    return this.isGMOrAdmin() || this.isInventario();
+  }
+
+  canAccessUsuariosResponsablesConfiguration(): boolean {
+    return this.isGMOrAdmin() || this.isInventario();
   }
 
   canAccessWarehouseConfiguration(): boolean {
@@ -237,6 +250,16 @@ export class PermissionsService {
   }
 
   // Tickets / Reclamos
+  /** Directorio telefónico Internos OSE: lectura para cualquier usuario autenticado. */
+  canAccessInternosOse(): boolean {
+    return this.isLoggedIn();
+  }
+
+  /** Alta, edición y baja de internos: solo GM y Administración (ADMIN). */
+  canManageInternosOse(): boolean {
+    return this.isGMOrAdmin();
+  }
+
   canAccessTickets(): boolean {
     return this.isLoggedIn();
   }

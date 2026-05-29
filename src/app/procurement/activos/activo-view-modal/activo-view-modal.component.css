@@ -1,0 +1,176 @@
+.activo-view-modal-body {
+  padding: 1rem 1.25rem;
+  background: #f8f9fa;
+}
+
+.activo-view-modal-header .modal-title {
+  font-size: 1.15rem;
+  color: #2c3e50;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.detail-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.detail-card--wide {
+  grid-column: 1 / -1;
+}
+
+.detail-card h3 {
+  color: #2c3e50;
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item:hover {
+  transform: translateX(3px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.detail-item .label {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.detail-item .value {
+  color: #2c3e50;
+  font-weight: 600;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge.alta {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badge.media {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.badge.baja {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.badge.confidencial {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badge.interno {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.badge.publico {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.badge.activo {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.badge.inactivo {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badge.mantenimiento {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.entrega-link,
+.ubicacion-link,
+.usuario-link,
+.tipo-activo-link,
+.compra-link,
+.item-link,
+.servicio-garantia-link {
+  color: #41a1af;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.entrega-link:hover,
+.ubicacion-link:hover,
+.usuario-link:hover,
+.tipo-activo-link:hover,
+.compra-link:hover,
+.item-link:hover,
+.servicio-garantia-link:hover {
+  color: #3a8f9c;
+  text-decoration: underline;
+}
+
+.hardware-link {
+  color: #007bff;
+  cursor: pointer;
+}
+
+.hardware-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 992px) {
+  .details-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-item .value {
+    text-align: left;
+  }
+}

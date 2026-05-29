@@ -348,8 +348,12 @@
       <pre style="white-space: pre-wrap; margin: 0;">{{errorMessage}}</pre>
     </div>
     
-    <!-- Modo de creación: selector tipo tarjeta -->
-    <div class="activo-creation-mode-wrap mb-3" id="activos-tour-modal-creation-mode">
+    <!-- Modo de creación: selector tipo tarjeta (solo alta) -->
+    <div
+      class="activo-creation-mode-wrap mb-2"
+      [class.activo-creation-mode-wrap--compact]="!modoEdicion"
+      id="activos-tour-modal-creation-mode"
+      *ngIf="!modoEdicion">
       <span class="activo-creation-mode-heading">Modo de creación</span>
       <div class="activo-creation-mode" role="radiogroup" aria-label="Modo de creación">
         <label
@@ -400,310 +404,306 @@
       <li [ngbNavItem]="'1'">
         <a ngbNavLink>Datos del activo</a>
         <ng-template ngbNavContent>
-          <form [formGroup]="activoForm">
-            <!-- Modo Individual -->
-            <div class="row mb-3" *ngIf="creationMode === 'single'">
-              <div class="col-md-6">
-                <label class="form-label">Número de Activo</label>
-                <input
-                  id="activos-tour-modal-name"
-                  type="text"
-                  class="form-control"
-                  formControlName="name"
-                  placeholder="Ej: PC14000, PC1, 14000, 1"
-                  [class.is-invalid]="activoForm.get('name')?.errors?.['duplicate'] || (activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors)"
-                  (input)="onAssetNameInputChange()"
-                  (blur)="onAssetNameInputChange()"
-                >
-                <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors">
-                  El número de activo es requerido.
-                </div>
-                <div class="invalid-feedback d-block" *ngIf="activoForm.get('name')?.errors?.['duplicate']">
-                  Este número de activo ya está registrado.
-                </div>
-              </div>
-            </div>
+          <form [formGroup]="activoForm" [class.activo-form-alta]="!modoEdicion">
 
-            <!-- Modo Rango -->
-            <div class="row mb-3" *ngIf="creationMode === 'range'">
-              <div class="col-md-6">
-                <label class="form-label">Número Inicial</label>
-                <input type="text" class="form-control" [(ngModel)]="rangeStartControl" 
-                       [ngModelOptions]="{standalone: true}" placeholder="Ej: PC14000, PC1, 14000, 1">
-                <small class="text-muted">
-                  <i class="fas fa-info-circle me-1"></i>
-                  Formato PC: PC + números (ej: PC14000, PC1, PC123)<br>
-                  Formato numérico: solo números (ej: 14000, 1, 123)
-                </small>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Número Final</label>
-                <input type="text" class="form-control" [(ngModel)]="rangeEndControl" 
-                       [ngModelOptions]="{standalone: true}" placeholder="Ej: PC15000, PC10, 15000, 10">
-                <small class="text-muted">
-                  <i class="fas fa-info-circle me-1"></i>
-                  Debe usar el mismo formato que el inicial
-                </small>
-              </div>
-            </div>
-
-            <!-- Información del rango -->
-            <div class="row mb-3" *ngIf="creationMode === 'range' && getRangeInfo().count > 0">
-              <div class="col-12">
-                <div class="alert" [ngClass]="getRangeInfo().count > 100 ? 'alert-warning' : 'alert-info'">
-                  <i class="fas" [ngClass]="getRangeInfo().count > 100 ? 'fa-exclamation-triangle' : 'fa-info-circle'"></i>
-                  <span class="me-2"></span>
-                  Se crearán <strong>{{ getRangeInfo().count }}</strong> activos desde 
-                  <strong>{{ getRangeInfo().start }}</strong> hasta <strong>{{ getRangeInfo().end }}</strong>
-                  <span class="ms-2">
-                    <i class="fas" [ngClass]="getRangeInfo().isPcFormat ? 'fa-desktop' : 'fa-box'"></i>
-                    <span class="ms-1">{{ getRangeInfo().isPcFormat ? 'Formato PC' : 'Formato numérico' }}</span>
-                  </span>
-                  <span *ngIf="getRangeInfo().count > 100" class="ms-2">
-                    <i class="fas fa-clock me-1"></i>Esta operación puede tomar varios minutos.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Primera fila: Tipo de Activo y Clasificación -->
-            <div class="row mb-3" id="activos-tour-modal-tipo-clasificacion">
-              <div class="col-md-6">
-                <label class="form-label">Tipo de Activo</label>
-                <select id="activos-tour-modal-tipo" class="form-select" formControlName="idTipoActivo">
-                  <option value="">Seleccione un tipo de activo</option>
-                  <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">
-                    {{tipo.descripcion}}
-                  </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched && shouldShowValidationErrors">
-                  El tipo de activo es requerido.
-                </div>
-                <small class="text-muted">
-                  Al seleccionar un tipo de activo, el usuario responsable se asignará automáticamente
-                </small>
-              </div>
-              <div class="col-md-6" id="activos-tour-modal-clasificacion">
-                <label class="form-label">Clasificación de INFO</label>
-                <select class="form-select" formControlName="clasificacionDeINFO">
-                  <option value="">Seleccione una clasificación</option>
-                  <option value="CONFIDENCIAL">Confidencial</option>
-                  <option value="NO CONFIDENCIAL">No confidencial</option>
-                  <option value="PUBLICA">Pública</option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched && shouldShowValidationErrors">
-                  La clasificación es requerida.
-                </div>
-              </div>
-            </div>
-
-            <!-- Segunda fila: Criticidad y Estado -->
-            <div class="row mb-3" id="activos-tour-modal-criticidad-estado">
-              <div class="col-md-6">
-                <label class="form-label">Criticidad</label>
-                <select class="form-select" formControlName="criticidad">
-                  <option value="">Seleccione una criticidad</option>
-                  <option value="ALTA">Alta</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="BAJA">Baja</option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched && shouldShowValidationErrors">
-                  La criticidad es requerida.
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Estado</label>
-                <select class="form-select" formControlName="estado">
-                  <option value="">Seleccione un estado</option>
-                  <option value="ACTIVO">Activo</option>
-                  <option value="INACTIVO">Inactivo</option>
-                  <option value="MANTENIMIENTO">Mantenimiento</option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched && shouldShowValidationErrors">
-                  El estado es requerido.
-                </div>
-              </div>
-            </div>
-
-            <!-- Tercera fila: Número de Compra y Item -->
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label" for="activos-tour-modal-compra">Compra</label>
-                <!-- Mismo patrón que Registrar Stock (stock.component → modal Ubicación): input + .items-dropdown -->
-                <div class="position-relative activo-modal-compra-search-wrap">
+            <!-- ——— Alta: layout compacto ——— -->
+            <ng-container *ngIf="!modoEdicion">
+              <div class="row g-2 mb-2" *ngIf="creationMode === 'single'">
+                <div class="col-sm-4 col-lg-3">
+                  <label class="form-label">Número de activo</label>
                   <input
-                    id="activos-tour-modal-compra"
+                    id="activos-tour-modal-name"
+                    type="text"
+                    class="form-control form-control-sm"
+                    formControlName="name"
+                    placeholder="PC14000"
+                    [class.is-invalid]="activoForm.get('name')?.errors?.['duplicate'] || (activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors)"
+                    (input)="onAssetNameInputChange()"
+                    (blur)="onAssetNameInputChange()">
+                  <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors">
+                    Requerido.
+                  </div>
+                  <div class="invalid-feedback d-block" *ngIf="activoForm.get('name')?.errors?.['duplicate']">
+                    Ya registrado.
+                  </div>
+                </div>
+                <div class="col-sm-5 col-lg-5" id="activos-tour-modal-tipo-clasificacion">
+                  <label class="form-label">Tipo de activo</label>
+                  <select id="activos-tour-modal-tipo" class="form-select form-select-sm" formControlName="idTipoActivo">
+                    <option value="">Seleccione…</option>
+                    <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">{{ tipo.descripcion }}</option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched && shouldShowValidationErrors">
+                    Requerido.
+                  </div>
+                </div>
+                <div class="col-sm-3 col-lg-2" id="activos-tour-modal-criticidad-estado">
+                  <label class="form-label">Estado</label>
+                  <select class="form-select form-select-sm" formControlName="estado">
+                    <option value="">—</option>
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                    <option value="MANTENIMIENTO">Mantenimiento</option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched && shouldShowValidationErrors">
+                    Requerido.
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-2" *ngIf="creationMode === 'range'">
+                <div class="col-6 col-md-3">
+                  <label class="form-label">Desde</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="rangeStartControl"
+                    [ngModelOptions]="{standalone: true}" placeholder="PC14000">
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="form-label">Hasta</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="rangeEndControl"
+                    [ngModelOptions]="{standalone: true}" placeholder="PC15000">
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label">Tipo de activo</label>
+                  <select class="form-select form-select-sm" formControlName="idTipoActivo">
+                    <option value="">Seleccione…</option>
+                    <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">{{ tipo.descripcion }}</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <label class="form-label">Estado</label>
+                  <select class="form-select form-select-sm" formControlName="estado">
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                    <option value="MANTENIMIENTO">Mant.</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-2" *ngIf="creationMode === 'range' && getRangeInfo().count > 0">
+                <div class="alert alert-sm py-2 mb-0" [ngClass]="getRangeInfo().count > 100 ? 'alert-warning' : 'alert-info'">
+                  <i class="fas me-1" [ngClass]="getRangeInfo().count > 100 ? 'fa-exclamation-triangle' : 'fa-info-circle'"></i>
+                  <strong>{{ getRangeInfo().count }}</strong> activos: {{ getRangeInfo().start }} → {{ getRangeInfo().end }}
+                  <span class="text-muted ms-1">({{ getRangeInfo().isPcFormat ? 'PC' : 'numérico' }})</span>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- ——— Edición: layout completo ——— -->
+            <ng-container *ngIf="modoEdicion">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Número de Activo</label>
+                  <input
+                    id="activos-tour-modal-name"
                     type="text"
                     class="form-control"
-                    autocomplete="off"
-                    spellcheck="false"
-                    [(ngModel)]="compraModalSearchTerm"
-                    [ngModelOptions]="{ standalone: true }"
-                    placeholder="Escriba para buscar compras por número o descripción…"
+                    formControlName="name"
+                    placeholder="Ej: PC14000, PC1, 14000, 1"
+                    [class.is-invalid]="activoForm.get('name')?.errors?.['duplicate'] || (activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors)"
+                    (input)="onAssetNameInputChange()"
+                    (blur)="onAssetNameInputChange()">
+                  <div class="invalid-feedback" *ngIf="activoForm.get('name')?.errors?.['required'] && activoForm.get('name')?.touched && shouldShowValidationErrors">
+                    El número de activo es requerido.
+                  </div>
+                  <div class="invalid-feedback d-block" *ngIf="activoForm.get('name')?.errors?.['duplicate']">
+                    Este número de activo ya está registrado.
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-3" id="activos-tour-modal-tipo-clasificacion">
+                <div class="col-md-6">
+                  <label class="form-label">Tipo de Activo</label>
+                  <select class="form-select" formControlName="idTipoActivo">
+                    <option value="">Seleccione un tipo de activo</option>
+                    <option *ngFor="let tipo of tiposActivoList" [value]="tipo.idActivo">{{ tipo.descripcion }}</option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="activoForm.get('idTipoActivo')?.errors?.['required'] && activoForm.get('idTipoActivo')?.touched && shouldShowValidationErrors">
+                    El tipo de activo es requerido.
+                  </div>
+                </div>
+                <div class="col-md-6" id="activos-tour-modal-clasificacion">
+                  <label class="form-label">Clasificación de INFO</label>
+                  <select class="form-select" formControlName="clasificacionDeINFO">
+                    <option value="">Seleccione una clasificación</option>
+                    <option value="CONFIDENCIAL">Confidencial</option>
+                    <option value="NO CONFIDENCIAL">No confidencial</option>
+                    <option value="PUBLICA">Pública</option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required'] && activoForm.get('clasificacionDeINFO')?.touched && shouldShowValidationErrors">
+                    La clasificación es requerida.
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-3" id="activos-tour-modal-criticidad-estado">
+                <div class="col-md-6">
+                  <label class="form-label">Criticidad</label>
+                  <select class="form-select" formControlName="criticidad">
+                    <option value="">Seleccione una criticidad</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="MEDIA">Media</option>
+                    <option value="BAJA">Baja</option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="activoForm.get('criticidad')?.errors?.['required'] && activoForm.get('criticidad')?.touched && shouldShowValidationErrors">
+                    La criticidad es requerida.
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Estado</label>
+                  <select class="form-select" formControlName="estado">
+                    <option value="">Seleccione un estado</option>
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                    <option value="MANTENIMIENTO">Mantenimiento</option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="activoForm.get('estado')?.errors?.['required'] && activoForm.get('estado')?.touched && shouldShowValidationErrors">
+                    El estado es requerido.
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Compra e ítem -->
+            <div class="row mb-3" [class.g-2]="!modoEdicion" [class.mb-2]="!modoEdicion">
+              <div class="col-md-6" [class.col-lg-6]="!modoEdicion">
+                <label class="form-label" for="activos-tour-modal-compra">Compra</label>
+                <input type="hidden" formControlName="idNumeroCompra" />
+                <div
+                  class="input-group activo-picker-field"
+                  [class.input-group-sm]="!modoEdicion"
+                  id="activos-tour-modal-compra">
+                  <input
+                    type="text"
+                    class="form-control activo-picker-display"
+                    readonly
+                    [value]="compraModalSearchTerm"
+                    placeholder="Seleccionar compra…"
                     [class.is-invalid]="
                       activoForm.get('idNumeroCompra')?.errors?.['required'] &&
                       activoForm.get('idNumeroCompra')?.touched &&
                       shouldShowValidationErrors
                     "
-                    (input)="filtrarComprasModal()"
-                    (focus)="onCompraModalSearchFocus()"
-                    (blur)="onCompraModalBlur()"
-                  />
-                  <div
-                    *ngIf="mostrarDropdownComprasModal && comprasModalFiltradas.length > 0"
-                    class="items-dropdown"
-                  >
-                    <div
-                      *ngFor="let c of comprasModalFiltradas"
-                      class="item-option"
-                      data-type="compra"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="seleccionarCompraModal(c)"
-                      [class.selected]="esCompraSeleccionadaEnModal(c)"
-                    >
-                      <i class="fas fa-shopping-cart me-2"></i>
-                      <span>Compra {{ c.numeroCompra }}</span>
-                      <small *ngIf="c.descripcion && c.descripcion.trim()" class="d-block item-option-subline">{{ c.descripcion }}</small>
-                    </div>
-                  </div>
-                  <div
-                    *ngIf="
-                      mostrarDropdownComprasModal &&
-                      comprasModalFiltradas.length === 0 &&
-                      compraModalSearchTerm.trim()
-                    "
-                    class="items-dropdown no-results"
-                  >
-                    <div class="item-option disabled">
-                      <i class="fas fa-search me-2"></i>
-                      No se encontraron compras
-                    </div>
-                  </div>
+                    (click)="abrirPickerCompra()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="abrirPickerCompra()"
+                    title="Buscar compra">
+                    <i class="fas fa-search"></i>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  class="btn btn-link btn-sm p-0 mt-1"
-                  *ngIf="compraModalSearchTerm.trim() || activoForm.get('idNumeroCompra')?.value"
-                  (click)="limpiarSeleccionCompraModal()"
-                >
-                  Limpiar compra
-                </button>
                 <div class="invalid-feedback d-block" *ngIf="activoForm.get('idNumeroCompra')?.errors?.['required'] && activoForm.get('idNumeroCompra')?.touched && shouldShowValidationErrors">
                   La compra es requerida.
                 </div>
-                <small class="text-muted">
-                  Lista desplegable bajo el campo (como en almacenes / Registrar stock). Al elegir una compra se cargarán los ítems de esa compra.
+                <small class="text-muted activo-form-hint-full" *ngIf="modoEdicion">
+                  Use el botón de búsqueda para elegir la compra en una ventana aparte.
                 </small>
               </div>
-              <div class="col-md-6" id="activos-tour-modal-item">
-                <label class="form-label">Item</label>
-                <select class="form-select" formControlName="idItem" [class.disabled-field]="isItemDisabled()">
-                  <option value="">Seleccione un item</option>
-                  <option *ngFor="let lote of lotesFiltrados" [value]="lote.idItem">
-                    {{lote.nombreItem}}
-                  </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched && shouldShowValidationErrors">
-                  El item es requerido.
+              <div class="col-md-6" id="activos-tour-modal-item" [class.col-lg-6]="!modoEdicion">
+                <label class="form-label">Ítem</label>
+                <input type="hidden" formControlName="idItem" />
+                <div
+                  class="input-group activo-picker-field"
+                  [class.input-group-sm]="!modoEdicion"
+                  [class.activo-picker-field--disabled]="isItemDisabled()">
+                  <input
+                    type="text"
+                    class="form-control activo-picker-display"
+                    readonly
+                    [value]="itemModalDisplayTerm"
+                    placeholder="Seleccionar ítem…"
+                    [class.is-invalid]="
+                      activoForm.get('idItem')?.errors?.['required'] &&
+                      activoForm.get('idItem')?.touched &&
+                      shouldShowValidationErrors
+                    "
+                    (click)="abrirPickerItem()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    [disabled]="isItemDisabled()"
+                    (click)="abrirPickerItem()"
+                    title="Buscar ítem">
+                    <i class="fas fa-search"></i>
+                  </button>
                 </div>
-                <small class="text-muted" *ngIf="!activoForm.get('idNumeroCompra')?.value">
-                  Primero seleccione una compra para ver los items disponibles
-                </small>
-                <small class="text-muted" *ngIf="activoForm.get('idNumeroCompra')?.value && lotesFiltrados.length === 0">
-                  No hay items disponibles para la compra seleccionada
-                </small>
-                <small class="text-muted" *ngIf="activoForm.get('idNumeroCompra')?.value && lotesFiltrados.length > 0">
-                  Al seleccionar un item, se mostrarán solo las entregas disponibles para ese item
+                <div class="invalid-feedback d-block" *ngIf="activoForm.get('idItem')?.errors?.['required'] && activoForm.get('idItem')?.touched && shouldShowValidationErrors">
+                  El ítem es requerido.
+                </div>
+                <small class="text-muted activo-form-hint-full" *ngIf="modoEdicion && !activoForm.get('idNumeroCompra')?.value">
+                  Primero seleccione una compra.
                 </small>
               </div>
             </div>
 
-            <!-- Cuarta fila: Entrega y Ubicación -->
-            <div class="row mb-3" id="activos-tour-modal-entrega-ubicacion">
-              <div class="col-md-6">
+            <!-- Entrega y ubicación -->
+            <div class="row mb-3" id="activos-tour-modal-entrega-ubicacion" [class.g-2]="!modoEdicion" [class.mb-2]="!modoEdicion">
+              <div class="col-md-6" [class.col-lg-4]="!modoEdicion">
                 <label class="form-label">Entrega</label>
-                <select class="form-select" formControlName="idEntrega" [class.disabled-field]="isEntregaDisabled()">
-                  <option value="">Seleccione una entrega</option>
-                  <option *ngFor="let entrega of entregasFiltradas" [value]="entrega.idEntrega">
-                    Entrega #{{entrega.idEntrega}} - {{entrega.descripcion}}
-                  </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched && shouldShowValidationErrors">
+                <input type="hidden" formControlName="idEntrega" />
+                <div
+                  class="input-group activo-picker-field"
+                  [class.input-group-sm]="!modoEdicion"
+                  [class.activo-picker-field--disabled]="isEntregaDisabled()">
+                  <input
+                    type="text"
+                    class="form-control activo-picker-display"
+                    readonly
+                    [value]="entregaModalDisplayTerm"
+                    placeholder="Seleccionar entrega…"
+                    [class.is-invalid]="
+                      activoForm.get('idEntrega')?.errors?.['required'] &&
+                      activoForm.get('idEntrega')?.touched &&
+                      shouldShowValidationErrors
+                    "
+                    (click)="abrirPickerEntrega()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    [disabled]="isEntregaDisabled()"
+                    (click)="abrirPickerEntrega()"
+                    title="Buscar entrega">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback d-block" *ngIf="activoForm.get('idEntrega')?.errors?.['required'] && activoForm.get('idEntrega')?.touched && shouldShowValidationErrors">
                   La entrega es requerida.
                 </div>
-                <small class="text-muted" *ngIf="!activoForm.get('idItem')?.value">
-                  Primero seleccione un item para ver las entregas disponibles
-                </small>
-                <small class="text-muted" *ngIf="activoForm.get('idItem')?.value && entregasFiltradas.length === 0">
-                  No hay entregas disponibles para el item seleccionado
+                <small class="text-muted activo-form-hint-full" *ngIf="modoEdicion && !activoForm.get('idItem')?.value">
+                  Primero seleccione un ítem.
                 </small>
               </div>
-              <div class="col-md-6">
-                <label class="form-label" for="activoModalUbicacionSearch">Ubicación</label>
+              <div class="col-md-6" [class.col-lg-8]="!modoEdicion">
+                <label class="form-label">Ubicación <span class="text-muted fw-normal" *ngIf="!modoEdicion">(opcional)</span></label>
                 <input type="hidden" formControlName="idUbicacion" />
-                <div class="position-relative activo-modal-ubicacion-search-wrap">
+                <div class="input-group activo-picker-field" [class.input-group-sm]="!modoEdicion">
                   <input
-                    id="activoModalUbicacionSearch"
                     type="text"
-                    class="form-control"
-                    autocomplete="off"
-                    spellcheck="false"
-                    [(ngModel)]="ubicacionModalSearchTerm"
-                    [ngModelOptions]="{ standalone: true }"
-                    placeholder="Escriba para buscar por gerencia, oficina, ciudad…"
-                    (input)="filtrarUbicacionesModal()"
-                    (focus)="onUbicacionModalSearchFocus()"
-                    (blur)="onUbicacionModalBlur()"
-                  />
-                  <div
-                    *ngIf="mostrarDropdownUbicacionesModal && ubicacionesModalFiltradas.length > 0"
-                    class="items-dropdown"
-                  >
-                    <div
-                      *ngFor="let u of ubicacionesModalFiltradas"
-                      class="item-option"
-                      data-type="ubicacion"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="seleccionarUbicacionModal(u)"
-                      [class.selected]="esUbicacionSeleccionadaEnModal(u)"
-                    >
-                      <i class="fas fa-map-marker-alt me-2"></i>
-                      <span>{{ etiquetaUbicacionModal(u) }}</span>
-                    </div>
-                  </div>
-                  <div
-                    *ngIf="
-                      mostrarDropdownUbicacionesModal &&
-                      ubicacionesModalFiltradas.length === 0 &&
-                      ubicacionModalSearchTerm.trim()
-                    "
-                    class="items-dropdown no-results"
-                  >
-                    <div class="item-option disabled">
-                      <i class="fas fa-search me-2"></i>
-                      No se encontraron ubicaciones
-                    </div>
-                  </div>
+                    class="form-control activo-picker-display"
+                    readonly
+                    [value]="ubicacionModalSearchTerm"
+                    placeholder="Seleccionar ubicación…"
+                    (click)="abrirPickerUbicacion()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="abrirPickerUbicacion()"
+                    title="Buscar ubicación">
+                    <i class="fas fa-search"></i>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  class="btn btn-link btn-sm p-0 mt-1"
-                  *ngIf="ubicacionModalSearchTerm.trim() || activoForm.get('idUbicacion')?.value"
-                  (click)="limpiarSeleccionUbicacionModal()"
-                >
-                  Limpiar ubicación
-                </button>
-                <small class="text-muted">
-                  Lista desplegable bajo el campo (como Compra). La ubicación es opcional.
+                <small class="text-muted activo-form-hint-full" *ngIf="modoEdicion">
+                  Opcional. En la ventana de búsqueda puede dejar la ubicación vacía.
                 </small>
               </div>
             </div>
 
-            <!-- Quinta fila: Responsable y ID Secundario -->
-            <div class="row mb-3" id="activos-tour-modal-responsable-id">
+            <!-- Responsable (edición) / ID secundario + garantía -->
+            <div class="row mb-3" id="activos-tour-modal-responsable-id" *ngIf="modoEdicion">
               <div class="col-md-6">
                 <label class="form-label">Responsable</label>
-                <select class="form-select" formControlName="idUsuario" [class.disabled-field]="isUsuarioDisabled()">
+                <select class="form-select" formControlName="idUsuario">
                   <option value="">Seleccione un responsable</option>
                   <option *ngFor="let usuario of usuarios | keyvalue" [value]="usuario.key">
                     {{usuario.value.nombre}} {{usuario.value.apellido}}
@@ -712,9 +712,6 @@
                 <div class="invalid-feedback" *ngIf="activoForm.get('idUsuario')?.errors?.['required'] && activoForm.get('idUsuario')?.touched && shouldShowValidationErrors">
                   El responsable es requerido.
                 </div>
-                <small class="text-muted" *ngIf="isUsuarioDisabled()">
-                  El responsable se asigna automáticamente según el tipo de activo seleccionado
-                </small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">ID Secundario</label>
@@ -725,79 +722,75 @@
               </div>
             </div>
 
-            <!-- Sexta fila: Servicio de Garantía y Fecha Fin Garantía -->
-            <div class="row mb-3" id="activos-tour-modal-garantia">
-              <div class="col-md-6">
-                <label class="form-label" for="activoModalServicioGarantiaSearch">Servicio de Garantía</label>
+            <!-- Alta: fecha y garantía -->
+            <div class="row g-2 mb-2" id="activos-tour-modal-garantia" *ngIf="!modoEdicion">
+              <div class="col-12 col-md-4">
+                <label class="form-label">Fin garantía</label>
+                <input type="date" class="form-control form-control-sm" formControlName="fechaFinGarantia">
+                <div class="invalid-feedback" *ngIf="activoForm.get('fechaFinGarantia')?.errors?.['required'] && activoForm.get('fechaFinGarantia')?.touched && shouldShowValidationErrors">
+                  Requerida.
+                </div>
+              </div>
+              <div class="col-12 col-md-8">
+                <label class="form-label" for="activoModalServicioGarantiaSearch">Servicio de garantía</label>
                 <input type="hidden" formControlName="idServicioGarantia" />
-                <div class="position-relative activo-modal-servicio-garantia-search-wrap">
+                <div class="input-group activo-picker-field input-group-sm">
                   <input
                     id="activoModalServicioGarantiaSearch"
                     type="text"
-                    class="form-control"
-                    autocomplete="off"
-                    spellcheck="false"
-                    [(ngModel)]="servicioGarantiaModalSearchTerm"
-                    [ngModelOptions]="{ standalone: true }"
-                    placeholder="Escriba para buscar por nombre comercial, razón social, RUC…"
+                    class="form-control activo-picker-display"
+                    readonly
+                    [value]="servicioGarantiaModalSearchTerm"
+                    placeholder="Seleccionar servicio…"
                     [class.is-invalid]="
                       activoForm.get('idServicioGarantia')?.errors?.['required'] &&
                       activoForm.get('idServicioGarantia')?.touched &&
                       shouldShowValidationErrors
                     "
-                    (input)="filtrarServiciosGarantiaModal()"
-                    (focus)="onServicioGarantiaModalSearchFocus()"
-                    (blur)="onServicioGarantiaModalBlur()"
-                  />
-                  <div
-                    *ngIf="mostrarDropdownServiciosGarantiaModal && serviciosGarantiaModalFiltrados.length > 0"
-                    class="items-dropdown"
-                  >
-                    <div
-                      *ngFor="let sg of serviciosGarantiaModalFiltrados"
-                      class="item-option"
-                      data-type="servicio-garantia"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="seleccionarServicioGarantiaModal(sg)"
-                      [class.selected]="esServicioGarantiaSeleccionadoEnModal(sg)"
-                    >
-                      <i class="fas fa-shield-alt me-2"></i>
-                      <span>{{ etiquetaServicioGarantiaModal(sg) }}</span>
-                      <small
-                        *ngIf="sg.nombre && sg.nombre.trim() && sg.nombre.trim() !== (sg.nombreComercial || '').trim()"
-                        class="d-block item-option-subline"
-                      >{{ sg.nombre }}</small>
-                      <small *ngIf="sg.ruc && sg.ruc.trim()" class="d-block text-muted item-option-subline">RUC {{ sg.ruc }}</small>
-                    </div>
-                  </div>
-                  <div
-                    *ngIf="
-                      mostrarDropdownServiciosGarantiaModal &&
-                      serviciosGarantiaModalFiltrados.length === 0 &&
-                      servicioGarantiaModalSearchTerm.trim()
-                    "
-                    class="items-dropdown no-results"
-                  >
-                    <div class="item-option disabled">
-                      <i class="fas fa-search me-2"></i>
-                      No se encontraron servicios de garantía
-                    </div>
-                  </div>
+                    (click)="abrirPickerServicioGarantia()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="abrirPickerServicioGarantia()"
+                    title="Buscar servicio de garantía">
+                    <i class="fas fa-search"></i>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  class="btn btn-link btn-sm p-0 mt-1"
-                  *ngIf="servicioGarantiaModalSearchTerm.trim() || activoForm.get('idServicioGarantia')?.value"
-                  (click)="limpiarSeleccionServicioGarantiaModal()"
-                >
-                  Limpiar servicio de garantía
-                </button>
                 <div class="invalid-feedback d-block" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched && shouldShowValidationErrors">
                   El servicio de garantía es requerido.
                 </div>
-                <small class="text-muted">
-                  Lista desplegable bajo el campo (como Compra). El servicio de garantía es obligatorio.
-                </small>
+              </div>
+            </div>
+
+            <!-- Edición: garantía en fila aparte -->
+            <div class="row mb-3" id="activos-tour-modal-garantia" *ngIf="modoEdicion">
+              <div class="col-md-6">
+                <label class="form-label">Servicio de Garantía</label>
+                <input type="hidden" formControlName="idServicioGarantia" />
+                <div class="input-group activo-picker-field">
+                  <input
+                    type="text"
+                    class="form-control activo-picker-display"
+                    readonly
+                    [value]="servicioGarantiaModalSearchTerm"
+                    placeholder="Seleccionar servicio de garantía…"
+                    [class.is-invalid]="
+                      activoForm.get('idServicioGarantia')?.errors?.['required'] &&
+                      activoForm.get('idServicioGarantia')?.touched &&
+                      shouldShowValidationErrors
+                    "
+                    (click)="abrirPickerServicioGarantia()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="abrirPickerServicioGarantia()"
+                    title="Buscar servicio de garantía">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback d-block" *ngIf="activoForm.get('idServicioGarantia')?.errors?.['required'] && activoForm.get('idServicioGarantia')?.touched && shouldShowValidationErrors">
+                  El servicio de garantía es requerido.
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Fecha Fin Garantía</label>
@@ -808,8 +801,8 @@
               </div>
             </div>
 
-            <!-- Activos Relacionados -->
-            <div class="row mb-3" id="activos-tour-modal-relacionados">
+            <!-- Activos Relacionados (solo edición) -->
+            <div class="row mb-3" id="activos-tour-modal-relacionados" *ngIf="modoEdicion">
               <div class="col-md-12">
                 <label class="form-label" for="activoModalRelacionadosSearch">Activos Relacionados</label>
                 <div class="selected-assets mb-2" *ngIf="selectedRelatedAssets.length > 0">
@@ -818,51 +811,23 @@
                     <button type="button" class="btn-close" (click)="removeRelatedAsset(assetId)"></button>
                   </div>
                 </div>
-                <div class="position-relative activo-modal-relacionados-search-wrap">
+                <div class="input-group activo-picker-field" id="activoModalRelacionadosSearch">
                   <input
-                    id="activoModalRelacionadosSearch"
                     type="text"
-                    class="form-control"
-                    autocomplete="off"
-                    spellcheck="false"
-                    [(ngModel)]="relacionadosModalSearchTerm"
-                    [ngModelOptions]="{ standalone: true }"
-                    placeholder="Busque por número de equipo, ID de activo o ID secundario…"
-                    (input)="filtrarActivosRelacionadosModal()"
-                    (focus)="onRelacionadosModalSearchFocus()"
-                    (blur)="onRelacionadosModalBlur()"
-                  />
-                  <div
-                    *ngIf="mostrarDropdownRelacionadosModal && activosRelacionadosModalFiltrados.length > 0"
-                    class="items-dropdown"
-                  >
-                    <div
-                      *ngFor="let a of activosRelacionadosModalFiltrados"
-                      class="item-option"
-                      data-type="relacionado"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="seleccionarActivoRelacionadoModal(a)"
-                    >
-                      <i class="fas fa-link me-2"></i>
-                      <span>{{ getAssetDescription(a.idActivo) }}</span>
-                    </div>
-                  </div>
-                  <div
-                    *ngIf="
-                      mostrarDropdownRelacionadosModal &&
-                      activosRelacionadosModalFiltrados.length === 0 &&
-                      relacionadosModalSearchTerm.trim()
-                    "
-                    class="items-dropdown no-results"
-                  >
-                    <div class="item-option disabled">
-                      <i class="fas fa-search me-2"></i>
-                      No se encontraron activos
-                    </div>
-                  </div>
+                    class="form-control activo-picker-display"
+                    readonly
+                    placeholder="Buscar activo para vincular…"
+                    (click)="abrirPickerRelacionado()" />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="abrirPickerRelacionado()"
+                    title="Agregar activo relacionado">
+                    <i class="fas fa-search"></i>
+                  </button>
                 </div>
                 <small class="text-muted">
-                  Lista bajo el campo (como Compra). Puede agregar varios; no se muestra el activo actual ni los ya relacionados.
+                  Abrí el buscador para elegir otro activo. Podés agregar varios; no aparece el activo actual ni los ya vinculados.
                 </small>
               </div>
             </div>
@@ -894,11 +859,11 @@
             <i class="fas fa-times-circle text-danger me-1"></i>
             Tipo de activo es requerido
           </li>
-          <li *ngIf="activoForm.get('clasificacionDeINFO')?.errors?.['required']">
+          <li *ngIf="modoEdicion && activoForm.get('clasificacionDeINFO')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
             Clasificación de INFO es requerida
           </li>
-          <li *ngIf="activoForm.get('criticidad')?.errors?.['required']">
+          <li *ngIf="modoEdicion && activoForm.get('criticidad')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
             Criticidad es requerida
           </li>
@@ -918,11 +883,11 @@
             <i class="fas fa-times-circle text-danger me-1"></i>
             Entrega es requerida
           </li>
-          <li *ngIf="activoForm.get('idUsuario')?.errors?.['required']">
+          <li *ngIf="modoEdicion && activoForm.get('idUsuario')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
             Responsable es requerido
           </li>
-          <li *ngIf="activoForm.get('idSecundario')?.errors?.['required']">
+          <li *ngIf="modoEdicion && activoForm.get('idSecundario')?.errors?.['required']">
             <i class="fas fa-times-circle text-danger me-1"></i>
             ID Secundario es requerido
           </li>

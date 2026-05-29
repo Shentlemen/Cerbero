@@ -2,7 +2,8 @@
   position: fixed;
   top: 80px; /* 20px + 60px del header */
   right: 20px;
-  z-index: 9999;
+  /* Por encima de modales Bootstrap/ng-bootstrap (1055+) y backdrops apilados */
+  z-index: 10060;
   display: flex;
   flex-direction: column;
   gap: 8px;

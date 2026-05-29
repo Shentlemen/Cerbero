@@ -39,8 +39,30 @@ import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { driver, type Driver, type DriveStep } from 'driver.js';
 import { TourRegistryService } from '../../services/tour-registry.service';
+import {
+  SearchListPickerModalComponent,
+  SearchListPickerItem
+} from '../../components/search-list-picker-modal/search-list-picker-modal.component';
+import { ActivoViewModalComponent } from './activo-view-modal/activo-view-modal.component';
 
 type ActivoSortColumn = 'numeroCompra' | 'name' | 'idUsuario' | 'idUbicacion' | 'criticidad' | 'estado';
+
+/** Valores del formulario de activo (getRawValue incluye controles deshabilitados). */
+interface ActivoFormRaw {
+  name: string;
+  criticidad: string;
+  clasificacionDeINFO: string;
+  estado: string;
+  idTipoActivo: string | number;
+  idNumeroCompra: string | number;
+  idItem: string | number;
+  idEntrega: string | number;
+  idUbicacion: string | number | null | undefined;
+  idUsuario: string | number | null | undefined;
+  idSecundario: string;
+  idServicioGarantia: string | number;
+  fechaFinGarantia: string;
+}
 
 type PdfHardwareRemoteDep =
   | 'bios'
@@ -167,6 +189,9 @@ export class ActivosComponent implements OnInit, OnDestroy {
   comprasModalFiltradas: CompraDTO[] = [];
   mostrarDropdownComprasModal = false;
 
+  itemModalDisplayTerm = '';
+  entregaModalDisplayTerm = '';
+
   /**
    * Búsqueda de ubicación en el modal activo — mismo patrón que Compra / Registrar Stock:
    * input + `.items-dropdown` (sin typeahead en body).
@@ -181,13 +206,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
   servicioGarantiaModalSearchTerm = '';
   serviciosGarantiaModalFiltrados: ServicioGarantiaDTO[] = [];
   mostrarDropdownServiciosGarantiaModal = false;
-
-  /**
-   * Agregar activos relacionados — mismo patrón de búsqueda; filtra por número de equipo, ID e ID secundario.
-   */
-  relacionadosModalSearchTerm = '';
-  activosRelacionadosModalFiltrados: ActivoDTO[] = [];
-  mostrarDropdownRelacionadosModal = false;
 
   // Listas para los dropdowns
   hardwareList: any[] = [];
@@ -838,7 +856,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
           title: '10. Activos Relacionados',
           description:
             'Sirve para vincular este activo con otros (por ejemplo, un monitor y su CPU, o una impresora con su servidor). ' +
-            'Podés agregar varios buscando por número de equipo, ID de activo o ID secundario. La relación queda visible desde el detalle del equipo.',
+            'Podés agregar varios con el buscador (modal): número de equipo, ID de activo o ID secundario. La relación queda visible desde el detalle del equipo.',
           side: 'top',
           align: 'start'
         }
@@ -1159,10 +1177,13 @@ export class ActivosComponent implements OnInit, OnDestroy {
     if (compra?.idCompra == null) {
       return;
     }
-    this.activoForm.patchValue({ idNumeroCompra: compra.idCompra }, { emitEvent: true });
+    this.activoForm.patchValue({ idNumeroCompra: compra.idCompra }, { emitEvent: false });
     this.compraModalSearchTerm = String(compra.numeroCompra ?? '');
+    this.itemModalDisplayTerm = '';
+    this.entregaModalDisplayTerm = '';
     this.mostrarDropdownComprasModal = false;
     this.comprasModalFiltradas = [];
+    this.onCompraChange(compra.idCompra);
   }
 
   esCompraSeleccionadaEnModal(compra: CompraDTO): boolean {
@@ -1176,9 +1197,200 @@ export class ActivosComponent implements OnInit, OnDestroy {
 
   limpiarSeleccionCompraModal(): void {
     this.compraModalSearchTerm = '';
+    this.itemModalDisplayTerm = '';
+    this.entregaModalDisplayTerm = '';
     this.comprasModalFiltradas = [];
     this.mostrarDropdownComprasModal = false;
     this.activoForm.patchValue({ idNumeroCompra: '' }, { emitEvent: true });
+  }
+
+  private sublabelEntregaModal(entrega: EntregaDTO): string | undefined {
+    const partes: string[] = [];
+    const desc = (entrega.descripcion || '').trim();
+    if (desc) {
+      partes.push(desc);
+    }
+    if (entrega.cantidad != null) {
+      partes.push(`Cant.: ${entrega.cantidad}`);
+    }
+    return partes.length > 0 ? partes.join(' · ') : undefined;
+  }
+
+  etiquetaItemModal(lote: LoteDTO | null): string {
+    if (!lote) {
+      return '';
+    }
+    const nombre = (lote.nombreItem || '').trim();
+    return nombre || `Ítem #${lote.idItem}`;
+  }
+
+  etiquetaEntregaModal(entrega: EntregaDTO | null): string {
+    if (!entrega) {
+      return '';
+    }
+    if (entrega.fechaPedido) {
+      return this.formatearFecha(entrega.fechaPedido);
+    }
+    const desc = (entrega.descripcion || '').trim();
+    if (desc) {
+      return desc;
+    }
+    return entrega.idEntrega != null ? `Entrega #${entrega.idEntrega}` : '';
+  }
+
+  seleccionarItemModal(lote: LoteDTO): void {
+    if (lote?.idItem == null) {
+      return;
+    }
+    const itemControl = this.activoForm.get('idItem');
+    itemControl?.enable({ emitEvent: false });
+    itemControl?.setValue(lote.idItem, { emitEvent: false });
+    this.itemModalDisplayTerm = this.etiquetaItemModal(lote);
+    this.onItemChange(lote.idItem);
+  }
+
+  seleccionarEntregaModal(entrega: EntregaDTO): void {
+    if (entrega?.idEntrega == null) {
+      return;
+    }
+    const entregaControl = this.activoForm.get('idEntrega');
+    entregaControl?.enable({ emitEvent: false });
+    entregaControl?.setValue(entrega.idEntrega, { emitEvent: false });
+    this.entregaModalDisplayTerm = this.etiquetaEntregaModal(entrega);
+  }
+
+  private syncItemModalDisplayFromForm(): void {
+    const raw = this.activoForm.get('idItem')?.value as string | number | null | undefined;
+    if (raw === '' || raw == null) {
+      this.itemModalDisplayTerm = '';
+      return;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isFinite(id)) {
+      this.itemModalDisplayTerm = '';
+      return;
+    }
+    const lote =
+      this.lotesFiltrados.find((l) => Number(l.idItem) === id) ??
+      this.lotesList.find((l) => Number(l.idItem) === id) ??
+      null;
+    this.itemModalDisplayTerm = lote ? this.etiquetaItemModal(lote) : '';
+  }
+
+  private syncEntregaModalDisplayFromForm(): void {
+    const raw = this.activoForm.get('idEntrega')?.value as string | number | null | undefined;
+    if (raw === '' || raw == null) {
+      this.entregaModalDisplayTerm = '';
+      return;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isFinite(id)) {
+      this.entregaModalDisplayTerm = '';
+      return;
+    }
+    const entrega =
+      this.entregasFiltradas.find((e) => Number(e.idEntrega) === id) ??
+      this.entregasList.find((e) => Number(e.idEntrega) === id) ??
+      null;
+    this.entregaModalDisplayTerm = entrega ? this.etiquetaEntregaModal(entrega) : '';
+  }
+
+  private getCompraIdFromForm(): number | null {
+    const raw = this.activoForm.getRawValue().idNumeroCompra as string | number | null | undefined;
+    if (raw === '' || raw == null) {
+      return null;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    return Number.isFinite(id) ? id : null;
+  }
+
+  private getItemIdFromForm(): number | null {
+    const raw = this.activoForm.getRawValue().idItem as string | number | null | undefined;
+    if (raw === '' || raw == null) {
+      return null;
+    }
+    const id = typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    return Number.isFinite(id) ? id : null;
+  }
+
+  abrirPickerItem(): void {
+    if (!this.tieneCompraSeleccionada()) {
+      this.notificationService.showWarning(
+        'Ítem',
+        'Seleccione primero una compra para ver los ítems disponibles.'
+      );
+      return;
+    }
+    if (this.lotesFiltrados.length === 0) {
+      this.notificationService.showWarning(
+        'Ítem',
+        'No hay ítems disponibles para la compra seleccionada.'
+      );
+      return;
+    }
+    const items: SearchListPickerItem<LoteDTO>[] = this.lotesFiltrados.map((lote) => ({
+      id: String(lote.idItem ?? ''),
+      label: this.etiquetaItemModal(lote),
+      sublabel: lote.descripcion?.trim() || undefined,
+      iconClass: 'fa-box',
+      data: lote
+    }));
+    const raw = this.activoForm.get('idItem')?.value;
+    const selectedId = raw !== '' && raw != null ? String(raw) : null;
+    this.openSearchListPicker<LoteDTO>({
+      title: 'Seleccionar ítem',
+      searchPlaceholder: 'Buscar por nombre o descripción…',
+      items,
+      selectedId
+    }).then((lote) => {
+      if (lote === undefined) {
+        return;
+      }
+      if (lote === null || lote.idItem == null) {
+        return;
+      }
+      this.seleccionarItemModal(lote);
+    });
+  }
+
+  abrirPickerEntrega(): void {
+    if (!this.tieneItemSeleccionado()) {
+      this.notificationService.showWarning(
+        'Entrega',
+        'Seleccione primero un ítem para ver las entregas disponibles.'
+      );
+      return;
+    }
+    if (this.entregasFiltradas.length === 0) {
+      this.notificationService.showWarning(
+        'Entrega',
+        'No hay entregas disponibles para el ítem seleccionado.'
+      );
+      return;
+    }
+    const items: SearchListPickerItem<EntregaDTO>[] = this.entregasFiltradas.map((entrega) => ({
+      id: String(entrega.idEntrega ?? ''),
+      label: this.etiquetaEntregaModal(entrega),
+      sublabel: this.sublabelEntregaModal(entrega),
+      iconClass: 'fa-truck',
+      data: entrega
+    }));
+    const raw = this.activoForm.get('idEntrega')?.value;
+    const selectedId = raw !== '' && raw != null ? String(raw) : null;
+    this.openSearchListPicker<EntregaDTO>({
+      title: 'Seleccionar entrega',
+      searchPlaceholder: 'Buscar por fecha o descripción…',
+      items,
+      selectedId
+    }).then((entrega) => {
+      if (entrega === undefined) {
+        return;
+      }
+      if (entrega === null || entrega.idEntrega == null) {
+        return;
+      }
+      this.seleccionarEntregaModal(entrega);
+    });
   }
 
   private syncCompraModalSearchFromForm(): void {
@@ -1393,6 +1605,120 @@ export class ActivosComponent implements OnInit, OnDestroy {
     this.filtrarServiciosGarantiaModal();
   }
 
+  private readonly searchPickerModalOptions: NgbModalOptions = {
+    size: 'lg',
+    centered: true,
+    scrollable: true,
+    backdrop: true,
+    modalDialogClass: 'search-list-picker-dialog'
+  };
+
+  private openSearchListPicker<T>(config: {
+    title: string;
+    searchPlaceholder: string;
+    items: SearchListPickerItem<T>[];
+    allowClear?: boolean;
+    clearLabel?: string;
+    selectedId?: string | null;
+  }): Promise<T | null | undefined> {
+    const ref = this.modalService.open(SearchListPickerModalComponent<T>, this.searchPickerModalOptions);
+    ref.componentInstance.title = config.title;
+    ref.componentInstance.searchPlaceholder = config.searchPlaceholder;
+    ref.componentInstance.items = config.items;
+    ref.componentInstance.allowClear = config.allowClear ?? false;
+    if (config.clearLabel) {
+      ref.componentInstance.clearLabel = config.clearLabel;
+    }
+    ref.componentInstance.selectedId = config.selectedId ?? null;
+    return ref.result.then(
+      (value) => value as T | null,
+      () => undefined
+    );
+  }
+
+  abrirPickerCompra(): void {
+    const items: SearchListPickerItem<CompraDTO>[] = this.comprasListOrdenadasModal.map((c) => ({
+      id: String(c.idCompra ?? ''),
+      label: `Compra ${c.numeroCompra ?? c.idCompra}`,
+      sublabel: c.descripcion?.trim() || undefined,
+      iconClass: 'fa-shopping-cart',
+      data: c
+    }));
+    const raw = this.activoForm.get('idNumeroCompra')?.value;
+    const selectedId = raw !== '' && raw != null ? String(raw) : null;
+    this.openSearchListPicker<CompraDTO>({
+      title: 'Seleccionar compra',
+      searchPlaceholder: 'Buscar por número, descripción o ID…',
+      items,
+      selectedId
+    }).then((compra) => {
+      if (compra === undefined) {
+        return;
+      }
+      if (compra === null || compra.idCompra == null) {
+        this.limpiarSeleccionCompraModal();
+        return;
+      }
+      this.seleccionarCompraModal(compra);
+    });
+  }
+
+  abrirPickerUbicacion(): void {
+    const items: SearchListPickerItem<UbicacionDTO>[] = this.ubicacionesList.map((u) => ({
+      id: String(u.id ?? ''),
+      label: this.etiquetaUbicacionModal(u),
+      sublabel: [u.ciudad, u.departamento].filter(Boolean).join(' — ') || undefined,
+      iconClass: 'fa-map-marker-alt',
+      data: u
+    }));
+    const raw = this.activoForm.get('idUbicacion')?.value;
+    const selectedId = raw !== '' && raw != null ? String(raw) : null;
+    this.openSearchListPicker<UbicacionDTO>({
+      title: 'Seleccionar ubicación',
+      searchPlaceholder: 'Buscar por gerencia, oficina, ciudad…',
+      items,
+      allowClear: true,
+      clearLabel: 'Sin ubicación',
+      selectedId
+    }).then((ubicacion) => {
+      if (ubicacion === undefined) {
+        return;
+      }
+      if (ubicacion === null) {
+        this.limpiarSeleccionUbicacionModal();
+        return;
+      }
+      this.seleccionarUbicacionModal(ubicacion);
+    });
+  }
+
+  abrirPickerServicioGarantia(): void {
+    const items: SearchListPickerItem<ServicioGarantiaDTO>[] = this.serviciosGarantiaList.map((sg) => ({
+      id: String(sg.idServicioGarantia ?? ''),
+      label: this.etiquetaServicioGarantiaModal(sg),
+      sublabel: sg.ruc?.trim() ? `RUC ${sg.ruc.trim()}` : undefined,
+      iconClass: 'fa-shield-alt',
+      data: sg
+    }));
+    const raw = this.activoForm.get('idServicioGarantia')?.value;
+    const selectedId = raw !== '' && raw != null ? String(raw) : null;
+    this.openSearchListPicker<ServicioGarantiaDTO>({
+      title: 'Seleccionar servicio de garantía',
+      searchPlaceholder: 'Buscar por nombre comercial, razón social o RUC…',
+      items,
+      selectedId
+    }).then((sg) => {
+      if (sg === undefined) {
+        return;
+      }
+      if (sg === null || sg.idServicioGarantia == null) {
+        this.limpiarSeleccionServicioGarantiaModal();
+        return;
+      }
+      this.seleccionarServicioGarantiaModal(sg);
+    });
+  }
+
   private activosElegiblesParaRelacionModal(): ActivoDTO[] {
     const selfId =
       this.modoEdicion && this.activoSeleccionado?.idActivo != null
@@ -1409,47 +1735,41 @@ export class ActivosComponent implements OnInit, OnDestroy {
       );
   }
 
-  filtrarActivosRelacionadosParaModal(term: string): ActivoDTO[] {
-    const base = this.activosElegiblesParaRelacionModal();
-    const t = term.trim().toLowerCase();
-    const n = (s: string | null | undefined) => (s || '').toLowerCase();
-    const lista = !t.length
-      ? base
-      : base.filter(
-          (a) =>
-            n(a.name).includes(t) ||
-            String(a.idActivo).includes(t) ||
-            n(a.idSecundario).includes(t)
-        );
-    return lista.slice(0, 200);
+  private etiquetaActivoRelacionadoPicker(activo: ActivoDTO): string {
+    const partes: string[] = [`ID ${activo.idActivo}`];
+    if (activo.idSecundario?.trim()) {
+      partes.push(`Sec. ${activo.idSecundario.trim()}`);
+    }
+    return partes.join(' · ');
   }
 
-  filtrarActivosRelacionadosModal(): void {
-    this.activosRelacionadosModalFiltrados = this.filtrarActivosRelacionadosParaModal(
-      this.relacionadosModalSearchTerm
-    );
-  }
-
-  onRelacionadosModalSearchFocus(): void {
-    this.mostrarDropdownRelacionadosModal = true;
-    this.filtrarActivosRelacionadosModal();
-  }
-
-  onRelacionadosModalBlur(): void {
-    setTimeout(() => {
-      this.mostrarDropdownRelacionadosModal = false;
-      this.changeDetectorRef.markForCheck();
-    }, 200);
-  }
-
-  seleccionarActivoRelacionadoModal(activo: ActivoDTO): void {
-    if (activo?.idActivo == null) {
+  abrirPickerRelacionado(): void {
+    const elegibles = this.activosElegiblesParaRelacionModal();
+    if (elegibles.length === 0) {
+      this.notificationService.showWarning(
+        'Activos relacionados',
+        'No hay más activos disponibles para vincular.'
+      );
       return;
     }
-    this.addRelatedAsset(activo.idActivo);
-    this.relacionadosModalSearchTerm = '';
-    this.activosRelacionadosModalFiltrados = [];
-    this.mostrarDropdownRelacionadosModal = false;
+    const items: SearchListPickerItem<ActivoDTO>[] = elegibles.map((activo) => ({
+      id: String(activo.idActivo),
+      label: activo.name?.trim() || `Activo #${activo.idActivo}`,
+      sublabel: this.etiquetaActivoRelacionadoPicker(activo),
+      iconClass: 'fa-link',
+      data: activo
+    }));
+    this.openSearchListPicker<ActivoDTO>({
+      title: 'Agregar activo relacionado',
+      searchPlaceholder: 'Buscar por número de equipo, ID o ID secundario…',
+      items,
+      selectedId: null
+    }).then((activo) => {
+      if (activo === undefined || activo === null || activo.idActivo == null) {
+        return;
+      }
+      this.addRelatedAsset(activo.idActivo);
+    });
   }
 
   private resolverIdTipoActivoDesktop(): number | null {
@@ -1474,11 +1794,11 @@ export class ActivosComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  /** Solo creación nueva: valores sugeridos (el usuario puede cambiarlos). */
+  /** Solo creación nueva: valores por defecto (no editables en el modal de alta). */
   private aplicarValoresPorDefectoNuevoActivo(): void {
     this.activoForm.patchValue(
       {
-        clasificacionDeINFO: 'NO CONFIDENCIAL',
+        clasificacionDeINFO: 'CONFIDENCIAL',
         criticidad: 'MEDIA',
         estado: 'INACTIVO',
         idSecundario: '0'
@@ -1489,13 +1809,33 @@ export class ActivosComponent implements OnInit, OnDestroy {
     const idDesktop = this.resolverIdTipoActivoDesktop();
     if (idDesktop != null) {
       this.activoForm.patchValue({ idTipoActivo: idDesktop }, { emitEvent: true });
+    } else {
+      this.onTipoActivoChange(this.activoForm.get('idTipoActivo')?.value);
     }
+  }
 
-    const idCarlos = this.resolverIdUsuarioCarlosMorey();
-    if (idCarlos != null) {
-      this.activoForm.patchValue({ idUsuario: idCarlos }, { emitEvent: true });
-      this.activoForm.get('idUsuario')?.enable();
+  /** Datos del formulario incluyendo controles deshabilitados (p. ej. responsable en alta). */
+  private getActivoFormData(): ActivoFormRaw {
+    const raw = this.activoForm.getRawValue() as ActivoFormRaw;
+    if (!this.modoEdicion) {
+      if (!raw.clasificacionDeINFO) {
+        raw.clasificacionDeINFO = 'CONFIDENCIAL';
+      }
+      if (!raw.criticidad) {
+        raw.criticidad = 'MEDIA';
+      }
+      if (!raw.idSecundario) {
+        raw.idSecundario = '0';
+      }
     }
+    return raw;
+  }
+
+  private parseFormInt(value: string | number | null | undefined): number {
+    if (typeof value === 'number') {
+      return value;
+    }
+    return Number.parseInt(String(value ?? ''), 10);
   }
 
   verDetallesCompra(idCompra: number, compraModal: any) {
@@ -1591,7 +1931,17 @@ export class ActivosComponent implements OnInit, OnDestroy {
   }
 
   verDetalles(activo: ActivoDTO): void {
-    this.router.navigate(['/menu/procurement/activos', activo.idActivo]);
+    if (activo?.idActivo == null) {
+      return;
+    }
+    const modalRef = this.modalService.open(ActivoViewModalComponent, {
+      size: 'xl',
+      scrollable: true,
+      centered: true,
+      backdrop: true,
+      windowClass: 'activo-view-modal-window'
+    });
+    modalRef.componentInstance.idActivo = activo.idActivo;
   }
 
   private async actualizarRelaciones(idActivo: number) {
@@ -1695,10 +2045,13 @@ export class ActivosComponent implements OnInit, OnDestroy {
         if (activo.idTipoActivo) {
           this.onTipoActivoChange(activo.idTipoActivo);
         }
+        this.activoForm.get('idUsuario')?.enable({ emitEvent: false });
 
         console.log('Valores del formulario después de patchValue:', this.activoForm.value);
 
         this.syncCompraModalSearchFromForm();
+        this.syncItemModalDisplayFromForm();
+        this.syncEntregaModalDisplayFromForm();
         this.syncUbicacionModalSearchFromForm();
         this.syncServicioGarantiaModalSearchFromForm();
 
@@ -1719,6 +2072,8 @@ export class ActivosComponent implements OnInit, OnDestroy {
       } else {
         this.activoForm.reset();
         this.compraModalSearchTerm = '';
+        this.itemModalDisplayTerm = '';
+        this.entregaModalDisplayTerm = '';
         this.comprasModalFiltradas = [];
         this.mostrarDropdownComprasModal = false;
         this.ubicacionModalSearchTerm = '';
@@ -1727,12 +2082,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
         this.servicioGarantiaModalSearchTerm = '';
         this.serviciosGarantiaModalFiltrados = [];
         this.mostrarDropdownServiciosGarantiaModal = false;
-        this.relacionadosModalSearchTerm = '';
-        this.activosRelacionadosModalFiltrados = [];
-        this.mostrarDropdownRelacionadosModal = false;
         this.selectedRelatedAssets = [];
-        // Habilitar el campo de usuario al crear un nuevo activo
-        this.activoForm.get('idUsuario')?.enable();
         // Deshabilitar campos dependientes al inicio
         this.activoForm.get('idItem')?.disable();
         this.activoForm.get('idEntrega')?.disable();
@@ -1752,7 +2102,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
         /** En edición no cerrar por clic fuera (evita pérdida de cambios). Alta sigue igual que antes. */
         backdrop: this.modoEdicion ? 'static' : true,
         keyboard: false,
-        centered: false
+        centered: true
       };
       if (esModalActivo) {
         modalOpts.modalDialogClass = 'activo-form-modal-dialog-layout';
@@ -1961,7 +2311,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
     console.log('Valores del formulario:', this.activoForm.value);
     
     // El formulario ya fue validado en guardarActivo()
-    const formData = this.activoForm.value;
+    const formData = this.getActivoFormData();
     const nombreActivoNormalizado = String(formData.name || '').trim().toUpperCase();
 
     const existeDuplicado = this.isNombreActivoDuplicado(nombreActivoNormalizado);
@@ -1982,14 +2332,16 @@ export class ActivosComponent implements OnInit, OnDestroy {
       criticidad: formData.criticidad,
       clasificacionDeINFO: formData.clasificacionDeINFO,
       estado: formData.estado,
-      idTipoActivo: parseInt(formData.idTipoActivo),
-      idNumeroCompra: parseInt(formData.idNumeroCompra),
-      idItem: parseInt(formData.idItem),
-      idEntrega: parseInt(formData.idEntrega),
-      idUbicacion: formData.idUbicacion ? parseInt(formData.idUbicacion) : null,
+      idTipoActivo: this.parseFormInt(formData.idTipoActivo),
+      idNumeroCompra: this.parseFormInt(formData.idNumeroCompra),
+      idItem: this.parseFormInt(formData.idItem),
+      idEntrega: this.parseFormInt(formData.idEntrega),
+      idUbicacion: formData.idUbicacion != null && formData.idUbicacion !== ''
+        ? this.parseFormInt(formData.idUbicacion)
+        : null,
       idUsuario: idUsuario,
       idSecundario: formData.idSecundario,
-      idServicioGarantia: parseInt(formData.idServicioGarantia),
+      idServicioGarantia: this.parseFormInt(formData.idServicioGarantia),
       fechaFinGarantia: formData.fechaFinGarantia
     };
 
@@ -2054,7 +2406,7 @@ export class ActivosComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formData = this.activoForm.value;
+    const formData = this.getActivoFormData();
     console.log('Datos del formulario:', formData);
     
     const assetNumbers = this.generateAssetNumbers();
@@ -2084,14 +2436,16 @@ export class ActivosComponent implements OnInit, OnDestroy {
         criticidad: formData.criticidad,
         clasificacionDeINFO: formData.clasificacionDeINFO,
         estado: formData.estado,
-        idTipoActivo: parseInt(formData.idTipoActivo),
-        idNumeroCompra: parseInt(formData.idNumeroCompra),
-        idItem: parseInt(formData.idItem),
-        idEntrega: parseInt(formData.idEntrega),
-        idUbicacion: formData.idUbicacion ? parseInt(formData.idUbicacion) : null,
+        idTipoActivo: this.parseFormInt(formData.idTipoActivo),
+        idNumeroCompra: this.parseFormInt(formData.idNumeroCompra),
+        idItem: this.parseFormInt(formData.idItem),
+        idEntrega: this.parseFormInt(formData.idEntrega),
+        idUbicacion: formData.idUbicacion != null && formData.idUbicacion !== ''
+          ? this.parseFormInt(formData.idUbicacion)
+          : null,
         idUsuario: idUsuario,
         idSecundario: formData.idSecundario,
-        idServicioGarantia: parseInt(formData.idServicioGarantia),
+        idServicioGarantia: this.parseFormInt(formData.idServicioGarantia),
         fechaFinGarantia: formData.fechaFinGarantia
       }));
 
@@ -2219,13 +2573,17 @@ export class ActivosComponent implements OnInit, OnDestroy {
           const currentItemId = this.activoForm.get('idItem')?.value;
           if (currentItemId && !this.lotesFiltrados.find(lote => lote.idItem === currentItemId)) {
             this.activoForm.get('idItem')?.setValue('');
+            this.itemModalDisplayTerm = '';
+            this.entregaModalDisplayTerm = '';
           }
           // Habilitar el campo de item
           this.activoForm.get('idItem')?.enable();
+          this.syncItemModalDisplayFromForm();
         },
         error: (error) => {
           console.error('Error al cargar lotes de la compra:', error);
           this.lotesFiltrados = [];
+          this.itemModalDisplayTerm = '';
           // Deshabilitar el campo de item
           this.activoForm.get('idItem')?.disable();
         }
@@ -2234,6 +2592,8 @@ export class ActivosComponent implements OnInit, OnDestroy {
       // Si no hay compra seleccionada, limpiar los lotes filtrados y entregas
       this.lotesFiltrados = [];
       this.entregasFiltradas = [];
+      this.itemModalDisplayTerm = '';
+      this.entregaModalDisplayTerm = '';
       this.activoForm.get('idItem')?.setValue('');
       this.activoForm.get('idEntrega')?.setValue('');
       // Deshabilitar campos dependientes
@@ -2242,57 +2602,81 @@ export class ActivosComponent implements OnInit, OnDestroy {
     }
   }
 
-  onItemChange(idItem: number) {
-    if (idItem) {
-      // Cargar entregas específicas del item seleccionado
-      this.entregasService.getEntregasByItem(idItem).subscribe({
+  onItemChange(idItem: number | string | null | undefined) {
+    const id =
+      idItem === '' || idItem == null
+        ? 0
+        : typeof idItem === 'number'
+          ? idItem
+          : Number.parseInt(String(idItem), 10);
+
+    if (id && Number.isFinite(id)) {
+      const lote =
+        this.lotesFiltrados.find((l) => Number(l.idItem) === id) ??
+        this.lotesList.find((l) => Number(l.idItem) === id) ??
+        null;
+      if (lote) {
+        this.itemModalDisplayTerm = this.etiquetaItemModal(lote);
+      }
+
+      this.entregasService.getEntregasByItem(id).subscribe({
         next: (entregas) => {
           this.entregasFiltradas = entregas;
-          // Limpiar el campo de entrega si no está en la nueva lista
           const currentEntregaId = this.activoForm.get('idEntrega')?.value;
-          if (currentEntregaId && !this.entregasFiltradas.find(entrega => entrega.idEntrega === currentEntregaId)) {
+          if (
+            currentEntregaId &&
+            !this.entregasFiltradas.find((entrega) => entrega.idEntrega === currentEntregaId)
+          ) {
             this.activoForm.get('idEntrega')?.setValue('');
+            this.entregaModalDisplayTerm = '';
+          } else {
+            this.syncEntregaModalDisplayFromForm();
           }
-          // Habilitar el campo de entrega
           this.activoForm.get('idEntrega')?.enable();
         },
         error: (error) => {
           console.error('Error al cargar entregas del item:', error);
           this.entregasFiltradas = [];
-          // Deshabilitar el campo de entrega
+          this.entregaModalDisplayTerm = '';
           this.activoForm.get('idEntrega')?.disable();
         }
       });
     } else {
-      // Si no hay item seleccionado, limpiar las entregas filtradas
       this.entregasFiltradas = [];
+      this.itemModalDisplayTerm = '';
+      this.entregaModalDisplayTerm = '';
       this.activoForm.get('idEntrega')?.setValue('');
-      // Deshabilitar el campo de entrega
       this.activoForm.get('idEntrega')?.disable();
     }
   }
 
-  onTipoActivoChange(idTipoActivo: number) {
-    if (idTipoActivo && this.tiposActivoList.length > 0) {
-      // Buscar el tipo de activo seleccionado para obtener el idUsuario
-      // Usar búsqueda flexible para manejar diferentes tipos de datos
-      const tipoActivo = this.tiposActivoList.find(tipo => 
-        tipo.idActivo == idTipoActivo || 
-        Number(tipo.idActivo) === Number(idTipoActivo)
+  onTipoActivoChange(idTipoActivo: number | string | null | undefined) {
+    const id = idTipoActivo === '' || idTipoActivo == null
+      ? 0
+      : typeof idTipoActivo === 'number'
+        ? idTipoActivo
+        : Number.parseInt(String(idTipoActivo), 10);
+
+    const usuarioControl = this.activoForm.get('idUsuario');
+    if (!usuarioControl) {
+      return;
+    }
+
+    if (this.modoEdicion) {
+      return;
+    }
+
+    if (id && Number.isFinite(id) && this.tiposActivoList.length > 0) {
+      const tipoActivo = this.tiposActivoList.find(tipo =>
+        tipo.idActivo == id || Number(tipo.idActivo) === Number(id)
       );
-      
-      if (tipoActivo && tipoActivo.idUsuario) {
-        // Cargar automáticamente el usuario responsable
-        this.activoForm.get('idUsuario')?.setValue(tipoActivo.idUsuario);
-        // Deshabilitar el campo de usuario
-        this.activoForm.get('idUsuario')?.disable();
-      } else {
-        // Habilitar el campo de usuario si no se puede asignar automáticamente
-        this.activoForm.get('idUsuario')?.enable();
+      if (tipoActivo?.idUsuario) {
+        usuarioControl.setValue(tipoActivo.idUsuario, { emitEvent: false });
       }
-    } else if (!idTipoActivo) {
-      // Si no hay tipo de activo seleccionado, habilitar el campo de usuario
-      this.activoForm.get('idUsuario')?.enable();
+      usuarioControl.disable({ emitEvent: false });
+    } else {
+      usuarioControl.reset('', { emitEvent: false });
+      usuarioControl.disable({ emitEvent: false });
     }
   }
 
@@ -2300,12 +2684,20 @@ export class ActivosComponent implements OnInit, OnDestroy {
     return this.activoForm.get('idUsuario')?.disabled || false;
   }
 
+  tieneCompraSeleccionada(): boolean {
+    return this.getCompraIdFromForm() != null;
+  }
+
+  tieneItemSeleccionado(): boolean {
+    return this.getItemIdFromForm() != null;
+  }
+
   isItemDisabled(): boolean {
-    return this.activoForm.get('idItem')?.disabled || false;
+    return !this.tieneCompraSeleccionada();
   }
 
   isEntregaDisabled(): boolean {
-    return this.activoForm.get('idEntrega')?.disabled || false;
+    return !this.tieneItemSeleccionado();
   }
 
   // Método para cargar entregas
@@ -3367,13 +3759,14 @@ export class ActivosComponent implements OnInit, OnDestroy {
   /**
    * Obtiene el idUsuario correcto basado en el estado del formulario
    */
-  private getUserIdFromForm(formData: any): number {
+  private getUserIdFromForm(formData: ActivoFormRaw): number {
     if (formData.idUsuario) {
       // Si el campo está habilitado, usar el valor del formulario
-      return parseInt(formData.idUsuario);
+      return this.parseFormInt(formData.idUsuario);
     } else {
       // Si el campo está deshabilitado, obtener el idUsuario del tipo de activo
-      const tipoActivo = this.tiposActivoList.find(tipo => tipo.idActivo === parseInt(formData.idTipoActivo));
+      const idTipo = this.parseFormInt(formData.idTipoActivo);
+      const tipoActivo = this.tiposActivoList.find(tipo => tipo.idActivo === idTipo);
       if (tipoActivo && tipoActivo.idUsuario) {
         return tipoActivo.idUsuario;
       } else {

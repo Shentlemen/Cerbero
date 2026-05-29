@@ -223,17 +223,34 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.permissionsService.canAccessConfiguration();
   }
 
+  canAccessLocationsConfiguration(): boolean {
+    return this.permissionsService.canAccessLocationsConfiguration();
+  }
+
+  canAccessTiposActivoConfiguration(): boolean {
+    return this.permissionsService.canAccessTiposActivoConfiguration();
+  }
+
+  canAccessUsuariosResponsablesConfiguration(): boolean {
+    return this.permissionsService.canAccessUsuariosResponsablesConfiguration();
+  }
+
   canAccessWarehouseConfiguration(): boolean {
     return this.permissionsService.canAccessWarehouseConfiguration();
   }
 
   /**
    * El submenú Configuración se muestra para:
-   *  - GM / Admin (ven todos los ítems via `canAccessConfiguration`).
-   *  - Rol ALMACEN (solo ven «ALMACÉN CONFIG», via `canAccessWarehouseConfiguration`).
+   *  - GM / Admin (ítems completos vía `canAccessConfiguration`).
+   *  - INVENTARIO: ubicaciones, tipos de activo y usuarios responsables.
+   *  - ALMACEN: solo «ALMACÉN CONFIG».
    */
   canShowConfigurationMenu(): boolean {
-    return this.canAccessConfiguration() || this.canAccessWarehouseConfiguration();
+    return (
+      this.canAccessConfiguration() ||
+      this.canAccessWarehouseConfiguration() ||
+      this.canAccessLocationsConfiguration()
+    );
   }
 
   canAccessAdministration(): boolean {
@@ -246,6 +263,10 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   canAccessTickets(): boolean {
     return this.permissionsService.canAccessTickets();
+  }
+
+  canAccessInternosOse(): boolean {
+    return this.permissionsService.canAccessInternosOse();
   }
 
   // Métodos para el user-header integrado

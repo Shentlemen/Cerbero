@@ -1,0 +1,101 @@
+.search-list-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.search-list-picker-toolbar {
+  flex-shrink: 0;
+}
+
+.search-list-picker-count {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.35rem;
+}
+
+.search-list-picker-list {
+  flex: 1 1 auto;
+  min-height: 12rem;
+  max-height: min(55vh, 28rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.search-list-picker-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.search-list-picker-row:last-child {
+  border-bottom: none;
+}
+
+.search-list-picker-row:hover,
+.search-list-picker-row:focus-visible {
+  background: #f0f6ff;
+  outline: none;
+}
+
+.search-list-picker-row--selected {
+  background: #e7f1ff;
+}
+
+.search-list-picker-row-icon {
+  flex-shrink: 0;
+  width: 1.1rem;
+  margin-top: 0.15rem;
+  color: #6c757d;
+  text-align: center;
+}
+
+.search-list-picker-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-list-picker-row-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #212529;
+  word-break: break-word;
+}
+
+.search-list-picker-row-sublabel {
+  display: block;
+  font-size: 0.78rem;
+  color: #6c757d;
+  margin-top: 0.1rem;
+  word-break: break-word;
+}
+
+.search-list-picker-row-check {
+  flex-shrink: 0;
+  color: #0d6efd;
+  margin-top: 0.2rem;
+}
+
+.search-list-picker-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+

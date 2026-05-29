@@ -572,8 +572,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
 
   canManageAssets(): boolean {
-    // En activos, GM, Admin e Inventario pueden gestionar assets
-    return this.permissionsService.canManageAssets() || this.permissionsService.isInventario();
+    return this.permissionsService.canManageAssets();
   }
 
   // Verificar si el usuario puede gestionar estados de equipos
@@ -583,8 +582,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   canDeleteAssets(): boolean {
-    // En activos, GM, Admin e Inventario pueden eliminar definitivamente
-    return this.permissionsService.canDeleteAssets() || this.permissionsService.isInventario();
+    return this.permissionsService.canDeleteAssets();
   }
 
   // Método de utilidad para debugging - obtener información del usuario actual

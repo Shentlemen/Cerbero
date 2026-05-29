@@ -61,6 +61,7 @@ export const routes: Routes = [
       { path: 'almacen-laboratorio', loadComponent: () => import('./almacen-laboratorio/almacen-laboratorio.component').then(m => m.AlmacenLaboratorioComponent) },
       { path: 'asset-details/:id', loadComponent: () => import('./assetdetails/assetdetails.component').then(m => m.AssetdetailsComponent) },
       { path: 'software', component: SoftwareComponent },
+      { path: 'internos-ose', loadComponent: () => import('./internos-ose/internos-ose.component').then(m => m.InternosOseComponent) },
       { path: 'settings', loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },
       { path: 'user-management', loadComponent: () => import('./user-management/user-management.component').then(m => m.UserManagementComponent) },
       { path: 'procurement', component: ProcurementComponent },

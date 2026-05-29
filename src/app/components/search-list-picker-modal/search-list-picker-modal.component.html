@@ -1,0 +1,58 @@
+<div class="modal-header">
+  <h4 class="modal-title">{{ title }}</h4>
+  <button type="button" class="btn-close" aria-label="Cerrar" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body search-list-picker-body">
+  <div class="search-list-picker-toolbar">
+    <div class="input-group">
+      <span class="input-group-text"><i class="fas fa-search"></i></span>
+      <input
+        type="search"
+        class="form-control"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        [placeholder]="searchPlaceholder"
+        autocomplete="off"
+        spellcheck="false"
+        autofocus />
+    </div>
+    <p class="search-list-picker-count mb-0" *ngIf="items.length > 0">
+      {{ filteredItems.length }} de {{ items.length }} resultados
+    </p>
+  </div>
+
+  <div class="search-list-picker-list" role="listbox">
+    <button
+      type="button"
+      class="search-list-picker-row"
+      *ngFor="let item of filteredItems"
+      [class.search-list-picker-row--selected]="isSelected(item)"
+      (click)="selectItem(item)">
+      <i class="fas search-list-picker-row-icon" [ngClass]="item.iconClass || 'fa-circle'" aria-hidden="true"></i>
+      <span class="search-list-picker-row-text">
+        <span class="search-list-picker-row-label">{{ item.label }}</span>
+        <span class="search-list-picker-row-sublabel" *ngIf="item.sublabel">{{ item.sublabel }}</span>
+      </span>
+      <i class="fas fa-check search-list-picker-row-check" *ngIf="isSelected(item)" aria-hidden="true"></i>
+    </button>
+
+    <div class="search-list-picker-empty" *ngIf="items.length === 0">
+      {{ emptyListMessage }}
+    </div>
+    <div class="search-list-picker-empty" *ngIf="items.length > 0 && filteredItems.length === 0">
+      {{ noResultsMessage }}
+    </div>
+  </div>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">Cancelar</button>
+  <button
+    type="button"
+    class="btn btn-outline-secondary"
+    *ngIf="allowClear"
+    (click)="clearSelection()">
+    {{ clearLabel }}
+  </button>
+</div>

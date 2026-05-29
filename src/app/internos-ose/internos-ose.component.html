@@ -1,0 +1,228 @@
+<div class="generic-container internos-ose-page">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
+        <div class="title-wrapper flex-grow-1">
+          <h1><i class="fas fa-phone"></i> Internos OSE</h1>
+        </div>
+      </div>
+      <div class="actions" *ngIf="canManageInternos()">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" (click)="abrirModal(internoModal)">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo interno
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="table-container">
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando directorio telefónico...</p>
+      </div>
+
+      <ng-container *ngIf="!loading">
+        <div class="list-toolbar">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchTermChange()"
+              placeholder="Buscar por box, área, persona, interno o app..."
+              autocomplete="off">
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearch()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <label class="internos-filter-activos mb-0">
+            <input type="checkbox" [(ngModel)]="soloActivos" (ngModelChange)="onSoloActivosChange()">
+            Solo activos
+          </label>
+
+          <p class="list-summary mb-0" *ngIf="internosList.length > 0">
+            <span *ngIf="collectionSize === internosList.length">
+              {{ internosList.length }} internos
+            </span>
+            <span *ngIf="collectionSize !== internosList.length">
+              {{ collectionSize }} de {{ internosList.length }} internos
+            </span>
+            <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+          </p>
+        </div>
+
+        <div class="table-responsive" *ngIf="collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th class="sortable-header" [class.active]="isSortActive('box')" (click)="sortData('box')">
+                  <div class="th-content"><span>Box</span><i class="fas" [ngClass]="getSortIcon('box')"></i></div>
+                </th>
+                <th class="sortable-header" [class.active]="isSortActive('area')" (click)="sortData('area')">
+                  <div class="th-content"><span>Área</span><i class="fas" [ngClass]="getSortIcon('area')"></i></div>
+                </th>
+                <th class="sortable-header" [class.active]="isSortActive('persona')" (click)="sortData('persona')">
+                  <div class="th-content"><span>Persona</span><i class="fas" [ngClass]="getSortIcon('persona')"></i></div>
+                </th>
+                <th class="sortable-header" [class.active]="isSortActive('interno')" (click)="sortData('interno')">
+                  <div class="th-content"><span>Interno</span><i class="fas" [ngClass]="getSortIcon('interno')"></i></div>
+                </th>
+                <th class="sortable-header" [class.active]="isSortActive('app')" (click)="sortData('app')">
+                  <div class="th-content"><span>App</span><i class="fas" [ngClass]="getSortIcon('app')"></i></div>
+                </th>
+                <th><div class="th-content"><span>Colectivo</span></div></th>
+                <th><div class="th-content"><span>Activo</span></div></th>
+                <th *ngIf="canManageInternos()"><div class="th-content"><span>Acciones</span></div></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let interno of pagedInternos" class="generic-row" [class.interno-inactivo]="!interno.activo">
+                <td>{{ displayValue(interno.box) }}</td>
+                <td>{{ interno.area }}</td>
+                <td>{{ displayValue(interno.persona) }}</td>
+                <td>
+                  <span class="interno-badge" *ngIf="interno.interno; else sinInterno">{{ interno.interno }}</span>
+                  <ng-template #sinInterno>-</ng-template>
+                </td>
+                <td>
+                  <span class="app-badge" *ngIf="interno.app; else sinApp">{{ interno.app }}</span>
+                  <ng-template #sinApp>-</ng-template>
+                </td>
+                <td>
+                  <span class="badge" [class.bg-secondary]="!interno.esColectivo" [class.bg-info]="interno.esColectivo">
+                    {{ interno.esColectivo ? 'Sí' : 'No' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge" [class.bg-success]="interno.activo" [class.bg-secondary]="!interno.activo">
+                    {{ interno.activo ? 'Sí' : 'No' }}
+                  </span>
+                </td>
+                <td *ngIf="canManageInternos()">
+                  <div class="action-buttons">
+                    <button class="btn btn-info btn-sm me-2" (click)="abrirModal(internoModal, interno)" title="Editar">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" (click)="eliminarInterno(interno)" title="Eliminar">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-container" *ngIf="collectionSize > pageSize">
+          <ngb-pagination
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [collectionSize]="collectionSize"
+            [boundaryLinks]="true"
+            [maxSize]="5"
+            [rotate]="true"
+            [ellipses]="false"
+            class="custom-pagination">
+          </ngb-pagination>
+        </div>
+
+        <div *ngIf="internosList.length === 0 && !error" class="alert alert-info">
+          <ng-container *ngIf="canManageInternos(); else soloLecturaSinDatos">
+            No hay internos registrados. Ejecutá la migración SQL o agregá el primero.
+          </ng-container>
+          <ng-template #soloLecturaSinDatos>
+            No hay internos registrados en el directorio.
+          </ng-template>
+        </div>
+
+        <div *ngIf="internosList.length > 0 && collectionSize === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay internos que coincidan con los filtros aplicados.
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<ng-template #internoModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">{{ modoEdicion ? 'Editar' : 'Nuevo' }} interno</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="internoForm">
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Box / Piso</label>
+          <input type="text" class="form-control" formControlName="box" placeholder="Ej: 6° PISO o 12">
+        </div>
+        <div class="col-md-8 mb-3">
+          <label class="form-label">Área *</label>
+          <input type="text" class="form-control" formControlName="area" placeholder="Ej: APLICACIONES">
+        </div>
+        <div class="col-md-8 mb-3">
+          <label class="form-label">Persona</label>
+          <input type="text" class="form-control" formControlName="persona" placeholder="Nombre o descripción del contacto">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Interno</label>
+          <input type="text" class="form-control" formControlName="interno" placeholder="Ej: 1742">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">App móvil</label>
+          <input type="text" class="form-control" formControlName="app" placeholder="Ej: 7142 o MLC">
+          <small class="form-text text-muted">Código para llamar desde la app del celular.</small>
+        </div>
+        <div class="col-md-4 mb-3 d-flex align-items-end">
+          <div class="form-check me-4">
+            <input class="form-check-input" type="checkbox" formControlName="esColectivo" id="esColectivo">
+            <label class="form-check-label" for="esColectivo">Extensión colectiva</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" formControlName="activo" id="activo">
+            <label class="form-check-label" for="activo">Activo</label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn modal-btn-primario" (click)="guardarInterno()" [disabled]="!internoForm.valid">
+      {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+    </button>
+  </div>
+</ng-template>
+
+<div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Eliminar el interno
+      <strong>{{ internoToDelete?.persona || internoToDelete?.area }}</strong>
+      <span *ngIf="internoToDelete?.interno"> ({{ internoToDelete?.interno }})</span>?
+      Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">Cancelar</button>
+      <button class="confirm-dialog-button confirm" (click)="confirmarEliminacion()">Eliminar</button>
+    </div>
+  </div>
+</div>

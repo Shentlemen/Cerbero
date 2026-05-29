@@ -446,57 +446,54 @@
 }
 
 /*
- * Modal alta/edición activo: alto hasta el borde inferior visible.
- * En TS: `scrollable: true` + windowClass activo-form-modal-window.
- * Bootstrap pone `d-block` en el host: el .modal-dialog no estiraba (solo crecía con el contenido → banda oscura abajo).
- * Forzamos flex en ngb-modal-window + flex:1 en el diálogo para llenar 100vh/100dvh menos padding.
+ * Modal alta/edición activo: centrado vertical y horizontal en pantalla.
+ * Si el contenido es alto, scroll dentro del cuerpo del modal (scrollable en TS).
  */
 ngb-modal-window.activo-form-modal-window {
-  --bs-modal-margin: 0px;
+  --bs-modal-margin: 0.75rem;
 }
 
 ngb-modal-window.activo-form-modal-window.modal {
   display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  overflow: hidden !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
-  /* Alto explícito: % en fixed a veces no estira el hijo como flex */
-  height: 100vh;
-  max-height: 100vh;
-  min-height: 100vh;
-  padding-top: max(0.35rem, env(safe-area-inset-top, 0px));
-  padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
-  padding-inline: clamp(0.25rem, 1.2vw, 0.75rem);
-}
-
-@supports (height: 100dvh) {
-  ngb-modal-window.activo-form-modal-window.modal {
-    height: 100dvh;
-    max-height: 100dvh;
-    min-height: 100dvh;
-  }
+  padding: max(0.75rem, env(safe-area-inset-top, 0px))
+    clamp(0.25rem, 1.2vw, 0.75rem)
+    max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
 
 .modal-dialog.modal-xl.activo-form-modal-dialog-layout {
-  margin: 0 auto !important;
+  margin: auto !important;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  /* Que no gane `.modal-dialog-scrollable { height: calc(…%) }`: el alto lo marca el flex del host */
-  height: auto !important;
-  max-height: none !important;
+  flex: 0 1 auto;
   width: min(1240px, 100%) !important;
   max-width: min(1240px, 100%) !important;
+  max-height: calc(100vh - 1.5rem);
+  height: auto !important;
+}
+
+@supports (height: 100dvh) {
+  .modal-dialog.modal-xl.activo-form-modal-dialog-layout {
+    max-height: calc(100dvh - 1.5rem);
+  }
 }
 
 .modal-dialog.modal-xl.activo-form-modal-dialog-layout .modal-content {
   width: 100%;
+  max-height: calc(100vh - 1.5rem);
   min-height: 0;
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+}
+
+@supports (height: 100dvh) {
+  .modal-dialog.modal-xl.activo-form-modal-dialog-layout .modal-content {
+    max-height: calc(100dvh - 1.5rem);
+  }
 }
 
 .modal-dialog.modal-xl.activo-form-modal-dialog-layout .modal-header,
@@ -507,6 +504,7 @@ ngb-modal-window.activo-form-modal-window.modal {
 .modal-dialog.modal-xl.activo-form-modal-dialog-layout .modal-body {
   flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
 }
 
 /* Selector Individual / Rango en modal nuevo activo */
@@ -608,6 +606,113 @@ ngb-modal-window.activo-form-modal-window.modal {
   font-size: 0.75rem;
   color: #6c757d;
   line-height: 1.25;
+}
+
+/* Selector Individual / Rango compacto (modal nuevo activo) */
+.activo-creation-mode-wrap--compact .activo-creation-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.activo-creation-mode-wrap--compact .activo-creation-mode-option {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.activo-creation-mode-wrap--compact .activo-creation-mode-option-inner {
+  padding: 0.45rem 0.65rem;
+  min-height: 0;
+  gap: 0.5rem;
+}
+
+.activo-creation-mode-wrap--compact .activo-creation-mode-icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  font-size: 0.8rem;
+}
+
+.activo-creation-mode-wrap--compact .activo-creation-mode-desc {
+  display: none;
+}
+
+.activo-creation-mode-wrap--compact .activo-creation-mode-title {
+  font-size: 0.8125rem;
+}
+
+/* Formulario de alta: más denso y sin textos de ayuda largos */
+.activo-form-alta .row.mb-3,
+.activo-form-alta .row.mb-2 {
+  margin-bottom: 0.65rem !important;
+}
+
+.activo-form-alta .form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+  color: #495057;
+}
+
+.activo-form-alta .form-control-sm,
+.activo-form-alta .form-select-sm {
+  min-height: calc(1.5em + 0.5rem + 2px);
+}
+
+.activo-form-alta .activo-form-hint-full {
+  display: none !important;
+}
+
+.activo-form-alta .alert.alert-sm {
+  font-size: 0.8125rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.activo-form-alta .btn-link.btn-sm {
+  font-size: 0.75rem;
+}
+
+/* Campo de solo lectura + botón que abre ventana de búsqueda */
+.activo-picker-field .activo-picker-display {
+  cursor: pointer;
+  background-color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activo-picker-field .activo-picker-display:hover {
+  background-color: #f8f9fa;
+}
+
+.activo-picker-field .btn-outline-secondary {
+  flex-shrink: 0;
+}
+
+.activo-picker-field--disabled .activo-picker-display {
+  cursor: not-allowed;
+  background-color: #e9ecef;
+  opacity: 0.85;
+}
+
+.activo-picker-field--disabled .activo-picker-display:hover {
+  background-color: #e9ecef;
+}
+
+:host ::ng-deep .modal-dialog.search-list-picker-dialog {
+  max-width: 42rem;
+}
+
+:host ::ng-deep .modal-dialog.search-list-picker-dialog .modal-content {
+  max-height: min(90vh, 40rem);
+  display: flex;
+  flex-direction: column;
+}
+
+:host ::ng-deep .modal-dialog.search-list-picker-dialog .modal-body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Resto de modales en esta página: cuerpo con scroll si es largo (no el modal de alta activo). */
@@ -1345,4 +1450,30 @@ ngb-modal-window.activo-form-modal-window.modal {
   .details-body .entrega-detail {
     padding: 0.75rem 0;
   }
+}
+
+/* Modal ver detalle de activo (desde lista inventario) */
+ngb-modal-window.activo-view-modal-window.modal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+ngb-modal-window.activo-view-modal-window .modal-dialog {
+  margin: auto !important;
+  max-width: min(1140px, 96vw);
+  width: 100%;
+}
+
+ngb-modal-window.activo-view-modal-window .modal-content {
+  max-height: calc(100vh - 1.5rem);
+  display: flex;
+  flex-direction: column;
+}
+
+ngb-modal-window.activo-view-modal-window .modal-body {
+  overflow-y: auto;
+  flex: 1 1 auto;
 }

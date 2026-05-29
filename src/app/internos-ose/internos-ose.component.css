@@ -1,0 +1,100 @@
+.internos-ose-page .list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.internos-ose-page .search-input-wrapper {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 520px;
+}
+
+.internos-ose-page .search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.internos-ose-page .search-input {
+  padding-left: 2.5rem;
+  padding-right: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.internos-ose-page .search-clear-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.internos-ose-page .search-clear-btn:hover {
+  color: #475569;
+}
+
+.internos-ose-page .list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.internos-ose-page .internos-filter-activos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: #475569;
+  user-select: none;
+}
+
+.internos-ose-page .pagination-container {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.internos-ose-page .interno-badge,
+.internos-ose-page .app-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+}
+
+.internos-ose-page .interno-inactivo {
+  opacity: 0.65;
+}
+
+.internos-ose-page .action-buttons .btn-info {
+  background: transparent !important;
+  border-color: #0ea5e9 !important;
+  color: #111827 !important;
+}
+
+.internos-ose-page .action-buttons .btn-info:hover,
+.internos-ose-page .action-buttons .btn-info:focus-visible {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.internos-ose-page .action-buttons .btn-danger {
+  background: transparent !important;
+  border-color: #dc3545 !important;
+  color: #111827 !important;
+}
+
+.internos-ose-page .action-buttons .btn-danger:hover,
+.internos-ose-page .action-buttons .btn-danger:focus-visible {
+  background: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: #ffffff !important;
+}

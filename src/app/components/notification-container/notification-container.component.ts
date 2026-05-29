@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { NotificationService } from '../../services/notification.service';
@@ -27,10 +27,18 @@ export class NotificationContainerComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   removingNotifications = new Set<string>();
   private subscription?: Subscription;
+  private movedToBody = false;
 
-  constructor(private notificationService: NotificationService) {}
+  constructor(
+    private notificationService: NotificationService,
+    private elementRef: ElementRef<HTMLElement>,
+    private renderer: Renderer2
+  ) {}
 
   ngOnInit() {
+    this.renderer.appendChild(document.body, this.elementRef.nativeElement);
+    this.movedToBody = true;
+
     this.subscription = this.notificationService.getNotifications().subscribe(
       notifications => {
         this.notifications = notifications;
@@ -41,6 +49,12 @@ export class NotificationContainerComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.subscription) {
       this.subscription.unsubscribe();
+    }
+    if (this.movedToBody && this.elementRef.nativeElement.parentNode) {
+      this.renderer.removeChild(
+        this.elementRef.nativeElement.parentNode,
+        this.elementRef.nativeElement
+      );
     }
   }
 
