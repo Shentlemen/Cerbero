@@ -262,34 +262,34 @@
             </td>
             <td>
               <div class="action-buttons" *ngIf="canManageSoftware()">
-                <button class="visibility-button" 
+                <button type="button" class="visibility-button" 
                         (click)="toggleSoftwareVisibility(software, $event)"
                         [title]="software.hidden ? 'Mostrar software' : 'Ocultar software'"
                         [disabled]="loading">
                   <i class="fas" [ngClass]="software.hidden ? 'fa-eye-slash' : 'fa-eye'"></i>
                 </button>
-                <button class="forbidden-button" 
+                <button type="button" class="forbidden-button" 
                         (click)="toggleSoftwareForbidden(software, $event)"
                         [title]="software.forbidden ? 'Desmarcar como prohibido' : 'Marcar como prohibido'"
                         [disabled]="loading"
                         [class.forbidden]="software.forbidden">
                   <i class="fas" [ngClass]="software.forbidden ? 'fa-ban' : 'fa-check-circle'"></i>
                 </button>
-                <button class="driver-button" 
+                <button type="button" class="driver-button" 
                         (click)="toggleSoftwareDriver(software, $event)"
                         [title]="software.driver ? 'Desmarcar como driver' : 'Marcar como driver'"
                         [disabled]="loading"
                         [class.driver]="software.driver">
                   <i class="fas" [ngClass]="software.driver ? 'fa-cog' : 'fa-cogs'"></i>
                 </button>
-                <button class="licenciado-button" 
+                <button type="button" class="licenciado-button" 
                         (click)="toggleSoftwareLicenciado(software, $event)"
                         [title]="software.licenciado ? 'Desmarcar como licenciado' : 'Marcar como licenciado'"
                         [disabled]="loading"
                         [class.licenciado]="software.licenciado">
                   <i class="fas fa-key"></i>
                 </button>
-                <button class="delete-button" 
+                <button type="button" class="delete-button" 
                         (click)="deleteSoftware(software, $event)"
                         [title]="'Eliminar software'"
                         [disabled]="loading">

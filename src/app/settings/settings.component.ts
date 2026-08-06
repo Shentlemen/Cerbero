@@ -69,10 +69,107 @@ export class SettingsComponent implements OnInit, OnDestroy {
       id: 'settings-overview',
       title: 'Tour de configuración',
       icon: 'fa-route',
+      beforeStart: () => this.resetScroll(),
+      afterEnd: () => this.resetScroll(),
       steps: [
-        { selector: '#tour-settings-title', title: 'Configuración', description: 'Herramientas de mantenimiento de bajo nivel (solo GM). Usalas con criterio.', side: 'bottom' },
-        { selector: '#tour-settings-ocs', title: 'Reset OCS', description: 'Vuelve a importar hardware, software y dispositivos desde OCS; preserva usuarios y alertas Cerbero.', side: 'top' },
-        { selector: '#tour-settings-reset-ocs', title: 'Botón de reseteo', description: 'Abre confirmación explícita antes de ejecutar el proceso largo de limpieza e importación.', side: 'left' }
+        {
+          selector: '#tour-settings-title',
+          title: 'Configuración del sistema',
+          description:
+            'Pantalla de <strong>mantenimiento avanzado</strong> (solo GM). Desde aquí podés resetear datos OCS, ' +
+            'comparar inventarios entre bases, detectar duplicados y probar el cierre de sesión por inactividad. ' +
+            'Todas las acciones son sensibles: usalas con criterio y en ventanas de mantenimiento.',
+          side: 'bottom'
+        },
+        {
+          selector: '#tour-settings-ocs',
+          title: 'Reseteo de tablas OCS',
+          description:
+            'Esta sección ejecuta un <strong>reseteo completo</strong> de lo que Cerbero sincroniza desde OCS. ' +
+            '<strong>Elimina</strong> hardware, software y dispositivos en Cerbero y luego <strong>reimporta</strong> datos frescos desde OCS. ' +
+            '<strong>Preserva</strong> usuarios, alertas y configuraciones propias de Cerbero. El proceso puede tardar varios minutos.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-reset-ocs',
+          title: 'Botón «Resetear tablas OCS»',
+          description:
+            'Inicia el reseteo. Abre un <strong>modal de confirmación</strong> con el detalle de lo que se borra y lo que se conserva. ' +
+            'Solo al confirmar arranca la operación; mientras corre el botón queda deshabilitado y muestra progreso. ' +
+            'Al terminar verás un resumen por tabla debajo de esta sección.',
+          side: 'left'
+        },
+        {
+          selector: '#tour-settings-idle',
+          title: 'Sesión por inactividad (prueba)',
+          description:
+            'Herramientas de <strong>prueba</strong> para el cierre automático de sesión. En producción la app cierra tras ' +
+            '<strong>30 minutos</strong> sin actividad y avisa en los <strong>últimos 3 minutos</strong>. ' +
+            'Estos controles aceleran la simulación para validar el aviso y el logout sin esperar media hora.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-idle-actions',
+          title: 'Probar aviso y cierre',
+          description:
+            '<strong>Probar aviso de inactividad</strong>: muestra el modal de advertencia en ~30 segundos (simula los últimos minutos). ' +
+            '<strong>Probar cierre inmediato</strong>: cierra la sesión al instante y te redirige al login (pide confirmación antes). ' +
+            'Útil para verificar que el flujo de seguridad funciona correctamente.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-compare',
+          title: 'Comparar hardware OCS vs Cerbero',
+          description:
+            'Cruza la tabla <code>hardware</code> de ambas bases por <strong>nombre de equipo</strong> (sin distinguir mayúsculas ni espacios extra). ' +
+            'El informe incluye estadísticas por base, grupos duplicados en OCS, resumen de sincronización (nombres únicos y diferencia Cerbero − OCS), ' +
+            'equipos <strong>solo en OCS</strong> (faltan en Cerbero) y <strong>solo en Cerbero</strong> (posibles obsoletos). No lista los que ya coinciden.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-compare-btn',
+          title: 'Botón «Comparar OCS vs Cerbero»',
+          description:
+            'Ejecuta el análisis y despliega tablas y tarjetas con los resultados debajo. ' +
+            'Usalo para diagnosticar desfasajes de inventario antes o después de un reseteo. ' +
+            'Si hay duplicados en Cerbero, el resumen te remite a la sección de búsqueda en Cerbero más abajo.',
+          side: 'left'
+        },
+        {
+          selector: '#ocs-duplicates-section',
+          title: 'Buscar duplicados en OCS',
+          description:
+            'Consulta la base <strong>OCS</strong> (origen del agente) y agrupa equipos con el <strong>mismo nombre</strong> en la tabla hardware. ' +
+            'Es <strong>solo lectura</strong>: no elimina registros en OCS desde Cerbero. ' +
+            'Sirve para detectar inventario sucio en origen; el badge naranja del perro también puede llevarte acá.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-ocs-duplicates-btn',
+          title: 'Botón «Buscar duplicados en OCS»',
+          description:
+            'Lanza la búsqueda y muestra cada grupo duplicado en tablas con ID, IP, DEVICEID, SO, usuario y última fecha. ' +
+            'Si no hay duplicados verás un mensaje de éxito. Los duplicados en OCS conviene corregirlos en origen antes de sincronizar.',
+          side: 'left'
+        },
+        {
+          selector: '#tour-settings-cerbero-duplicates',
+          title: 'Buscar duplicados en Cerbero',
+          description:
+            'Busca en la base <strong>Cerbero</strong> (no en OCS) equipos con el mismo nombre repetido. ' +
+            'A diferencia de la sección OCS, acá podés <strong>eliminar</strong> registros duplicados desde la tabla de resultados. ' +
+            'Complementa la comparación OCS vs Cerbero cuando necesitás limpiar la copia local.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-cerbero-duplicates-btn',
+          title: 'Buscar y eliminar duplicados en Cerbero',
+          description:
+            '<strong>Buscar duplicados en Cerbero</strong> lista los grupos por nombre. En cada fila, el botón rojo <strong>Eliminar</strong> ' +
+            'borra ese hardware de Cerbero y todos sus datos relacionados (pide confirmación y no se puede deshacer). ' +
+            'Tras eliminar, la lista se actualiza automáticamente.',
+          side: 'left'
+        }
       ]
     }]);
 
@@ -91,6 +188,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private scrollToOcsDuplicatesSection(): void {
     const el = document.getElementById('ocs-duplicates-section');
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  private resetScroll(): void {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }
 
   ngOnDestroy(): void {

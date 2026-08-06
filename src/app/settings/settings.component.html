@@ -104,7 +104,7 @@
   </div>
 
   <!-- Prueba de cierre por inactividad (solo GM) -->
-  <div class="settings-section">
+  <div class="settings-section" id="tour-settings-idle">
     <div class="section-header">
       <i class="fas fa-clock me-2"></i>
       <h3>Sesión por inactividad (prueba)</h3>
@@ -113,11 +113,11 @@
       <div class="info-box info-box-info">
         <i class="fas fa-info-circle me-2"></i>
         <span>
-          En producción la sesión se cierra tras <strong>1 hora</strong> sin actividad, con aviso en los
-          <strong>últimos 5 minutos</strong>. Estos botones aceleran la prueba (aviso ~30 s).
+          En producción la sesión se cierra tras <strong>30 minutos</strong> sin actividad, con aviso en los
+          <strong>últimos 3 minutos</strong>. Estos botones aceleran la prueba (aviso ~30 s).
         </span>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="d-flex flex-wrap gap-2" id="tour-settings-idle-actions">
         <button type="button" class="btn btn-outline-primary sync-button" (click)="probarAvisoInactividad()">
           <i class="fas fa-hourglass-half me-2"></i>
           Probar aviso de inactividad
@@ -131,7 +131,7 @@
   </div>
 
   <!-- Nueva sección para comparar bases de datos -->
-  <div class="settings-section">
+  <div class="settings-section" id="tour-settings-compare">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
       <h3>Comparar Tablas Hardware (OCS vs Cerbero)</h3>
@@ -163,7 +163,8 @@
       </div>
       
       <button 
-        class="btn btn-info sync-button" 
+        class="btn btn-info sync-button"
+        id="tour-settings-compare-btn"
         (click)="compararBasesDatos()"
         [disabled]="isComparingDatabases">
         <i class="fas fa-balance-scale me-2" [class.fa-spin]="isComparingDatabases"></i>
@@ -442,6 +443,7 @@
       <button
         type="button"
         class="btn btn-warning sync-button"
+        id="tour-settings-ocs-duplicates-btn"
         (click)="buscarDuplicadosOcs()"
         [disabled]="isSearchingOcsDuplicates">
         <i class="fas fa-search me-2" [class.fa-spin]="isSearchingOcsDuplicates"></i>
@@ -519,7 +521,7 @@
   </div>
 
   <!-- Duplicados en tabla hardware de la base Cerbero -->
-  <div class="settings-section">
+  <div class="settings-section" id="tour-settings-cerbero-duplicates">
     <div class="section-header">
       <i class="fas fa-search me-2"></i>
       <h3>Buscar duplicados en Hardware (base Cerbero)</h3>
@@ -536,7 +538,8 @@
       </div>
       
       <button 
-        class="btn btn-warning sync-button" 
+        class="btn btn-warning sync-button"
+        id="tour-settings-cerbero-duplicates-btn"
         (click)="buscarDuplicados()"
         [disabled]="isSearchingDuplicates">
         <i class="fas fa-search me-2" [class.fa-spin]="isSearchingDuplicates"></i>

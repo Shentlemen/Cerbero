@@ -1,35 +1,55 @@
+:host {
+  --sidenav-width: clamp(188px, 14vw, 220px);
+  --menu-link-pad: 10px 16px;
+  --menu-font-size: 13px;
+  --menu-icon-size: 15px;
+  --submenu-font-size: 11px;
+  --version-footer-height: 58px;
+  --dog-footer-gap: 18px;
+  --dog-menu-size: 118px;
+}
+
 /* Estilo para la barra lateral */
 .sidenav {
-  width: 220px;
+  width: var(--sidenav-width);
   position: fixed;
   top: 60px; /* Empieza debajo del header */
   left: 0;
   height: calc(100% - 60px); /* Altura total menos el header */
   background-color: #1a1a1a;
-  padding-top: 15px;
-  padding-bottom: 80px; /* Espacio para la información de versión */
+  padding-top: 0;
+  padding-bottom: 0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-  overflow-y: auto; /* Permite scroll vertical */
-  overflow-x: hidden; /* Evita scroll horizontal */
-  z-index: 2; /* Aseguramos que el menú esté por encima del contenido principal */
+  transition: width 0.25s ease;
+  overflow: hidden;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Estilo para la barra de scroll */
-.sidenav::-webkit-scrollbar {
+/* Zona desplazable: submenús no pisan al perro ni la versión (ambos abajo) */
+.sidenav-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0 8px;
+}
+
+.sidenav-nav::-webkit-scrollbar {
   width: 6px;
 }
 
-.sidenav::-webkit-scrollbar-track {
+.sidenav-nav::-webkit-scrollbar-track {
   background: #1a1a1a;
 }
 
-.sidenav::-webkit-scrollbar-thumb {
+.sidenav-nav::-webkit-scrollbar-thumb {
   background: #3498db;
   border-radius: 3px;
 }
 
-.sidenav::-webkit-scrollbar-thumb:hover {
+.sidenav-nav::-webkit-scrollbar-thumb:hover {
   background: #2980b9;
 }
 
@@ -138,9 +158,9 @@
 }
 
 .sidenav a, .menu-header {
-  padding: 12px 20px;
+  padding: var(--menu-link-pad);
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--menu-font-size);
   color: #ecf0f1;
   display: flex;
   align-items: center;
@@ -156,7 +176,8 @@
 
 .sidenav a span, .menu-header span {
   margin-left: 0;
-  font-size: 13px;
+  font-size: var(--menu-font-size);
+  line-height: 1.25;
 }
 
 .sidenav a:last-child {
@@ -171,7 +192,7 @@
 }
 
 .sidenav a i, .menu-header i {
-  font-size: 16px;
+  font-size: var(--menu-icon-size);
   width: 20px;
   text-align: center;
   color: #3498db;
@@ -204,7 +225,7 @@
 
 /* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
-  margin-left: 220px;
+  margin-left: var(--sidenav-width);
   margin-top: 60px; /* Espacio para el header superior */
   padding: 15px;
   /* Al menos el alto visible bajo el header; sin height fijo para que el fondo gris crezca con el scroll */
@@ -232,13 +253,35 @@
   width: 60px;
 }
 
-/* Estilo para el contenedor del logo */
-.logo-container {
-  position: relative;
+/* Perro justo encima del bloque Cerbero / Build (no encima del texto) */
+.dog-anchor {
+  position: fixed;
+  left: 0;
+  bottom: calc(var(--version-footer-height) + var(--dog-footer-gap));
+  width: var(--sidenav-width);
   display: flex;
   justify-content: center;
-  padding: 10px;
-  margin-bottom: 0;
+  align-items: flex-end;
+  z-index: 1010;
+  pointer-events: none;
+}
+
+:host ::ng-deep .dog-anchor .helper-dog {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  z-index: 1010;
+  pointer-events: auto;
+}
+
+:host ::ng-deep .dog-anchor .helper-dog-container {
+  --dog-size: var(--dog-menu-size);
+}
+
+.dog-spacer {
+  flex-shrink: 0;
+  height: calc(var(--dog-menu-size) + var(--dog-footer-gap));
+  pointer-events: none;
 }
 
 /* Estilo para el recuadro del logo */
@@ -257,13 +300,11 @@
 
 /* Estilos para la información de versión en el menú */
 .version-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #1a1a1a; /* Mismo color que el menú principal */
-  border-top: 1px solid #333333; /* Borde más sutil */
-  padding: 0.75rem 1rem;
+  position: relative;
+  flex-shrink: 0;
+  background: #1a1a1a;
+  border-top: 1px solid #333333;
+  padding: 0.55rem 0.75rem;
   margin: 0;
 }
 
@@ -307,9 +348,38 @@
   color: #3498db;
 }
 
+/* Pantallas bajas (ej. 1440×900): menú más compacto */
+@media screen and (max-height: 940px) {
+  :host {
+    --menu-link-pad: 7px 12px;
+    --menu-font-size: 12px;
+    --menu-icon-size: 14px;
+    --submenu-font-size: 10px;
+    --version-footer-height: 52px;
+    --dog-footer-gap: 14px;
+    --dog-menu-size: 100px;
+  }
+
+  .submenu.show {
+    max-height: 420px;
+  }
+
+  .app-name {
+    font-size: 0.72rem;
+  }
+
+  .build-info {
+    font-size: 0.62rem;
+  }
+}
+
 /* Media query para pantallas más pequeñas */
 @media screen and (max-width: 768px) {
   .sidenav {
+    width: 70px;
+  }
+
+  .dog-anchor {
     width: 70px;
   }
   
@@ -322,7 +392,7 @@
   }
   
   .main-content {
-    margin-left: 70px;
+    margin-left: 70px; /* ancho colapsado fijo en móvil */
   }
   
   .logo {
@@ -352,7 +422,7 @@
 }
 
 .menu-header {
-  padding: 12px 20px;
+  padding: var(--menu-link-pad);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -412,11 +482,11 @@
 
 .submenu-item {
   position: relative;
-  padding: 10px 14px 10px 18px !important;
+  padding: 7px 10px 7px 16px !important;
   margin: 2px 0;
   border-radius: 8px;
   border-left: 3px solid transparent;
-  font-size: 12px !important;
+  font-size: var(--submenu-font-size) !important;
   font-weight: 400;
   letter-spacing: 0.4px;
   background-color: rgba(45, 45, 45, 0.35);

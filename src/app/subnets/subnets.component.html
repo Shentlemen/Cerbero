@@ -41,7 +41,7 @@
               class="form-control"
               placeholder="Buscar por nombre, ID o Net ID…"
               [(ngModel)]="searchTerm"
-              (ngModelChange)="onSearchChange()">
+              (input)="onSearchChange($any($event.target).value)">
             <button
               type="button"
               class="btn btn-outline-secondary"
@@ -195,11 +195,137 @@
 
     <!-- Siempre en el DOM: Leaflet se inicializa al cargar y no debe perder el contenedor al poner loading=true -->
     <div class="subnets-map-block" id="tour-subnets-map" [class.subnets-map-block--dimmed]="loading">
-      <h2 class="subnets-map-title">
-        <i class="fas fa-map-marked-alt me-2"></i>
-        Mapa de subredes
-      </h2>
-      <div id="map" class="subnets-map"></div>
+      <div class="subnets-map-header">
+        <div class="subnets-map-header-top">
+          <h2 class="subnets-map-title">
+            <i class="fas fa-map-marked-alt me-2"></i>
+            Mapa de subredes
+          </h2>
+          <button
+            *ngIf="canManageSubnets()"
+            type="button"
+            class="btn btn-sm"
+            [class.btn-outline-primary]="!mapEditMode"
+            [class.btn-warning]="mapEditMode"
+            (click)="toggleMapEditMode()"
+            [disabled]="loading || subnetsOnMapCount === 0">
+            <i class="fas" [ngClass]="mapEditMode ? 'fa-times' : 'fa-arrows-alt'"></i>
+            {{ mapEditMode ? 'Salir de edición' : 'Editar ubicaciones' }}
+          </button>
+        </div>
+        <p *ngIf="!mapEditMode && !isSearchFilterActive()" class="subnets-map-hint text-muted small mb-0">
+          Clic en un marcador para ver equipos. Varios pins juntos: el mapa se acerca como con la rueda del mouse hasta que se separan solos y luego podés elegir subred.
+          <span *ngIf="subnetsOnMapCount > 0">
+            {{ subnetsOnMapCount }} en mapa
+            <span *ngIf="subnets.length > subnetsOnMapCount">
+              · {{ subnets.length - subnetsOnMapCount }} sin coordenadas
+            </span>
+          </span>
+        </p>
+        <p *ngIf="!mapEditMode && isSearchFilterActive()" class="subnets-map-hint subnets-map-hint--search mb-0">
+          <i class="fas fa-search me-1"></i>
+          Coincidencias con «{{ searchTerm }}» en <strong>amarillo</strong> (acercá el mapa para ver pins sueltos).
+        </p>
+        <p *ngIf="mapEditMode" class="subnets-map-hint subnets-map-hint--edit mb-0">
+          <i class="fas fa-hand-pointer me-1"></i>
+          Arrastrá un pin a la ubicación correcta y confirmá. Los clusters están desactivados para facilitar el ajuste.
+        </p>
+      </div>
+      <div class="subnets-map-wrapper" [class.subnets-map-wrapper--edit]="mapEditMode">
+        <div id="map" class="subnets-map"></div>
+        <div *ngIf="mapEditPending" class="subnets-map-edit-confirm" role="status">
+          <p class="subnets-map-edit-confirm-title mb-1">
+            <i class="fas fa-map-pin me-1"></i>
+            {{ mapEditPending.subnet.id || mapEditPending.subnet.name }}
+          </p>
+          <p class="subnets-map-edit-confirm-coords text-muted small mb-2">
+            Lat {{ formatCoord(mapEditPending.lat) }} · Lng {{ formatCoord(mapEditPending.lng) }}
+          </p>
+          <div class="subnets-map-edit-confirm-actions">
+            <button
+              type="button"
+              class="btn btn-sm btn-success"
+              (click)="confirmMapEditMove()"
+              [disabled]="mapEditSaving">
+              <span *ngIf="mapEditSaving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+              <i *ngIf="!mapEditSaving" class="fas fa-check me-1"></i>
+              Confirmar
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              (click)="cancelMapEditMove()"
+              [disabled]="mapEditSaving">
+              Cancelar
+            </button>
+          </div>
+        </div>
+        <div *ngIf="subnetsOnMapCount > 0" class="subnets-map-legend" aria-hidden="true">
+          <span class="subnets-map-legend-item">
+            <span class="subnet-map-pin subnet-map-pin--sample"></span> Con equipos
+          </span>
+          <span class="subnets-map-legend-item">
+            <span class="subnet-map-pin subnet-map-pin--empty subnet-map-pin--sample"></span> Sin equipos
+          </span>
+          <span class="subnets-map-legend-item">
+            <span class="subnet-map-pin subnet-map-pin--sample">·</span> Sin máscara / sin conteo
+          </span>
+          <span *ngIf="mapEditMode" class="subnets-map-legend-item">
+            <span class="subnet-map-pin subnet-map-pin--editable subnet-map-pin--sample"></span> Modo edición
+          </span>
+          <span *ngIf="isSearchFilterActive()" class="subnets-map-legend-item">
+            <span class="subnet-map-pin subnet-map-pin--search-match subnet-map-pin--sample"></span> Coinciden con la búsqueda
+          </span>
+        </div>
+
+        <!-- Selector de subred: solo sobre el mapa (no backdrop fijo a pantalla completa) -->
+        <div
+          class="subnet-map-picker-layer"
+          [class.subnet-map-picker-layer--closed]="!locationPickerOpen"
+          [attr.aria-hidden]="!locationPickerOpen">
+          <div
+            class="subnet-map-picker-scrim"
+            (click)="closeLocationPickerModal()"
+            role="presentation"></div>
+          <div
+            class="subnet-hw-modal subnet-location-picker"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="subnetLocationPickerTitle"
+            (click)="$event.stopPropagation()">
+            <header class="subnet-hw-modal-header">
+              <div>
+                <h2 id="subnetLocationPickerTitle" class="subnet-hw-modal-title">
+                  <i class="fas fa-layer-group me-2"></i>
+                  {{ locationPickerTitle }}
+                </h2>
+                <p class="subnet-hw-modal-meta mb-0">
+                  <span class="badge bg-secondary">{{ locationPickerSubnets.length }} subredes</span>
+                </p>
+              </div>
+              <button type="button" class="btn btn-sm btn-light" (click)="closeLocationPickerModal()" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+              </button>
+            </header>
+            <div class="subnet-location-picker-body">
+              <p class="text-muted small mb-3">
+                Varias subredes comparten la misma ubicación. Elegí una para ver sus equipos; el mapa queda visible detrás.
+              </p>
+              <ul class="subnet-location-picker-list">
+                <li *ngFor="let s of locationPickerSubnets">
+                  <button type="button" class="subnet-location-picker-item" (click)="pickSubnetFromLocation(s)">
+                    <span class="subnet-location-picker-name">{{ s.id || s.name }}</span>
+                    <span class="subnet-location-picker-meta text-muted">{{ s.netId }}</span>
+                    <span class="subnet-location-picker-count badge bg-info text-dark">
+                      {{ equipmentCountLabel(s) }} equipos
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -305,7 +431,18 @@
           </thead>
           <tbody>
             <tr *ngFor="let h of filteredHardwareRows">
-              <td class="subnet-hw-name">{{ h.name || '—' }}</td>
+              <td class="subnet-hw-name">
+                <button
+                  *ngIf="h.id; else subnetHwNamePlain"
+                  type="button"
+                  class="subnet-hw-name-link"
+                  title="Ver detalle del equipo"
+                  (click)="openAssetDetailsFromModal(h)">
+                  <span class="subnet-hw-name-link-text">{{ h.name || '—' }}</span>
+                  <i class="fas fa-chevron-right subnet-hw-name-link-icon" aria-hidden="true"></i>
+                </button>
+                <ng-template #subnetHwNamePlain>{{ h.name || '—' }}</ng-template>
+              </td>
               <td class="mono-cell">{{ h.ipAddr || '—' }}</td>
               <td>{{ h.osName || '—' }}</td>
               <td>{{ h.type || '—' }}</td>

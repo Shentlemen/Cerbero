@@ -2,10 +2,7 @@
   class="sidenav"
   [style.top.px]="layoutTopPx"
   [style.height]="'calc(100% - ' + layoutTopPx + 'px)'">
-  <div class="logo-container">
-    <app-helper-dog></app-helper-dog>
-  </div>
-
+  <nav class="sidenav-nav" aria-label="Menú principal">
   <!-- Menú de navegación -->
   <a routerLink="/menu/dashboard" routerLinkActive="active">
     <i class="fas fa-tachometer-alt"></i>
@@ -91,8 +88,8 @@
 
   <!--
     Menú Configuración:
-    - GM/Admin: todos los ítems (ubicaciones, subredes, tipos, usuarios, almacén config).
-    - INVENTARIO: ubicaciones, tipos de activo y usuarios responsables.
+    - GM/Admin: todos los ítems (ubicaciones, subredes, tipos, responsables, almacén config).
+    - INVENTARIO: ubicaciones, tipos de activo y responsables.
     - ALMACEN: solo «ALMACÉN CONFIG».
   -->
   <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canShowConfigurationMenu()">
@@ -118,8 +115,8 @@
         <span>TIPOS DE COMPRA</span>
       </a>
       <a *ngIf="canAccessUsuariosResponsablesConfiguration()" routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-users"></i>
-        <span>USUARIOS</span>
+        <i class="fas fa-user-tie"></i>
+        <span>RESPONSABLES</span>
       </a>
       <a *ngIf="canAccessWarehouseConfiguration()" routerLink="/menu/almacen/config" routerLinkActive="active" class="submenu-item">
         <i class="fas fa-cogs"></i>
@@ -150,6 +147,10 @@
     <i class="fas fa-phone"></i>
     <span>INTERNOS OSE</span>
   </a>
+  </nav>
+
+  <!-- Espacio reservado: el perro vive en .dog-anchor (fixed) encima de la versión -->
+  <div class="dog-spacer" aria-hidden="true"></div>
 
   <!-- Información de versión en la parte inferior del menú -->
   <div class="version-info">
@@ -159,6 +160,12 @@
     </div>
   </div>
 </div>
+
+<!-- Fuera del sidenav: burbujas y menú radial no quedan recortados ni detrás del contenido -->
+<div class="dog-anchor">
+  <app-helper-dog></app-helper-dog>
+</div>
+
 <app-header></app-header>
 <div
   class="main-content"

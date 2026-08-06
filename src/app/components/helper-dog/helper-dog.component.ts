@@ -25,8 +25,8 @@ import { filter, Subscription } from 'rxjs';
   styleUrls: ['./helper-dog.component.css']
 })
 export class HelperDogComponent implements OnInit, OnDestroy {
-  /** Debe coincidir con --dog-size en helper-dog.component.css (escala del menú radial). */
-  private static readonly DOG_SIZE_PX = 124;
+  /** Debe coincidir con --dog-size del contenedor (menú: ~118px; default CSS: 124px). */
+  private static readonly DOG_SIZE_PX = 118;
 
   @Input() currentSection: string = '';
 

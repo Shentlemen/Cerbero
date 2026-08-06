@@ -41,7 +41,10 @@ export function AuthInterceptor(request: HttpRequest<unknown>, next: HttpHandler
     });
     if (!isPublicUrl) {
       try {
-        inject(SessionIdleService).extendSession();
+        const sessionIdle = inject(SessionIdleService);
+        if (!sessionIdle.isBackgroundIdleRequest(request.url)) {
+          sessionIdle.extendSession();
+        }
       } catch {
         /* servicio no disponible aún */
       }

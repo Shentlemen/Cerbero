@@ -10,7 +10,7 @@
       antes de poder iniciar sesión.
     </div>
     <div *ngIf="idleLogoutNotice" class="login-info-notice login-idle-notice">
-      Su sesión se cerró automáticamente por inactividad (1 hora sin uso). Inicie sesión nuevamente para continuar.
+      Su sesión se cerró automáticamente por inactividad (30 minutos sin uso). Inicie sesión nuevamente para continuar.
     </div>
     <form class="login-form" (ngSubmit)="onSubmit()">
         <input

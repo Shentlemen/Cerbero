@@ -242,7 +242,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   /**
    * El submenú Configuración se muestra para:
    *  - GM / Admin (ítems completos vía `canAccessConfiguration`).
-   *  - INVENTARIO: ubicaciones, tipos de activo y usuarios responsables.
+   *  - INVENTARIO: ubicaciones, tipos de activo y responsables.
    *  - ALMACEN: solo «ALMACÉN CONFIG».
    */
   canShowConfigurationMenu(): boolean {

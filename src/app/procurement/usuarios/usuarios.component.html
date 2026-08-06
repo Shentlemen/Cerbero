@@ -3,13 +3,13 @@
     <div class="header-content">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
       <div class="title-wrapper flex-grow-1">
-        <h1 id="tour-proc-personas-title"><i class="fas fa-users"></i> Gestión de Usuarios</h1>
+        <h1 id="tour-proc-personas-title"><i class="fas fa-user-tie"></i> Gestión de Responsables</h1>
       </div>
       </div>
       <div class="actions">
         <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-proc-personas-nuevo" (click)="abrirModal(usuarioModal)">
           <i class="fas fa-plus me-2"></i>
-          Nuevo Usuario
+          Nuevo responsable
         </button>
       </div>
     </div>
@@ -25,7 +25,7 @@
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Cargando...</span>
         </div>
-        <p class="mt-2">Cargando usuarios...</p>
+        <p class="mt-2">Cargando responsables...</p>
       </div>
 
       <ng-container *ngIf="!loading && !error">
@@ -50,10 +50,10 @@
           </div>
           <p class="list-summary mb-0" *ngIf="usuariosList.length > 0">
             <span *ngIf="collectionSize === usuariosList.length">
-              {{ usuariosList.length }} usuarios
+              {{ usuariosList.length }} responsables
             </span>
             <span *ngIf="collectionSize !== usuariosList.length">
-              {{ collectionSize }} de {{ usuariosList.length }} usuarios
+              {{ collectionSize }} de {{ usuariosList.length }} responsables
             </span>
             <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
           </p>
@@ -156,12 +156,12 @@
         </div>
 
         <div *ngIf="usuariosList.length === 0" class="alert alert-info">
-          No hay usuarios registrados.
+          No hay responsables registrados.
         </div>
 
         <div *ngIf="usuariosList.length > 0 && collectionSize === 0" class="alert alert-info">
           <i class="fas fa-search me-2"></i>
-          No hay usuarios que coincidan con "{{ searchTerm }}".
+          No hay responsables que coincidan con "{{ searchTerm }}".
         </div>
       </ng-container>
     </div>
@@ -171,7 +171,7 @@
 <!-- Modal para crear/editar usuario -->
 <ng-template #usuarioModal let-modal>
   <div class="modal-header">
-    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} Usuario</h4>
+    <h4 class="modal-title">{{modoEdicion ? 'Editar' : 'Nuevo'}} responsable</h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
@@ -222,7 +222,7 @@
       Confirmar Eliminación
     </div>
     <div class="confirm-dialog-message">
-      ¿Está seguro que desea eliminar este usuario? Esta acción no se puede deshacer.
+      ¿Está seguro que desea eliminar este responsable? Esta acción no se puede deshacer.
     </div>
     <div class="confirm-dialog-buttons">
       <button class="confirm-dialog-button cancel" (click)="cancelarEliminacion()">

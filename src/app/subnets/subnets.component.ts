@@ -1,16 +1,19 @@
-import { Component, OnDestroy, OnInit, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, HostListener, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import {
   SubnetService,
   SubnetDTO,
   SubnetCoordinatesDTO,
-  ipv4MatchesSubnet
+  ipv4MatchesSubnet,
+  findSubnetForIpv4
 } from '../services/subnet.service';
 import { HardwareService } from '../services/hardware.service';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { TourRegistryService } from '../services/tour-registry.service';
@@ -35,6 +38,39 @@ interface ExtendedSubnet extends SubnetDTO {
   [key: string]: any;
 }
 
+/** Marcador del mapa con la subred asociada (para sumar equipos en clusters). */
+interface SubnetMapMarker extends L.Marker {
+  subnetRef: ExtendedSubnet;
+  subnetEquipmentCount: number;
+  collocatedPeers?: ExtendedSubnet[];
+  /** Coincide con el filtro de búsqueda actual (para clusters). */
+  subnetSearchMatch?: boolean;
+}
+
+interface MarkerPlacement {
+  lat: number;
+  lng: number;
+  peers: ExtendedSubnet[];
+}
+
+/** Cluster de Leaflet MarkerCluster (métodos usados en el mapa). */
+interface SubnetMapCluster {
+  getLatLng: () => L.LatLng;
+  getAllChildMarkers: () => L.Marker[];
+  getBounds: () => L.LatLngBounds;
+  spiderfy?: () => void;
+}
+
+/** Arrastre pendiente de confirmación en el mapa. */
+interface MapEditPending {
+  subnet: ExtendedSubnet;
+  marker: SubnetMapMarker;
+  displayLat: number;
+  displayLng: number;
+  lat: number;
+  lng: number;
+}
+
 // Añade esta declaración después de las importaciones
 declare module 'leaflet' {
   interface Map {
@@ -53,8 +89,14 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   subnets: ExtendedSubnet[] = [];
   private map: L.Map | undefined;
   private markerClusterGroup: L.MarkerClusterGroup | undefined;
-  private lines: L.Polyline[] = [];
+  private editMarkersLayer: L.LayerGroup | undefined;
+  /** Modo edición: arrastrar pins en el mapa para corregir coordenadas. */
+  public mapEditMode = false;
+  public mapEditSaving = false;
+  public mapEditPending: MapEditPending | null = null;
   public sortColumn: string = '';
+  /** Subredes con coordenadas guardadas (para leyenda del mapa). */
+  public subnetsOnMapCount = 0;
   public sortDirection: 'asc' | 'desc' = 'asc';
   public loading: boolean = false;
   public errorMessage: string | null = null;
@@ -68,10 +110,9 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Búsqueda en la tabla por nombre, id o netId. */
   public searchTerm: string = '';
 
-  private montevideoCenter = {
-    lat: -34.9011,
-    lng: -56.1645
-  };
+  /** Esquinas aproximadas de Uruguay (sur-oeste y norte-este). */
+  private readonly uruguaySouthWest: L.LatLngTuple = [-35.19, -58.45];
+  private readonly uruguayNorthEast: L.LatLngTuple = [-30.08, -53.07];
   private tourCleanup?: () => void;
 
   // Modal "Ver equipos de la subred"
@@ -81,14 +122,30 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   public hardwareModalLoading = false;
   public hardwareModalError: string | null = null;
   public hardwareModalSearch = '';
-  /** Cache local para no recargar el listado completo en cada apertura. */
+  /** Selector cuando varias subredes comparten ubicación (ej. Córdon). */
+  public locationPickerOpen = false;
+  public locationPickerSubnets: ExtendedSubnet[] = [];
+  public locationPickerTitle = '';
+  /** Cache local para no recargar el listado completo en cada apertura del modal. */
   private hardwareCache: any[] | null = null;
+  /** Conteos precalculados por netId (evita filtrar todo el inventario en cada marcador). */
+  private equipmentCountByNetId = new Map<string, number>();
+  private hardwareCountsLoading = false;
+  private mapInitialFitDone = false;
+  private resizeDebounceId: ReturnType<typeof setTimeout> | undefined;
+  private markersRefreshId: ReturnType<typeof setTimeout> | undefined;
+  /** Modales del mapa abiertos (sin tocar el zoom global 0.8 del body). */
+  private mapModalOpenCount = 0;
+  private hardwareModalRepaintId: ReturnType<typeof setTimeout> | undefined;
+  private markerPlacements = new Map<string, MarkerPlacement>();
 
   constructor(
     private subnetService: SubnetService,
     private permissionsService: PermissionsService,
     private tourRegistry: TourRegistryService,
-    private hardwareService: HardwareService
+    private hardwareService: HardwareService,
+    private ngZone: NgZone,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -100,7 +157,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
         { selector: '#tour-subnets-header', title: 'Subredes', description: 'Definición de VLANs y datos para ubicar equipos en el plano (IP, máscara, coordenadas).', side: 'bottom' },
         { selector: '#tour-subnets-toolbar', title: 'Resumen', description: 'Contador de registros cargados y estado de la operación.', side: 'bottom' },
         { selector: '#tour-subnets-table', title: 'Tabla editable', description: 'In-line: nombre, IP, máscara y datos del mapa; guardá cambios desde cada fila si tenés permiso.', side: 'top' },
-        { selector: '#tour-subnets-map', title: 'Mapa', description: 'Vista Leaflet con agregación de marcadores según coordenadas guardadas.', side: 'top' }
+        { selector: '#tour-subnets-map', title: 'Mapa', description: 'Marcadores por ubicación; el número indica equipos en la subred. Clic en un marcador abre el mismo listado que el botón Equipos.', side: 'top' }
       ]
     }]);
     this.loadResources()
@@ -113,20 +170,34 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    // Tras aplicar altura responsive del contenedor, Leaflet debe recalcular tiles
-    setTimeout(() => this.scheduleMapResize(), 150);
+    setTimeout(() => this.scheduleMapResize(() => {
+      if (!this.mapInitialFitDone && this.map) {
+        this.fitMapToUruguay();
+        this.mapInitialFitDone = true;
+      }
+    }), 150);
   }
 
   @HostListener('window:resize')
   onWindowResize(): void {
-    this.scheduleMapResize();
+    if (this.resizeDebounceId) {
+      clearTimeout(this.resizeDebounceId);
+    }
+    this.resizeDebounceId = setTimeout(() => {
+      if (this.mapModalOpenCount > 0) {
+        this.repaintMapMarkers();
+      } else {
+        this.scheduleMapResize();
+      }
+    }, 150);
   }
 
   /** Recalcula el tamaño del mapa cuando cambia el layout o el viewport. */
-  private scheduleMapResize(): void {
+  private scheduleMapResize(afterResize?: () => void): void {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         this.map?.invalidateSize();
+        afterResize?.();
       });
     });
   }
@@ -153,12 +224,13 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
           };
         });
         
-        // Configurar paginación
         this.collectionSize = this.subnets.length;
         this.page = 1;
-        
-        this.addMarkersToMap();
         this.loading = false;
+
+        // Mapa primero; conteos de equipos en segundo plano (no bloquea la UI).
+        setTimeout(() => this.addMarkersToMap(), 0);
+        this.loadHardwareCountsInBackground();
       },
       error: (error) => {
         console.error('Error al cargar datos:', error);
@@ -174,14 +246,25 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
    * "limon" matchee con "Limón" y "ANIO" con "año".
    */
   get filteredSubnets(): ExtendedSubnet[] {
-    const q = this.normalizeForSearch(this.searchTerm);
-    if (!q) {
+    if (!this.isSearchFilterActive()) {
       return this.subnets;
     }
-    return this.subnets.filter((s) => {
-      const fields = [s.name, s.id, s.netId, s.mask, s.tag];
-      return fields.some((v) => this.normalizeForSearch(v).includes(q));
-    });
+    return this.subnets.filter((s) => this.subnetMatchesSearch(s));
+  }
+
+  /** Hay texto de búsqueda activo (tras normalizar). */
+  isSearchFilterActive(): boolean {
+    return this.normalizeForSearch(this.searchTerm).length > 0;
+  }
+
+  /** Misma regla que la tabla: ¿la subred coincide con el buscador? */
+  subnetMatchesSearch(subnet: ExtendedSubnet): boolean {
+    const q = this.normalizeForSearch(this.searchTerm);
+    if (!q) {
+      return true;
+    }
+    const fields = [subnet.name, subnet.id, subnet.netId, subnet.mask, subnet.tag];
+    return fields.some((v) => this.normalizeForSearch(v).includes(q));
   }
 
   /**
@@ -202,18 +285,147 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Subredes visibles con paginación aplicada al resultado filtrado. */
   get pagedSubnets(): ExtendedSubnet[] {
     const filtered = this.filteredSubnets;
-    if (this.collectionSize !== filtered.length) {
-      this.collectionSize = filtered.length;
-    }
     const start = (this.page - 1) * this.pageSize;
-    const end = this.page * this.pageSize;
-    return filtered.slice(start, end);
+    return filtered.slice(start, start + this.pageSize);
   }
 
   /** Reset de la página actual al cambiar la búsqueda (evita quedar en una página inexistente). */
-  onSearchChange(): void {
+  onSearchChange(term?: string): void {
+    if (term !== undefined) {
+      this.searchTerm = term;
+    }
     this.page = 1;
     this.collectionSize = this.filteredSubnets.length;
+    this.scheduleMapSearchHighlight();
+  }
+
+  /** Actualiza colores en el mapa sin reconstruir marcadores (mantiene clusters). */
+  private scheduleMapSearchHighlight(): void {
+    if (this.mapEditMode || !this.map || !this.markerClusterGroup) {
+      return;
+    }
+    if (this.markersRefreshId) {
+      clearTimeout(this.markersRefreshId);
+    }
+    this.markersRefreshId = setTimeout(() => {
+      this.markersRefreshId = undefined;
+      this.refreshMapMarkerLabels();
+    }, 250);
+  }
+
+  private getMarkerSearchStyle(subnet: ExtendedSubnet, editable: boolean): {
+    highlighted: boolean;
+    dimmed: boolean;
+  } {
+    if (editable || !this.isSearchFilterActive()) {
+      return { highlighted: false, dimmed: false };
+    }
+    const matches = this.subnetMatchesSearch(subnet);
+    return { highlighted: matches, dimmed: !matches };
+  }
+
+  /** Precarga inventario y conteos una sola vez, fuera del camino crítico de carga. */
+  private loadHardwareCountsInBackground(): void {
+    if (this.hardwareCountsLoading || this.hardwareCache) {
+      return;
+    }
+    this.hardwareCountsLoading = true;
+    this.hardwareService.getHardware().pipe(
+      catchError((err) => {
+        console.warn('No se pudo precargar hardware para el mapa:', err);
+        return of([]);
+      })
+    ).subscribe({
+      next: (hardware) => {
+        this.hardwareCache = Array.isArray(hardware) ? hardware : [];
+        this.ngZone.runOutsideAngular(() => {
+          this.equipmentCountByNetId = this.buildEquipmentCountMap(this.hardwareCache!);
+          this.ngZone.run(() => {
+            this.hardwareCountsLoading = false;
+            this.refreshMapMarkerLabels();
+          });
+        });
+      },
+      error: () => {
+        this.hardwareCountsLoading = false;
+      }
+    });
+  }
+
+  /** Una pasada sobre el inventario → mapa netId → cantidad de equipos. */
+  private buildEquipmentCountMap(hardware: any[]): Map<string, number> {
+    const counts = new Map<string, number>();
+    const subnetsWithMask = this.subnets.filter((s) => s.mask?.trim());
+    for (const s of subnetsWithMask) {
+      counts.set(s.netId, 0);
+    }
+    for (const h of hardware) {
+      const ip = h?.ipAddr;
+      if (!ip?.trim()) continue;
+      const match = findSubnetForIpv4(ip, subnetsWithMask);
+      if (match) {
+        counts.set(match.netId, (counts.get(match.netId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }
+
+  private getSubnetEquipmentCount(subnet: ExtendedSubnet): number | null {
+    if (!subnet.mask?.trim()) {
+      return null;
+    }
+    if (!this.equipmentCountByNetId.size && !this.hardwareCache?.length) {
+      return null;
+    }
+    return this.equipmentCountByNetId.get(subnet.netId) ?? 0;
+  }
+
+  /** Actualiza iconos/tooltips cuando llegan los conteos o cambia la búsqueda. */
+  private refreshMapMarkerLabels(): void {
+    if (!this.markerClusterGroup) {
+      return;
+    }
+
+    const apply = () => {
+      const updatedMarkers: SubnetMapMarker[] = [];
+      const updateMarker = (marker: SubnetMapMarker, editable: boolean) => {
+        const subnet = marker.subnetRef;
+        if (!subnet) {
+          return;
+        }
+        const count = this.getSubnetEquipmentCount(subnet);
+        marker.subnetEquipmentCount = count ?? 0;
+        const style = this.getMarkerSearchStyle(subnet, editable);
+        marker.subnetSearchMatch = style.highlighted;
+        marker.setIcon(
+          this.createSubnetMarkerIcon(count, editable, style.highlighted, style.dimmed)
+        );
+        marker.setZIndexOffset(style.highlighted ? 1200 : 0);
+        updatedMarkers.push(marker);
+        const tooltip = marker.getTooltip();
+        if (tooltip) {
+          const peers = marker.collocatedPeers?.length ?? 1;
+          tooltip.setContent(this.buildMarkerTooltip(subnet, count, peers));
+        }
+      };
+
+      const layers = this.markerClusterGroup!.getLayers() as SubnetMapMarker[];
+      for (const marker of layers) {
+        updateMarker(marker, false);
+      }
+      if (this.editMarkersLayer) {
+        this.editMarkersLayer.eachLayer((layer) => {
+          updateMarker(layer as SubnetMapMarker, true);
+        });
+      }
+      if (updatedMarkers.length) {
+        this.markerClusterGroup!.refreshClusters(updatedMarkers);
+      } else {
+        this.markerClusterGroup!.refreshClusters();
+      }
+    };
+
+    this.ngZone.runOutsideAngular(apply);
   }
 
   clearSearch(): void {
@@ -357,8 +569,10 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.map) {
       console.log('Creando mapa...');
       this.map = L.map('map', {
-        center: [this.montevideoCenter.lat, this.montevideoCenter.lng],
-        zoom: 13
+        center: [-32.5, -55.75],
+        zoom: 7,
+        minZoom: 6,
+        maxZoom: 19
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -366,11 +580,268 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
         attribution: '© OpenStreetMap contributors'
       }).addTo(this.map);
 
-      this.markerClusterGroup = L.markerClusterGroup();
+      this.markerClusterGroup = L.markerClusterGroup({
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: false,
+        showCoverageOnHover: false,
+        disableClusteringAtZoom: this.focusSubnetZoom,
+        zoomToBoundsOnClick: false,
+        iconCreateFunction: (cluster) => this.createClusterEquipmentIcon(cluster)
+      });
+      this.markerClusterGroup.on('clusterclick', (e: L.LeafletEvent) => {
+        this.onMapClusterClick(e);
+      });
       this.map.addLayer(this.markerClusterGroup);
+      this.map.setMaxBounds(this.getUruguayBounds().pad(0.15));
       console.log('Mapa creado correctamente');
       this.scheduleMapResize();
     }
+  }
+
+  private getUruguayBounds(): L.LatLngBounds {
+    return L.latLngBounds(this.uruguaySouthWest, this.uruguayNorthEast);
+  }
+
+  /** Encuadra todo Uruguay; prioriza que norte y sur toquen el borde vertical del mapa. */
+  private fitMapToUruguay(): void {
+    if (!this.map) {
+      return;
+    }
+    const bounds = this.getUruguayBounds();
+    this.map.fitBounds(bounds, {
+      padding: [0, 0],
+      maxZoom: 10
+    });
+  }
+
+  /** Agrupa subredes con la misma coordenada y las reparte en círculo (evita pins tapados). */
+  private computeMarkerPlacements(subnets: ExtendedSubnet[]): Map<string, MarkerPlacement> {
+    const groups = new Map<string, ExtendedSubnet[]>();
+    for (const s of subnets) {
+      const key = `${s.latitud!.toFixed(5)},${s.longitud!.toFixed(5)}`;
+      const list = groups.get(key) ?? [];
+      list.push(s);
+      groups.set(key, list);
+    }
+
+    const placements = new Map<string, MarkerPlacement>();
+    for (const group of groups.values()) {
+      group.sort((a, b) => (a.id ?? '').localeCompare(b.id ?? '', 'es'));
+      const centerLat = group[0].latitud!;
+      const centerLng = group[0].longitud!;
+      const peers = group.length > 1 ? group : [];
+
+      group.forEach((subnet, index) => {
+        const [lat, lng] = this.offsetCollocated(index, group.length, centerLat, centerLng);
+        placements.set(subnet.netId, { lat, lng, peers });
+      });
+    }
+    return placements;
+  }
+
+  /** Desplaza cada subred en un anillo alrededor del punto original (~15–90 m). */
+  private offsetCollocated(
+    index: number,
+    total: number,
+    centerLat: number,
+    centerLng: number
+  ): L.LatLngTuple {
+    if (total <= 1) {
+      return [centerLat, centerLng];
+    }
+
+    const angle = (2 * Math.PI * index) / total - Math.PI / 2;
+    const radiusM = Math.min(14 + total * 2.8, 95);
+    const latRad = (centerLat * Math.PI) / 180;
+    const latOffset = (radiusM / 111_320) * Math.cos(angle);
+    const lngOffset = (radiusM / (111_320 * Math.cos(latRad))) * Math.sin(angle);
+    return [centerLat + latOffset, centerLng + lngOffset];
+  }
+
+  private onMapClusterClick(e: L.LeafletEvent): void {
+    L.DomEvent.stopPropagation(e);
+    const cluster = (e as L.LeafletEvent & { layer: SubnetMapCluster }).layer;
+    if (!cluster || !this.map) return;
+
+    const markers = cluster.getAllChildMarkers() as SubnetMapMarker[];
+
+    if (markers.length === 1) {
+      const subnet = markers[0].subnetRef;
+      this.ngZone.run(() => this.openHardwareModal(subnet));
+      this.focusMapOnSubnet(subnet);
+      return;
+    }
+
+    const subnets = this.extractSubnetsFromClusterMarkers(markers);
+    this.ngZone.run(() =>
+      this.openLocationPickerModal(subnets, 'Subredes en esta zona')
+    );
+    this.focusMapOnMarkers(markers);
+  }
+
+  /** Subredes únicas representadas por los marcadores del cluster. */
+  private extractSubnetsFromClusterMarkers(markers: SubnetMapMarker[]): ExtendedSubnet[] {
+    const seen = new Set<string>();
+    const subnets: ExtendedSubnet[] = [];
+    for (const marker of markers) {
+      const ref = marker.subnetRef;
+      if (ref && !seen.has(ref.netId)) {
+        seen.add(ref.netId);
+        subnets.push(ref);
+      }
+    }
+    return subnets;
+  }
+
+  /** Igual que disableClusteringAtZoom del MarkerClusterGroup: ahí el plugin separa solo. */
+  private readonly focusSubnetZoom = 17;
+
+  /**
+   * Salto de zoom sin animación: el cluster se desarma al instante (como llegar a 17 con la rueda),
+   * sin estados intermedios que chocan con el modal.
+   */
+  private applyMapViewInstant(center: L.LatLng, zoom: number, whenDone?: () => void): void {
+    if (!this.map) {
+      whenDone?.();
+      return;
+    }
+    this.ngZone.runOutsideAngular(() => {
+      this.map!.setView(center, zoom, { animate: false });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => whenDone?.());
+      });
+    });
+  }
+
+  private flyToNaturalUncluster(center: L.LatLng, whenDone?: () => void): void {
+    if (!this.map) {
+      whenDone?.();
+      return;
+    }
+    const targetZoom = Math.max(this.map.getZoom(), this.focusSubnetZoom);
+    const needsMove =
+      this.map.getZoom() < targetZoom ||
+      this.map.getCenter().distanceTo(center) >= 40;
+
+    if (!needsMove) {
+      whenDone?.();
+      return;
+    }
+
+    this.applyMapViewInstant(center, targetZoom, whenDone);
+  }
+
+  private focusMapOnSubnet(subnet: ExtendedSubnet, whenDone?: () => void): void {
+    if (!this.map) {
+      whenDone?.();
+      return;
+    }
+    const placement = this.markerPlacements.get(subnet.netId);
+    const lat = placement?.lat ?? subnet.latitud;
+    const lng = placement?.lng ?? subnet.longitud;
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      whenDone?.();
+      return;
+    }
+    const hasCollocated = (placement?.peers.length ?? 0) > 1;
+    if (hasCollocated) {
+      this.flyToNaturalUncluster(L.latLng(lat, lng), whenDone);
+      return;
+    }
+
+    const target = L.latLng(lat, lng);
+    const minZoom = 15;
+    const targetZoom = Math.max(this.map.getZoom(), minZoom);
+    const needsMove =
+      this.map.getZoom() < targetZoom ||
+      this.map.getCenter().distanceTo(target) >= 40;
+    if (!needsMove) {
+      whenDone?.();
+      return;
+    }
+    this.applyMapViewInstant(target, targetZoom, whenDone);
+  }
+
+  private focusMapOnMarkers(markers: SubnetMapMarker[], whenDone?: () => void): void {
+    if (!this.map || markers.length === 0) {
+      whenDone?.();
+      return;
+    }
+    const bounds = L.latLngBounds(markers.map((m) => m.getLatLng()));
+    if (!bounds.isValid()) {
+      whenDone?.();
+      return;
+    }
+    this.flyToNaturalUncluster(bounds.getCenter(), whenDone);
+  }
+
+  /** Leaflet + MarkerCluster: refresh tras cambios de layout (modales). */
+  private repaintMapMarkers(done?: () => void): void {
+    const map = this.map;
+    const group = this.markerClusterGroup;
+    if (!map || !group) {
+      done?.();
+      return;
+    }
+    this.ngZone.runOutsideAngular(() => {
+      if (!this.mapEditMode && !map.hasLayer(group)) {
+        group.addTo(map);
+      }
+      group.refreshClusters();
+      requestAnimationFrame(() => {
+        group.refreshClusters();
+        done?.();
+      });
+    });
+  }
+
+  private cancelHardwareModalRepaint(): void {
+    if (this.hardwareModalRepaintId) {
+      clearTimeout(this.hardwareModalRepaintId);
+      this.hardwareModalRepaintId = undefined;
+    }
+  }
+
+  /** Registra modal abierto: repinta clusters sin cambiar zoom global de la app. */
+  private registerMapModalOpen(): void {
+    this.mapModalOpenCount += 1;
+  }
+
+  private registerMapModalClose(): void {
+    this.cancelHardwareModalRepaint();
+    this.mapModalOpenCount = 0;
+    setTimeout(() => this.scheduleMapResize(), 0);
+  }
+
+  openLocationPickerModal(subnets: ExtendedSubnet[], title?: string): void {
+    this.locationPickerSubnets = [...subnets].sort((a, b) =>
+      (a.id ?? a.name ?? '').localeCompare(b.id ?? b.name ?? '', 'es')
+    );
+    this.locationPickerTitle = title ?? 'Subredes en esta ubicación';
+    this.locationPickerOpen = true;
+  }
+
+  closeLocationPickerModal(): void {
+    if (!this.locationPickerOpen) {
+      return;
+    }
+    this.locationPickerOpen = false;
+    this.locationPickerSubnets = [];
+    this.locationPickerTitle = '';
+  }
+
+  pickSubnetFromLocation(subnet: ExtendedSubnet): void {
+    this.locationPickerOpen = false;
+    this.locationPickerSubnets = [];
+    this.locationPickerTitle = '';
+    this.ngZone.run(() => this.openHardwareModal(subnet));
+    this.focusMapOnSubnet(subnet);
+  }
+
+  equipmentCountLabel(subnet: ExtendedSubnet): string {
+    const c = this.getSubnetEquipmentCount(subnet);
+    if (c === null) return '·';
+    return String(c);
   }
 
   private addMarkersToMap(): void {
@@ -379,40 +850,237 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Limpiar marcadores y líneas existentes
-    this.markerClusterGroup.clearLayers();
-    this.lines.forEach(line => line.remove());
-    this.lines = [];
-
-    // Agregar marcadores solo para subredes con coordenadas
-    const subnetsWithCoordinates = this.subnets.filter(subnet => 
-      subnet.hasCoordinates && subnet.latitud && subnet.longitud
-    );
-
-    subnetsWithCoordinates.forEach(subnet => {
-      const marker = L.marker([subnet.latitud!, subnet.longitud!])
-        .bindPopup(`
-          <b>${subnet.name}</b><br>
-          Net ID: ${subnet.netId}
-        `);
-      this.markerClusterGroup?.addLayer(marker);
-    });
-
-    // Dibujar líneas entre subredes conectadas si lo deseas
-    // (opcional, podrías querer remover las líneas si usas clusters)
-    for (let i = 0; i < subnetsWithCoordinates.length - 1; i++) {
-      const line = L.polyline([
-        [subnetsWithCoordinates[i].latitud!, subnetsWithCoordinates[i].longitud!],
-        [subnetsWithCoordinates[i + 1].latitud!, subnetsWithCoordinates[i + 1].longitud!]
-      ], {
-        color: '#85c1e9',
-        weight: 2,
-        opacity: 0.7
-      }).addTo(this.map!);
-      this.lines.push(line);
+    if (this.markersRefreshId) {
+      clearTimeout(this.markersRefreshId);
+      this.markersRefreshId = undefined;
     }
 
-    this.scheduleMapResize();
+    this.markerClusterGroup.clearLayers();
+    this.editMarkersLayer?.clearLayers();
+
+    const subnetsWithCoordinates = this.subnets.filter(subnet =>
+      subnet.hasCoordinates &&
+      typeof subnet.latitud === 'number' &&
+      typeof subnet.longitud === 'number'
+    );
+    this.subnetsOnMapCount = subnetsWithCoordinates.length;
+    this.markerPlacements = this.computeMarkerPlacements(subnetsWithCoordinates);
+    this.syncMapLayersForMode();
+
+    this.ngZone.runOutsideAngular(() => {
+      subnetsWithCoordinates.forEach(subnet => {
+        const placement = this.markerPlacements.get(subnet.netId)!;
+        const marker = this.createSubnetMarker(
+          subnet,
+          placement,
+          this.mapEditMode
+        );
+        if (this.mapEditMode) {
+          this.editMarkersLayer?.addLayer(marker);
+        } else {
+          this.markerClusterGroup?.addLayer(marker);
+        }
+      });
+
+      if (!this.mapInitialFitDone) {
+        this.fitMapToUruguay();
+        this.mapInitialFitDone = true;
+      } else {
+        this.map?.invalidateSize();
+      }
+    });
+  }
+
+  private createSubnetMarker(
+    subnet: ExtendedSubnet,
+    placement: MarkerPlacement,
+    editable: boolean
+  ): SubnetMapMarker {
+    const count = this.getSubnetEquipmentCount(subnet);
+    const style = this.getMarkerSearchStyle(subnet, editable);
+    const marker = L.marker([placement.lat, placement.lng], {
+      icon: this.createSubnetMarkerIcon(
+        count,
+        editable,
+        style.highlighted,
+        style.dimmed
+      ),
+      draggable: editable,
+      autoPan: editable,
+      zIndexOffset: style.highlighted ? 1200 : 0
+    }) as SubnetMapMarker;
+
+    marker.subnetRef = subnet;
+    marker.subnetEquipmentCount = count ?? 0;
+    marker.subnetSearchMatch = style.highlighted;
+    marker.collocatedPeers = placement.peers.length > 1 ? placement.peers : undefined;
+
+    marker.bindTooltip(
+      editable
+        ? this.buildEditMarkerTooltip(subnet)
+        : this.buildMarkerTooltip(subnet, count, placement.peers.length),
+      {
+        direction: 'top',
+        offset: [0, -14],
+        opacity: 0.95,
+        sticky: false
+      }
+    );
+
+    if (editable) {
+      marker.on('dragstart', () => {
+        this.ngZone.run(() => {
+          if (this.mapEditPending && this.mapEditPending.marker !== marker) {
+            this.cancelMapEditMove();
+          }
+          const pos = marker.getLatLng();
+          this.mapEditPending = {
+            subnet,
+            marker,
+            displayLat: pos.lat,
+            displayLng: pos.lng,
+            lat: pos.lat,
+            lng: pos.lng
+          };
+        });
+      });
+      marker.on('drag', () => {
+        const pos = marker.getLatLng();
+        if (this.mapEditPending?.marker === marker) {
+          this.ngZone.run(() => {
+            this.mapEditPending!.lat = pos.lat;
+            this.mapEditPending!.lng = pos.lng;
+          });
+        }
+      });
+      marker.on('dragend', () => {
+        const pos = marker.getLatLng();
+        this.ngZone.run(() => {
+          if (this.mapEditPending?.marker === marker) {
+            this.mapEditPending.lat = pos.lat;
+            this.mapEditPending.lng = pos.lng;
+          }
+        });
+      });
+    } else {
+      marker.on('click', (ev: L.LeafletMouseEvent) => {
+        L.DomEvent.stopPropagation(ev);
+        this.ngZone.run(() => this.openHardwareModal(subnet));
+        this.focusMapOnSubnet(subnet);
+      });
+      marker.on('mouseover', () => marker.setZIndexOffset(2000));
+      marker.on('mouseout', () => marker.setZIndexOffset(0));
+    }
+
+    return marker;
+  }
+
+  private buildEditMarkerTooltip(subnet: ExtendedSubnet): string {
+    return `<strong>${this.escapeHtml(subnet.id || subnet.name)}</strong><br>
+      Net ID ${this.escapeHtml(subnet.netId)}<br>
+      <em class="subnet-map-tooltip-hint">Arrastrá el pin y confirmá la nueva ubicación</em>`;
+  }
+
+  /**
+   * Icono de cluster: suma equipos usando el conteo ya guardado en cada marcador.
+   */
+  private createClusterEquipmentIcon(cluster: {
+    getAllChildMarkers: () => L.Marker[];
+  }): L.DivIcon {
+    const markers = cluster.getAllChildMarkers() as SubnetMapMarker[];
+    const total = markers.reduce(
+      (sum, m) => sum + (m.subnetEquipmentCount ?? 0),
+      0
+    );
+    const subnetCount = markers.length;
+    const searchActive = this.isSearchFilterActive();
+    const hasSearchMatch =
+      searchActive && markers.some((m) => this.subnetMatchesSearch(m.subnetRef));
+    const searchClass = hasSearchMatch ? ' subnet-map-cluster--search-match' : '';
+    const dimClass = searchActive && !hasSearchMatch ? ' subnet-map-cluster--dimmed' : '';
+    const clusterStyle = hasSearchMatch
+      ? ' style="background:#ffeb3b!important;color:#5d4037!important;border:3px solid #f57f17!important;box-shadow:0 0 0 2px #fff,0 3px 14px rgba(245,127,23,0.75)!important;"'
+      : searchActive && !hasSearchMatch
+        ? ' style="opacity:0.22!important;filter:grayscale(0.4)!important;"'
+        : '';
+    const sizeClass =
+      total >= 100
+        ? 'subnet-map-cluster--large'
+        : total >= 10
+          ? 'subnet-map-cluster--medium'
+          : 'subnet-map-cluster--small';
+    const display = String(total);
+    const dim =
+      total >= 1000 ? 58 : total >= 100 ? 52 : total >= 10 ? 46 : 40;
+    const wideClass = total >= 1000 ? ' subnet-map-cluster--xlarge' : '';
+
+    return L.divIcon({
+      className: 'subnet-map-cluster-wrap',
+      html: `<div class="subnet-map-cluster ${sizeClass}${wideClass}${searchClass}${dimClass}"${clusterStyle} title="${total} equipos en ${subnetCount} subredes"><span>${display}</span></div>`,
+      iconSize: L.point(dim, dim, true)
+    });
+  }
+
+  private createSubnetMarkerIcon(
+    count: number | null,
+    editable = false,
+    highlighted = false,
+    dimmed = false
+  ): L.DivIcon {
+    const hasCount = count !== null;
+    const display = hasCount ? String(count) : '·';
+    const sizeClass =
+      hasCount && count > 99
+        ? 'subnet-map-pin--wide'
+        : hasCount && count === 0 && !highlighted
+          ? 'subnet-map-pin--empty'
+          : '';
+    const editClass = editable ? ' subnet-map-pin--editable' : '';
+    const highlightClass = highlighted ? ' subnet-map-pin--search-match' : '';
+    const dimClass = dimmed ? ' subnet-map-pin--dimmed' : '';
+    const inlineStyle = highlighted
+      ? ' style="background:#ffeb3b!important;color:#5d4037!important;border:3px solid #f57f17!important;box-shadow:0 0 0 2px #fff,0 3px 12px rgba(245,127,23,0.8)!important;"'
+      : dimmed
+        ? ' style="opacity:0.22!important;filter:grayscale(0.4)!important;"'
+        : editable
+          ? ' style="background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%)!important;"'
+          : '';
+    return L.divIcon({
+      className: 'subnet-map-pin-wrap',
+      html: `<div class="subnet-map-pin ${sizeClass}${editClass}${highlightClass}${dimClass}"${inlineStyle} aria-hidden="true"><span>${display}</span></div>`,
+      iconSize: [36, 40],
+      iconAnchor: [18, 40],
+      tooltipAnchor: [0, -36]
+    });
+  }
+
+  private buildMarkerTooltip(
+    subnet: ExtendedSubnet,
+    count: number | null,
+    collocatedTotal = 1
+  ): string {
+    const countLine =
+      count !== null
+        ? `${count} equipo${count === 1 ? '' : 's'} en subred`
+        : subnet.mask
+          ? 'Clic para ver equipos'
+          : 'Sin máscara: no se puede contar equipos';
+    const stackLine =
+      collocatedTotal > 1
+        ? `<br><em class="subnet-map-tooltip-hint">${collocatedTotal} subredes en este punto — clic para elegir</em>`
+        : `<br><em class="subnet-map-tooltip-hint">Clic para abrir el listado</em>`;
+    return `<strong>${this.escapeHtml(subnet.name)}</strong><br>
+      ${this.escapeHtml(subnet.id || subnet.netId)}<br>
+      Net ID ${this.escapeHtml(subnet.netId)}<br>
+      ${countLine}${stackLine}`;
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   sortData(column: string): void {
@@ -458,13 +1126,115 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.permissionsService.canManageSubnets();
   }
 
+  toggleMapEditMode(): void {
+    if (!this.canManageSubnets()) return;
+    if (this.mapEditMode) {
+      this.exitMapEditMode();
+      return;
+    }
+    this.mapEditMode = true;
+    this.mapEditPending = null;
+    this.addMarkersToMap();
+  }
+
+  exitMapEditMode(): void {
+    this.cancelMapEditMove();
+    this.mapEditMode = false;
+    this.addMarkersToMap();
+  }
+
+  confirmMapEditMove(): void {
+    const pending = this.mapEditPending;
+    if (!pending || this.mapEditSaving) return;
+
+    this.mapEditSaving = true;
+    this.errorMessage = null;
+
+    const save$ = pending.subnet.hasCoordinates
+      ? this.subnetService.updateSubnetCoordinates(
+          pending.subnet.netId,
+          pending.lat,
+          pending.lng
+        )
+      : this.subnetService.saveSubnetCoordinates(
+          pending.subnet.netId,
+          pending.lat,
+          pending.lng
+        );
+
+    save$.subscribe({
+      next: () => {
+        pending.subnet.latitud = pending.lat;
+        pending.subnet.longitud = pending.lng;
+        pending.subnet.hasCoordinates = true;
+        this.mapEditPending = null;
+        this.mapEditSaving = false;
+        this.addMarkersToMap();
+      },
+      error: (error) => {
+        console.error('Error al guardar coordenadas del mapa:', error);
+        this.errorMessage =
+          'Error al guardar la nueva ubicación: ' + (error.message ?? error);
+        this.mapEditSaving = false;
+      }
+    });
+  }
+
+  cancelMapEditMove(): void {
+    if (!this.mapEditPending) return;
+    this.mapEditPending.marker.setLatLng([
+      this.mapEditPending.displayLat,
+      this.mapEditPending.displayLng
+    ]);
+    this.mapEditPending = null;
+  }
+
+  formatCoord(value: number): string {
+    return value.toFixed(6);
+  }
+
+  private syncMapLayersForMode(): void {
+    if (!this.map || !this.markerClusterGroup) {
+      return;
+    }
+
+    if (this.mapEditMode) {
+      if (this.map.hasLayer(this.markerClusterGroup)) {
+        this.map.removeLayer(this.markerClusterGroup);
+      }
+      if (!this.editMarkersLayer) {
+        this.editMarkersLayer = L.layerGroup();
+      }
+      if (!this.map.hasLayer(this.editMarkersLayer)) {
+        this.editMarkersLayer.addTo(this.map);
+      }
+    } else {
+      this.editMarkersLayer?.clearLayers();
+      if (this.editMarkersLayer && this.map.hasLayer(this.editMarkersLayer)) {
+        this.map.removeLayer(this.editMarkersLayer);
+      }
+      if (!this.map.hasLayer(this.markerClusterGroup)) {
+        this.markerClusterGroup.addTo(this.map);
+      }
+    }
+  }
+
   /** Abre el modal y carga (o reusa) el listado de hardware para esta subred. */
   openHardwareModal(subnet: ExtendedSubnet): void {
+    const wasOpen = this.hardwareModalOpen;
     this.hardwareModalOpen = true;
     this.hardwareModalSubnet = subnet;
     this.hardwareModalError = null;
     this.hardwareModalSearch = '';
     this.hardwareModalRows = [];
+    if (!wasOpen) {
+      this.registerMapModalOpen();
+      this.cancelHardwareModalRepaint();
+      this.hardwareModalRepaintId = setTimeout(() => {
+        this.hardwareModalRepaintId = undefined;
+        this.scheduleMapResize();
+      }, 0);
+    }
 
     if (this.hardwareCache) {
       this.applyHardwareFilter();
@@ -472,26 +1242,47 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.hardwareModalLoading = true;
-    this.hardwareService.getHardware().subscribe({
-      next: (list) => {
-        this.hardwareCache = Array.isArray(list) ? list : [];
-        this.applyHardwareFilter();
-        this.hardwareModalLoading = false;
-      },
-      error: (err) => {
+    this.hardwareService.getHardware().pipe(
+      catchError((err) => {
         console.error('Error al cargar hardware para subred:', err);
         this.hardwareModalError = 'No se pudo cargar el listado de equipos.';
+        this.hardwareModalLoading = false;
+        return of([]);
+      })
+    ).subscribe({
+      next: (list) => {
+        this.hardwareCache = Array.isArray(list) ? list : [];
+        if (!this.equipmentCountByNetId.size) {
+          this.equipmentCountByNetId = this.buildEquipmentCountMap(this.hardwareCache);
+          this.refreshMapMarkerLabels();
+        }
+        this.applyHardwareFilter();
         this.hardwareModalLoading = false;
       }
     });
   }
 
   closeHardwareModal(): void {
+    if (!this.hardwareModalOpen) {
+      return;
+    }
+    this.cancelHardwareModalRepaint();
     this.hardwareModalOpen = false;
     this.hardwareModalSubnet = null;
     this.hardwareModalRows = [];
     this.hardwareModalError = null;
     this.hardwareModalSearch = '';
+    this.registerMapModalClose();
+  }
+
+  /** Desde el modal de equipos: ir al detalle del equipo. */
+  openAssetDetailsFromModal(row: SubnetHardwareRow): void {
+    if (!row?.id) {
+      return;
+    }
+    void this.router.navigate(['/menu/asset-details', row.id], {
+      state: { volverSubnets: true }
+    });
   }
 
   refreshHardwareModal(): void {
@@ -553,11 +1344,30 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   onEscapeKey(): void {
     if (this.hardwareModalOpen) {
       this.closeHardwareModal();
+    } else if (this.locationPickerOpen) {
+      this.closeLocationPickerModal();
+    } else if (this.mapEditPending) {
+      this.cancelMapEditMove();
+    } else if (this.mapEditMode) {
+      this.exitMapEditMode();
     }
   }
 
   ngOnDestroy(): void {
     this.tourCleanup?.();
     this.tourCleanup = undefined;
+    this.cancelHardwareModalRepaint();
+    if (this.resizeDebounceId) clearTimeout(this.resizeDebounceId);
+    if (this.markersRefreshId) clearTimeout(this.markersRefreshId);
+    if (this.hardwareModalOpen) {
+      this.hardwareModalOpen = false;
+    }
+    this.mapModalOpenCount = 0;
+    this.markerClusterGroup?.clearLayers();
+    this.editMarkersLayer?.clearLayers();
+    this.map?.remove();
+    this.map = undefined;
+    this.markerClusterGroup = undefined;
+    this.editMarkersLayer = undefined;
   }
 } 

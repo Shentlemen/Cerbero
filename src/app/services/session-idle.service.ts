@@ -3,10 +3,10 @@ import { Router, NavigationEnd } from '@angular/router';
 import { BehaviorSubject, Subscription, filter } from 'rxjs';
 import { AuthService } from './auth.service';
 
-/** Tiempo total sin actividad antes de cerrar sesión (1 hora). */
-export const SESSION_IDLE_MS = 60 * 60 * 1000;
-/** Aviso en los últimos N ms de inactividad (5 min antes del cierre). */
-export const SESSION_IDLE_WARNING_BEFORE_MS = 5 * 60 * 1000;
+/** Tiempo total sin actividad antes de cerrar sesión (30 minutos). */
+export const SESSION_IDLE_MS = 30 * 60 * 1000;
+/** Aviso en los últimos N ms de inactividad (3 min antes del cierre). */
+export const SESSION_IDLE_WARNING_BEFORE_MS = 3 * 60 * 1000;
 const WARNING_AT_MS = SESSION_IDLE_MS - SESSION_IDLE_WARNING_BEFORE_MS;
 
 const ACTIVITY_THROTTLE_MS = 1000;
@@ -83,6 +83,21 @@ export class SessionIdleService implements OnDestroy {
     return this.monitoring;
   }
 
+  /**
+   * Peticiones HTTP automáticas (polling) que no deben contar como actividad del usuario.
+   * Si no se excluyen, la sesión nunca expira aunque nadie esté en la PC.
+   */
+  isBackgroundIdleRequest(url: string): boolean {
+    const u = (url || '').toLowerCase();
+    return (
+      u.includes('/tickets/no-leidos') ||
+      u.includes('/tickets/ids-no-leidos') ||
+      u.includes('/sync/duplicates/ocs/summary') ||
+      u.includes('/auth/refresh') ||
+      u.includes('/auth/verify')
+    );
+  }
+
   /** El refresh automático del JWT solo si hubo actividad reciente. */
   shouldAllowTokenRefresh(): boolean {
     if (!this.monitoring) return true;
@@ -103,7 +118,7 @@ export class SessionIdleService implements OnDestroy {
 
   /**
    * Prueba desde Configuración (GM): muestra el aviso con cuenta regresiva ~30 s y cierra sesión al terminar.
-   * No modifica los tiempos reales de producción (1 h / 5 min de aviso).
+   * No modifica los tiempos reales de producción (30 min / 3 min de aviso).
    */
   simulateIdleWarningForTest(): void {
     if (!this.authService.getCurrentUser()) return;

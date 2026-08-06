@@ -2381,16 +2381,37 @@ ngb-pagination.custom-pagination {
 /* Quitar también cualquier outline en texto e iconos dentro de TODOS los botones */
 button:focus,
 button:focus-visible,
-button:active {
+button:active,
+button:hover,
+button:hover:focus,
+button:hover:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
 
 button *:focus,
 button *:focus-visible,
-button *:active {
+button *:active,
+button *:hover,
+button:hover *:focus,
+button:hover *:focus-visible {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* Software: botones de acción sin clase .btn (iconos sueltos en tabla) */
+app-software .software-table .action-buttons button:not(.btn),
+app-software .software-table .action-buttons button:not(.btn):hover,
+app-software .software-table .action-buttons button:not(.btn):focus,
+app-software .software-table .action-buttons button:not(.btn):focus-visible,
+app-software .software-table .action-buttons button:not(.btn):active,
+app-software .software-table .action-buttons button:not(.btn) i,
+app-software .software-table .action-buttons button:not(.btn):hover i,
+app-software .software-table .action-buttons button:not(.btn):focus i,
+app-software .software-table .action-buttons button:not(.btn):focus-visible i {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 /* Refuerzo extra solo en el dashboard: texto e iconos dentro de los filtros */

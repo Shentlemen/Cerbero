@@ -152,7 +152,7 @@ export class HelperService {
       userLevel: 'intermediate'
     },
     'procurement/usuarios': {
-      message: "Gestiona los usuarios responsables de los activos y compras. Asigna roles y mantén actualizada la información de cada usuario.",
+      message: "Gestiona los responsables de activos y compras (personas de la organización). Mantén actualizada la información de contacto y cargo.",
       type: 'info',
       priority: 'medium',
       context: ['procurement', 'users', 'roles'],

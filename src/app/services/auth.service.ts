@@ -280,7 +280,7 @@ export class AuthService {
     }, 5 * 60 * 1000);
   }
 
-  /** No renovar JWT si el usuario lleva 1+ h sin actividad (cierre por inactividad). */
+  /** No renovar JWT si el usuario lleva 30+ min sin actividad (cierre por inactividad). */
   private shouldAutoRefreshToken(): boolean {
     try {
       return this.injector.get(SessionIdleService).shouldAllowTokenRefresh();

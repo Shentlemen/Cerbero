@@ -81,7 +81,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error al cargar los usuarios:', error);
-        this.error = 'Error al cargar los usuarios. Por favor, intente nuevamente.';
+        this.error = 'Error al cargar los responsables. Por favor, intente nuevamente.';
         this.loading = false;
       }
     });
@@ -195,7 +195,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
       if (this.modoEdicion && this.usuarioSeleccionado) {
         if (!this.usuarioSeleccionado.idUsuario || isNaN(this.usuarioSeleccionado.idUsuario)) {
-          this.error = 'ID de usuario no válido';
+          this.error = 'ID de responsable no válido';
           return;
         }
 
@@ -212,7 +212,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('Error al actualizar el usuario:', error);
-            this.error = error.message || 'Error al actualizar el usuario. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al actualizar el responsable. Por favor, intente nuevamente.';
           }
         });
       } else {
@@ -224,7 +224,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('Error al crear el usuario:', error);
-            this.error = error.message || 'Error al crear el usuario. Por favor, intente nuevamente.';
+            this.error = error.message || 'Error al crear el responsable. Por favor, intente nuevamente.';
           }
         });
       }
@@ -252,7 +252,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error al eliminar el usuario:', error);
-          this.error = error.message || 'Error al eliminar el usuario. Por favor, intente nuevamente.';
+          this.error = error.message || 'Error al eliminar el responsable. Por favor, intente nuevamente.';
           this.showConfirmDialog = false;
           this.usuarioToDelete = null;
         }

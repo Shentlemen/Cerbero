@@ -684,6 +684,10 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   }
 
   volver(): void {
+    if (history.state?.['volverSubnets']) {
+      void this.router.navigate(['/menu/subnets']);
+      return;
+    }
     this.location.back();
   }
 
