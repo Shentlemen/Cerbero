@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { ConfigService } from '../services/config.service';
@@ -20,7 +21,7 @@ interface ApiResponse<T> {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, NgbModule, NotificationContainerComponent, FormsModule],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css'
 })

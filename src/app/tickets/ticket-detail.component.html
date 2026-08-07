@@ -1,96 +1,346 @@
-<app-notification-container></app-notification-container>
+<app-notification-container *ngIf="!embedded"></app-notification-container>
 
-<div class="generic-container ticket-detail-container">
-  <div class="header-section">
+
+
+<div class="generic-container ticket-detail-container" [class.ticket-detail-container--embedded]="embedded">
+
+  <div class="header-section" *ngIf="!embedded">
+
     <div class="title-row">
+
       <div class="title-wrapper">
+
         <h1>
+
           <i class="fas fa-ticket-alt"></i>
+
           Detalle de ticket
+
         </h1>
+
       </div>
+
       <a routerLink="/menu/tickets" class="btn btn-secondary btn-sm">Volver</a>
+
     </div>
+
   </div>
+
+
 
   <div *ngIf="loading" class="text-center py-4">
+
     <div class="spinner-border text-primary"></div>
+
   </div>
 
-  <div *ngIf="!loading && ticket" class="row g-3">
-    <div class="col-lg-8">
-      <div class="content-section ticket-hero mb-3">
+
+
+  <div *ngIf="!loading && ticket" class="ticket-detail-layout">
+
+    <div class="ticket-detail-hero">
+
+      <div class="content-section ticket-hero mb-0">
+
         <div class="ticket-hero-accent" aria-hidden="true"></div>
+
         <div class="ticket-hero-inner">
+
           <header class="ticket-hero-head">
+
             <span class="ticket-hero-code">
+
               <i class="fas fa-ticket-alt" aria-hidden="true"></i>
+
               {{ ticket.codigo }}
+
             </span>
+
             <div class="ticket-hero-chips" role="group" aria-label="Resumen del ticket">
+
               <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroAreaClass(ticket.areaActual)" title="Área actual">
+
                 <i class="fas fa-sitemap" aria-hidden="true"></i>
+
                 {{ getHeroAreaLabel(ticket.areaActual) }}
+
               </span>
+
               <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroEstadoClass(ticket.estado)" title="Estado">
+
                 <i class="fas fa-flag" aria-hidden="true"></i>
+
                 {{ getEstadoLabel(ticket.estado) }}
+
               </span>
+
               <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroPrioridadClass(ticket.prioridad)" title="Prioridad">
+
                 <i class="fas fa-bolt" aria-hidden="true"></i>
+
                 {{ getHeroPrioridadLabel(ticket.prioridad) }}
+
               </span>
+
             </div>
+
           </header>
+
           <h2 class="ticket-hero-title">{{ ticket.titulo }}</h2>
+
           <p class="ticket-hero-desc">{{ ticket.descripcion }}</p>
+
           <footer class="ticket-hero-dates">
+
             <span class="ticket-hero-date" *ngIf="ticket.fechaCreacion">
+
               <i class="fas fa-plus-circle" aria-hidden="true"></i>
+
               Alta: <time [attr.datetime]="ticket.fechaCreacion">{{ ticket.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</time>
+
             </span>
+
             <span class="ticket-hero-date" *ngIf="ticket.fechaActualizacion">
+
               <i class="fas fa-sync-alt" aria-hidden="true"></i>
+
               Última actividad: <time [attr.datetime]="ticket.fechaActualizacion">{{ ticket.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</time>
+
             </span>
+
           </footer>
+
         </div>
+
       </div>
 
-      <div class="content-section mb-3">
+    </div>
+
+
+
+    <aside class="ticket-detail-aside" aria-label="Acciones del ticket">
+
+      <div
+
+        class="content-section ticket-detail-aside-panel mb-0"
+
+        *ngIf="canCreatorCloseOrReopenResolvedTicket() && !canProcessCurrentTicket()">
+
+        <h2 class="ticket-section-heading ticket-section-heading--accent">
+
+          <i class="fas fa-user-check" aria-hidden="true"></i>
+
+          <span>Resolución del área</span>
+
+        </h2>
+
+        <div class="ticket-section-body">
+
+          <p class="small text-muted mb-2">
+
+            El área marcó este ticket como <strong>resuelto</strong>. Podés cerrarlo si aceptás la solución, o reabrirlo si sigue pendiente.
+
+          </p>
+
+          <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaCierreCreador" placeholder="Comentario (opcional)"></textarea>
+
+          <button type="button" class="btn btn-success w-100 mb-2" (click)="closeTicketAsCreator()">
+
+            <i class="fas fa-check-circle"></i>
+
+            Cerrar ticket (aceptar solución)
+
+          </button>
+
+          <button type="button" class="btn btn-outline-warning w-100" (click)="reopenTicketAsCreator()">
+
+            <i class="fas fa-redo"></i>
+
+            Reabrir ticket
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="content-section ticket-detail-aside-panel ticket-detail-aside-panel--gestion mb-0" *ngIf="canProcessCurrentTicket()">
+
+        <h2 class="ticket-section-heading ticket-section-heading--accent">
+
+          <i class="fas fa-tasks" aria-hidden="true"></i>
+
+          <span>Gestionar ticket</span>
+
+        </h2>
+
+        <div class="ticket-section-body">
+
+          <label class="form-label small text-muted mb-1">Estado</label>
+
+          <select class="form-select ticket-gestion-select mb-3" [(ngModel)]="nuevoEstado">
+
+            <option *ngFor="let estado of estados" [value]="estado">{{ getEstadoLabel(estado) }}</option>
+
+          </select>
+
+          <label class="form-label small text-muted mb-1">Derivar a otra área</label>
+
+          <select class="form-select ticket-gestion-select mb-2" [(ngModel)]="nuevaArea">
+
+            <option value="">Sin derivar (solo cambiar estado)</option>
+
+            <option *ngFor="let area of areasParaDerivar()" [ngValue]="area.codigo">{{ labelAreaDerivacion(area) }}</option>
+
+          </select>
+
+          <label class="form-label small text-muted mb-1">Nota</label>
+
+          <textarea
+
+            class="form-control mb-3"
+
+            rows="3"
+
+            [(ngModel)]="notaGestion"
+
+            placeholder="Si derivás, la nota es obligatoria. Si solo cambiás el estado, es opcional."></textarea>
+
+          <button type="button" class="btn btn-ticket-primary w-100" (click)="aplicarGestionTicket()">
+
+            <i class="fas fa-check"></i>
+
+            Aplicar cambios
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+
+      <div
+
+        class="content-section ticket-detail-aside-panel mb-0"
+
+        *ngIf="!canProcessCurrentTicket() && !canDerivarTicket() && !canCreatorCloseOrReopenResolvedTicket()">
+
+        <h2 class="ticket-section-heading ticket-section-heading--muted">
+
+          <i class="fas fa-info-circle" aria-hidden="true"></i>
+
+          <span>Acciones del ticket</span>
+
+        </h2>
+
+        <div class="ticket-section-body">
+
+          <p class="text-muted mb-0">Tenés acceso de lectura y comentarios si corresponde. Para cambiar estado o derivar el ticket necesitás pertenecer al área actual o ser administrador/GM.</p>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+
+
+    <div class="ticket-detail-main">
+      <div class="content-section ticket-detail-feed mb-3">
         <h2 class="ticket-section-heading">
           <i class="fas fa-history" aria-hidden="true"></i>
           <span>Historial del ticket</span>
         </h2>
         <div class="ticket-section-body">
-          <div *ngIf="movimientos.length === 0" class="text-muted">Sin movimientos.</div>
-          <div *ngFor="let mov of movimientos" class="timeline-item">
-            <div class="timeline-date">{{ mov.fechaEvento | date:'dd/MM/yyyy HH:mm' }}</div>
-            <div>
-              <strong>{{ getTipoEventoLabel(mov.tipoEvento) }}</strong>
-              <span> | Usuario: {{ getMovimientoUsuario(mov) }}</span>
-              <span *ngIf="mov.areaAnterior || mov.areaNueva"> | Área: {{ mov.areaAnterior || '-' }} -> {{ mov.areaNueva || '-' }}</span>
-              <span *ngIf="mov.estadoAnterior || mov.estadoNuevo"> | Estado: {{ getEstadoLabel(mov.estadoAnterior) }} -> {{ getEstadoLabel(mov.estadoNuevo) }}</span>
-              <div class="text-muted" *ngIf="mov.nota">{{ mov.nota }}</div>
-            </div>
-          </div>
+          <p *ngIf="movimientos.length === 0" class="ticket-feed-empty">Sin movimientos registrados.</p>
+          <ol *ngIf="movimientos.length > 0" class="ticket-timeline" aria-label="Línea de tiempo del ticket">
+            <li
+              *ngFor="let mov of movimientos; let last = last"
+              class="ticket-timeline-entry"
+              [ngClass]="getMovimientoTimelineKind(mov.tipoEvento)"
+              [class.ticket-timeline-entry--last]="last">
+              <div class="ticket-timeline-rail" aria-hidden="true">
+                <span class="ticket-timeline-dot">
+                  <i class="fas" [ngClass]="getMovimientoTimelineIcon(mov.tipoEvento)" aria-hidden="true"></i>
+                </span>
+              </div>
+              <article class="ticket-timeline-card">
+                <header class="ticket-timeline-card-head">
+                  <h3 class="ticket-timeline-title">{{ getTipoEventoLabel(mov.tipoEvento) }}</h3>
+                  <time class="ticket-timeline-time" [attr.datetime]="mov.fechaEvento">
+                    {{ mov.fechaEvento | date:'dd/MM/yyyy HH:mm' }}
+                  </time>
+                </header>
+                <p class="ticket-timeline-actor">
+                  <i class="fas fa-user" aria-hidden="true"></i>
+                  {{ getMovimientoUsuario(mov) }}
+                </p>
+                <div
+                  class="ticket-timeline-changes"
+                  *ngIf="(mov.estadoAnterior || mov.estadoNuevo) || (mov.areaAnterior || mov.areaNueva)">
+                  <div class="ticket-timeline-change" *ngIf="mov.estadoAnterior || mov.estadoNuevo">
+                    <span class="ticket-timeline-change-label">Estado</span>
+                    <div class="ticket-timeline-change-values">
+                      <span [ngClass]="getEstadoPillClass(mov.estadoAnterior)">{{ getEstadoLabel(mov.estadoAnterior) || '—' }}</span>
+                      <i class="fas fa-long-arrow-alt-right ticket-timeline-arrow" aria-hidden="true"></i>
+                      <span [ngClass]="getEstadoPillClass(mov.estadoNuevo)">{{ getEstadoLabel(mov.estadoNuevo) || '—' }}</span>
+                    </div>
+                  </div>
+                  <div class="ticket-timeline-change" *ngIf="mov.areaAnterior || mov.areaNueva">
+                    <span class="ticket-timeline-change-label">Área</span>
+                    <div class="ticket-timeline-change-values">
+                      <span [ngClass]="getAreaPillClass(mov.areaAnterior)">{{ getHeroAreaLabel(mov.areaAnterior) || '—' }}</span>
+                      <i class="fas fa-long-arrow-alt-right ticket-timeline-arrow" aria-hidden="true"></i>
+                      <span [ngClass]="getAreaPillClass(mov.areaNueva)">{{ getHeroAreaLabel(mov.areaNueva) || '—' }}</span>
+                    </div>
+                  </div>
+                </div>
+                <blockquote class="ticket-timeline-note" *ngIf="mov.nota">
+                  <i class="fas fa-quote-left" aria-hidden="true"></i>
+                  <span>{{ mov.nota }}</span>
+                </blockquote>
+              </article>
+            </li>
+          </ol>
         </div>
       </div>
 
-      <div class="content-section mb-3">
+      <div class="content-section ticket-detail-feed mb-3">
         <h2 class="ticket-section-heading">
           <i class="fas fa-comments" aria-hidden="true"></i>
           <span>Comentarios</span>
         </h2>
         <div class="ticket-section-body">
-          <div *ngIf="comentarios.length === 0" class="text-muted mb-3">Sin comentarios.</div>
-          <div *ngFor="let c of comentarios" class="comment-item">
-            <div class="small text-muted">{{ c.fechaComentario | date:'dd/MM/yyyy HH:mm' }} - {{ getComentarioUsuario(c) }}</div>
-            <div>{{ c.comentario }}</div>
-          </div>
-          <div class="mt-3" *ngIf="canAddCommentOnTicket()">
-            <textarea class="form-control" rows="3" [(ngModel)]="comentario" placeholder="Agregar comentario"></textarea>
-            <button class="btn btn-info mt-2" (click)="agregarComentario()">Comentar</button>
+          <p *ngIf="comentarios.length === 0" class="ticket-feed-empty">Sin comentarios todavía.</p>
+          <ul *ngIf="comentarios.length > 0" class="ticket-comment-list" role="list">
+            <li *ngFor="let c of comentarios" class="ticket-comment-item">
+              <div class="ticket-comment-avatar" aria-hidden="true">
+                {{ (getComentarioUsuario(c) || '?').charAt(0).toUpperCase() }}
+              </div>
+              <article class="ticket-comment-bubble">
+                <header class="ticket-comment-meta">
+                  <strong class="ticket-comment-author">{{ getComentarioUsuario(c) }}</strong>
+                  <time [attr.datetime]="c.fechaComentario">{{ c.fechaComentario | date:'dd/MM/yyyy HH:mm' }}</time>
+                </header>
+                <p class="ticket-comment-text">{{ c.comentario }}</p>
+              </article>
+            </li>
+          </ul>
+          <div class="ticket-comment-compose" *ngIf="canAddCommentOnTicket()">
+            <label class="form-label small text-muted mb-1" for="ticket-nuevo-comentario">Nuevo comentario</label>
+            <textarea
+              id="ticket-nuevo-comentario"
+              class="form-control"
+              rows="3"
+              [(ngModel)]="comentario"
+              placeholder="Escribí un comentario para el equipo…"></textarea>
+            <button type="button" class="btn btn-info mt-2" (click)="agregarComentario()">
+              <i class="fas fa-paper-plane me-1" aria-hidden="true"></i>
+              Comentar
+            </button>
           </div>
           <p *ngIf="!canAddCommentOnTicket()" class="text-muted small mb-0 mt-2">
             Solo lectura: no podés agregar comentarios en este ticket.
@@ -98,151 +348,178 @@
         </div>
       </div>
 
-      <div id="adjuntos" class="content-section">
+
+
+      <div id="adjuntos" class="content-section ticket-detail-feed">
+
         <h2 class="ticket-section-heading">
+
           <i class="fas fa-paperclip" aria-hidden="true"></i>
+
           <span>Adjuntos ({{ adjuntos.length }})</span>
+
         </h2>
+
         <div class="ticket-section-body">
+
           <p class="text-muted small mb-3">
+
             Tipos permitidos: PDF, JPG, PNG, GIF, WEBP. Tamaño máximo por archivo: 10 MB.
+
           </p>
+
+
 
           <div *ngIf="adjuntos.length === 0" class="text-muted mb-3">Sin archivos adjuntos.</div>
 
+
+
           <div *ngIf="adjuntos.length > 0" class="attach-grid mb-3">
+
             <div *ngFor="let adj of adjuntos" class="attach-card">
+
               <a class="attach-thumb-wrapper" [href]="getAdjuntoVerUrl(adj)" target="_blank" rel="noopener"
+
                  [title]="adj.nombreArchivoOriginal">
+
                 <img *ngIf="esAdjuntoImagen(adj)" class="attach-thumb"
+
                      [src]="getAdjuntoVerUrl(adj)"
+
                      [alt]="adj.nombreArchivoOriginal"
+
                      loading="lazy" />
+
                 <div *ngIf="!esAdjuntoImagen(adj)" class="attach-pdf-tile">
+
                   <i class="fas fa-file-pdf" aria-hidden="true"></i>
+
                 </div>
+
               </a>
+
               <div class="attach-body">
+
                 <div class="attach-name-row">
+
                   <span class="attach-name" [title]="adj.nombreArchivoOriginal">{{ adj.nombreArchivoOriginal }}</span>
+
                   <span [ngClass]="getAdjuntoBadgeClass(adj)">{{ getAdjuntoBadgeLabel(adj) }}</span>
+
                 </div>
+
                 <div class="attach-meta">
+
                   {{ formatearTamanoAdjunto(adj.tamanoArchivo) }}
+
                 </div>
+
                 <div class="attach-meta">
+
                   Subido por <strong>{{ getAdjuntoUsuario(adj) }}</strong>
+
                   el <time [attr.datetime]="adj.fechaCreacion">{{ adj.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</time>
+
                 </div>
+
                 <div class="attach-desc" *ngIf="adj.descripcion">
+
                   <em>{{ adj.descripcion }}</em>
+
                 </div>
+
                 <div class="attach-actions">
+
                   <a class="btn btn-sm btn-outline-primary" [href]="getAdjuntoVerUrl(adj)" target="_blank" rel="noopener">
+
                     <i class="fas fa-external-link-alt"></i> Abrir
+
                   </a>
+
                   <a class="btn btn-sm btn-outline-secondary" [href]="getAdjuntoDescargarUrl(adj)">
+
                     <i class="fas fa-download"></i> Descargar
+
                   </a>
+
                   <button *ngIf="puedeEliminarAdjunto(adj)"
+
                           type="button"
+
                           class="btn btn-sm btn-outline-danger"
+
                           (click)="eliminarAdjunto(adj)">
+
                     <i class="fas fa-trash"></i> Eliminar
+
                   </button>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
+
+
 
           <div *ngIf="puedeSubirAdjuntos()" class="attach-uploader">
+
             <label class="form-label small text-muted mb-1" for="ticket-adjunto-input">
+
               Adjuntar archivo
+
             </label>
+
             <input id="ticket-adjunto-input"
+
                    type="file"
+
                    class="form-control mb-2"
+
                    [accept]="adjuntoAccept"
+
                    (change)="onArchivoSeleccionado($event)" />
+
             <textarea class="form-control mb-2"
+
                       rows="2"
+
                       [(ngModel)]="descripcionAdjunto"
+
                       placeholder="Descripción (opcional): a qué pliego o equipo corresponde"></textarea>
+
             <button type="button"
+
                     class="btn btn-info"
+
                     (click)="subirAdjunto()"
+
                     [disabled]="subiendoAdjunto || !archivoSeleccionado">
+
               <i class="fas fa-paperclip"></i>
+
               {{ subiendoAdjunto ? 'Subiendo...' : 'Adjuntar archivo' }}
+
             </button>
+
           </div>
+
           <p *ngIf="!puedeSubirAdjuntos()" class="text-muted small mb-0 mt-2">
+
             Solo lectura: no podés adjuntar archivos en este ticket.
+
           </p>
+
         </div>
+
       </div>
+
     </div>
 
-    <div class="col-lg-4">
-      <div class="content-section mb-3" *ngIf="canCreatorCloseOrReopenResolvedTicket() && !canProcessCurrentTicket()">
-        <h2 class="ticket-section-heading ticket-section-heading--accent">
-          <i class="fas fa-user-check" aria-hidden="true"></i>
-          <span>Resolución del área</span>
-        </h2>
-        <div class="ticket-section-body">
-          <p class="small text-muted mb-2">
-            El área marcó este ticket como <strong>resuelto</strong>. Podés cerrarlo si aceptás la solución, o reabrirlo si sigue pendiente.
-          </p>
-          <textarea class="form-control mb-2" rows="2" [(ngModel)]="notaCierreCreador" placeholder="Comentario (opcional)"></textarea>
-          <button type="button" class="btn btn-success w-100 mb-2" (click)="closeTicketAsCreator()">
-            <i class="fas fa-check-circle"></i>
-            Cerrar ticket (aceptar solución)
-          </button>
-          <button type="button" class="btn btn-outline-warning w-100" (click)="reopenTicketAsCreator()">
-            <i class="fas fa-redo"></i>
-            Reabrir ticket
-          </button>
-        </div>
-      </div>
-
-      <div class="content-section mb-3" *ngIf="canProcessCurrentTicket()">
-        <h2 class="ticket-section-heading ticket-section-heading--accent">
-          <i class="fas fa-tasks" aria-hidden="true"></i>
-          <span>Gestionar ticket</span>
-        </h2>
-        <div class="ticket-section-body">
-          <label class="form-label small text-muted mb-1">Estado</label>
-          <select class="form-select mb-3" [(ngModel)]="nuevoEstado">
-            <option *ngFor="let estado of estados" [value]="estado">{{ getEstadoLabel(estado) }}</option>
-          </select>
-          <label class="form-label small text-muted mb-1">Derivar a otra área</label>
-          <select class="form-select mb-2" [(ngModel)]="nuevaArea">
-            <option value="">Sin derivar (solo cambiar estado)</option>
-            <option *ngFor="let area of areasDerivacion" [value]="area">{{ area }}</option>
-          </select>
-          <label class="form-label small text-muted mb-1">Nota</label>
-          <textarea
-            class="form-control mb-3"
-            rows="3"
-            [(ngModel)]="notaGestion"
-            placeholder="Si derivás, la nota es obligatoria. Si solo cambiás el estado, es opcional."></textarea>
-          <button type="button" class="btn btn-ticket-primary w-100" (click)="aplicarGestionTicket()">
-            <i class="fas fa-check"></i>
-            Aplicar cambios
-          </button>
-        </div>
-      </div>
-
-      <div class="content-section" *ngIf="!canProcessCurrentTicket() && !canDerivarTicket()">
-        <h2 class="ticket-section-heading ticket-section-heading--muted">
-          <i class="fas fa-info-circle" aria-hidden="true"></i>
-          <span>Acciones del ticket</span>
-        </h2>
-        <div class="ticket-section-body">
-          <p class="text-muted mb-0">Tenés acceso de lectura y comentarios si corresponde. Para cambiar estado o derivar el ticket necesitás pertenecer al área actual o ser administrador/GM.</p>
-        </div>
-      </div>
-    </div>
   </div>
+
 </div>
+
 

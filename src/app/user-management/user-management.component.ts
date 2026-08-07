@@ -7,6 +7,7 @@ import { User, CreateUserRequest, UpdateUserRequest } from '../interfaces/auth.i
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { TourRegistryService } from '../services/tour-registry.service';
+import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.service';
 
 @Component({
   selector: 'app-user-management',
@@ -49,12 +50,18 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     { value: 'GARANTIA', label: 'Garantía' }
   ];
 
+  /** Bandejas asignables a usuarios rol USER (formulario). */
+  bandejasUsuario: TicketAreaDTO[] = [];
+  /** Catálogo completo para mostrar nombres en la tabla. */
+  private todasAreasTicket: TicketAreaDTO[] = [];
+
   constructor(
     private authService: AuthService,
     private fb: FormBuilder,
     private modalService: NgbModal,
     private notificationService: NotificationService,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private ticketAreaService: TicketAreaService
   ) {
     this.filterForm = this.fb.group({
       search: ['']
@@ -65,7 +72,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       password: ['', [Validators.required]],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-      role: ['USER', [Validators.required]]
+      role: ['USER', [Validators.required]],
+      ticketAreaCodigo: ['']
     });
 
     this.userForm.valueChanges.subscribe(() => this.limpiarFeedbackUsuarioModal());
@@ -73,6 +81,72 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   limpiarFeedbackUsuarioModal(): void {
     this.usuarioModalValidacion = null;
+  }
+
+  showTicketAreaField(): boolean {
+    return this.userForm.get('role')?.value === 'USER';
+  }
+
+  getBandejaLabel(codigo: string | null | undefined): string {
+    if (!codigo) return '—';
+    const b = this.todasAreasTicket.find((x) => x.codigo === codigo)
+      ?? this.bandejasUsuario.find((x) => x.codigo === codigo);
+    return b ? b.nombre : codigo;
+  }
+
+  /** Bandeja de tickets que atiende cada usuario en la lista. */
+  getBandejaEntrada(user: User): string {
+    const cod = this.codigoBandejaEntrada(user);
+    if (!cod) {
+      if (user.role === 'USER') {
+        return 'Sin bandeja';
+      }
+      if (user.role === 'GM') {
+        return 'Sin bandeja fija';
+      }
+      return '—';
+    }
+    return this.getBandejaLabel(cod);
+  }
+
+  getBandejaEntradaCodigo(user: User): string | null {
+    return this.codigoBandejaEntrada(user);
+  }
+
+  private codigoBandejaEntrada(user: User): string | null {
+    if (user.role === 'USER') {
+      const c = user.ticketAreaCodigo?.trim();
+      return c ? c.toUpperCase() : null;
+    }
+    if (user.role === 'GM') {
+      return null;
+    }
+    if (user.role === 'ADMIN') {
+      return 'LABORATORIO';
+    }
+    const tiRoles = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
+    if (tiRoles.includes(user.role)) {
+      return user.role;
+    }
+    return null;
+  }
+
+  getBandejaBadgeClass(user: User): string {
+    const cod = this.codigoBandejaEntrada(user);
+    if (!cod) {
+      if (user.role === 'GM') {
+        return 'bandeja-global';
+      }
+      return 'bandeja-none';
+    }
+    const slug = cod.toLowerCase().replace(/_/g, '-');
+    const tiSlugs = [
+      'almacen', 'inventario', 'compras', 'gestion-equip', 'impresion', 'garantia', 'laboratorio'
+    ];
+    if (tiSlugs.includes(slug)) {
+      return `bandeja-${slug}`;
+    }
+    return 'bandeja-ose';
   }
 
   private mensajeErrorHttp(error: unknown): string {
@@ -127,6 +201,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadUsers();
+    this.ticketAreaService.listarAsignables().subscribe({
+      next: (list) => { this.bandejasUsuario = list; }
+    });
+    this.ticketAreaService.listarTodasAdmin().subscribe({
+      next: (list) => { this.todasAreasTicket = list; }
+    });
     this.tourCleanup = this.tourRegistry.register('user-management', [{
       id: 'user-management-overview',
       title: 'Tour de usuarios Cerbero',
@@ -171,7 +251,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     // Configurar el formulario para creación
     this.userForm.reset();
     this.userForm.patchValue({
-      role: 'USER' // Valor por defecto
+      role: 'USER',
+      ticketAreaCodigo: ''
     });
     
     // Habilitar el campo username para creación
@@ -194,7 +275,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      password: '' // Dejar vacío para edición
+      ticketAreaCodigo: user.ticketAreaCodigo ?? '',
+      password: ''
     });
     
     // Hacer el campo username readonly en edición
@@ -247,12 +329,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       
       if (this.editingUser) {
         // Actualizar usuario existente
-        const updateData: any = {
+        const updateData: UpdateUserRequest = {
           email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
           role: userData.role,
-          enabled: true
+          enabled: this.editingUser.enabled,
+          ticketAreaCodigo: userData.role === 'USER' ? (userData.ticketAreaCodigo || null) : null
         };
         
         // Incluir contraseña solo si se proporciona
@@ -285,8 +368,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
           }
         });
       } else {
-        // Crear nuevo usuario
-        this.authService.createUser(userData).subscribe({
+        const createPayload: CreateUserRequest = {
+          ...userData,
+          ticketAreaCodigo: userData.role === 'USER' ? (userData.ticketAreaCodigo || null) : null
+        };
+        this.authService.createUser(createPayload).subscribe({
           next: (newUser) => {
             this.successMessage = 'Usuario creado exitosamente';
             this.notificationService.showSuccessMessage('Usuario creado exitosamente');
@@ -411,7 +497,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
          user.firstName?.toLowerCase().includes(search) ||
          user.lastName?.toLowerCase().includes(search) ||
          `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(search) ||
-         `${user.lastName || ''} ${user.firstName || ''}`.toLowerCase().includes(search));
+         `${user.lastName || ''} ${user.firstName || ''}`.toLowerCase().includes(search) ||
+         this.getBandejaEntrada(user).toLowerCase().includes(search) ||
+         (this.getBandejaEntradaCodigo(user)?.toLowerCase().includes(search) ?? false));
       const matchEstado = this.filtroEstado === 'todos' ||
         (this.filtroEstado === 'activo' && user.enabled) ||
         (this.filtroEstado === 'inactivo' && !user.enabled);

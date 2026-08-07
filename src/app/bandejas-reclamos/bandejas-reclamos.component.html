@@ -1,0 +1,103 @@
+<div class="generic-container bandejas-reclamos-page" *ngIf="canManage(); else noAccess">
+  <app-notification-container></app-notification-container>
+
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1 class="mb-0"><i class="fas fa-inbox"></i> Bandejas de reclamos</h1>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="bandejas-panel">
+      <p class="text-muted small mb-3">
+        Áreas configurables para tickets fuera de TI. Los usuarios rol <strong>Usuario</strong> pueden tener una bandeja asignada en Gestión de usuarios.
+        Las áreas de TI (Almacén, Inventario, etc.) siguen vinculadas a su rol y no se eliminan desde aquí.
+      </p>
+      <div *ngIf="bandejasError" class="alert alert-danger py-2">{{ bandejasError }}</div>
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+          <label class="form-label small mb-1">Código</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="bandejaNuevaCodigo"
+                 placeholder="Ej. RRHH_NORTE (sin tildes)" maxlength="30" [disabled]="bandejaGuardando">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label small mb-1">Nombre</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="bandejaNuevaNombre"
+                 placeholder="Nombre visible" [disabled]="bandejaGuardando">
+        </div>
+        <div class="col-md-3">
+          <button type="button" class="btn btn-sm btn-agregar-bandeja w-100" (click)="crearBandejaTicket()" [disabled]="bandejaGuardando">
+            <i class="fas fa-plus me-1"></i> Agregar bandeja
+          </button>
+        </div>
+      </div>
+      <div *ngIf="bandejasLoading" class="text-muted small py-2">Cargando bandejas…</div>
+      <div *ngIf="!bandejasLoading" class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="!bandejasError && bandejasTicket.length === 0">
+              <td colspan="5" class="text-muted text-center py-3">
+                No hay bandejas configuradas todavía. Creá la primera con el formulario de arriba.
+              </td>
+            </tr>
+            <tr *ngFor="let b of bandejasTicket">
+              <td class="font-monospace">{{ b.codigo }}</td>
+              <td>{{ b.nombre }}</td>
+              <td>{{ esBandejaConfigurable(b) ? 'Reclamos OSE' : 'TI (rol)' }}</td>
+              <td>
+                <span class="badge" [class.bg-success]="b.activa" [class.bg-secondary]="!b.activa">
+                  {{ b.activa ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button type="button" class="btn btn-sm btn-agregar-bandeja me-1" (click)="toggleBandejaActiva(b)">
+                  {{ b.activa ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button *ngIf="esBandejaConfigurable(b)" type="button" class="btn btn-outline-danger btn-sm"
+                        (click)="abrirConfirmEliminarBandeja(b, confirmDeleteBandeja)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #confirmDeleteBandeja let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Eliminar bandeja</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <p>Se eliminará la bandeja <strong>{{ bandejaEliminar?.nombre }}</strong> y <strong>todos los tickets</strong> cuya bandeja actual sea esta área.</p>
+    <p class="text-muted small mb-0">El historial de áreas en otros tickets no se modifica. Los usuarios asignados quedarán sin bandeja.</p>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-danger" (click)="confirmarEliminarBandeja(bandejaEliminar!, modal)">Eliminar</button>
+  </div>
+</ng-template>
+
+<ng-template #noAccess>
+  <div class="generic-container">
+    <div class="content-section">
+      <div class="alert alert-danger text-center py-5">
+        <i class="fas fa-lock fa-3x mb-3"></i>
+        <h4>Acceso denegado</h4>
+        <p class="mb-0">Solo GM o ADMIN pueden gestionar bandejas de reclamos.</p>
+      </div>
+    </div>
+  </div>
+</ng-template>

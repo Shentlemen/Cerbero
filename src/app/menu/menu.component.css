@@ -5,20 +5,29 @@
   --menu-icon-size: 15px;
   --submenu-font-size: 11px;
   --version-footer-height: 58px;
-  --dog-footer-gap: 18px;
+  --dog-footer-gap: 6px;
+  /* Ajuste visual burbuja (solo si hace falta separar sombra del texto del footer) */
+  --dog-bubble-chrome-bottom: 4px;
   --dog-menu-size: 118px;
+  --layout-top: 60px;
+  /* Aire entre el borde inferior del header y el primer ítem del menú */
+  --sidenav-nav-top-pad: 14px;
 }
 
 /* Estilo para la barra lateral */
 .sidenav {
   width: var(--sidenav-width);
   position: fixed;
-  top: 60px; /* Empieza debajo del header */
+  top: var(--layout-top, 60px);
   left: 0;
-  height: calc(100% - 60px); /* Altura total menos el header */
+  bottom: 0;
+  height: auto;
+  box-sizing: border-box;
   background-color: #1a1a1a;
   padding-top: 0;
   padding-bottom: 0;
+  /* Línea suave bajo el header (el sidenav empieza donde termina la barra superior) */
+  border-top: 1px solid rgba(52, 152, 219, 0.12);
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   transition: width 0.25s ease;
   overflow: hidden;
@@ -33,7 +42,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 6px 0 8px;
+  padding: var(--sidenav-nav-top-pad) 0 8px;
 }
 
 .sidenav-nav::-webkit-scrollbar {
@@ -226,11 +235,10 @@
 /* Ajuste correspondiente en el margen del contenido principal */
 .main-content {
   margin-left: var(--sidenav-width);
-  margin-top: 60px; /* Espacio para el header superior */
+  margin-top: 60px; /* fallback; inline --layout-top + margin-top px */
   padding: 15px;
-  /* Al menos el alto visible bajo el header; sin height fijo para que el fondo gris crezca con el scroll */
-  min-height: calc(100vh - 60px);
-  min-height: calc(100dvh - 60px);
+  /* Con zoom 0.8 en body hace falta más alto en px de layout para cubrir el viewport visible */
+  min-height: calc((100dvh - var(--layout-top, 60px)) / var(--app-global-zoom, 1));
   background-color: #ecf0f1;
   position: relative;
   z-index: 1; /* Mantenemos un z-index bajo para el contenido principal */
@@ -262,6 +270,8 @@
   display: flex;
   justify-content: center;
   align-items: flex-end;
+  padding-bottom: 0;
+  box-sizing: border-box;
   z-index: 1010;
   pointer-events: none;
 }
@@ -278,8 +288,14 @@
   --dog-size: var(--dog-menu-size);
 }
 
+:host ::ng-deep .dog-anchor .helper-dog-image {
+  /* Sombra/borde circular: acercar el círculo al footer sin subir todo el anchor */
+  margin-bottom: calc(-1 * var(--dog-bubble-chrome-bottom));
+}
+
 .dog-spacer {
   flex-shrink: 0;
+  /* Solo hueco del perro + gap al footer; el chrome de la burbuja va en .dog-anchor */
   height: calc(var(--dog-menu-size) + var(--dog-footer-gap));
   pointer-events: none;
 }
@@ -356,8 +372,10 @@
     --menu-icon-size: 14px;
     --submenu-font-size: 10px;
     --version-footer-height: 52px;
-    --dog-footer-gap: 14px;
+    --dog-footer-gap: 4px;
+    --dog-bubble-chrome-bottom: 3px;
     --dog-menu-size: 100px;
+    --sidenav-nav-top-pad: 10px;
   }
 
   .submenu.show {

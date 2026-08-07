@@ -28,8 +28,6 @@ import { VersionService } from '../services/version.service';
 export class MenuComponent implements OnInit, OnDestroy {
   /** Top del layout bajo el header (60px o 60px + franja vista previa GM). */
   layoutTopPx = 60;
-  /** Mínimo alto bajo el header; el bloque crece con el contenido (evita franja blanca al hacer scroll). */
-  layoutContentHeightCalc = 'calc(100vh - 60px)';
   private layoutSub?: Subscription;
 
   isAssetsExpanded: boolean = false;
@@ -49,7 +47,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/procurement/tipos-activo',
     '/menu/procurement/tipos-compra',
     '/menu/procurement/usuarios',
-    '/menu/almacen/config'
+    '/menu/almacen/config',
+    '/menu/settings'
   ];
   private adminRoutes = [
     '/menu/settings',
@@ -158,7 +157,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     const mainRow = 60;
     const previewStrip = this.permissionsService.isGmPreviewActive() ? 52 : 0;
     this.layoutTopPx = mainRow + previewStrip;
-    this.layoutContentHeightCalc = `calc(100vh - ${this.layoutTopPx}px)`;
   }
 
   ngOnDestroy() {
@@ -237,6 +235,10 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   canAccessWarehouseConfiguration(): boolean {
     return this.permissionsService.canAccessWarehouseConfiguration();
+  }
+
+  canManageTicketBandejas(): boolean {
+    return this.permissionsService.canManageTicketBandejas();
   }
 
   /**

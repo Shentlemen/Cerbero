@@ -2429,9 +2429,19 @@ app-software .software-table .action-buttons button:not(.btn):focus-visible i {
 /* Configuración global de zoom - Reducir tamaño del 20%
    Nota: no se aplica cuando el body tiene la clase .no-global-zoom
    (por ejemplo, en la demo de almacén 3D). */
-/* Usamos zoom pero ajustamos las gráficas para que funcionen correctamente */
+:root {
+  --app-global-zoom: 0.8;
+}
+
+body.no-global-zoom {
+  --app-global-zoom: 1;
+}
+
 body:not(.no-global-zoom) {
   zoom: 0.8;
+  /* Tras zoom 0.8 hace falta más alto de layout para cubrir el viewport visible */
+  min-height: calc(100vh / 0.8);
+  min-height: calc(100dvh / 0.8);
 }
 
 /* Iconos rojos en modales de detalles de activo - estilo similar a items del almacén */
@@ -2469,14 +2479,18 @@ body:not(.no-global-zoom) {
   bottom: 0 !important;
 }
 
-/* Layout principal para footer fijo */
-html, body {
-  height: 100%;
-  min-height: 100vh;
+/* Layout principal: fondo gris continuo (sin franja blanca con zoom global) */
+html,
+body {
   margin: 0;
   padding: 0;
-  background: #ffffff; /* Fondo blanco sólido */
-  overflow-x: hidden; /* Evitar scroll horizontal */
+  overflow-x: hidden;
+  background-color: #ecf0f1;
+}
+
+html:has(body:not(.no-global-zoom)) {
+  min-height: calc(100vh / 0.8);
+  min-height: calc(100dvh / 0.8);
 }
 
 /*

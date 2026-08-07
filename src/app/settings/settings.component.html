@@ -10,7 +10,7 @@
   </div>
 
   <div class="content-section">
-  <div class="settings-section" id="tour-settings-ocs">
+  <div class="settings-section" id="tour-settings-ocs" *ngIf="canAccessSettings()">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
       <h3>Reseteo de Tablas OCS</h3>
@@ -104,7 +104,7 @@
   </div>
 
   <!-- Prueba de cierre por inactividad (solo GM) -->
-  <div class="settings-section" id="tour-settings-idle">
+  <div class="settings-section" id="tour-settings-idle" *ngIf="canAccessSettings()">
     <div class="section-header">
       <i class="fas fa-clock me-2"></i>
       <h3>Sesión por inactividad (prueba)</h3>
@@ -131,7 +131,7 @@
   </div>
 
   <!-- Nueva sección para comparar bases de datos -->
-  <div class="settings-section" id="tour-settings-compare">
+  <div class="settings-section" id="tour-settings-compare" *ngIf="canAccessSettings()">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
       <h3>Comparar Tablas Hardware (OCS vs Cerbero)</h3>
@@ -424,7 +424,7 @@
   </div>
 
   <!-- Duplicados en tabla hardware de la base OCS -->
-  <div class="settings-section" id="ocs-duplicates-section">
+  <div class="settings-section" id="ocs-duplicates-section" *ngIf="canAccessSettings()">
     <div class="section-header">
       <i class="fas fa-server me-2"></i>
       <h3>Buscar duplicados en Hardware (base OCS)</h3>
@@ -521,7 +521,7 @@
   </div>
 
   <!-- Duplicados en tabla hardware de la base Cerbero -->
-  <div class="settings-section" id="tour-settings-cerbero-duplicates">
+  <div class="settings-section" id="tour-settings-cerbero-duplicates" *ngIf="canAccessSettings()">
     <div class="section-header">
       <i class="fas fa-search me-2"></i>
       <h3>Buscar duplicados en Hardware (base Cerbero)</h3>

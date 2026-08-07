@@ -108,6 +108,18 @@
                 </select>
               </div>
             </div>
+            <div class="row" *ngIf="showTicketAreaField()">
+              <div class="col-12 mb-3">
+                <label for="ticketAreaCodigo" class="form-label">Bandeja de reclamos</label>
+                <select id="ticketAreaCodigo" class="form-select" formControlName="ticketAreaCodigo">
+                  <option value="">Sin bandeja (solo Mis tickets)</option>
+                  <option *ngFor="let b of bandejasUsuario" [value]="b.codigo">
+                    {{ b.nombre }} ({{ b.codigo }})
+                  </option>
+                </select>
+                <small class="text-muted">Opcional. Define qué tickets del área puede ver y gestionar este usuario.</small>
+              </div>
+            </div>
           </div>
           <div class="modal-footer user-modal-footer-stack">
             <div *ngIf="usuarioModalValidacion" class="user-modal-validacion">
@@ -253,6 +265,7 @@
             <th>Email</th>
             <th>Nombre Completo</th>
             <th>Rol</th>
+            <th>Bandeja de entrada</th>
             <th>Estado</th>
             <th>Fecha Creación</th>
             <th>Acciones</th>
@@ -270,6 +283,13 @@
               <span class="role-badge" [ngClass]="'role-' + user.role.toLowerCase()">
                 {{ getRoleLabel(user.role) }}
               </span>
+            </td>
+            <td class="bandeja-cell">
+              <span class="bandeja-badge" [ngClass]="getBandejaBadgeClass(user)">
+                <i class="fas fa-inbox bandeja-badge-icon" aria-hidden="true"></i>
+                {{ getBandejaEntrada(user) }}
+              </span>
+              <small *ngIf="getBandejaEntradaCodigo(user) as cod" class="bandeja-codigo">{{ cod }}</small>
             </td>
             <td>
               <span class="status-badge" [ngClass]="user.enabled ? 'status-active' : 'status-inactive'">

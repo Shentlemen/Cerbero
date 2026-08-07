@@ -1,7 +1,6 @@
 <div
   class="sidenav"
-  [style.top.px]="layoutTopPx"
-  [style.height]="'calc(100% - ' + layoutTopPx + 'px)'">
+  [style.--layout-top.px]="layoutTopPx">
   <nav class="sidenav-nav" aria-label="Menú principal">
   <!-- Menú de navegación -->
   <a routerLink="/menu/dashboard" routerLinkActive="active">
@@ -122,6 +121,10 @@
         <i class="fas fa-cogs"></i>
         <span>ALMACÉN CONFIG</span>
       </a>
+      <a *ngIf="canManageTicketBandejas()" routerLink="/menu/bandejas-reclamos" routerLinkActive="active" class="submenu-item">
+        <i class="fas fa-inbox"></i>
+        <span>BANDEJAS RECLAMOS</span>
+      </a>
     </div>
   </div>
 
@@ -170,6 +173,6 @@
 <div
   class="main-content"
   [style.margin-top.px]="layoutTopPx"
-  [style.min-height]="layoutContentHeightCalc">
+  [style.--layout-top.px]="layoutTopPx">
   <router-outlet></router-outlet>
 </div>

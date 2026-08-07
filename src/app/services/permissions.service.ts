@@ -9,6 +9,7 @@ export interface User {
   lastName?: string;
   role: string;
   enabled: boolean;
+  ticketAreaCodigo?: string | null;
 }
 
 @Injectable({
@@ -271,8 +272,26 @@ export class PermissionsService {
   canProcessTicketsForArea(areaCodigo: string): boolean {
     if (!this.currentUser || !areaCodigo) return false;
     if (this.isGMOrAdmin()) return true;
-    if (this.isUser()) return false;
+    if (this.isUser()) {
+      const asignada = this.currentUser.ticketAreaCodigo?.trim().toUpperCase();
+      return !!asignada && asignada === areaCodigo.trim().toUpperCase();
+    }
     return this.getEffectiveRole() === areaCodigo;
+  }
+
+  /** Bandeja de reclamos asignada (solo rol USER). */
+  getTicketAreaCodigo(): string | null {
+    const c = this.currentUser?.ticketAreaCodigo;
+    return c?.trim() ? c.trim().toUpperCase() : null;
+  }
+
+  /** Usuario USER con bandeja de área asignada. */
+  hasUserTicketBandeja(): boolean {
+    return this.isUser() && !!this.getTicketAreaCodigo();
+  }
+
+  canManageTicketBandejas(): boolean {
+    return this.isRealGmOrAdmin();
   }
 
   // Helper method to check if user is logged in

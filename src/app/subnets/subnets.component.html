@@ -10,6 +10,18 @@
         Gestión de subredes y coordenadas para el mapa.
       </p>
     </div>
+    <div class="subnets-header-actions flex-shrink-0">
+      <button
+        type="button"
+        class="btn btn-sm btn-export"
+        (click)="exportarExcel()"
+        [disabled]="exportingExcel || loading"
+        title="Exportar subredes, PCs y dispositivos a Excel">
+        <span *ngIf="exportingExcel" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        <i *ngIf="!exportingExcel" class="fas fa-file-excel me-2" aria-hidden="true"></i>
+        Exportar Excel
+      </button>
+    </div>
     </div>
   </div>
 
@@ -132,8 +144,8 @@
                     type="button"
                     class="btn btn-info btn-sm"
                     (click)="openHardwareModal(subnet)"
-                    title="Ver equipos de esta subred">
-                    <i class="fas fa-desktop"></i> Equipos
+                    title="Ver PCs y dispositivos de esta subred">
+                    <i class="fas fa-desktop"></i> Activos
                   </button>
                   <ng-container *ngIf="canManageSubnets()">
                     <button
@@ -214,7 +226,7 @@
           </button>
         </div>
         <p *ngIf="!mapEditMode && !isSearchFilterActive()" class="subnets-map-hint text-muted small mb-0">
-          Clic en un marcador para ver equipos. Varios pins juntos: el mapa se acerca como con la rueda del mouse hasta que se separan solos y luego podés elegir subred.
+          Clic en un marcador para ver PCs y dispositivos de la subred. Varios pins juntos: el mapa se acerca como con la rueda del mouse hasta que se separan solos y luego podés elegir subred.
           <span *ngIf="subnetsOnMapCount > 0">
             {{ subnetsOnMapCount }} en mapa
             <span *ngIf="subnets.length > subnetsOnMapCount">
@@ -262,10 +274,10 @@
         </div>
         <div *ngIf="subnetsOnMapCount > 0" class="subnets-map-legend" aria-hidden="true">
           <span class="subnets-map-legend-item">
-            <span class="subnet-map-pin subnet-map-pin--sample"></span> Con equipos
+            <span class="subnet-map-pin subnet-map-pin--sample"></span> Con PCs o dispositivos
           </span>
           <span class="subnets-map-legend-item">
-            <span class="subnet-map-pin subnet-map-pin--empty subnet-map-pin--sample"></span> Sin equipos
+            <span class="subnet-map-pin subnet-map-pin--empty subnet-map-pin--sample"></span> Sin activos
           </span>
           <span class="subnets-map-legend-item">
             <span class="subnet-map-pin subnet-map-pin--sample">·</span> Sin máscara / sin conteo
@@ -317,7 +329,7 @@
                     <span class="subnet-location-picker-name">{{ s.id || s.name }}</span>
                     <span class="subnet-location-picker-meta text-muted">{{ s.netId }}</span>
                     <span class="subnet-location-picker-count badge bg-info text-dark">
-                      {{ equipmentCountLabel(s) }} equipos
+                      {{ equipmentCountLabel(s) }} activos
                     </span>
                   </button>
                 </li>
@@ -414,26 +426,32 @@
       <div *ngIf="filteredHardwareRows.length === 0 && hardwareModalSubnet?.mask"
            class="empty-state text-center py-4 text-muted">
         <i class="fas fa-inbox fa-2x mb-2"></i>
-        <p class="mb-0">No hay equipos cuya IP coincida con esta subred.</p>
+        <p class="mb-0">No hay PCs ni dispositivos cuya IP coincida con esta subred.</p>
       </div>
 
       <div *ngIf="filteredHardwareRows.length > 0" class="table-responsive">
         <table class="table table-sm table-hover align-middle subnet-hw-table">
           <thead>
             <tr>
+              <th>Clase</th>
               <th>Nombre</th>
               <th>IP</th>
-              <th>Sistema operativo</th>
-              <th>Tipo</th>
-              <th>Usuario</th>
+              <th>Sistema operativo / tipo</th>
+              <th>Detalle</th>
+              <th>MAC</th>
               <th>Último contacto</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let h of filteredHardwareRows">
+              <td>
+                <span class="badge" [class.bg-primary]="h.kind === 'pc'" [class.bg-secondary]="h.kind === 'device'">
+                  {{ assetKindLabel(h) }}
+                </span>
+              </td>
               <td class="subnet-hw-name">
                 <button
-                  *ngIf="h.id; else subnetHwNamePlain"
+                  *ngIf="h.kind === 'pc' && h.id; else subnetHwNamePlain"
                   type="button"
                   class="subnet-hw-name-link"
                   title="Ver detalle del equipo"
@@ -444,9 +462,9 @@
                 <ng-template #subnetHwNamePlain>{{ h.name || '—' }}</ng-template>
               </td>
               <td class="mono-cell">{{ h.ipAddr || '—' }}</td>
-              <td>{{ h.osName || '—' }}</td>
-              <td>{{ h.type || '—' }}</td>
-              <td>{{ h.userid || '—' }}</td>
+              <td>{{ h.kind === 'pc' ? (h.osName || '—') : (h.type || '—') }}</td>
+              <td>{{ h.kind === 'pc' ? (h.userid || '—') : (h.userid || '—') }}</td>
+              <td class="mono-cell">{{ h.mac || '—' }}</td>
               <td>{{ h.lastcome ? (h.lastcome | date:'short') : '—' }}</td>
             </tr>
           </tbody>

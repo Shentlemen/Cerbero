@@ -22,6 +22,7 @@
 }
 
 .helper-dog-image {
+  box-sizing: border-box;
   width: var(--dog-size);
   height: var(--dog-size);
   cursor: pointer;
@@ -29,6 +30,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   border: 3px solid transparent;
+  display: block;
 }
 
 .helper-dog-image:hover {

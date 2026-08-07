@@ -20,6 +20,16 @@
   max-width: 42rem;
 }
 
+.subnets-header-actions {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 0.15rem;
+}
+
+.subnets-header-actions .btn-export {
+  white-space: nowrap;
+}
+
 .subnets-toolbar {
   display: flex;
   align-items: center;

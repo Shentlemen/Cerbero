@@ -1,4 +1,13 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -7,6 +16,7 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { NotificationService } from '../services/notification.service';
 import { PermissionsService } from '../services/permissions.service';
 import { UnreadTicketsService } from '../services/unread-tickets.service';
+import { TicketAreaService } from '../services/ticket-area.service';
 import {
   Ticket,
   TICKET_ADJUNTOS_EXT_PERMITIDAS,
@@ -22,16 +32,28 @@ import {
   TicketPrioridad,
   TicketsService
 } from '../services/tickets.service';
+import { TicketAreaDTO } from '../services/ticket-area.service';
 
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, NotificationContainerComponent],
   templateUrl: './ticket-detail.component.html',
-  styleUrls: ['./ticket-detail.component.css']
+  styleUrls: ['./ticket-detail.component.css'],
+  inputs: ['embedded', 'ticketIdInput', 'areasActivasInput', 'scrollFragment']
 })
-export class TicketDetailComponent implements OnInit, OnDestroy {
-  ticketId!: number;
+export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
+  /** Vista embebida en la bandeja (split view). */
+  @Input() embedded = false;
+  @Input() ticketIdInput: number | null = null;
+  /** Misma lista que el filtro de área de la bandeja (split view). */
+  @Input() areasActivasInput: TicketAreaDTO[] | null = null;
+  /** Fragmento a scrollear tras cargar (p. ej. `adjuntos`). */
+  @Input() scrollFragment: string | null = null;
+  @Output() ticketChanged = new EventEmitter<void>();
+  @Output() accessDenied = new EventEmitter<void>();
+
+  ticketId = 0;
   ticket: Ticket | null = null;
   movimientos: TicketMovimiento[] = [];
   comentarios: TicketComentario[] = [];
@@ -66,24 +88,28 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
     'CERRADO',
     'REABIERTO'
   ];
-  private readonly areasBase = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
-
-  /** Cualquier usuario puede derivar hacia Laboratorio (la atienden GM/Admin). */
-  readonly areasDerivacion: string[] = [...this.areasBase, 'LABORATORIO'];
+  areasDerivacion: TicketAreaDTO[] = [];
+  private areasActivasSub?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private ticketsService: TicketsService,
+    private ticketAreaService: TicketAreaService,
     private notificationService: NotificationService,
     private permissionsService: PermissionsService,
     private unreadTicketsService: UnreadTicketsService
   ) {}
 
   ngOnInit(): void {
-    this.ticketId = Number(this.route.snapshot.paramMap.get('id'));
-    if (!this.ticketId) {
-      this.notificationService.showError('Error', 'ID de ticket inválido.');
+    this.areasActivasSub = this.ticketAreaService.areasActivas$.subscribe((areas) => {
+      this.areasDerivacion = areas;
+    });
+    this.ticketAreaService.refreshAreasActivas().subscribe();
+    if (!this.resolverTicketId()) {
+      if (!this.embedded) {
+        this.notificationService.showError('Error', 'ID de ticket inválido.');
+      }
       return;
     }
     this.lastViewAsRole = this.permissionsService.getViewAsRole();
@@ -104,9 +130,65 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.viewAsSub?.unsubscribe();
+    this.areasActivasSub?.unsubscribe();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.embedded) {
+      return;
+    }
+    if (changes['ticketIdInput'] && !changes['ticketIdInput'].firstChange) {
+      const next = this.ticketIdInput;
+      if (next && next !== this.ticketId) {
+        this.ticketId = next;
+        this.cargarTodo();
+      }
+    }
+    if (changes['scrollFragment'] && this.scrollFragment) {
+      this.scrollAlFragmentoSiCorresponde();
+    }
+  }
+
+  private resolverTicketId(): boolean {
+    if (this.embedded && this.ticketIdInput) {
+      this.ticketId = this.ticketIdInput;
+      return true;
+    }
+    const fromRoute = Number(this.route.snapshot.paramMap.get('id'));
+    if (fromRoute && !Number.isNaN(fromRoute)) {
+      this.ticketId = fromRoute;
+      return true;
+    }
+    return false;
+  }
+
+  areasParaDerivar(): TicketAreaDTO[] {
+    const byCodigo = new Map<string, TicketAreaDTO>();
+    for (const a of this.areasDerivacion) {
+      if (a?.codigo) {
+        byCodigo.set(a.codigo, a);
+      }
+    }
+    for (const a of this.areasActivasInput ?? []) {
+      if (a?.codigo) {
+        byCodigo.set(a.codigo, a);
+      }
+    }
+    return Array.from(byCodigo.values()).sort((a, b) =>
+      (a.nombre || a.codigo).localeCompare(b.nombre || b.codigo, 'es')
+    );
+  }
+
+  labelAreaDerivacion(area: TicketAreaDTO): string {
+    const nombre = (area.nombre || '').trim();
+    if (nombre) {
+      return this.formatClaveLegible(nombre);
+    }
+    return this.formatClaveLegible(area.codigo);
   }
 
   cargarTodo(): void {
+    this.ticketAreaService.refreshAreasActivas().subscribe();
     this.loading = true;
     forkJoin({
       ticket: this.ticketsService.obtener(this.ticketId),
@@ -140,9 +222,13 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
         if (status === 401 || status === 403) {
           this.notificationService.showError(
             'Sin acceso',
-            'El rol seleccionado no tiene permisos para ver este ticket. Volviendo a la bandeja.'
+            'El rol seleccionado no tiene permisos para ver este ticket.'
           );
-          this.router.navigate(['/menu/tickets']);
+          if (this.embedded) {
+            this.accessDenied.emit();
+          } else {
+            this.router.navigate(['/menu/tickets']);
+          }
           return;
         }
         this.notificationService.showError('Error', error?.error?.message || 'No se pudo cargar el ticket');
@@ -161,7 +247,7 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
    * que Angular pinte la sección antes de buscar el elemento.
    */
   private scrollAlFragmentoSiCorresponde(): void {
-    const fragment = this.route.snapshot.fragment;
+    const fragment = this.scrollFragment || this.route.snapshot.fragment;
     if (!fragment) return;
     setTimeout(() => {
       const el = document.getElementById(fragment);
@@ -227,10 +313,7 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (response) => {
             if (response.success) {
-              this.notificationService.showSuccessMessage('Estado y área actualizados. Volviendo a la bandeja...');
-              this.notaGestion = '';
-              this.nuevaArea = '';
-              this.router.navigate(['/menu/tickets']);
+              this.finalizarGestionExitosa('Estado y área actualizados.', true);
             } else {
               this.notificationService.showError('Error', response.message || 'No se pudo aplicar los cambios.');
             }
@@ -246,10 +329,7 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
       this.ticketsService.cambiarArea(this.ticket.id, this.nuevaArea, nota || undefined).subscribe({
         next: (response) => {
           if (response.success) {
-            this.notificationService.showSuccessMessage('Área actualizada. Volviendo a la bandeja...');
-            this.nuevaArea = '';
-            this.notaGestion = '';
-            this.router.navigate(['/menu/tickets']);
+            this.finalizarGestionExitosa('Área actualizada.', true);
           } else {
             this.notificationService.showError('Error', response.message || 'No se pudo cambiar área.');
           }
@@ -264,9 +344,7 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
     this.ticketsService.cambiarEstado(this.ticket.id, this.nuevoEstado, nota || undefined).subscribe({
       next: (response) => {
         if (response.success) {
-          this.notificationService.showSuccessMessage('Estado actualizado.');
-          this.notaGestion = '';
-          this.cargarTodo();
+          this.finalizarGestionExitosa('Estado actualizado.', false);
         } else {
           this.notificationService.showError('Error', response.message || 'No se pudo cambiar estado.');
         }
@@ -275,6 +353,26 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
         this.notificationService.showError('Error', error?.error?.message || 'No se pudo cambiar estado.');
       }
     });
+  }
+
+  /**
+   * Tras gestionar el ticket: en split view recargamos acá y avisamos al padre; en pantalla
+   * completa volvemos a la bandeja cuando el flujo lo pedía antes.
+   */
+  private finalizarGestionExitosa(mensaje: string, volverABandeja: boolean): void {
+    this.notaGestion = '';
+    this.nuevaArea = '';
+    this.notificationService.showSuccessMessage(mensaje);
+    if (this.embedded) {
+      this.ticketChanged.emit();
+      this.cargarTodo();
+      return;
+    }
+    if (volverABandeja) {
+      this.router.navigate(['/menu/tickets']);
+      return;
+    }
+    this.cargarTodo();
   }
 
   agregarComentario(): void {
@@ -361,6 +459,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
     if (this.permissionsService.isGMOrAdmin()) return true;
     if (this.ticket.creadoPorUserId === u.id) return true;
     if (this.ticket.areaActual === 'LABORATORIO') return false;
+    if (this.permissionsService.hasUserTicketBandeja()) {
+      return this.permissionsService.canProcessTicketsForArea(this.ticket.areaActual);
+    }
     if (this.permissionsService.isUser()) return false;
     // Misma lógica que canProcessTicketsForArea: rol efectivo (p. ej. GM «Ver como ALMACEN»).
     const efectivo = this.permissionsService.getEffectiveRole();
@@ -422,6 +523,54 @@ export class TicketDetailComponent implements OnInit, OnDestroy {
       return 'Cambio de estado y área';
     }
     return this.formatClaveLegible(tipo);
+  }
+
+  getMovimientoTimelineIcon(tipo?: string | null): string {
+    const t = (tipo || '').toUpperCase();
+    if (t === 'CREACION') {
+      return 'fa-plus-circle';
+    }
+    if (t.includes('ESTADO') && t.includes('AREA')) {
+      return 'fa-exchange-alt';
+    }
+    if (t.includes('ESTADO')) {
+      return 'fa-flag';
+    }
+    if (t.includes('AREA') || t.includes('DERIV')) {
+      return 'fa-sitemap';
+    }
+    return 'fa-history';
+  }
+
+  getMovimientoTimelineKind(tipo?: string | null): string {
+    const t = (tipo || '').toUpperCase();
+    if (t === 'CREACION') {
+      return 'ticket-timeline-entry--create';
+    }
+    if (t.includes('ESTADO') && t.includes('AREA')) {
+      return 'ticket-timeline-entry--both';
+    }
+    if (t.includes('ESTADO')) {
+      return 'ticket-timeline-entry--state';
+    }
+    if (t.includes('AREA') || t.includes('DERIV')) {
+      return 'ticket-timeline-entry--area';
+    }
+    return 'ticket-timeline-entry--default';
+  }
+
+  getEstadoPillClass(estado?: string | null): string {
+    if (!estado) {
+      return 'ticket-pill ticket-pill--muted';
+    }
+    return `ticket-pill ticket-pill--estado ${this.getHeroEstadoClass(estado as TicketEstado)}`;
+  }
+
+  getAreaPillClass(area?: string | null): string {
+    if (!area) {
+      return 'ticket-pill ticket-pill--muted';
+    }
+    return `ticket-pill ticket-pill--area ${this.getHeroAreaClass(area)}`;
   }
 
   private formatClaveLegible(valor?: string | null): string {

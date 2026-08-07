@@ -1,0 +1,45 @@
+.bandejas-panel {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 15px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bandejas-reclamos-page .header-section h1 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.bandejas-reclamos-page .header-section h1 i {
+  color: #212529;
+  margin-right: 0.5rem;
+}
+
+.btn-agregar-bandeja {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #000;
+  font-weight: 600;
+}
+
+.btn-agregar-bandeja:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  color: #000;
+  border-color: #000;
+}
+
+.btn-agregar-bandeja:focus-visible {
+  background-color: #fff;
+  color: #000;
+  border-color: #000;
+  box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-agregar-bandeja:disabled {
+  background-color: #fff;
+  color: #6c757d;
+  border-color: #adb5bd;
+  opacity: 0.85;
+}

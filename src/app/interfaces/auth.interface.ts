@@ -19,7 +19,9 @@ export interface User {
   role: string;
   enabled: boolean;
   createdAt?: string;
-  password?: string; // Agregar campo para contraseña
+  password?: string;
+  /** Bandeja de reclamos (rol USER). */
+  ticketAreaCodigo?: string | null;
 }
 
 export interface CreateUserRequest {
@@ -29,6 +31,7 @@ export interface CreateUserRequest {
   firstName: string;
   lastName: string;
   role: string;
+  ticketAreaCodigo?: string | null;
 }
 
 export interface UpdateUserRequest {
@@ -37,7 +40,8 @@ export interface UpdateUserRequest {
   lastName: string;
   role: string;
   enabled: boolean;
-  password?: string; // Agregar campo para contraseña
+  password?: string;
+  ticketAreaCodigo?: string | null;
 }
 
 export interface UpdateProfileRequest {

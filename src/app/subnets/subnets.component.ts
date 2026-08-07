@@ -10,22 +10,27 @@ import {
   findSubnetForIpv4
 } from '../services/subnet.service';
 import { HardwareService } from '../services/hardware.service';
+import { NetworkInfoService } from '../services/network-info.service';
+import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import * as XLSX from 'xlsx';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { TourRegistryService } from '../services/tour-registry.service';
 
-/** Fila reducida de hardware que mostramos en el modal de equipos por subred. */
+/** Fila de PC o dispositivo de red en el modal / exportación por subred. */
 interface SubnetHardwareRow {
-  id: number;
+  kind: 'pc' | 'device';
+  id?: number;
   name: string;
   ipAddr: string;
   osName: string;
   type: string;
   userid: string;
+  mac?: string;
   lastcome: string | null;
 }
 
@@ -128,6 +133,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   public locationPickerTitle = '';
   /** Cache local para no recargar el listado completo en cada apertura del modal. */
   private hardwareCache: any[] | null = null;
+  private devicesCache: NetworkInfoDTO[] | null = null;
+  public exportingExcel = false;
   /** Conteos precalculados por netId (evita filtrar todo el inventario en cada marcador). */
   private equipmentCountByNetId = new Map<string, number>();
   private hardwareCountsLoading = false;
@@ -144,6 +151,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     private permissionsService: PermissionsService,
     private tourRegistry: TourRegistryService,
     private hardwareService: HardwareService,
+    private networkInfoService: NetworkInfoService,
     private ngZone: NgZone,
     private router: Router
   ) {}
@@ -326,20 +334,16 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Precarga inventario y conteos una sola vez, fuera del camino crítico de carga. */
   private loadHardwareCountsInBackground(): void {
-    if (this.hardwareCountsLoading || this.hardwareCache) {
+    if (this.hardwareCountsLoading || (this.hardwareCache && this.devicesCache)) {
       return;
     }
     this.hardwareCountsLoading = true;
-    this.hardwareService.getHardware().pipe(
-      catchError((err) => {
-        console.warn('No se pudo precargar hardware para el mapa:', err);
-        return of([]);
-      })
-    ).subscribe({
-      next: (hardware) => {
-        this.hardwareCache = Array.isArray(hardware) ? hardware : [];
+    this.loadInventory().subscribe({
+      next: ({ hardware, devices }) => {
+        this.hardwareCache = hardware;
+        this.devicesCache = devices;
         this.ngZone.runOutsideAngular(() => {
-          this.equipmentCountByNetId = this.buildEquipmentCountMap(this.hardwareCache!);
+          this.equipmentCountByNetId = this.buildEquipmentCountMap(hardware, devices);
           this.ngZone.run(() => {
             this.hardwareCountsLoading = false;
             this.refreshMapMarkerLabels();
@@ -352,20 +356,47 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /** Una pasada sobre el inventario → mapa netId → cantidad de equipos. */
-  private buildEquipmentCountMap(hardware: any[]): Map<string, number> {
+  /** Carga PCs (hardware) y dispositivos de red (misma fuente que Dispositivos). */
+  private loadInventory(): Observable<{ hardware: any[]; devices: NetworkInfoDTO[] }> {
+    return forkJoin({
+      hardware: this.hardwareService.getHardware().pipe(catchError((err) => {
+        console.warn('No se pudo cargar hardware:', err);
+        return of([]);
+      })),
+      devices: this.networkInfoService.getNetworkInfo().pipe(
+        map((response) => (response?.success && Array.isArray(response.data) ? response.data : [])),
+        catchError((err) => {
+          console.warn('No se pudo cargar dispositivos de red:', err);
+          return of([]);
+        })
+      )
+    }).pipe(
+      map(({ hardware, devices }) => ({
+        hardware: Array.isArray(hardware) ? hardware : [],
+        devices: Array.isArray(devices) ? devices : []
+      }))
+    );
+  }
+
+  /** Una pasada sobre PCs + dispositivos → mapa netId → cantidad en subred. */
+  private buildEquipmentCountMap(hardware: any[], devices: NetworkInfoDTO[]): Map<string, number> {
     const counts = new Map<string, number>();
     const subnetsWithMask = this.subnets.filter((s) => s.mask?.trim());
     for (const s of subnetsWithMask) {
       counts.set(s.netId, 0);
     }
-    for (const h of hardware) {
-      const ip = h?.ipAddr;
-      if (!ip?.trim()) continue;
+    const bump = (ip: string | undefined | null) => {
+      if (!ip?.trim()) return;
       const match = findSubnetForIpv4(ip, subnetsWithMask);
       if (match) {
         counts.set(match.netId, (counts.get(match.netId) ?? 0) + 1);
       }
+    };
+    for (const h of hardware) {
+      bump(h?.ipAddr);
+    }
+    for (const d of devices) {
+      bump(d?.ip);
     }
     return counts;
   }
@@ -1061,10 +1092,10 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   ): string {
     const countLine =
       count !== null
-        ? `${count} equipo${count === 1 ? '' : 's'} en subred`
+        ? `${count} activo${count === 1 ? '' : 's'} (PCs + dispositivos)`
         : subnet.mask
-          ? 'Clic para ver equipos'
-          : 'Sin máscara: no se puede contar equipos';
+          ? 'Clic para ver PCs y dispositivos'
+          : 'Sin máscara: no se puede contar activos';
     const stackLine =
       collocatedTotal > 1
         ? `<br><em class="subnet-map-tooltip-hint">${collocatedTotal} subredes en este punto — clic para elegir</em>`
@@ -1236,24 +1267,25 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       }, 0);
     }
 
-    if (this.hardwareCache) {
+    if (this.hardwareCache && this.devicesCache) {
       this.applyHardwareFilter();
       return;
     }
 
     this.hardwareModalLoading = true;
-    this.hardwareService.getHardware().pipe(
+    this.loadInventory().pipe(
       catchError((err) => {
-        console.error('Error al cargar hardware para subred:', err);
-        this.hardwareModalError = 'No se pudo cargar el listado de equipos.';
+        console.error('Error al cargar inventario para subred:', err);
+        this.hardwareModalError = 'No se pudo cargar el listado de equipos y dispositivos.';
         this.hardwareModalLoading = false;
-        return of([]);
+        return of({ hardware: [] as any[], devices: [] as NetworkInfoDTO[] });
       })
     ).subscribe({
-      next: (list) => {
-        this.hardwareCache = Array.isArray(list) ? list : [];
+      next: ({ hardware, devices }) => {
+        this.hardwareCache = hardware;
+        this.devicesCache = devices;
         if (!this.equipmentCountByNetId.size) {
-          this.equipmentCountByNetId = this.buildEquipmentCountMap(this.hardwareCache);
+          this.equipmentCountByNetId = this.buildEquipmentCountMap(hardware, devices);
           this.refreshMapMarkerLabels();
         }
         this.applyHardwareFilter();
@@ -1290,18 +1322,161 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.hardwareCache = null;
+    this.devicesCache = null;
     this.openHardwareModal(this.hardwareModalSubnet);
   }
 
-  private applyHardwareFilter(): void {
-    const subnet = this.hardwareModalSubnet;
-    const all = this.hardwareCache ?? [];
-    if (!subnet) {
-      this.hardwareModalRows = [];
+  /** Exporta todas las subredes agrupadas por nombre con PCs y dispositivos por ID. */
+  exportarExcel(): void {
+    if (this.exportingExcel || this.loading) {
       return;
     }
-    const filtered = all.filter((h) => ipv4MatchesSubnet(h?.ipAddr, subnet));
-    this.hardwareModalRows = filtered.map((h) => ({
+    this.exportingExcel = true;
+    this.errorMessage = null;
+
+    this.loadInventory().subscribe({
+      next: ({ hardware, devices }) => {
+        this.hardwareCache = hardware;
+        this.devicesCache = devices;
+        this.equipmentCountByNetId = this.buildEquipmentCountMap(hardware, devices);
+        this.refreshMapMarkerLabels();
+        try {
+          const sheetRows = this.buildExcelExportRows(hardware, devices);
+          const worksheet = XLSX.utils.aoa_to_sheet(sheetRows);
+          worksheet['!cols'] = [
+            { wch: 28 },
+            { wch: 18 },
+            { wch: 16 },
+            { wch: 16 },
+            { wch: 14 },
+            { wch: 28 },
+            { wch: 16 },
+            { wch: 22 },
+            { wch: 24 },
+            { wch: 18 },
+            { wch: 20 }
+          ];
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'Subredes');
+          const stamp = new Date().toISOString().slice(0, 10);
+          XLSX.writeFile(workbook, `subredes_inventario_${stamp}.xlsx`);
+        } catch (err) {
+          console.error('Error al exportar Excel:', err);
+          this.errorMessage = 'No se pudo generar el archivo Excel.';
+        } finally {
+          this.exportingExcel = false;
+        }
+      },
+      error: () => {
+        this.errorMessage = 'No se pudo cargar datos para exportar.';
+        this.exportingExcel = false;
+      }
+    });
+  }
+
+  private buildExcelExportRows(hardware: any[], devices: NetworkInfoDTO[]): unknown[][] {
+    const header = [
+      'Nombre agrupación',
+      'ID subred',
+      'Net ID',
+      'Máscara',
+      'Tipo',
+      'Nombre',
+      'IP',
+      'SO / tipo dispositivo',
+      'Usuario / descripción',
+      'MAC',
+      'Último contacto'
+    ];
+    const rows: unknown[][] = [header];
+    const groups = this.groupSubnetsByDisplayName();
+
+    for (const groupName of [...groups.keys()].sort((a, b) => a.localeCompare(b, 'es'))) {
+      const subnetsInGroup = groups.get(groupName)!;
+      for (const subnet of subnetsInGroup) {
+        const assets = this.collectAssetsForSubnet(subnet, hardware, devices);
+        if (assets.length === 0) {
+          rows.push([
+            groupName,
+            subnet.id ?? '',
+            subnet.netId ?? '',
+            subnet.mask ?? '',
+            'Subred (sin activos)',
+            '',
+            '',
+            '',
+            '',
+            '',
+            ''
+          ]);
+          continue;
+        }
+        for (const asset of assets) {
+          rows.push([
+            groupName,
+            subnet.id ?? '',
+            subnet.netId ?? '',
+            subnet.mask ?? '',
+            asset.kind === 'pc' ? 'PC' : 'Dispositivo',
+            asset.name || '—',
+            asset.ipAddr || '—',
+            asset.osName || asset.type || '—',
+            asset.userid || '—',
+            asset.mac ?? '',
+            asset.lastcome ? this.formatExportDate(asset.lastcome) : ''
+          ]);
+        }
+      }
+    }
+    return rows;
+  }
+
+  private groupSubnetsByDisplayName(): Map<string, ExtendedSubnet[]> {
+    const groups = new Map<string, ExtendedSubnet[]>();
+    for (const subnet of this.subnets) {
+      const key = (subnet.name ?? '').trim() || '(Sin nombre)';
+      const list = groups.get(key) ?? [];
+      list.push(subnet);
+      groups.set(key, list);
+    }
+    for (const list of groups.values()) {
+      list.sort((a, b) => {
+        const byId = (a.id ?? '').localeCompare(b.id ?? '', 'es');
+        if (byId !== 0) return byId;
+        return (a.netId ?? '').localeCompare(b.netId ?? '', 'es');
+      });
+    }
+    return groups;
+  }
+
+  private collectAssetsForSubnet(
+    subnet: ExtendedSubnet,
+    hardware: any[],
+    devices: NetworkInfoDTO[]
+  ): SubnetHardwareRow[] {
+    if (!subnet.mask?.trim()) {
+      return [];
+    }
+    const rows: SubnetHardwareRow[] = [];
+    for (const h of hardware) {
+      if (!ipv4MatchesSubnet(h?.ipAddr, subnet)) continue;
+      rows.push(this.mapHardwareToRow(h));
+    }
+    for (const d of devices) {
+      if (!ipv4MatchesSubnet(d?.ip, subnet)) continue;
+      rows.push(this.mapDeviceToRow(d));
+    }
+    rows.sort((a, b) => {
+      const kindOrder = a.kind === b.kind ? 0 : a.kind === 'pc' ? -1 : 1;
+      if (kindOrder !== 0) return kindOrder;
+      return this.compareIpv4(a.ipAddr, b.ipAddr);
+    });
+    return rows;
+  }
+
+  private mapHardwareToRow(h: any): SubnetHardwareRow {
+    return {
+      kind: 'pc',
       id: h.id,
       name: h.name ?? '',
       ipAddr: h.ipAddr ?? '',
@@ -1309,9 +1484,43 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       type: h.type ?? '',
       userid: h.userid ?? '',
       lastcome: h.lastCome ?? h.lastcome ?? null
-    }));
-    // Orden por IP ascendente para una lectura natural.
-    this.hardwareModalRows.sort((a, b) => this.compareIpv4(a.ipAddr, b.ipAddr));
+    };
+  }
+
+  private mapDeviceToRow(d: NetworkInfoDTO): SubnetHardwareRow {
+    return {
+      kind: 'device',
+      name: d.name ?? '',
+      ipAddr: d.ip ?? '',
+      osName: d.type ?? '',
+      type: d.type ?? '',
+      userid: d.description ?? '',
+      mac: d.mac ?? '',
+      lastcome: null
+    };
+  }
+
+  private formatExportDate(value: string): string {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+      return value;
+    }
+    return d.toLocaleString('es-UY');
+  }
+
+  assetKindLabel(row: SubnetHardwareRow): string {
+    return row.kind === 'pc' ? 'PC' : 'Dispositivo';
+  }
+
+  private applyHardwareFilter(): void {
+    const subnet = this.hardwareModalSubnet;
+    const hardware = this.hardwareCache ?? [];
+    const devices = this.devicesCache ?? [];
+    if (!subnet) {
+      this.hardwareModalRows = [];
+      return;
+    }
+    this.hardwareModalRows = this.collectAssetsForSubnet(subnet, hardware, devices);
   }
 
   /** Comparador IPv4 octeto a octeto; strings vacíos al final. */
@@ -1334,7 +1543,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     const q = this.hardwareModalSearch.trim().toLowerCase();
     if (!q) return this.hardwareModalRows;
     return this.hardwareModalRows.filter((r) =>
-      [r.name, r.ipAddr, r.osName, r.type, r.userid]
+      [r.name, r.ipAddr, r.osName, r.type, r.userid, r.mac, r.kind === 'pc' ? 'pc' : 'dispositivo']
         .filter((v): v is string => !!v)
         .some((v) => v.toLowerCase().includes(q))
     );

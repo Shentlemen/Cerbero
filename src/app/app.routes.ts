@@ -63,6 +63,7 @@ export const routes: Routes = [
       { path: 'software', component: SoftwareComponent },
       { path: 'internos-ose', loadComponent: () => import('./internos-ose/internos-ose.component').then(m => m.InternosOseComponent) },
       { path: 'settings', loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'bandejas-reclamos', loadComponent: () => import('./bandejas-reclamos/bandejas-reclamos.component').then(m => m.BandejasReclamosComponent) },
       { path: 'user-management', loadComponent: () => import('./user-management/user-management.component').then(m => m.UserManagementComponent) },
       { path: 'procurement', component: ProcurementComponent },
       { path: 'procurement/activos', loadComponent: () => import('./procurement/activos/activos.component').then(m => m.ActivosComponent) },
@@ -87,7 +88,10 @@ export const routes: Routes = [
       { path: 'almacen/config', loadComponent: () => import('./almacen/config-almacenes/config-almacenes.component').then(m => m.ConfigAlmacenesComponent) },
       { path: 'tickets', loadComponent: () => import('./tickets/tickets.component').then(m => m.TicketsComponent) },
       { path: 'tickets/nuevo', redirectTo: 'tickets', pathMatch: 'full' },
-      { path: 'tickets/:id', loadComponent: () => import('./tickets/ticket-detail.component').then(m => m.TicketDetailComponent) },
+      {
+        path: 'tickets/:id',
+        loadComponent: () => import('./tickets/tickets.component').then(m => m.TicketsComponent)
+      },
       // Vista 3D del almacén (demo)
       { path: 'almacen/3d-demo', loadComponent: () => import('./almacen-3d-demo/almacen-3d-demo.component').then(m => m.Almacen3DDemoComponent) }
     ]

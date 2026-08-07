@@ -198,6 +198,98 @@
   color: #721c24;
 }
 
+/* Bandeja de entrada (misma paleta que roles / filtros) */
+.bandeja-cell {
+  min-width: 9rem;
+}
+
+.bandeja-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
+  border: 1px solid transparent;
+  max-width: 100%;
+}
+
+.bandeja-badge-icon {
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+
+.bandeja-codigo {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+.bandeja-none {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
+.bandeja-global {
+  background: linear-gradient(135deg, #fce8e8 0%, #ede9fe 100%);
+  color: #6b21a8;
+  border-color: #c4b5fd;
+}
+
+.bandeja-ose {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #7dd3fc;
+}
+
+.bandeja-almacen {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.bandeja-inventario {
+  background: #d1fae5;
+  color: #059669;
+  border-color: #6ee7b7;
+}
+
+.bandeja-compras {
+  background: #ffedd5;
+  color: #b45309;
+  border-color: #fed7aa;
+}
+
+.bandeja-gestion-equip {
+  background: #ede9fe;
+  color: #7c3aed;
+  border-color: #c4b5fd;
+}
+
+.bandeja-impresion {
+  background: #ccfbf1;
+  color: #0f766e;
+  border-color: #5eead4;
+}
+
+.bandeja-garantia {
+  background: #ffe4e6;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+.bandeja-laboratorio {
+  background: #fff3cd;
+  color: #856404;
+  border-color: #ffeaa7;
+}
+
 /*
  * Botones de acción: mismo criterio que locations / usuarios (borde con color en reposo).
  * Supera styles.css global que fuerza borde negro en .action-buttons .btn-*.

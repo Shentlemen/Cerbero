@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
@@ -10,14 +10,24 @@ import { Ticket, TicketEstado, TicketPrioridad, TicketsService } from '../servic
 import { forkJoin, Subscription } from 'rxjs';
 import { GuidedTourHostService, type GuidedTourStepDef } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
+import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.service';
 import type { DriveStep, Driver } from 'driver.js';
+import { TicketDetailComponent } from './ticket-detail.component';
 
 type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'fechaActualizacion';
+type TicketsVistaBandeja = 'area' | 'mios' | 'cerrados';
 
 @Component({
   selector: 'app-tickets',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, NgbModalModule, NotificationContainerComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    NgbModalModule,
+    NotificationContainerComponent,
+    TicketDetailComponent
+  ],
   templateUrl: './tickets.component.html',
   styleUrls: ['./tickets.component.css']
 })
@@ -36,6 +46,13 @@ export class TicketsComponent implements OnInit, OnDestroy {
   /** Filtro en vivo por código o título sobre las tres bandejas (datos ya cargados). */
   busquedaCodigoTitulo = '';
 
+  /** Pestaña activa: una bandeja por vista. */
+  vistaBandeja: TicketsVistaBandeja = 'area';
+
+  /** Ticket abierto en el panel derecho (sincronizado con la ruta `/tickets/:id`). */
+  selectedTicketId: number | null = null;
+  detailScrollFragment: string | null = null;
+
   /**
    * Mapa `ticketId -> cantidad de adjuntos activos`. Si un ticket no tiene clave aqui, no tiene adjuntos.
    * Lo refrescamos junto con la lista, pero su fallo es no critico (las tablas siguen funcionando).
@@ -52,15 +69,11 @@ export class TicketsComponent implements OnInit, OnDestroy {
   ordenAsc = true;
 
   /** Áreas para filtro local (incl. Laboratorio: el creador puede tener tickets derivados allí). */
-  readonly areasTicket: string[] = [
-    'ALMACEN',
-    'INVENTARIO',
-    'COMPRAS',
-    'GESTION_EQUIP',
-    'IMPRESION',
-    'GARANTIA',
-    'LABORATORIO'
-  ];
+  /** Áreas activas (API ticket_areas). */
+  areasTicket: string[] = [];
+  areasTicketActivas: TicketAreaDTO[] = [];
+  private areaNombrePorCodigo = new Map<string, string>();
+  private areasActivasSub?: Subscription;
 
   private readonly prioridadOrden: Record<string, number> = {
     BAJA: 0,
@@ -79,6 +92,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
     'REABIERTO'
   ];
   private viewAsSub?: Subscription;
+  private routeParamSub?: Subscription;
+  private routeFragmentSub?: Subscription;
   private lastViewAsRole: string | null = null;
   private pageTour?: Driver;
   private tourCleanup?: () => void;
@@ -113,11 +128,20 @@ export class TicketsComponent implements OnInit, OnDestroy {
     private permissionsService: PermissionsService,
     private modalService: NgbModal,
     private router: Router,
+    private route: ActivatedRoute,
     private guidedTourHost: GuidedTourHostService,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private ticketAreaService: TicketAreaService
   ) {}
 
   ngOnInit(): void {
+    this.syncAreasDesdeServicio(this.ticketAreaService.getAreasActivasSnapshot());
+    this.areasActivasSub = this.ticketAreaService.areasActivas$.subscribe((areas) => {
+      this.syncAreasDesdeServicio(areas);
+    });
+    this.cargarAreasTicket();
+    this.ordenColumna = 'fechaActualizacion';
+    this.ordenAsc = false;
     this.lastViewAsRole = this.permissionsService.getViewAsRole();
     this.aplicarFiltroAreaDefault(false);
     this.actualizarTodo();
@@ -150,10 +174,28 @@ export class TicketsComponent implements OnInit, OnDestroy {
         : []),
     ];
     this.tourCleanup = this.tourRegistry.register('tickets', tours);
+    this.routeParamSub = this.route.paramMap.subscribe((params) => {
+      const raw = params.get('id');
+      if (!raw) {
+        this.selectedTicketId = null;
+        return;
+      }
+      const id = Number(raw);
+      this.selectedTicketId = Number.isNaN(id) ? null : id;
+      if (this.selectedTicketId !== null) {
+        this.cargarAreasTicket();
+      }
+    });
+    this.routeFragmentSub = this.route.fragment.subscribe((fragment) => {
+      this.detailScrollFragment = fragment;
+    });
   }
 
   ngOnDestroy(): void {
     this.viewAsSub?.unsubscribe();
+    this.areasActivasSub?.unsubscribe();
+    this.routeParamSub?.unsubscribe();
+    this.routeFragmentSub?.unsubscribe();
     this.tourCleanup?.();
     this.tourCleanup = undefined;
     this.pageTour?.destroy();
@@ -161,8 +203,24 @@ export class TicketsComponent implements OnInit, OnDestroy {
   }
 
   actualizarTodo(): void {
+    this.cargarAreasTicket();
     this.cargarTickets();
     this.cargarCerrados();
+  }
+
+  private cargarAreasTicket(): void {
+    this.ticketAreaService.refreshAreasActivas().subscribe();
+  }
+
+  private syncAreasDesdeServicio(areas: TicketAreaDTO[]): void {
+    this.areasTicketActivas = areas;
+    this.areaNombrePorCodigo.clear();
+    for (const a of areas) {
+      if (a.codigo) {
+        this.areaNombrePorCodigo.set(a.codigo, a.nombre);
+      }
+    }
+    this.areasTicket = areas.map((a) => a.codigo).filter((c): c is string => !!c);
   }
 
   /**
@@ -316,6 +374,49 @@ export class TicketsComponent implements OnInit, OnDestroy {
     return this.ordenarLista(this.filtrarLista(this.ticketsCerrados), true);
   }
 
+  /** Tickets visibles según pestaña activa (filtros globales ya aplicados). */
+  get ticketsVistaActiva(): Ticket[] {
+    switch (this.vistaBandeja) {
+      case 'mios':
+        return this.ticketsMisCreadosVista;
+      case 'cerrados':
+        return this.ticketsCerradosVista;
+      default:
+        return this.ticketsAreaVista;
+    }
+  }
+
+  get esVistaCerrados(): boolean {
+    return this.vistaBandeja === 'cerrados';
+  }
+
+  get cargandoVistaActiva(): boolean {
+    return this.esVistaCerrados ? this.loadingCerrados : this.loading;
+  }
+
+  cambiarVistaBandeja(vista: TicketsVistaBandeja): void {
+    this.vistaBandeja = vista;
+  }
+
+  /** Filtros locales (área / búsqueda): la vista reactiva se actualiza sola. */
+  onFiltroVistaLocalChange(): void {}
+
+  contadorVista(vista: TicketsVistaBandeja): number {
+    switch (vista) {
+      case 'mios':
+        return this.ticketsMisCreadosVista.length;
+      case 'cerrados':
+        return this.ticketsCerradosVista.length;
+      default:
+        return this.ticketsAreaVista.length;
+    }
+  }
+
+  contadorNoLeidos(vista: 'area' | 'mios'): number {
+    const lista = vista === 'area' ? this.ticketsAreaVista : this.ticketsMisCreadosVista;
+    return lista.filter((t) => this.esNoLeido(t.id)).length;
+  }
+
   toggleOrden(col: TicketsOrdenColumna): void {
     if (this.ordenColumna === col) {
       this.ordenAsc = !this.ordenAsc;
@@ -429,6 +530,17 @@ export class TicketsComponent implements OnInit, OnDestroy {
     return this.formatBadgeLabel(prioridad);
   }
 
+  /** Inicial(es) para la lista compacta del split view. */
+  getPrioridadShort(prioridad: string): string {
+    const map: Record<string, string> = {
+      BAJA: 'B',
+      MEDIA: 'M',
+      ALTA: 'A',
+      CRITICA: 'CR'
+    };
+    return map[(prioridad || '').toUpperCase()] || '?';
+  }
+
   /** Pastilla de color por área (lista de tickets). */
   getAreaPillClass(area: string): string {
     const key = (area || '').trim().toUpperCase();
@@ -445,7 +557,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
   }
 
   getAreaLabel(area: string): string {
-    return this.formatBadgeLabel(area);
+    const key = (area || '').trim().toUpperCase();
+    return this.areaNombrePorCodigo.get(key) || this.formatBadgeLabel(area);
   }
 
   canCreateTickets(): boolean {
@@ -586,8 +699,31 @@ export class TicketsComponent implements OnInit, OnDestroy {
    * navegan o ejecutan acciones (papelera, pill de adjuntos) usan `stopPropagation` para
    * no disparar este handler dos veces.
    */
-  abrirDetalle(ticketId: number): void {
-    this.router.navigate(['/menu/tickets', ticketId]);
+  abrirDetalle(ticketId: number, fragment?: string): void {
+    this.router.navigate(['/menu/tickets', ticketId], {
+      fragment: fragment || undefined
+    });
+  }
+
+  abrirAdjuntos(ticketId: number, event: Event): void {
+    event.stopPropagation();
+    this.abrirDetalle(ticketId, 'adjuntos');
+  }
+
+  esTicketSeleccionado(ticketId: number): boolean {
+    return this.selectedTicketId === ticketId;
+  }
+
+  cerrarDetalle(): void {
+    this.router.navigate(['/menu/tickets']);
+  }
+
+  onTicketDetailChanged(): void {
+    this.actualizarTodo();
+  }
+
+  onTicketDetailAccessDenied(): void {
+    this.cerrarDetalle();
   }
 
   onRowKeyDown(event: KeyboardEvent, ticketId: number): void {
@@ -621,6 +757,9 @@ export class TicketsComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.notificationService.showSuccessMessage(`Ticket ${codigo} eliminado.`);
+          if (this.selectedTicketId === ticket.id) {
+            this.cerrarDetalle();
+          }
           this.actualizarTodo();
         } else {
           this.notificationService.showError(
@@ -678,14 +817,21 @@ export class TicketsComponent implements OnInit, OnDestroy {
         selector: '#tour-tickets-filters',
         title: 'Filtros',
         description:
-          'Estado, área y búsqueda por código o título filtran las tres bandejas sobre los datos ya cargados.',
+          'Estado, área y búsqueda filtran la bandeja que tengas abierta en las pestañas.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-tickets-tabs',
+        title: 'Bandejas',
+        description:
+          'Elegí Bandeja del área, Mis tickets o Cerrados. A la izquierda la lista; a la derecha el detalle del ticket seleccionado.',
         side: 'bottom'
       },
       {
         selector: '#tour-tickets-panels',
-        title: 'Bandejas',
+        title: 'Lista y detalle',
         description:
-          'Tickets del área según tu rol, los que creaste vos y el historial de cerrados. Abrí el detalle desde «Abrir» en cada fila.',
+          'Hacé clic en un ticket para verlo al lado (en el celular se abre a pantalla completa). Podés ordenar con los encabezados de la lista.',
         side: 'top'
       },
       ...(this.canCreateTickets()
