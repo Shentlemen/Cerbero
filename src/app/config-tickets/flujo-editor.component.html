@@ -1,0 +1,223 @@
+<div class="flujo-editor" *ngIf="tipo && !tipo.esComun">
+  <div class="flujo-toolbar">
+    <div class="flujo-toolbar-left">
+      <button type="button" class="btn btn-sm btn-flujo-tool" (click)="agregarEtapa()" title="Agregar etapa">
+        <i class="fas fa-plus me-1"></i> Etapa
+      </button>
+      <button type="button" class="btn btn-sm btn-flujo-tool" (click)="agregarFin()" title="Agregar fin">
+        <i class="fas fa-flag-checkered me-1"></i> Fin
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger"
+        (click)="eliminarSeleccion()"
+        [disabled]="!selection"
+        title="Eliminar selección">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </div>
+    <div class="flujo-toolbar-right">
+      <span class="flujo-version-hint text-muted small" *ngIf="tipo.versionPublicada">
+        Publicado: v{{ tipo.versionPublicada }}
+      </span>
+      <span class="flujo-version-hint text-muted small" *ngIf="!tipo.tieneFlujoPublicado">
+        Sin publicar
+      </span>
+      <button type="button" class="btn btn-sm btn-flujo-guardar" (click)="guardarBorrador()" [disabled]="saving || publishing || loading">
+        <i class="fas" [ngClass]="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+        Guardar
+      </button>
+      <button type="button" class="btn btn-sm btn-flujo-publicar" (click)="publicar()" [disabled]="saving || publishing || loading">
+        <i class="fas" [ngClass]="publishing ? 'fa-spinner fa-spin' : 'fa-upload'"></i>
+        Publicar
+      </button>
+    </div>
+  </div>
+
+  <div class="flujo-workspace" *ngIf="!loading; else loadingTpl">
+    <div class="flujo-canvas-slot" #canvasSlot>
+      <div class="flujo-canvas-wrap" #canvasWrap (click)="clearSelection()">
+      <f-flow
+        fDraggable
+        (fFullRendered)="onFlowLoaded()"
+        (fMoveNodes)="onMoveNodes($event)"
+        (fCreateConnection)="onCreateConnection($event)"
+        (fReassignConnection)="onReassignConnection($event)">
+        <f-canvas fZoom>
+          <f-connection-for-create></f-connection-for-create>
+
+          <ng-container ngProjectAs="[fConnections]">
+            <f-connection
+              *ngFor="let edge of edges; trackBy: trackEdge"
+              [fConnectionId]="edge.id"
+              [fSourceId]="connectorOut(edge.source)"
+              [fTargetId]="connectorIn(edge.target)"
+              [fReassignableStart]="true"
+              fType="segment"
+              [class.flujo-edge--selected]="selection?.kind === 'edge' && selection?.id === edge.id"
+              (click)="selectEdge(edge.id, $event)">
+              <f-connection-marker-arrow type="f-connection-marker-end"></f-connection-marker-arrow>
+              <div
+                fConnectionContent
+                class="flujo-edge-label"
+                [class.flujo-edge-label--editing]="selection?.kind === 'edge' && selection?.id === edge.id"
+                (click)="selectEdge(edge.id, $event)">
+                <input
+                  *ngIf="selection?.kind === 'edge' && selection?.id === edge.id"
+                  class="flujo-edge-input"
+                  [(ngModel)]="edge.label"
+                  (click)="$event.stopPropagation()"
+                  (mousedown)="$event.stopPropagation()"
+                  maxlength="80"
+                  placeholder="Texto del botón"
+                  #edgeLabelInput />
+                <span *ngIf="!(selection?.kind === 'edge' && selection?.id === edge.id)">
+                  {{ edge.label || 'Continuar' }}
+                </span>
+              </div>
+            </f-connection>
+          </ng-container>
+
+          <ng-container ngProjectAs="[fNodes]">
+            <div
+              *ngFor="let node of nodes; trackBy: trackNode"
+              fNode
+              fDragHandle
+              [fNodeId]="node.id"
+              [fNodePosition]="{ x: node.x, y: node.y }"
+              class="flujo-node"
+              [class.flujo-node--inicio]="node.kind === 'inicio'"
+              [class.flujo-node--etapa]="node.kind === 'etapa'"
+              [class.flujo-node--fin]="node.kind === 'fin'"
+              [class.flujo-node--selected]="selection?.kind === 'node' && selection?.id === node.id"
+              (click)="selectNode(node.id, $event)">
+              <div
+                *ngIf="node.kind !== 'inicio'"
+                fConnector
+                fConnectorType="target"
+                [fConnectorId]="connectorIn(node.id)"
+                [fConnectorMultiple]="true"
+                [fConnectorConnectableSide]="connectableSide.LEFT"
+                class="flujo-connector flujo-connector--in"
+                title="Entrada">
+              </div>
+
+              <div class="flujo-node-kind">{{ kindLabel(node.kind) }}</div>
+              <div class="flujo-node-title">{{ node.label || node.id }}</div>
+              <div class="flujo-node-meta" *ngIf="node.kind !== 'fin'">
+                {{ areaNombre(node.bandeja) }}
+              </div>
+              <div class="flujo-node-meta" *ngIf="node.kind === 'etapa' && node.estado">
+                {{ node.estado }}
+              </div>
+              <div class="flujo-node-meta" *ngIf="node.kind === 'fin'">
+                {{ node.estadoFinal || 'RESUELTO' }}
+              </div>
+
+              <div
+                *ngIf="node.kind !== 'fin'"
+                fConnector
+                fConnectorType="source"
+                [fConnectorId]="connectorOut(node.id)"
+                [fConnectorMultiple]="true"
+                [fConnectorConnectableSide]="connectableSide.RIGHT"
+                class="flujo-connector flujo-connector--out"
+                title="Arrastrá desde acá hacia otra etapa">
+              </div>
+            </div>
+          </ng-container>
+        </f-canvas>
+      </f-flow>
+      </div>
+    </div>
+
+    <aside class="flujo-props" *ngIf="selectedNode as node">
+      <h3>{{ kindLabel(node.kind) }}</h3>
+      <label class="form-label small mb-1">Etiqueta</label>
+      <input class="form-control form-control-sm mb-2" [(ngModel)]="node.label" />
+
+      <ng-container *ngIf="node.kind === 'inicio' || node.kind === 'etapa'">
+        <label class="form-label small mb-1">Bandeja</label>
+        <select class="form-select form-select-sm mb-2" [(ngModel)]="node.bandeja">
+          <option value="">Seleccionar…</option>
+          <option *ngFor="let a of areas" [value]="a.codigo">{{ a.nombre }} ({{ a.codigo }})</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="node.kind === 'etapa'">
+        <label class="form-label small mb-1">Estado</label>
+        <select class="form-select form-select-sm mb-2" [(ngModel)]="node.estado">
+          <option *ngFor="let e of estadosTransicion" [ngValue]="e">{{ e }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="node.kind === 'fin'">
+        <label class="form-label small mb-1">Estado final</label>
+        <select class="form-select form-select-sm mb-2" [(ngModel)]="node.estadoFinal">
+          <option *ngFor="let e of estadosFin" [ngValue]="e">{{ e }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="node.kind !== 'fin'">
+        <hr class="my-2">
+        <label class="form-label small mb-1">Conectar hacia</label>
+        <div class="d-flex gap-1">
+          <select class="form-select form-select-sm" [(ngModel)]="conectarHaciaId">
+            <option value="">Elegir…</option>
+            <option *ngFor="let d of destinosPosiblesDesde(node.id)" [value]="d.id">
+              {{ d.label || d.id }}
+            </option>
+          </select>
+          <button type="button" class="btn btn-sm btn-flujo-tool" (click)="agregarTransicionDesdePanel()"
+                  [disabled]="!conectarHaciaId" title="Crear flecha">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      </ng-container>
+    </aside>
+
+    <aside class="flujo-props" *ngIf="selectedEdge as edge">
+      <h3>Texto del link</h3>
+      <p class="small text-muted mb-2">
+        {{ nodeById(edge.source)?.label || edge.source }}
+        →
+        {{ nodeById(edge.target)?.label || edge.target }}
+      </p>
+      <label class="form-label small mb-1">Qué dice el botón</label>
+      <input
+        class="form-control form-control-sm mb-2"
+        [(ngModel)]="edge.label"
+        maxlength="80"
+        placeholder="Ej. Enviar a laboratorio" />
+
+      <label class="form-label small mb-1">Destino</label>
+      <select
+        class="form-select form-select-sm mb-2"
+        [ngModel]="edge.target"
+        (ngModelChange)="cambiarDestinoEdge(edge.id, $event)">
+        <option *ngFor="let d of destinosPosiblesDesde(edge.source)" [value]="d.id">
+          {{ d.label || d.id }}
+        </option>
+      </select>
+
+      <label class="form-label small mb-1">Nota automática</label>
+      <textarea class="form-control form-control-sm" rows="4" [(ngModel)]="edge.notaPlantilla"
+                placeholder="Se agrega al historial al apretar el botón"></textarea>
+      <p class="small text-muted mb-0 mt-2">
+        Tip: también podés agarrar el extremo de la flecha y soltarlo en otra etapa.
+      </p>
+    </aside>
+
+    <aside class="flujo-props flujo-props--hint" *ngIf="!selectedNode && !selectedEdge">
+      <h3>Flujo</h3>
+      <p class="small text-muted mb-0">
+        Seleccioná un box y usá <strong>Conectar hacia</strong>, o arrastrá desde el punto azul derecho al izquierdo del siguiente.
+        Para cambiar una flecha existente, arrastrá su extremo o elegí otro destino en el panel.
+      </p>
+    </aside>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="text-muted small py-4 px-3">Cargando diagrama…</div>
+</ng-template>

@@ -11,7 +11,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin, Subscription } from 'rxjs';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { NotificationService } from '../services/notification.service';
 import { PermissionsService } from '../services/permissions.service';
@@ -27,6 +28,7 @@ import {
   TicketComentario,
   TicketComentarioView,
   TicketEstado,
+  TicketFlujoAccion,
   TicketMovimiento,
   TicketMovimientoView,
   TicketPrioridad,
@@ -71,6 +73,11 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
   comentario = '';
   /** Nota opcional al cerrar o reabrir como creador (estado RESUELTO). */
   notaCierreCreador = '';
+  /** Acciones del flujo congelado (botones). */
+  flujoAcciones: TicketFlujoAccion[] = [];
+  flujoConFlujo = false;
+  notaFlujoExtra = '';
+  aplicandoFlujo = false;
 
   archivoSeleccionado: File | null = null;
   descripcionAdjunto = '';
@@ -190,11 +197,22 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
   cargarTodo(): void {
     this.ticketAreaService.refreshAreasActivas().subscribe();
     this.loading = true;
+    this.flujoAcciones = [];
+    this.flujoConFlujo = false;
     forkJoin({
       ticket: this.ticketsService.obtener(this.ticketId),
       historial: this.ticketsService.historial(this.ticketId),
       comentarios: this.ticketsService.comentarios(this.ticketId),
-      adjuntos: this.ticketsService.listarAdjuntos(this.ticketId)
+      adjuntos: this.ticketsService.listarAdjuntos(this.ticketId),
+      flujo: this.ticketsService.listarAccionesFlujo(this.ticketId).pipe(
+        catchError(() =>
+          of({
+            success: true,
+            message: '',
+            data: { conFlujo: false, acciones: [] }
+          })
+        )
+      )
     }).subscribe({
       next: (response) => {
         this.ticket = response.ticket.data;
@@ -214,6 +232,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
           usuarioNombre: a.usuarioNombre
         }));
         this.nuevoEstado = this.ticket?.estado || '';
+        const flujo = response.flujo?.data;
+        this.flujoConFlujo = !!flujo?.conFlujo;
+        this.flujoAcciones = flujo?.acciones || [];
       },
       error: (error) => {
         this.loading = false;
@@ -293,6 +314,13 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
    */
   aplicarGestionTicket(): void {
     if (!this.ticket || !this.nuevoEstado) return;
+    if (this.esTicketConFlujo()) {
+      this.notificationService.showError(
+        'Flujo activo',
+        'Este ticket sigue un flujo. Usá los botones de avance en lugar de la gestión manual.'
+      );
+      return;
+    }
 
     const nota = this.notaGestion.trim();
     const derivar = !!this.nuevaArea && this.nuevaArea !== this.ticket.areaActual;
@@ -395,7 +423,61 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
 
   canProcessCurrentTicket(): boolean {
     if (!this.ticket) return false;
+    // Cerrados con flujo: solo lectura (no hay gestión manual).
+    // Cerrados comunes: el área/GM puede reabrir vía el panel manual.
+    if (this.ticket.estado === 'CERRADO' && this.esTicketConFlujo()) {
+      return false;
+    }
     return this.permissionsService.canProcessTicketsForArea(this.ticket.areaActual);
+  }
+
+  /** Ticket ligado a una versión de flujo (no es tipo común). */
+  esTicketConFlujo(): boolean {
+    return !!(this.ticket?.flujoVersionId) || this.flujoConFlujo;
+  }
+
+  /** Gestión por botones del flujo (oculta el panel manual). */
+  usaGestionPorFlujo(): boolean {
+    return this.canProcessCurrentTicket() && this.esTicketConFlujo() && this.flujoAcciones.length > 0;
+  }
+
+  /** Ticket con flujo pero sin botones en este paso (p. ej. fin RESUELTO). */
+  mostrarFlujoSinAcciones(): boolean {
+    return this.canProcessCurrentTicket() && this.esTicketConFlujo() && this.flujoAcciones.length === 0;
+  }
+
+  /** Solo tickets comunes: estado/derivar a mano. */
+  mostrarGestionManual(): boolean {
+    return this.canProcessCurrentTicket() && !this.esTicketConFlujo();
+  }
+
+  aplicarAccionFlujo(accion: TicketFlujoAccion): void {
+    if (!this.ticket || this.aplicandoFlujo) {
+      return;
+    }
+    this.aplicandoFlujo = true;
+    this.ticketsService
+      .aplicarAccionFlujo(this.ticket.id, accion.edgeId, this.notaFlujoExtra.trim() || undefined)
+      .subscribe({
+        next: (response) => {
+          this.aplicandoFlujo = false;
+          if (response.success) {
+            this.notificationService.showSuccessMessage(`Acción aplicada: ${accion.label}`);
+            this.notaFlujoExtra = '';
+            this.cargarTodo();
+            this.ticketChanged.emit();
+          } else {
+            this.notificationService.showError('Error', response.message || 'No se pudo aplicar la acción.');
+          }
+        },
+        error: (error) => {
+          this.aplicandoFlujo = false;
+          this.notificationService.showError(
+            'Error',
+            error?.error?.message || 'No se pudo aplicar la acción de flujo.'
+          );
+        }
+      });
   }
 
   /** Tras RESUELTO por el área, el creador puede cerrar o reabrir. */
@@ -522,6 +604,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
     if (tipo === 'CAMBIO_ESTADO_Y_AREA') {
       return 'Cambio de estado y área';
     }
+    if (tipo === 'FLUJO_ACCION') {
+      return 'Acción de flujo';
+    }
     return this.formatClaveLegible(tipo);
   }
 
@@ -535,6 +620,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
     }
     if (t.includes('ESTADO')) {
       return 'fa-flag';
+    }
+    if (t.includes('FLUJO')) {
+      return 'fa-project-diagram';
     }
     if (t.includes('AREA') || t.includes('DERIV')) {
       return 'fa-sitemap';

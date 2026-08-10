@@ -314,11 +314,16 @@
           placeholder="Resumen breve del reclamo" />
       </div>
 
-      <div class="col-md-6" id="tour-ticket-nuevo-area">
-        <label class="form-label">Área destino</label>
-        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.areaDestino" (ngModelChange)="limpiarFeedbackTicketNuevo()">
-          <option value="">Seleccionar...</option>
-          <option *ngFor="let area of areasTicket" [value]="area">{{ getAreaLabel(area) }} ({{ area }})</option>
+      <div class="col-md-6" id="tour-ticket-nuevo-tipo">
+        <label class="form-label">Tipo</label>
+        <select
+          class="form-select form-select-sm"
+          [(ngModel)]="ticketNuevoForm.ticketTipoId"
+          (ngModelChange)="onTipoTicketChange()">
+          <option [ngValue]="null">Seleccionar...</option>
+          <option *ngFor="let tipo of tiposTicket" [ngValue]="tipo.id">
+            {{ tipo.esComun ? 'Común' : tipo.nombre }}
+          </option>
         </select>
       </div>
 
@@ -327,6 +332,20 @@
         <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.prioridad" (ngModelChange)="limpiarFeedbackTicketNuevo()">
           <option *ngFor="let p of prioridadesTicket" [value]="p">{{ p }}</option>
         </select>
+      </div>
+
+      <div class="col-12" id="tour-ticket-nuevo-area" *ngIf="esTipoComunSeleccionado()">
+        <label class="form-label">Área destino</label>
+        <select class="form-select form-select-sm" [(ngModel)]="ticketNuevoForm.areaDestino" (ngModelChange)="limpiarFeedbackTicketNuevo()">
+          <option value="">Seleccionar...</option>
+          <option *ngFor="let area of areasTicket" [value]="area">{{ getAreaLabel(area) }} ({{ area }})</option>
+        </select>
+      </div>
+
+      <div class="col-12" *ngIf="!esTipoComunSeleccionado() && tipoTicketSeleccionado() as tipoFlujo">
+        <div class="alert alert-info py-2 px-3 small mb-0">
+          Entra directo a la bandeja inicial del flujo <strong>{{ tipoFlujo.nombre }}</strong>.
+        </div>
       </div>
 
       <div class="col-12" id="tour-ticket-nuevo-descripcion">

@@ -121,10 +121,8 @@
     <aside class="ticket-detail-aside" aria-label="Acciones del ticket">
 
       <div
-
         class="content-section ticket-detail-aside-panel mb-0"
-
-        *ngIf="canCreatorCloseOrReopenResolvedTicket() && !canProcessCurrentTicket()">
+        *ngIf="canCreatorCloseOrReopenResolvedTicket()">
 
         <h2 class="ticket-section-heading ticket-section-heading--accent">
 
@@ -166,7 +164,50 @@
 
 
 
-      <div class="content-section ticket-detail-aside-panel ticket-detail-aside-panel--gestion mb-0" *ngIf="canProcessCurrentTicket()">
+      <div
+        class="content-section ticket-detail-aside-panel ticket-detail-aside-panel--gestion mb-0"
+        *ngIf="usaGestionPorFlujo()">
+        <h2 class="ticket-section-heading ticket-section-heading--accent">
+          <i class="fas fa-project-diagram" aria-hidden="true"></i>
+          <span>Avanzar flujo</span>
+        </h2>
+        <div class="ticket-section-body">
+          <label class="form-label small text-muted mb-1">Nota extra (opcional)</label>
+          <textarea
+            class="form-control mb-3"
+            rows="2"
+            [(ngModel)]="notaFlujoExtra"
+            placeholder="Se suma a la nota automática del flujo"></textarea>
+          <button
+            type="button"
+            class="btn btn-ticket-primary w-100 mb-2"
+            *ngFor="let accion of flujoAcciones"
+            [disabled]="aplicandoFlujo"
+            (click)="aplicarAccionFlujo(accion)">
+            <i class="fas fa-play me-1" aria-hidden="true"></i>
+            {{ accion.label }}
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="content-section ticket-detail-aside-panel ticket-detail-aside-panel--gestion mb-0"
+        *ngIf="mostrarFlujoSinAcciones()">
+        <h2 class="ticket-section-heading ticket-section-heading--accent">
+          <i class="fas fa-project-diagram" aria-hidden="true"></i>
+          <span>Flujo</span>
+        </h2>
+        <div class="ticket-section-body">
+          <p class="text-muted small mb-0" *ngIf="ticket?.estado === 'RESUELTO'">
+            Este ticket sigue un flujo y quedó en <strong>resuelto</strong>. El creador puede cerrarlo o reabrirlo.
+          </p>
+          <p class="text-muted small mb-0" *ngIf="ticket?.estado !== 'RESUELTO'">
+            Este ticket sigue un flujo configurado. No hay acciones disponibles en el paso actual.
+          </p>
+        </div>
+      </div>
+
+      <div class="content-section ticket-detail-aside-panel ticket-detail-aside-panel--gestion mb-0" *ngIf="mostrarGestionManual()">
 
         <h2 class="ticket-section-heading ticket-section-heading--accent">
 
@@ -226,7 +267,7 @@
 
         class="content-section ticket-detail-aside-panel mb-0"
 
-        *ngIf="!canProcessCurrentTicket() && !canDerivarTicket() && !canCreatorCloseOrReopenResolvedTicket()">
+        *ngIf="!canProcessCurrentTicket() && !canDerivarTicket() && !canCreatorCloseOrReopenResolvedTicket() && !mostrarFlujoSinAcciones() && !usaGestionPorFlujo() && !mostrarGestionManual()">
 
         <h2 class="ticket-section-heading ticket-section-heading--muted">
 
@@ -238,7 +279,12 @@
 
         <div class="ticket-section-body">
 
-          <p class="text-muted mb-0">Tenés acceso de lectura y comentarios si corresponde. Para cambiar estado o derivar el ticket necesitás pertenecer al área actual o ser administrador/GM.</p>
+          <p class="text-muted mb-0" *ngIf="esTicketConFlujo()">
+            Este ticket sigue un flujo configurado. Las acciones las aplica el área actual con los botones del flujo.
+          </p>
+          <p class="text-muted mb-0" *ngIf="!esTicketConFlujo()">
+            Tenés acceso de lectura y comentarios si corresponde. Para cambiar estado o derivar el ticket necesitás pertenecer al área actual o ser administrador/GM.
+          </p>
 
         </div>
 

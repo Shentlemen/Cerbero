@@ -1,0 +1,294 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.flujo-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.flujo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.flujo-toolbar-left,
+.flujo-toolbar-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-flujo-tool {
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  font-weight: 600;
+}
+
+.btn-flujo-tool:hover:not(:disabled) {
+  background: #f8f9fa;
+  color: #000;
+  border-color: #000;
+}
+
+.btn-flujo-tool:disabled {
+  opacity: 0.65;
+}
+
+.btn-flujo-guardar {
+  background: transparent;
+  color: #000;
+  border: 1px solid #000;
+  font-weight: 600;
+}
+
+.btn-flujo-guardar:hover:not(:disabled) {
+  background: #3498db;
+  color: #fff;
+  border-color: #3498db;
+}
+
+.btn-flujo-guardar:disabled {
+  opacity: 0.65;
+}
+
+/* Mismo criterio que modal-btn-primario / botones de acción de la app. */
+.btn-flujo-publicar {
+  background: transparent;
+  color: #000;
+  border: 1px solid #000;
+  font-weight: 600;
+}
+
+.btn-flujo-publicar:hover:not(:disabled) {
+  background: #198754;
+  color: #fff;
+  border-color: #198754;
+}
+
+.btn-flujo-publicar:disabled {
+  opacity: 0.65;
+}
+
+.flujo-version-hint {
+  margin-right: 0.25rem;
+}
+
+.flujo-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+}
+
+/* Celda completa del editor (todo el blanco disponible). */
+.flujo-canvas-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  align-self: stretch;
+  justify-self: stretch;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #e9ecef;
+  border-radius: 15px;
+  box-sizing: border-box;
+}
+
+/*
+ * Tamaño y zoom los setea el TS midiendo el slot en px:
+ * width/height = slot / invZoom, zoom = invZoom → visual = 100% del slot
+ * y Foblex alinea mouse/links con el zoom global del body.
+ */
+.flujo-canvas-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  background: #f1f5f9;
+  overflow: hidden;
+  border-radius: 14px;
+  --ff-connection-color: #3498db;
+  --ff-connection-hover-color: rgba(52, 152, 219, 0.35);
+  --ff-connection-selected-color: #2980b9;
+  --ff-connection-width: 2.5px;
+  --ff-marker-color: #3498db;
+}
+
+.flujo-canvas-wrap f-flow,
+:host ::ng-deep .flujo-canvas-wrap f-flow,
+:host ::ng-deep .flujo-canvas-wrap f-canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.flujo-node {
+  min-width: 150px;
+  max-width: 190px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  color: #2c3e50;
+  position: relative;
+  cursor: grab;
+}
+
+.flujo-node--selected {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.flujo-node--inicio {
+  border-color: #27ae60;
+}
+
+.flujo-node--fin {
+  border-color: #e67e22;
+}
+
+.flujo-node-kind {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.flujo-node-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.flujo-node-meta {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flujo-connector {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3498db;
+  border: 2px solid #fff;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  cursor: crosshair;
+}
+
+.flujo-connector--in {
+  left: -7px;
+  background: #27ae60;
+}
+
+.flujo-connector--out {
+  right: -7px;
+}
+
+/* Forzar línea visible (el path SVG a veces queda sin stroke por tokens/CSS). */
+:host ::ng-deep .flujo-canvas-wrap .f-connection-path {
+  fill: none !important;
+  stroke: #3498db !important;
+  stroke-width: 2.5px !important;
+}
+
+:host ::ng-deep .flujo-canvas-wrap .f-connection.f-selected .f-connection-path {
+  stroke: #2980b9 !important;
+}
+
+:host ::ng-deep .flujo-canvas-wrap .f-marker,
+:host ::ng-deep .flujo-canvas-wrap .connection-marker {
+  color: #3498db;
+}
+
+.flujo-edge-label {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.flujo-edge-label--editing,
+.flujo-edge--selected .flujo-edge-label {
+  border-color: #3498db;
+  color: #2980b9;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.flujo-edge-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 110px;
+  max-width: 180px;
+  padding: 0;
+}
+
+.flujo-props {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 15px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  align-self: stretch;
+  overflow: auto;
+  min-height: 0;
+}
+
+.flujo-props h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+}
+
+.flujo-props--hint ul {
+  line-height: 1.45;
+}
+
+@media (max-width: 992px) {
+  .flujo-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(280px, 1fr) auto;
+  }
+}

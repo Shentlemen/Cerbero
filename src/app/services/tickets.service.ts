@@ -25,6 +25,9 @@ export interface Ticket {
   areaActual: string;
   creadoPorUserId: number;
   asignadoAUserId?: number | null;
+  ticketTipoId?: number | null;
+  flujoVersionId?: number | null;
+  flujoNodoActual?: string | null;
   fechaCreacion: string;
   fechaActualizacion: string;
   fechaCierre?: string | null;
@@ -38,6 +41,7 @@ export interface TicketMovimiento {
     | 'CAMBIO_ESTADO'
     | 'CAMBIO_AREA'
     | 'CAMBIO_ESTADO_Y_AREA'
+    | 'FLUJO_ACCION'
     | 'NOTA';
   estadoAnterior?: TicketEstado | null;
   estadoNuevo?: TicketEstado | null;
@@ -81,6 +85,23 @@ export interface TicketAdjunto {
 export interface TicketAdjuntoView {
   adjunto: TicketAdjunto;
   usuarioNombre: string;
+}
+
+export interface TicketFlujoAccion {
+  edgeId: string;
+  label: string;
+  estadoDestino: TicketEstado;
+  areaDestino: string;
+  notaPlantilla?: string | null;
+  nodoDestinoId: string;
+  nodoDestinoKind: string;
+}
+
+export interface TicketFlujoAccionesResponse {
+  conFlujo: boolean;
+  nodoActualId?: string | null;
+  nodoActualKind?: string | null;
+  acciones: TicketFlujoAccion[];
 }
 
 /** Tope alineado con `spring.servlet.multipart.max-file-size=10MB`. */
@@ -149,13 +170,33 @@ export class TicketsService {
   crear(payload: {
     titulo: string;
     descripcion: string;
-    areaDestino: string;
+    areaDestino?: string;
     prioridad: TicketPrioridad;
     nota?: string;
+    ticketTipoId?: number;
   }): Observable<ApiResponse<Ticket>> {
     return this.http.post<ApiResponse<Ticket>>(this.apiUrl, payload, {
       params: this.withVistaComo()
     });
+  }
+
+  listarAccionesFlujo(ticketId: number): Observable<ApiResponse<TicketFlujoAccionesResponse>> {
+    return this.http.get<ApiResponse<TicketFlujoAccionesResponse>>(
+      `${this.apiUrl}/${ticketId}/flujo-acciones`,
+      { params: this.withVistaComo() }
+    );
+  }
+
+  aplicarAccionFlujo(
+    ticketId: number,
+    edgeId: string,
+    notaExtra?: string
+  ): Observable<ApiResponse<Ticket>> {
+    return this.http.post<ApiResponse<Ticket>>(
+      `${this.apiUrl}/${ticketId}/flujo-accion`,
+      { edgeId, notaExtra },
+      { params: this.withVistaComo() }
+    );
   }
 
   obtener(ticketId: number): Observable<ApiResponse<Ticket>> {

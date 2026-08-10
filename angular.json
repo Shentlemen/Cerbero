@@ -48,7 +48,8 @@
               "src/assets/css/material-icons.css",
               "node_modules/leaflet/dist/leaflet.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
-              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css"
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
+              "node_modules/@foblex/flow/styles/default.scss"
             ],
             "scripts": [
               "node_modules/leaflet/dist/leaflet.js",

@@ -46,14 +46,7 @@ export class AppComponent implements OnDestroy {
   ) {
     this.routerSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(() => {
-        const path = this.router.url.split('?')[0];
-        if (path.includes('secret-game')) {
-          document.body.classList.add('no-global-zoom');
-        } else {
-          document.body.classList.remove('no-global-zoom');
-        }
-      });
+      .subscribe(() => this.applyZoomClassFromUrl(this.router.url));
     this.applyZoomClassFromUrl(this.router.url);
   }
 

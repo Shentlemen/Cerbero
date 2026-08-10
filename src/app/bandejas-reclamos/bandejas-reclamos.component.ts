@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -15,6 +15,9 @@ import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.servic
   styleUrl: './bandejas-reclamos.component.css'
 })
 export class BandejasReclamosComponent implements OnInit {
+  /** Cuando está dentro de Config tickets, oculta el layout de página completo. */
+  @Input() embedded = false;
+
   bandejasTicket: TicketAreaDTO[] = [];
   bandejasLoading = false;
   bandejasError: string | null = null;

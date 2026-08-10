@@ -11,6 +11,7 @@ import { forkJoin, Subscription } from 'rxjs';
 import { GuidedTourHostService, type GuidedTourStepDef } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
 import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.service';
+import { TicketTipoDTO, TicketTipoService } from '../services/ticket-tipo.service';
 import type { DriveStep, Driver } from 'driver.js';
 import { TicketDetailComponent } from './ticket-detail.component';
 
@@ -118,9 +119,11 @@ export class TicketsComponent implements OnInit, OnDestroy {
     descripcion: '',
     areaDestino: '',
     prioridad: 'MEDIA' as TicketPrioridad,
-    nota: ''
+    nota: '',
+    ticketTipoId: null as number | null
   };
   readonly prioridadesTicket: TicketPrioridad[] = ['BAJA', 'MEDIA', 'ALTA', 'CRITICA'];
+  tiposTicket: TicketTipoDTO[] = [];
 
   constructor(
     private ticketsService: TicketsService,
@@ -131,7 +134,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private guidedTourHost: GuidedTourHostService,
     private tourRegistry: TourRegistryService,
-    private ticketAreaService: TicketAreaService
+    private ticketAreaService: TicketAreaService,
+    private ticketTipoService: TicketTipoService
   ) {}
 
   ngOnInit(): void {
@@ -140,6 +144,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
       this.syncAreasDesdeServicio(areas);
     });
     this.cargarAreasTicket();
+    this.cargarTiposTicket();
     this.ordenColumna = 'fechaActualizacion';
     this.ordenAsc = false;
     this.lastViewAsRole = this.permissionsService.getViewAsRole();
@@ -586,14 +591,51 @@ export class TicketsComponent implements OnInit, OnDestroy {
   }
 
   private resetTicketNuevoForm(): void {
+    const comun = this.tiposTicket.find((t) => t.esComun) || this.tiposTicket[0] || null;
     this.ticketNuevoForm = {
       titulo: '',
       descripcion: '',
       areaDestino: '',
       prioridad: 'MEDIA',
-      nota: ''
+      nota: '',
+      ticketTipoId: comun?.id ?? null
     };
     this.ticketNuevoValidacion = null;
+  }
+
+  cargarTiposTicket(): void {
+    this.ticketTipoService.listarActivos().subscribe({
+      next: (tipos) => {
+        this.tiposTicket = tipos.filter((t) => t.esComun || t.tieneFlujoPublicado);
+        if (!this.ticketNuevoForm.ticketTipoId && this.tiposTicket.length) {
+          const comun = this.tiposTicket.find((t) => t.esComun) || this.tiposTicket[0];
+          this.ticketNuevoForm.ticketTipoId = comun.id;
+        }
+      },
+      error: () => {
+        this.tiposTicket = [];
+      }
+    });
+  }
+
+  tipoTicketSeleccionado(): TicketTipoDTO | null {
+    const id = this.ticketNuevoForm.ticketTipoId;
+    if (id == null) {
+      return null;
+    }
+    return this.tiposTicket.find((t) => t.id === id) || null;
+  }
+
+  esTipoComunSeleccionado(): boolean {
+    const t = this.tipoTicketSeleccionado();
+    return !t || t.esComun;
+  }
+
+  onTipoTicketChange(): void {
+    this.limpiarFeedbackTicketNuevo();
+    if (!this.esTipoComunSeleccionado()) {
+      this.ticketNuevoForm.areaDestino = '';
+    }
   }
 
   limpiarFeedbackTicketNuevo(): void {
@@ -603,7 +645,9 @@ export class TicketsComponent implements OnInit, OnDestroy {
   /** Misma regla que `armarValidacionClienteTicketNuevo` (hover ámbar en el botón cuando falta algo). */
   esTicketNuevoFormValido(): boolean {
     const f = this.ticketNuevoForm;
-    return !!(f.titulo?.trim() && f.descripcion?.trim() && f.areaDestino);
+    const tipoOk = f.ticketTipoId != null;
+    const areaOk = !this.esTipoComunSeleccionado() || !!f.areaDestino;
+    return !!(f.titulo?.trim() && f.descripcion?.trim() && tipoOk && areaOk);
   }
 
   private armarValidacionClienteTicketNuevo(): { titulo: string; lineas: string[] } | null {
@@ -615,8 +659,15 @@ export class TicketsComponent implements OnInit, OnDestroy {
     if (!f.descripcion.trim()) {
       lineas.push('La descripción es obligatoria.');
     }
-    if (!f.areaDestino) {
+    if (f.ticketTipoId == null) {
+      lineas.push('Seleccioná el tipo de ticket.');
+    }
+    if (this.esTipoComunSeleccionado() && !f.areaDestino) {
       lineas.push('Seleccioná el área destino.');
+    }
+    const tipo = this.tipoTicketSeleccionado();
+    if (tipo && !tipo.esComun && !tipo.tieneFlujoPublicado) {
+      lineas.push('Ese tipo aún no tiene un flujo publicado.');
     }
     if (lineas.length === 0) {
       return null;
@@ -641,9 +692,10 @@ export class TicketsComponent implements OnInit, OnDestroy {
       .crear({
         titulo: f.titulo.trim(),
         descripcion: f.descripcion.trim(),
-        areaDestino: f.areaDestino,
+        areaDestino: this.esTipoComunSeleccionado() ? f.areaDestino : undefined,
         prioridad: f.prioridad,
-        nota: f.nota.trim() || undefined
+        nota: f.nota.trim() || undefined,
+        ticketTipoId: f.ticketTipoId ?? undefined
       })
       .subscribe({
         next: (response) => {

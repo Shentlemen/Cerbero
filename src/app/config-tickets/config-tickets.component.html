@@ -1,0 +1,173 @@
+<div class="generic-container config-tickets-page" *ngIf="canManage(); else noAccess">
+  <app-notification-container></app-notification-container>
+
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1 class="mb-0"><i class="fas fa-ticket-alt"></i> Config tickets</h1>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="config-tickets-tabs" role="tablist" aria-label="Configuración de tickets">
+      <button
+        type="button"
+        role="tab"
+        class="config-tickets-tab"
+        [class.config-tickets-tab--active]="tab === 'flujos'"
+        [attr.aria-selected]="tab === 'flujos'"
+        (click)="setTab('flujos')">
+        <i class="fas fa-project-diagram" aria-hidden="true"></i>
+        Flujos
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="config-tickets-tab"
+        [class.config-tickets-tab--active]="tab === 'bandejas'"
+        [attr.aria-selected]="tab === 'bandejas'"
+        (click)="setTab('bandejas')">
+        <i class="fas fa-inbox" aria-hidden="true"></i>
+        Bandejas
+      </button>
+    </div>
+
+    <div class="config-tickets-panel" *ngIf="tab === 'flujos'" role="tabpanel">
+      <div class="flujos-layout">
+        <div class="flujos-list-card">
+          <div class="flujos-list-header">
+            <h2>Tipos</h2>
+            <button
+              type="button"
+              class="btn btn-sm btn-agregar-tipo"
+              (click)="abrirModalNuevoTipo()"
+              [disabled]="creando">
+              <i class="fas fa-plus me-1" aria-hidden="true"></i>
+              Nuevo tipo
+            </button>
+          </div>
+
+          <div *ngIf="tiposError" class="alert alert-danger py-2 small">{{ tiposError }}</div>
+          <div *ngIf="tiposLoading" class="text-muted small">Cargando…</div>
+
+          <ul class="flujos-tipo-list" *ngIf="!tiposLoading">
+            <li
+              *ngFor="let t of tipos"
+              class="flujos-tipo-item"
+              [class.flujos-tipo-item--active]="tipoSeleccionado?.id === t.id"
+              [class.flujos-tipo-item--inactive]="!t.esComun && !t.activo"
+              (click)="seleccionarTipo(t)">
+              <div class="flujos-tipo-name">{{ t.esComun ? 'Común' : t.nombre }}</div>
+              <div class="flujos-tipo-meta">
+                <span class="font-monospace">{{ t.codigo }}</span>
+                <span
+                  class="badge"
+                  [class.bg-secondary]="t.esComun"
+                  [class.bg-primary]="!t.esComun && t.tieneFlujoPublicado"
+                  [class.bg-warning]="!t.esComun && !t.tieneFlujoPublicado"
+                  [class.text-dark]="!t.esComun && !t.tieneFlujoPublicado">
+                  {{ t.esComun ? 'Sin flujo' : (t.tieneFlujoPublicado ? 'v' + t.versionPublicada : 'Borrador') }}
+                </span>
+              </div>
+              <button
+                *ngIf="!t.esComun"
+                type="button"
+                class="btn btn-sm flujos-tipo-estado"
+                [class.flujos-tipo-estado--on]="t.activo"
+                [class.flujos-tipo-estado--off]="!t.activo"
+                [attr.title]="t.activo ? 'Clic para desactivar' : 'Clic para activar'"
+                (click)="toggleActivo(t); $event.stopPropagation()">
+                <i class="fas" [ngClass]="t.activo ? 'fa-check-circle' : 'fa-times-circle'" aria-hidden="true"></i>
+                {{ t.activo ? 'Activo' : 'Inactivo' }}
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="flujos-editor-card">
+          <ng-container *ngIf="tipoSeleccionado as tipo">
+            <div *ngIf="tipo.esComun" class="flujos-comun-hint">
+              <h2>Común</h2>
+              <p class="text-muted mb-0">
+                Los tickets comunes se gestionan a mano (área, estado y comentarios), como hasta ahora.
+                Elegí o creá otro tipo en la lista de la izquierda para diseñar su flujo con botones.
+              </p>
+            </div>
+            <app-flujo-editor *ngIf="!tipo.esComun" [tipo]="tipo" (publicado)="onFlujoPublicado($event)"></app-flujo-editor>
+          </ng-container>
+          <div *ngIf="!tipoSeleccionado && !tiposLoading" class="text-muted py-4">
+            Creá un tipo de ticket para empezar a diseñar su flujo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-tickets-panel" *ngIf="tab === 'bandejas'" role="tabpanel">
+      <app-bandejas-reclamos [embedded]="true"></app-bandejas-reclamos>
+    </div>
+  </div>
+</div>
+
+<ng-template #nuevoTipoModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="fas fa-plus me-2" aria-hidden="true"></i>
+      Nuevo tipo de ticket
+    </h4>
+    <button type="button" class="btn-close" (click)="cerrarModalNuevoTipo()" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label">Nombre visible</label>
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          [ngModel]="nuevoNombre"
+          (ngModelChange)="onNombreNuevoChange($event)"
+          placeholder="Ej. Pedido de toner"
+          maxlength="120"
+          [disabled]="creando"
+          autofocus />
+      </div>
+      <div class="col-12">
+        <label class="form-label">Código interno</label>
+        <input
+          type="text"
+          class="form-control form-control-sm font-monospace"
+          [ngModel]="nuevoCodigo"
+          (ngModelChange)="onCodigoNuevoChange($event)"
+          placeholder="Ej. PEDIDO_TONER"
+          maxlength="40"
+          [disabled]="creando" />
+        <div class="form-text">Se sugiere desde el nombre; podés editarlo.</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModalNuevoTipo()" [disabled]="creando">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn-sm modal-btn-primario"
+      [class.modal-btn-primario--valid]="esNuevoTipoValido()"
+      [class.modal-btn-primario--invalid]="!esNuevoTipoValido()"
+      [disabled]="creando"
+      (click)="crearTipo()">
+      <i class="fas" [ngClass]="creando ? 'fa-spinner fa-spin' : 'fa-check'" aria-hidden="true"></i>
+      {{ creando ? 'Creando…' : 'Aceptar' }}
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #noAccess>
+  <div class="generic-container">
+    <div class="content-section">
+      <div class="alert alert-danger text-center py-5">
+        <i class="fas fa-lock fa-3x mb-3"></i>
+        <h4>Acceso denegado</h4>
+        <p class="mb-0">Solo GM o ADMIN pueden configurar tickets.</p>
+      </div>
+    </div>
+  </div>
+</ng-template>
