@@ -1,28 +1,32 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../interfaces/auth.interface';
 import { PermissionsService } from '../../services/permissions.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './app-header.component.html',
   styleUrls: ['./app-header.component.css']
 })
 export class AppHeaderComponent implements OnInit {
+  @ViewChild('userMenu') userMenu?: ElementRef<HTMLElement>;
+
   currentUser: User | null = null;
   isRealGm = false;
   effectiveRole = '';
   viewAsSelectValue = '';
   showPreviewBar = false;
   previewRole = '';
+  menuOpen = false;
+  viewAsOpen = false;
 
   readonly viewAsOptions: { value: string; label: string }[] = [
-    { value: '', label: 'GM (normal)' },
+    { value: '', label: 'Game Master' },
     { value: 'USER', label: 'Usuario' },
     { value: 'ADMIN', label: 'Administrador' },
     { value: 'ALMACEN', label: 'Almacén' },
@@ -51,10 +55,33 @@ export class AppHeaderComponent implements OnInit {
     return raw.trim().toLocaleUpperCase('es-UY');
   }
 
+  get hasAvatar(): boolean {
+    return !!this.currentUser?.hasAvatar;
+  }
+
+  get avatarUrl(): string {
+    return this.authService.getAvatarUrl();
+  }
+
+  get headerInitials(): string {
+    const u = this.currentUser;
+    if (!u) {
+      return '?';
+    }
+    const first = (u.firstName || '').trim();
+    const last = (u.lastName || '').trim();
+    if (first && last) {
+      return (first[0] + last[0]).toUpperCase();
+    }
+    const label = (first || last || u.username || '?').trim();
+    return label.slice(0, 2).toUpperCase();
+  }
+
   constructor(
     private authService: AuthService,
     private router: Router,
-    private permissionsService: PermissionsService
+    private permissionsService: PermissionsService,
+    public theme: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -73,8 +100,54 @@ export class AppHeaderComponent implements OnInit {
     this.showPreviewBar = this.permissionsService.isGmPreviewActive();
   }
 
+  toggleMenu(event?: Event): void {
+    event?.stopPropagation();
+    this.menuOpen = !this.menuOpen;
+    if (!this.menuOpen) {
+      this.viewAsOpen = false;
+    }
+  }
+
+  closeMenu(): void {
+    this.menuOpen = false;
+    this.viewAsOpen = false;
+  }
+
+  openViewAsPanel(): void {
+    this.viewAsOpen = true;
+  }
+
+  closeViewAsPanel(): void {
+    if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+      this.viewAsOpen = false;
+    }
+  }
+
+  toggleViewAsPanel(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.viewAsOpen = !this.viewAsOpen;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.menuOpen) {
+      return;
+    }
+    const root = this.userMenu?.nativeElement;
+    if (root && !root.contains(event.target as Node)) {
+      this.closeMenu();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeMenu();
+  }
+
   onViewAsChange(value: string): void {
     this.permissionsService.setViewAsRole(value || null);
+    this.closeMenu();
   }
 
   clearPreview(): void {
@@ -148,12 +221,24 @@ export class AppHeaderComponent implements OnInit {
     }
   }
 
+  toggleTheme(): void {
+    this.theme.toggle();
+  }
+
   logout(): void {
+    this.closeMenu();
     this.authService.logout();
     window.location.href = '/#/login';
   }
 
   goToProfile(): void {
-    this.router.navigate(['/user-profile']);
+    this.closeMenu();
+    this.router.navigate(['/menu/user-profile']);
+  }
+
+  onAvatarError(): void {
+    if (this.currentUser?.hasAvatar) {
+      this.currentUser = { ...this.currentUser, hasAvatar: false };
+    }
   }
 }

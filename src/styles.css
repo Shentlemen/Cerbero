@@ -1,5 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @import "driver.js/dist/driver.css";
+@import "./styles-tokens.css";
+@import "./styles-dark.css";
 
 /* Tour guiado — mismo estilo en todas las pantallas con botón propio */
 .btn-tour-guided {
@@ -22,18 +24,8 @@ body.driver-active.driver-fade .driver-popover {
   animation-duration: 0.18s !important;
 }
 
-/* Estilos base y variables */
+/* Estilos base y variables (colores y tamaños: styles-tokens.css) */
 :root {
-  --primary-color: #3498db;
-  --primary-dark: #2980b9;
-  --danger-color: #e74c3c;
-  --danger-dark: #c0392b;
-  --background-color: #f0f4f8;
-  --text-color: #2c3e50;
-  --border-radius: 12px;
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
   --transition: all 0.3s ease;
 }
 
@@ -41,14 +33,14 @@ body.driver-active.driver-fade .driver-popover {
 html {
   min-height: 100%;
   min-height: 100dvh;
-  background-color: #ecf0f1;
+  background-color: var(--theme-page);
 }
 
 body {
   margin: 0;
   min-height: 100%;
   min-height: 100dvh;
-  background-color: #ecf0f1;
+  background-color: var(--theme-page);
   color: var(--text-color);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   line-height: 1.6;
@@ -289,6 +281,56 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
  * Anillo azul de foco de Bootstrap 5 en .btn (box-shadow 0 0 0 .25rem rgba(13,110,253,.25)).
  * Las variantes outline/small y muchas pantallas no estaban cubiertas por las reglas por tipo.
  */
+
+a.config-hub-tab:focus,
+a.config-hub-tab:focus-visible,
+a.config-hub-tab:active,
+a.config-hub-tab:focus-within {
+  outline: none !important;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.config-hub-tab:not(.config-hub-tab--active):focus,
+a.config-hub-tab:not(.config-hub-tab--active):focus-visible,
+a.config-hub-tab:not(.config-hub-tab--active):active {
+  box-shadow: var(--ds-shadow-inset-tab) !important;
+}
+
+a.config-hub-tab.config-hub-tab--active:focus,
+a.config-hub-tab.config-hub-tab--active:focus-visible,
+a.config-hub-tab.config-hub-tab--active:active {
+  box-shadow: none !important;
+}
+
+a.config-hub-tab *,
+a.config-hub-tab *:focus,
+a.config-hub-tab *:focus-visible,
+a.config-hub-tab *:active,
+a.config-hub-tab .config-hub-tab-icon,
+a.config-hub-tab .config-hub-tab-icon i,
+a.config-hub-tab .config-hub-tab-icon i::before {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tickets-ig-card:focus,
+.tickets-ig-card:focus-visible,
+.tickets-ig-card:focus-within,
+.tickets-ig-card:active,
+.tickets-kanban-card:focus,
+.tickets-kanban-card:focus-visible,
+.tickets-kanban-card:focus-within,
+.tickets-kanban-card:active {
+  outline: none !important;
+}
+
+.tickets-ig-card:focus:not(:hover),
+.tickets-ig-card:focus-visible:not(:hover),
+.tickets-ig-card:focus-within:not(:hover) {
+  box-shadow: var(--ds-shadow-sm) !important;
+}
 .btn:focus,
 .btn:focus-visible {
   outline: none !important;
@@ -573,28 +615,55 @@ button.btn.btn-danger:active {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
 }
 
 .title-wrapper h1 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1.2;
 }
 
 .title-wrapper h1 i {
-  color: #212529;
-  font-size: 2rem;
-  opacity: 0.9;
+  color: #475569;
+  font-size: 0.8rem;
+  opacity: 1;
 }
 
 .actions {
   display: flex;
   align-items: center;
   margin-top: 0.5rem;
+}
+
+.content-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.content-toolbar .actions {
+  margin-top: 0;
+  gap: 0.75rem;
+}
+
+.list-toolbar .actions,
+.list-toolbar > .print-btn,
+.locations-toolbar .actions,
+.subnets-toolbar .actions {
+  margin-top: 0;
+  margin-left: auto;
+  gap: 0.75rem;
 }
 
 /* Estilos de contenido comunes */
@@ -965,20 +1034,22 @@ button.btn.btn-danger:active {
 }
 
 .title-wrapper h1 {
-  font-size: 1.85rem;
-  font-weight: 600;
-  color: var(--text-color);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
   margin: 0;
-  letter-spacing: -0.5px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1.2;
 }
 
 .title-wrapper h1 i {
-  color: #212529;
-  font-size: 2rem;
-  opacity: 0.9;
+  color: #475569;
+  font-size: 0.8rem;
+  opacity: 1;
 }
 
 /* Mejoras en la sección de contenido */
@@ -1274,7 +1345,7 @@ ngb-modal-window.almacen-form-modal-window .modal-footer.almacen-form-modal-foot
   text-align: left;
 }
 
-/* Modal nueva/editar configuración de almacén (ConfigAlmacenesComponent). */
+/* Modal nueva/editar configuración de almacén (ConfiguracionAlmacenComponent). */
 ngb-modal-window.config-almacen-modal-window .modal-footer.config-almacen-modal-footer-stack {
   background-color: #f8f9fa;
   border-top: 1px solid #dee2e6;
@@ -1356,7 +1427,7 @@ ngb-pagination.custom-pagination {
   }
 
   .title-wrapper h1 {
-    font-size: 1.5rem;
+    font-size: 0.82rem;
   }
 
   .btn {
@@ -1390,22 +1461,26 @@ ngb-pagination.custom-pagination {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
 }
 
 .title-wrapper h1 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1.2;
 }
 
 .title-wrapper h1 i {
-  color: #212529;
-  font-size: 2rem;
-  opacity: 0.9;
+  color: #475569;
+  font-size: 0.8rem;
+  opacity: 1;
 }
 
 .actions {
@@ -1537,12 +1612,12 @@ ngb-pagination.custom-pagination {
   cursor: pointer;
 }
 
-.cerbero-list-table thead th.sortable-header:hover {
+html:not(.theme-dark) .cerbero-list-table thead th.sortable-header:hover {
   background: #eef2ff !important;
   color: #4338ca !important;
 }
 
-.cerbero-list-table thead th.sortable-header.active {
+html:not(.theme-dark) .cerbero-list-table thead th.sortable-header.active {
   background: #e8eaff !important;
   color: #312e81 !important;
 }
@@ -1561,11 +1636,11 @@ ngb-pagination.custom-pagination {
   transition: color 0.15s ease;
 }
 
-.cerbero-list-table thead th.sortable-header:hover .th-content i {
+html:not(.theme-dark) .cerbero-list-table thead th.sortable-header:hover .th-content i {
   color: #6366f1;
 }
 
-.cerbero-list-table thead th.sortable-header.active .th-content i {
+html:not(.theme-dark) .cerbero-list-table thead th.sortable-header.active .th-content i {
   color: #4f46e5;
 }
 
@@ -1826,7 +1901,7 @@ ngb-pagination.custom-pagination {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.28);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2116,23 +2191,31 @@ ngb-pagination.custom-pagination {
 }
 
 .text-center.my-4 {
+  position: fixed;
+  right: 1.75rem;
+  bottom: 1.75rem;
+  left: auto;
+  z-index: 1040;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  position: relative;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin: 0 !important;
+  width: auto;
+  max-width: 12rem;
+  pointer-events: none;
 }
 
 .text-center.my-4::before {
   content: '';
-  width: 120px; /* Reducido de 200px a 120px */
-  height: 120px; /* Reducido de 200px a 120px */
+  width: 120px;
+  height: 120px;
   background-image: url('/assets/loadcat.gif');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  animation: bounce 0.5s infinite alternate; /* Agregamos una animación de rebote */
+  animation: bounce 0.5s infinite alternate;
 }
 
 @keyframes bounce {
@@ -2145,10 +2228,17 @@ ngb-pagination.custom-pagination {
 }
 
 .text-center.my-4 p {
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   color: #2c3e50;
   font-weight: 500;
-  margin-top: 1rem;
+  margin: 0;
+  text-align: center;
+}
+
+.text-center.my-4 small {
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 0;
 }
 
 /* Estilo para el badge de solo lectura */
@@ -2218,10 +2308,11 @@ ngb-pagination.custom-pagination {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--ds-color-border, #e9ecef);
   border-radius: 25px;
-  background: white;
-  color: #6c757d;
+  background: var(--ds-color-elevated, #f8f9fa);
+  color: var(--ds-color-text, #6c757d);
+  -webkit-text-fill-color: var(--ds-color-text, #6c757d);
   font-weight: 500;
   font-size: 0.9rem;
   cursor: pointer;
@@ -2426,23 +2517,8 @@ app-software .software-table .action-buttons button:not(.btn):focus-visible i {
   border-color: transparent !important;
 }
 
-/* Configuración global de zoom - Reducir tamaño del 20%
-   Nota: no se aplica cuando el body tiene la clase .no-global-zoom
-   (por ejemplo, en la demo de almacén 3D). */
-:root {
-  --app-global-zoom: 0.8;
-}
-
-body.no-global-zoom {
-  --app-global-zoom: 1;
-}
-
-body:not(.no-global-zoom) {
-  zoom: 0.8;
-  /* Tras zoom 0.8 hace falta más alto de layout para cubrir el viewport visible */
-  min-height: calc(100vh / 0.8);
-  min-height: calc(100dvh / 0.8);
-}
+/* El tamaño compacto de la UI vive en html { font-size: 80% } (styles-after-bootstrap.css).
+   No usar zoom en body: rompe coordenadas del mouse, canvas y popovers. */
 
 /* Iconos rojos en modales de detalles de activo - estilo similar a items del almacén */
 .activo-details-modal .detail-label i {
@@ -2455,9 +2531,12 @@ body:not(.no-global-zoom) {
   color: #e74c3c;
 }
 
-/* Estilos globales para el backdrop del modal - funciona con zoom */
-/* Nota: El JavaScript ajustará las dimensiones en píxeles para evitar problemas con zoom */
-.modal-backdrop {
+/* Overlay de modal: solo un velo semitransparente.
+ * backdrop-filter: blur() en pantalla completa obliga al compositor a
+ * redifuminar toda la UI en cada frame: el modal abre lento y cualquier
+ * popup/datepicker/dropdown interno también. Sin blur, las animaciones vuelven. */
+.modal-backdrop,
+ngb-modal-backdrop {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -2465,21 +2544,44 @@ body:not(.no-global-zoom) {
   bottom: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
-  transform: none !important;
   overflow: hidden !important;
   z-index: 1040 !important;
+  --bs-backdrop-bg: rgba(15, 23, 42, 0.28);
+  --bs-backdrop-opacity: 1;
+  background-color: rgba(15, 23, 42, 0.28) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: auto;
 }
 
-/* Asegurar que el backdrop cubra toda la pantalla incluso con zoom */
-.modal-backdrop.show {
+.modal-backdrop.fade,
+ngb-modal-backdrop.fade,
+.modal.fade,
+ngb-modal-window.modal.fade,
+.modal.fade .modal-dialog {
+  transition: none !important;
+}
+
+.modal.fade .modal-dialog {
+  transform: none !important;
+}
+
+.modal-backdrop.fade:not(.show),
+ngb-modal-backdrop.fade:not(.show) {
+  opacity: 0 !important;
+}
+
+.modal-backdrop.show,
+ngb-modal-backdrop.show {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
+  opacity: 1 !important;
 }
 
-/* Layout principal: fondo gris continuo (sin franja blanca con zoom global) */
+/* Layout principal: fondo gris continuo */
 html,
 body {
   margin: 0;
@@ -2488,33 +2590,34 @@ body {
   background-color: #ecf0f1;
 }
 
-html:has(body:not(.no-global-zoom)) {
-  min-height: calc(100vh / 0.8);
-  min-height: calc(100dvh / 0.8);
-}
-
 /*
- * Mi perfil (ruta /user-profile): el zoom global del body puede dejar huecos claros al scrollear.
- * Forzamos negro también en html/body y en la cascata app-root → app-container → main hasta el alto del contenido.
+ * Al abrir un modal, body.modal-open oculta el scrollbar y Bootstrap/ng-bootstrap
+ * compensan con padding-right. Eso hace que listas de fondo se ensanchen o salten.
+ * Reservamos el gutter de forma estable y anulamos el padding extra.
  */
-html:has(app-user-profile),
-body:has(app-user-profile) {
-  background-color: #000 !important;
-  height: auto;
-  min-height: 100vh;
-  min-height: 100dvh;
+html {
+  scrollbar-gutter: stable;
 }
 
-app-root:has(app-user-profile),
-app-root:has(app-user-profile) .app-container,
-app-root:has(app-user-profile) .app-container > .main-content {
-  background-color: #000;
+body.modal-open {
+  padding-right: 0 !important;
+  overflow: hidden !important;
 }
 
-app-root:has(app-user-profile) .app-container {
-  min-height: 100vh;
-  min-height: 100dvh;
-  flex: 1 1 auto;
+/* El diálogo centrado no debe usar min-height: 100% (estira el documento). */
+ngb-modal-window.modal {
+  position: fixed !important;
+  inset: 0;
+  width: auto !important;
+  max-width: 100%;
+  height: auto !important;
+  max-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.modal-dialog.modal-dialog-centered {
+  min-height: calc(100dvh - var(--bs-modal-margin, 0.5rem) * 2) !important;
 }
 
 /* Asegurar que los contenedores principales usen todo el espacio disponible */
@@ -2533,8 +2636,6 @@ app-root:has(app-user-profile) .app-container {
   position: relative;
 }
 
-/* Ajustar contenedores de gráficas - solución CSS no funciona bien con canvas */
-/* Usamos JavaScript para ajustar coordenadas del mouse */
 .chart-card {
   position: relative;
 }
@@ -2544,4 +2645,187 @@ app-root:has(app-user-profile) .app-container {
 .software-content,
 .assets-content {
   flex: 1;
+}
+
+.cerbero-folder-stage {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-section:has(+ .cerbero-folder-stage) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0.35rem 0.15rem 0;
+  margin-bottom: 0.55rem;
+  border-radius: 0;
+}
+
+.cerbero-folder-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  justify-content: start;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+.cerbero-folder-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.cerbero-folder-tabs-groups {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.65rem;
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+  scrollbar-width: none;
+}
+
+.cerbero-folder-tabs-groups::-webkit-scrollbar {
+  display: none;
+}
+
+.cerbero-folder-tabs-groups > .cerbero-folder-tabs {
+  overflow: hidden;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.cerbero-folder-tabs-groups > .cerbero-folder-tabs + .cerbero-folder-tabs {
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--ds-color-border, #e2e8f0);
+}
+
+.cerbero-folder-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem 0.65rem;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  border-radius: var(--ds-radius-lg) var(--ds-radius-lg) 0 0;
+  background: var(--ds-color-recessed);
+  box-shadow: var(--ds-shadow-inset-tab);
+  cursor: pointer;
+  color: inherit;
+}
+
+.cerbero-folder-tab:hover:not(.cerbero-folder-tab--active) {
+  background: var(--ds-color-recessed-hover);
+}
+
+.cerbero-folder-tab--active {
+  background: var(--ds-color-surface);
+  box-shadow: none;
+  z-index: 2;
+  margin-bottom: -2px;
+  padding-bottom: calc(0.65rem + 2px);
+}
+
+.cerbero-folder-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: inherit;
+  pointer-events: none;
+}
+
+.cerbero-folder-tab:focus-visible {
+  outline: 2px solid var(--ds-color-faint);
+  outline-offset: -2px;
+}
+
+.cerbero-folder-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--tab-accent, var(--ds-color-accent));
+}
+
+.cerbero-folder-tab-label {
+  font-size: var(--ds-font-2xs);
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-color-faint);
+  text-align: center;
+  max-width: 7.25rem;
+  line-height: 1.2;
+}
+
+.cerbero-folder-tab--active .cerbero-folder-tab-label {
+  color: var(--ds-color-subtle);
+}
+
+.content-section.cerbero-folder-panel {
+  border: none;
+  border-radius: 0 var(--ds-radius-xl) var(--ds-radius-xl) var(--ds-radius-xl);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-shadow-sm);
+  position: relative;
+  z-index: 0;
+}
+
+.cerbero-folder-stage:not(:has(.cerbero-folder-tabs)) .cerbero-folder-panel {
+  border-radius: var(--ds-radius-xl);
+}
+
+@media (max-width: 991.98px) {
+  .cerbero-folder-tab {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .content-section.cerbero-folder-panel {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+/* Después de :root (claro): reafirma variables oscuras cuando html.theme-dark está activo. */
+html.theme-dark {
+  color-scheme: dark;
+  --theme-page: #1a1d24;
+  --theme-canvas: #1a1d24;
+  --theme-surface: #252830;
+  --theme-elevated: #2c303a;
+  --theme-input: #1e222b;
+  --theme-hover: #353a46;
+  --theme-border: #3d4452;
+  --theme-text: #e6e8ec;
+  --theme-muted: #a8b0bc;
+  --theme-heading: #f1f3f6;
+  --theme-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+  --text-color: #e6e8ec;
+  --background-color: #1a1d24;
+}
+
+html.theme-dark,
+html.theme-dark body {
+  background-color: var(--theme-page) !important;
+  color: var(--theme-text);
 }

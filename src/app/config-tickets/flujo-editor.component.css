@@ -116,15 +116,12 @@
   box-sizing: border-box;
 }
 
-/*
- * Tamaño y zoom los setea el TS midiendo el slot en px:
- * width/height = slot / invZoom, zoom = invZoom → visual = 100% del slot
- * y Foblex alinea mouse/links con el zoom global del body.
- */
 .flujo-canvas-wrap {
   position: absolute;
   left: 0;
   top: 0;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
   background: #f1f5f9;
   overflow: hidden;

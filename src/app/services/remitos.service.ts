@@ -55,11 +55,18 @@ export class RemitosService {
   }
 
   getUrlDescarga(idRemito: number): string {
-    return `${this.apiUrl}/descargar/${idRemito}`;
+    return this.withAuthToken(`${this.apiUrl}/descargar/${idRemito}`);
   }
 
   getUrlVisualizacion(idRemito: number): string {
-    return `${this.apiUrl}/ver/${idRemito}`;
+    return this.withAuthToken(`${this.apiUrl}/ver/${idRemito}`);
+  }
+
+  private withAuthToken(url: string): string {
+    const token = localStorage.getItem('token');
+    if (!token) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}token=${encodeURIComponent(token)}`;
   }
 
   descargarRemito(idRemito: number): void {

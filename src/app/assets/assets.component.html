@@ -12,124 +12,112 @@
             - Filtrado por software: {{ route.snapshot.queryParams['softwareName'] }}
           </span>
         </h1>
-        
-        <div class="d-flex align-items-center gap-2 ms-auto">
-          <!-- Botón de imprimir/exportar PDF -->
-          <button 
-            class="btn btn-primary btn-sm print-btn" 
-            id="tour-assets-print"
-            (click)="exportarPDF()"
-            title="Exportar lista filtrada a PDF"
-            [disabled]="loading || assetsFiltrados.length === 0">
-            <i class="fas fa-file-pdf"></i>
-            Imprimir
-          </button>
-        </div>
       </div>
       
-      <!-- Filtros por tipo de activo -->
-      <div class="filters-container" id="tour-assets-filters">
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === ''"
-          (click)="filterByType('')"
-          data-help="🎯 Filtro para mostrar todos los activos sin restricciones">
-          <i class="fas fa-th-large"></i>
-          <span>Todos</span>
-          <span class="count">({{totalAssets}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'DESKTOP'"
-          [style.--device-color]="'#2e7d32'"
-          [style.--device-bg-color]="'#e8f5e9'"
-          [style.--device-border-color]="'#c8e6c9'"
-          (click)="filterByType('DESKTOP')">
-          <i class="fas fa-desktop" style="color: #2e7d32;"></i>
-          <span>Desktops</span>
-          <span class="count">({{pcCount}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'MINI PC'"
-          [style.--device-color]="'#f57c00'"
-          [style.--device-bg-color]="'#fff3e0'"
-          [style.--device-border-color]="'#ffe0b2'"
-          (click)="filterByType('MINI PC')">
-          <i class="fas fa-laptop" style="color: #f57c00;"></i>
-          <span>Mini PCs</span>
-          <span class="count">({{miniPcCount}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'LAPTOP'"
-          [style.--device-color]="'#1976d2'"
-          [style.--device-bg-color]="'#e3f2fd'"
-          [style.--device-border-color]="'#bbdefb'"
-          (click)="filterByType('LAPTOP')">
-          <i class="fas fa-laptop" style="color: #1976d2;"></i>
-          <span>Laptops</span>
-          <span class="count">({{laptopCount}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'TOWER'"
-          [style.--device-color]="'#34495e'"
-          [style.--device-bg-color]="'#ecf0f1'"
-          [style.--device-border-color]="'#bdc3c7'"
-          (click)="filterByType('TOWER')">
-          <i class="fas fa-server" style="color: #34495e;"></i>
-          <span>Towers</span>
-          <span class="count">({{towerCount}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'LOW PROFILE DESKTOP'"
-          [style.--device-color]="'#8e44ad'"
-          [style.--device-bg-color]="'#f4e6f7'"
-          [style.--device-border-color]="'#e8d5f0'"
-          (click)="filterByType('LOW PROFILE DESKTOP')">
-          <i class="fas fa-desktop" style="color: #8e44ad;"></i>
-          <span>Low Profile</span>
-          <span class="count">({{lowProfileCount}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'MINI TOWER'"
-          [style.--device-color]="'#e67e22'"
-          [style.--device-bg-color]="'#fdf2e9'"
-          [style.--device-border-color]="'#fad7b0'"
-          (click)="filterByType('MINI TOWER')">
-          <i class="fas fa-server" style="color: #e67e22;"></i>
-          <span>Mini Tower</span>
-          <span class="count">({{miniTowerCount}})</span>
-        </button>
-        
-        <button 
-          class="filter-btn" 
-          [class.active]="currentFilter === 'DESCONOCIDO'"
-          [style.--device-color]="'#95a5a6'"
-          [style.--device-bg-color]="'#f8f9fa'"
-          [style.--device-border-color]="'#dee2e6'"
-          (click)="filterByType('DESCONOCIDO')">
-          <i class="fas fa-question-circle" style="color: #95a5a6;"></i>
-          <span>Desconocido</span>
-          <span class="count">({{desconocidoCount}})</span>
-        </button>
-      </div>
     </div>
   </div>
 
-  <div class="assets-content">
+  <div class="cerbero-folder-stage">
+    <div
+      class="cerbero-folder-tabs"
+      id="tour-assets-filters"
+      role="tablist"
+      aria-label="Filtrar por tipo de terminal">
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === ''"
+        [attr.aria-selected]="currentFilter === ''"
+        [style.--tab-accent]="'var(--ds-color-accent)'"
+        (click)="filterByType('')"
+        data-help="🎯 Filtro para mostrar todos los activos sin restricciones">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-th-large"></i></span>
+        <span class="cerbero-folder-tab-label">Todos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'DESKTOP'"
+        [attr.aria-selected]="currentFilter === 'DESKTOP'"
+        [style.--tab-accent]="'#2e7d32'"
+        (click)="filterByType('DESKTOP')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-desktop"></i></span>
+        <span class="cerbero-folder-tab-label">Desktops</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'MINI PC'"
+        [attr.aria-selected]="currentFilter === 'MINI PC'"
+        [style.--tab-accent]="'#f57c00'"
+        (click)="filterByType('MINI PC')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-laptop"></i></span>
+        <span class="cerbero-folder-tab-label">Mini PCs</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'LAPTOP'"
+        [attr.aria-selected]="currentFilter === 'LAPTOP'"
+        [style.--tab-accent]="'#1976d2'"
+        (click)="filterByType('LAPTOP')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-laptop"></i></span>
+        <span class="cerbero-folder-tab-label">Laptops</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'TOWER'"
+        [attr.aria-selected]="currentFilter === 'TOWER'"
+        [style.--tab-accent]="'#34495e'"
+        (click)="filterByType('TOWER')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-server"></i></span>
+        <span class="cerbero-folder-tab-label">Towers</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'LOW PROFILE DESKTOP'"
+        [attr.aria-selected]="currentFilter === 'LOW PROFILE DESKTOP'"
+        [style.--tab-accent]="'#8e44ad'"
+        (click)="filterByType('LOW PROFILE DESKTOP')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-desktop"></i></span>
+        <span class="cerbero-folder-tab-label">Low Profile</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'MINI TOWER'"
+        [attr.aria-selected]="currentFilter === 'MINI TOWER'"
+        [style.--tab-accent]="'#e67e22'"
+        (click)="filterByType('MINI TOWER')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-server"></i></span>
+        <span class="cerbero-folder-tab-label">Mini Tower</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="currentFilter === 'DESCONOCIDO'"
+        [attr.aria-selected]="currentFilter === 'DESCONOCIDO'"
+        [style.--tab-accent]="'#95a5a6'"
+        (click)="filterByType('DESCONOCIDO')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></span>
+        <span class="cerbero-folder-tab-label">Desconocido</span>
+      </button>
+    </div>
+
+  <div class="assets-content content-section cerbero-folder-panel">
     <!-- Filtro de búsqueda arriba de la tabla -->
-    <div class="row mb-3">
-      <div class="col-12">
+    <div class="row mb-3 align-items-start g-2">
+      <div class="col-auto flex-grow-1">
         <input
           type="text"
           class="form-control"
@@ -139,6 +127,94 @@
           [formControl]="nombreEquipoControl"
           style="max-width: 320px;"
           autocomplete="off">
+      </div>
+      <div class="col-auto">
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm advanced-toggle-btn"
+          id="tour-assets-advanced"
+          (click)="toggleAdvancedFilters()"
+          [class.active]="showAdvancedFilters || advancedFiltersApplied">
+          <i class="fas fa-sliders-h"></i>
+          Filtros avanzados
+          <span *ngIf="advancedFiltersActiveCount > 0" class="advanced-badge">{{ advancedFiltersActiveCount }}</span>
+        </button>
+      </div>
+      <div class="col-auto">
+        <button
+          class="btn btn-primary btn-sm print-btn"
+          id="tour-assets-print"
+          (click)="exportarPDF()"
+          title="Exportar lista filtrada a PDF"
+          [disabled]="loading || assetsFiltrados.length === 0">
+          <i class="fas fa-file-pdf"></i>
+          Imprimir
+        </button>
+      </div>
+    </div>
+
+    <div class="advanced-filters-panel" id="tour-assets-advanced-panel" *ngIf="showAdvancedFilters" [formGroup]="advancedFilterForm"
+      (keydown.enter)="onAdvancedFiltersEnter($event)">
+      <div class="advanced-filters-grid">
+        <div class="advanced-field">
+          <label for="adv-diskType">Tipo de disco</label>
+          <select id="adv-diskType" class="form-select form-select-sm" formControlName="diskType">
+            <option value="">Cualquiera</option>
+            <option value="HDD">HDD (no SSD)</option>
+            <option value="SSD">SSD / NVMe</option>
+          </select>
+        </div>
+        <div class="advanced-field">
+          <label for="adv-osName">Sistema operativo</label>
+          <input id="adv-osName" type="text" class="form-control form-control-sm" formControlName="osName"
+            placeholder="Ej: Windows 10" autocomplete="off">
+        </div>
+        <div class="advanced-field">
+          <label for="adv-processor">Procesador</label>
+          <input id="adv-processor" type="text" class="form-control form-control-sm" formControlName="processor"
+            placeholder="Ej: i5, Ryzen" autocomplete="off">
+        </div>
+        <div class="advanced-field">
+          <label for="adv-diskPct">Uso de disco ≥ %</label>
+          <input id="adv-diskPct" type="number" min="1" max="100" class="form-control form-control-sm"
+            formControlName="minDiskUsagePercent" placeholder="80">
+        </div>
+        <div class="advanced-field advanced-field-ram">
+          <label>RAM</label>
+          <div class="ram-row">
+            <select class="form-select form-select-sm" formControlName="ramOp" aria-label="Comparación RAM">
+              <option value="lt">Menor que</option>
+              <option value="gt">Mayor que</option>
+            </select>
+            <input type="number" min="1" class="form-control form-control-sm" formControlName="ramGb"
+              placeholder="GB" aria-label="RAM en GB">
+          </div>
+        </div>
+        <div class="advanced-field">
+          <label for="adv-smanufacturer">Fabricante</label>
+          <input id="adv-smanufacturer" type="text" class="form-control form-control-sm" formControlName="smanufacturer"
+            placeholder="Ej: Dell, HP" autocomplete="off">
+        </div>
+        <div class="advanced-field">
+          <label for="adv-staleDays">Sin reportar ≥ días</label>
+          <input id="adv-staleDays" type="number" min="0" class="form-control form-control-sm"
+            formControlName="staleDays" placeholder="30">
+        </div>
+      </div>
+      <div class="advanced-filters-actions">
+        <button type="button" class="btn btn-sm advanced-apply-btn" (click)="aplicarFiltrosAvanzados()"
+          [disabled]="applyingAdvancedFilters || advancedFiltersActiveCount === 0">
+          <i class="fas" [ngClass]="applyingAdvancedFilters ? 'fa-spinner fa-spin' : 'fa-search'"></i>
+          Aplicar
+        </button>
+        <button type="button" class="btn btn-sm advanced-clear-btn" (click)="limpiarFiltrosAvanzados()"
+          [disabled]="applyingAdvancedFilters">
+          <i class="fas fa-times"></i>
+          Limpiar
+        </button>
+        <span class="advanced-hint" *ngIf="advancedFiltersApplied">
+          Mostrando resultados filtrados ({{ assetsList.length }} equipos base)
+        </span>
       </div>
     </div>
 
@@ -252,24 +328,6 @@
                 <!-- Botones de cambio de estado solo si hay permisos -->
                 <ng-container *ngIf="canManageAssetStates()">
                   <button 
-                    class="btn btn-warning btn-sm estado-btn baja-btn" 
-                    (click)="darDeBaja(asset); $event.stopPropagation()"
-                    [disabled]="changingStateAssetId === asset.id"
-                    title="Dar de baja este equipo (enviar al cementerio)"
-                    data-help="⚰️ Marca este equipo como dado de baja y lo envía al cementerio">
-                    <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-times-circle'"></i>
-                    Baja
-                  </button>
-                  <button 
-                    class="btn btn-info btn-sm estado-btn almacen-btn" 
-                    (click)="enviarAAlmacen(asset); $event.stopPropagation()"
-                    [disabled]="changingStateAssetId === asset.id"
-                    title="Enviar este equipo al almacén"
-                    data-help="📦 Marca este equipo como almacenado">
-                    <i class="fas" [ngClass]="changingStateAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
-                    Almacén
-                  </button>
-                  <button 
                     class="btn btn-info btn-sm estado-btn transferir-btn" 
                     (click)="transferirEquipo(asset); $event.stopPropagation()"
                     [disabled]="transferiendoAssetId === asset.id"
@@ -316,6 +374,7 @@
       </ngb-pagination>
     </div>
   </div>
+  </div>
 </div>
 
 <!-- Diálogo de confirmación -->
@@ -339,45 +398,3 @@
   </div>
 </div>
 
-<!-- Diálogo de cambio de estado -->
-<div *ngIf="showEstadoDialog" class="confirm-dialog-overlay">
-  <div class="confirm-dialog estado-dialog">
-    <div class="confirm-dialog-title">
-      <div class="estado-title-content">
-        <i class="fas" [ngClass]="estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive'"></i>
-        {{ estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén' }}
-      </div>
-      <button type="button" class="btn-close" (click)="cancelarCambioEstado()"></button>
-    </div>
-    <div class="confirm-dialog-message">
-      <div class="equipo-info">
-        <h6 class="mb-1"><strong>{{ assetToChangeState?.name }}</strong></h6>
-        <small class="text-muted">Equipo seleccionado para cambio de estado</small>
-      </div>
-      <p>¿Está seguro que desea {{ getEstadoActionText() }} el equipo <strong>{{ assetToChangeState?.name }}</strong>?</p>
-      <div class="observaciones-container">
-        <label for="observaciones">Observaciones (opcional):</label>
-        <textarea 
-          id="observaciones"
-          [(ngModel)]="estadoObservaciones" 
-          placeholder="Ingrese observaciones sobre el cambio de estado..."
-          maxlength="500"
-          rows="3"></textarea>
-        <small class="text-muted">{{ estadoObservaciones.length }}/500 caracteres</small>
-      </div>
-    </div>
-    <div class="confirm-dialog-buttons">
-      <button class="confirm-dialog-button cancel" (click)="cancelarCambioEstado()">
-        Cancelar
-      </button>
-      <button 
-        class="confirm-dialog-button confirm" 
-        [ngClass]="estadoAction === 'baja' ? 'baja' : 'almacen'"
-        (click)="confirmarCambioEstado()"
-        [disabled]="changingStateAssetId === assetToChangeState?.id">
-        <i class="fas" [ngClass]="changingStateAssetId === assetToChangeState?.id ? 'fa-spinner fa-spin' : (estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive')"></i>
-        {{ changingStateAssetId === assetToChangeState?.id ? 'Procesando...' : (estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén') }}
-      </button>
-    </div>
-  </div>
-</div>

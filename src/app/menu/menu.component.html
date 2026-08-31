@@ -3,56 +3,60 @@
   [style.--layout-top.px]="layoutTopPx">
   <nav class="sidenav-nav" aria-label="Menú principal">
   <!-- Menú de navegación -->
-  <a routerLink="/menu/dashboard" routerLinkActive="active">
+  <a routerLink="/menu/dashboard" routerLinkActive="active" class="nav-tile nav-tile--violet">
     <i class="fas fa-tachometer-alt"></i>
-    <span>PANEL DE CONTROL</span>
+    <span>DASHBOARD</span>
   </a>
   
   <!-- Menú expandible de Activos -->
   <div class="menu-item" [class.expanded]="isAssetsExpanded">
-    <div class="menu-header" (click)="toggleAssetsMenu()">
+    <div class="menu-header nav-tile nav-tile--cyan" (click)="toggleAssetsMenu()">
       <i class="fas fa-desktop"></i>
       <span>ACTIVOS</span>
     </div>
     <div class="submenu" [class.show]="isAssetsExpanded">
-      <a routerLink="/menu/assets" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/assets" routerLinkActive="active" class="submenu-item submenu-item--sky">
         <i class="fas fa-laptop"></i>
         <span>TERMINALES</span>
       </a>
-      <a routerLink="/menu/devices" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/devices" routerLinkActive="active" class="submenu-item submenu-item--teal">
         <i class="fas fa-hdd"></i>
         <span>DISPOSITIVOS</span>
+      </a>
+      <a *ngIf="canManageSubnets()" routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item submenu-item--blue">
+        <i class="fas fa-network-wired"></i>
+        <span>SUB REDES</span>
       </a>
     </div>
   </div>
 
-  <a routerLink="/menu/software" routerLinkActive="active">
+  <a routerLink="/menu/software" routerLinkActive="active" class="nav-tile nav-tile--green">
     <i class="fas fa-code"></i>
     <span>SOFTWARE</span>
   </a>
 
-  <a routerLink="/menu/procurement/activos" routerLinkActive="active">
+  <a routerLink="/menu/procurement/activos" routerLinkActive="active" class="nav-tile nav-tile--orange">
     <i class="fas fa-box"></i>
     <span>INVENTARIO</span>
   </a>
 
-  <a *ngIf="canAccessTickets()" routerLink="/menu/tickets" routerLinkActive="active">
+  <a *ngIf="canAccessTickets()" routerLink="/menu/tickets" routerLinkActive="active" class="nav-tile nav-tile--rose">
     <i class="fas fa-ticket-alt"></i>
     <span>TICKETS</span>
   </a>
 
   <!-- Menú expandible de Adquisiciones -->
   <div class="menu-item" [class.expanded]="isAdquisicionesExpanded">
-    <div class="menu-header" (click)="toggleAdquisicionesMenu()">
+    <div class="menu-header nav-tile nav-tile--blue" (click)="toggleAdquisicionesMenu()">
       <i class="fas fa-shopping-cart"></i>
       <span>ADQUISICIONES</span>
     </div>
     <div class="submenu" [class.show]="isAdquisicionesExpanded">
-      <a routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item submenu-item--blue">
         <i class="fas fa-shopping-bag"></i>
         <span>COMPRAS</span>
       </a>
-      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item submenu-item--indigo">
         <i class="fas fa-industry"></i>
         <span>PROVEEDOR</span>
       </a>
@@ -65,90 +69,60 @@
 
   <!-- Menú expandible de Almacén -->
   <div class="menu-item" [class.expanded]="isAlmacenExpanded">
-    <div class="menu-header" (click)="toggleAlmacenMenu()">
+    <div class="menu-header nav-tile nav-tile--amber" (click)="toggleAlmacenMenu()">
       <i class="fas fa-warehouse"></i>
       <span>ALMACÉN</span>
     </div>
     <div class="submenu" [class.show]="isAlmacenExpanded">
-      <a routerLink="/menu/almacen/almacenes" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/almacen/almacenes" routerLinkActive="active" class="submenu-item submenu-item--amber">
         <i class="fas fa-building"></i>
         <span>ALMACENES</span>
       </a>
-      <a routerLink="/menu/cementerio" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/cementerio" routerLinkActive="active" class="submenu-item submenu-item--rose">
         <i class="fas fa-skull-crossbones"></i>
         <span>CEMENTERIO</span>
       </a>
-      <a routerLink="/menu/almacen-laboratorio" routerLinkActive="active" class="submenu-item">
+      <a routerLink="/menu/almacen-laboratorio" routerLinkActive="active" class="submenu-item submenu-item--green">
         <i class="fas fa-archive"></i>
         <span>ALMACEN LAB</span>
+      </a>
+      <a *ngIf="canAccessWarehouseConfiguration()" routerLink="/menu/almacen/configuracion" routerLinkActive="active" class="submenu-item submenu-item--orange">
+        <i class="fas fa-cogs"></i>
+        <span>CONFIG. ALMACÉN</span>
       </a>
     </div>
   </div>
 
   <!--
-    Menú Configuración:
-    - GM/Admin: todos los ítems (ubicaciones, subredes, tipos, responsables, almacén config).
-    - INVENTARIO: ubicaciones, tipos de activo y responsables.
-    - ALMACEN: solo «ALMACÉN CONFIG».
+    Configuración: hub con pestañas (ubicaciones, tipos, responsables, tickets).
+    GM/Admin ven todas las pestañas; INVENTARIO ve ubicaciones, tipos de activo y responsables.
   -->
-  <div class="menu-item" [class.expanded]="isConfigExpanded" *ngIf="canShowConfigurationMenu()">
-    <div class="menu-header" (click)="toggleConfigMenu()">
-      <i class="fas fa-cog"></i>
-      <span>CONFIGURACIÓN</span>
-    </div>
-    <div class="submenu" [class.show]="isConfigExpanded">
-      <a *ngIf="canAccessLocationsConfiguration()" routerLink="/menu/locations" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>UBICACIONES</span>
-      </a>
-      <a *ngIf="canAccessConfiguration()" routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-network-wired"></i>
-        <span>SUB REDES</span>
-      </a>
-      <a *ngIf="canAccessTiposActivoConfiguration()" routerLink="/menu/procurement/tipos-activo" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-tags"></i>
-        <span>TIPOS DE ACTIVO</span>
-      </a>
-      <a *ngIf="canAccessConfiguration()" routerLink="/menu/procurement/tipos-compra" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-file-invoice-dollar"></i>
-        <span>TIPOS DE COMPRA</span>
-      </a>
-      <a *ngIf="canAccessUsuariosResponsablesConfiguration()" routerLink="/menu/procurement/usuarios" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-user-tie"></i>
-        <span>RESPONSABLES</span>
-      </a>
-      <a *ngIf="canAccessWarehouseConfiguration()" routerLink="/menu/almacen/config" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-cogs"></i>
-        <span>ALMACÉN CONFIG</span>
-      </a>
-      <a *ngIf="canManageTicketBandejas()" routerLink="/menu/config-tickets" routerLinkActive="active" class="submenu-item">
-        <i class="fas fa-ticket-alt"></i>
-        <span>CONFIG TICKETS</span>
-      </a>
-    </div>
-  </div>
+  <a *ngIf="canShowConfigurationMenu()" routerLink="/menu/configuracion" routerLinkActive="active" class="nav-tile nav-tile--gear">
+    <i class="fas fa-cog"></i>
+    <span>CONFIGURACIÓN</span>
+  </a>
 
   <!-- Menú expandible de Administración - Solo visible para GM y Admin -->
   <div class="menu-item" [class.expanded]="isAdminExpanded" *ngIf="canAccessAdministration()">
-    <div class="menu-header" (click)="toggleAdminMenu()">
+    <div class="menu-header nav-tile nav-tile--purple" (click)="toggleAdminMenu()">
       <i class="fas fa-user-shield"></i>
       <span>ADMINISTRACIÓN</span>
     </div>
     <div class="submenu" [class.show]="isAdminExpanded">
-      <a *ngIf="isGM()" routerLink="/menu/settings" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="isGM()" routerLink="/menu/settings" routerLinkActive="active" class="submenu-item submenu-item--orange">
         <i class="fas fa-database"></i>
         <span>BASE DE DATOS</span>
       </a>
-      <a *ngIf="canManageUsers()" routerLink="/menu/user-management" routerLinkActive="active" class="submenu-item">
+      <a *ngIf="canManageUsers()" routerLink="/menu/user-management" routerLinkActive="active" class="submenu-item submenu-item--purple">
         <i class="fas fa-user-cog"></i>
         <span>USUARIOS</span>
       </a>
     </div>
   </div>
 
-  <a *ngIf="canAccessInternosOse()" routerLink="/menu/internos-ose" routerLinkActive="active">
-    <i class="fas fa-phone"></i>
-    <span>INTERNOS OSE</span>
+  <a *ngIf="canAccessInternosOse()" routerLink="/menu/internos-ose" routerLinkActive="active" class="nav-tile nav-tile--teal">
+    <i class="fas fa-address-book"></i>
+    <span>GUÍA DE CONTACTOS</span>
   </a>
   </nav>
 

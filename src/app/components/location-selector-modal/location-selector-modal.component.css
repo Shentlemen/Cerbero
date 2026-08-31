@@ -105,7 +105,7 @@
 :host .modal-footer i,
 :host .form-card i,
 :host .item-option i {
-  color: #212529 !important;
+  color: var(--ds-color-heading) !important;
 }
 
 :host .modal-body .text-success {

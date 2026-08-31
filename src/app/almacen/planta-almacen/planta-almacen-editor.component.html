@@ -1,0 +1,145 @@
+<div class="planta-almacen-page">
+  <app-notification-container></app-notification-container>
+
+  <div class="planta-toolbar" id="tour-planta-editor-toolbar">
+    <div class="planta-toolbar-left">
+      <button type="button" class="btn btn-sm planta-btn-vista" (click)="volver()">
+        <i class="fas fa-arrow-left me-1"></i>
+        Volver
+      </button>
+      <h1 id="tour-planta-editor-title">
+        <i class="fas fa-th"></i>
+        Planta
+        <span *ngIf="almacen">{{ almacen.numero }} — {{ almacen.nombre }}</span>
+      </h1>
+    </div>
+    <div class="planta-toolbar-right">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="canvas?.zoomBy(1 / 1.15)" title="Alejar">
+        <i class="fas fa-search-minus"></i>
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm planta-btn-vista"
+        id="tour-planta-editor-fit"
+        (click)="canvas?.fitToView()"
+        title="Muestra la planta completa. Útil si hiciste zoom o arrastraste el mapa.">
+        <i class="fas fa-expand"></i>
+        Ver todo
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="canvas?.zoomBy(1.15)" title="Acercar">
+        <i class="fas fa-search-plus"></i>
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-success"
+        id="tour-planta-editor-save"
+        (click)="guardar()"
+        [disabled]="saving || loading">
+        <i class="fas" [ngClass]="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+        {{ saving ? 'Guardando…' : 'Guardar planta' }}
+      </button>
+    </div>
+  </div>
+
+  <p class="planta-lead text-muted" *ngIf="!loading && !error">
+    Arrastrá o hacé clic en una estantería de la paleta y después clic en la grilla.
+    Con un objeto seleccionado, arrastrá los cuadrados del borde para cambiar el tamaño
+    y el círculo de arriba para rotar 90°. También sirve el botón Girar o la tecla R.
+  </p>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <i class="fas fa-spinner fa-spin fa-2x me-2"></i>
+    Cargando planta…
+  </div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="planta-editor-layout" *ngIf="!loading && !error">
+    <aside class="planta-palette" id="tour-planta-editor-palette">
+      <h2>Estanterías</h2>
+      <p class="palette-hint" *ngIf="estanteriasSinColocar.length === 0">
+        Todas las estanterías de la configuración ya están en la planta.
+      </p>
+      <button
+        type="button"
+        class="palette-item estanteria"
+        *ngFor="let def of estanteriasSinColocar"
+        draggable="true"
+        [class.active]="isPendingEstanteria(def.codigo)"
+        (dragstart)="onPaletteDragStart($event, 'ESTANTERIA', def.codigo, def.codigo)"
+        (click)="setPending('ESTANTERIA', def.codigo, def.codigo)">
+        <i class="fas fa-layer-group"></i>
+        <span>{{ def.codigo }}</span>
+        <small>{{ def.cantidadEstantes }} est. · {{ def.divisionesEstante }}</small>
+        <span class="palette-swatch" [style.background]="colorEstanteriaPorCodigo(def.codigo)" aria-hidden="true"></span>
+      </button>
+
+      <h2>Zonas</h2>
+      <button
+        type="button"
+        class="palette-item zona"
+        *ngFor="let z of zonas"
+        draggable="true"
+        [class.active]="pending?.tipo === z.tipo && !pending?.estanteriaCodigo"
+        [attr.data-tipo]="z.tipo"
+        (dragstart)="onPaletteDragStart($event, z.tipo, null, z.etiqueta)"
+        (click)="setPending(z.tipo, null, siguienteEtiquetaZona(z.tipo, z.etiqueta))">
+        <i class="fas" [ngClass]="z.icon"></i>
+        <span>{{ z.etiqueta }}</span>
+      </button>
+
+      <div class="palette-selected" *ngIf="seleccionado as sel">
+        <h2>Seleccionado</h2>
+        <p class="mb-1"><strong>{{ sel.etiqueta || sel.estanteriaCodigo || sel.tipo }}</strong></p>
+        <p class="text-muted small mb-2">{{ sel.ancho }} × {{ sel.alto }} celdas</p>
+        <label class="form-label small mb-1">Color</label>
+        <div class="planta-color-row mb-2">
+          <button
+            type="button"
+            class="planta-color-dot"
+            *ngFor="let c of coloresEstanteria"
+            [class.active]="colorActual(sel) === c"
+            [style.background]="c"
+            [attr.title]="c"
+            (click)="pintarSeleccionado(c)">
+          </button>
+          <input
+            type="color"
+            class="planta-color-picker"
+            [ngModel]="colorActual(sel)"
+            (ngModelChange)="pintarSeleccionado($event)"
+            title="Elegir color">
+        </div>
+        <label class="form-label small mb-1" *ngIf="sel.tipo !== 'ESTANTERIA'">Etiqueta</label>
+        <input
+          *ngIf="sel.tipo !== 'ESTANTERIA'"
+          type="text"
+          class="form-control form-control-sm mb-2"
+          [ngModel]="sel.etiqueta"
+          (ngModelChange)="renombrarSeleccionado($event)">
+        <button type="button" class="btn btn-sm planta-btn-girar w-100 mb-2" (click)="girarSeleccionado()">
+          <i class="fas fa-redo me-1"></i>
+          Girar 90°
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="quitarSeleccionado()">
+          <i class="fas fa-trash me-1"></i>
+          Quitar
+        </button>
+      </div>
+    </aside>
+
+    <section class="planta-canvas-panel" id="tour-planta-editor-canvas">
+      <app-almacen-planta-canvas
+        #canvas
+        mode="edit"
+        [gridCols]="planta.gridCols"
+        [gridRows]="planta.gridRows"
+        [objetos]="planta.objetos"
+        [ocupacion]="planta.ocupacionPorEstanteria || {}"
+        [pending]="pending"
+        (objetosChange)="onObjetosChange($event)"
+        (selectionChange)="onSelection($event)"
+        (pendingConsumed)="pending = null">
+      </app-almacen-planta-canvas>
+    </section>
+  </div>
+</div>

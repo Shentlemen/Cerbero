@@ -1,26 +1,26 @@
 .container-fluid {
   padding: 2rem;
-  background: #f8f9fa;
+  background: var(--ds-color-canvas);
   min-height: 100vh;
 }
 
 .card {
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   border: none;
 }
 
 /* Header */
 .title-bar {
-  background: white;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
-  border-radius: 15px 15px 0 0;
+  background: transparent;
+  padding: 0.35rem 0.15rem 0.55rem;
+  border-bottom: none;
+  border-radius: 0;
 }
 
 .title-bar h2 {
-  color: #000000;
+  color: var(--ds-color-heading);
   font-size: 1.5rem;
   margin: 0;
   display: flex;
@@ -43,11 +43,11 @@
 }
 
 .asset-name {
-  color: #4a8bc5;
+  color: var(--ds-color-accent);
   font-size: 1.2rem;
   font-weight: 500;
   padding: 0.5rem 1rem;
-  background: #f8f9fa;
+  background: var(--ds-color-elevated);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -79,211 +79,36 @@
   color: #ffffff !important;
 }
 
-/* Pestañas: mismo lenguaje que .alert-filters / .btn-filter en dashboard.component */
-.asset-tab-filters {
-  margin-bottom: 16px;
-  padding: 15px;
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  border-radius: 10px;
-  border: 1px solid #dee2e6;
-  /* Tour / scrollIntoView: dejar espacio bajo header fijo del layout */
+/* Pestañas carpeta: mismo lenguaje que compras / cementerio. */
+#tour-assetdetails-tabs {
   scroll-margin-top: 76px;
 }
 
-/* Durante el tour mantenemos la franja de pestañas visible al iluminar un botón. */
 body.driver-active #tour-assetdetails-tabs {
   position: sticky;
   top: 68px;
   z-index: 10040;
 }
 
-.asset-tab-strip {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.asset-tab-btn {
-  --device-color: #3498db;
-  --device-bg-color: #e3f2fd;
-  --device-border-color: #bbdefb;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border: 2px solid #e9ecef;
-  border-radius: 25px;
-  background: #fff;
-  color: #6c757d;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  min-width: 110px;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Sin recuadro azul de foco/hover del navegador o Bootstrap sobre el botón o el icono */
-.asset-tab-btn:focus,
-.asset-tab-btn:focus-visible,
-.asset-tab-btn:active,
-.asset-tab-btn:hover {
-  outline: none !important;
-}
-
-.asset-tab-btn:focus-visible {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-}
-
-.asset-tab-btn:hover:focus-visible {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-.asset-tab-btn i,
-.asset-tab-btn span {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.asset-tab-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
-  border-color: var(--device-color, #3498db);
-  color: var(--device-color, #3498db);
-  /* Fondo hover distinto del activo (--device-bg-color) y único por pestaña (--device-bg-hover) */
-  background: var(--device-bg-hover, #f5f7fa);
-}
-
-.asset-tab-btn:hover i {
-  color: var(--device-color, #3498db);
-}
-
-.asset-tab-btn.active {
-  background: var(--device-bg-color, #e3f2fd);
-  border-color: var(--device-border-color, #bbdefb);
-  color: var(--device-color, #1976d2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.asset-tab-btn.active:focus,
-.asset-tab-btn.active:focus-visible,
-.asset-tab-btn.active:active {
-  outline: none !important;
-}
-
-.asset-tab-btn.active:focus-visible {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-.asset-tab-btn.active i {
-  color: var(--device-color, #1976d2);
-}
-
-.asset-tab-btn i {
-  pointer-events: none;
-  font-size: 0.85rem;
-  color: var(--device-color, #3498db);
-  transition: color 0.2s ease;
-}
-
-/* Una paleta distinta por pestaña (orden: General, BIOS, CPU, Unidades, Memoria, Monitor, Almacenamiento, Video, Ubicación, Software) */
-.asset-tab-strip li:nth-child(1) .asset-tab-btn {
-  --device-color: #1976d2;
-  --device-bg-color: #e3f2fd;
-  --device-bg-hover: #eef6fc;
-  --device-border-color: #bbdefb;
-}
-
-.asset-tab-strip li:nth-child(2) .asset-tab-btn {
-  --device-color: #6a1b9a;
-  --device-bg-color: #f3e5f5;
-  --device-bg-hover: #faf2fc;
-  --device-border-color: #e1bee7;
-}
-
-.asset-tab-strip li:nth-child(3) .asset-tab-btn {
-  --device-color: #303f9f;
-  --device-bg-color: #e8eaf6;
-  --device-bg-hover: #f0f2fa;
-  --device-border-color: #c5cae9;
-}
-
-.asset-tab-strip li:nth-child(4) .asset-tab-btn {
-  --device-color: #ef6c00;
-  --device-bg-color: #fff3e0;
-  --device-bg-hover: #fffaf3;
-  --device-border-color: #ffe0b2;
-}
-
-.asset-tab-strip li:nth-child(5) .asset-tab-btn {
-  --device-color: #00695c;
-  --device-bg-color: #e0f2f1;
-  --device-bg-hover: #ecf8f6;
-  --device-border-color: #b2dfdb;
-}
-
-.asset-tab-strip li:nth-child(6) .asset-tab-btn {
-  --device-color: #0097a7;
-  --device-bg-color: #e0f7fa;
-  --device-bg-hover: #ecf9fb;
-  --device-border-color: #b2ebf2;
-}
-
-.asset-tab-strip li:nth-child(7) .asset-tab-btn {
-  --device-color: #455a64;
-  --device-bg-color: #eceff1;
-  --device-bg-hover: #f5f6f8;
-  --device-border-color: #cfd8dc;
-}
-
-.asset-tab-strip li:nth-child(8) .asset-tab-btn {
-  --device-color: #ad1457;
-  --device-bg-color: #fce4ec;
-  --device-bg-hover: #fff5f9;
-  --device-border-color: #f8bbd9;
-}
-
-.asset-tab-strip li:nth-child(9) .asset-tab-btn {
-  --device-color: #2e7d32;
-  --device-bg-color: #e8f5e9;
-  --device-bg-hover: #f1faf2;
-  --device-border-color: #c8e6c9;
-}
-
-.asset-tab-strip li:nth-child(10) .asset-tab-btn {
-  --device-color: #c62828;
-  --device-bg-color: #ffebee;
-  --device-bg-hover: #fdf2f3;
-  --device-border-color: #ffcdd2;
-}
-
 /* Content */
 .card-body {
-  padding: 1.5rem;
+  padding: 0;
+  background: transparent;
 }
 
 .tab-content {
-  background: white;
   border: none;
-  padding: 1rem 0;
   scroll-margin-top: 76px;
 }
 
 /* Lists */
 .list-group-item {
   border: none;
-  background: #f8f9fa;
+  background: var(--ds-color-elevated);
   margin-bottom: 0.5rem;
   border-radius: 8px;
   padding: 1rem;
+  color: var(--ds-color-text);
 }
 
 .list-group-item i {
@@ -294,7 +119,7 @@ body.driver-active #tour-assetdetails-tabs {
 }
 
 .list-group-item strong {
-  color: #495057;
+  color: var(--ds-color-heading);
   margin-right: 0.5rem;
 }
 
@@ -305,15 +130,15 @@ h4.text-secondary {
   font-weight: 600;
   margin: 1.5rem 0 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid var(--ds-color-border);
 }
 
 /* Footer */
 .card-footer {
-  background: white;
-  border-top: 1px solid #eee;
-  padding: 1.5rem;
-  border-radius: 0 0 15px 15px;
+  background: transparent;
+  border-top: none;
+  padding: 1.25rem 0 0;
+  border-radius: 0;
 }
 
 .btn {
@@ -345,26 +170,6 @@ h4.text-secondary {
 @media (max-width: 768px) {
   .container-fluid {
     padding: 1rem;
-  }
-
-  .asset-tab-filters {
-    padding: 10px;
-  }
-
-  .asset-tab-strip {
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .asset-tab-btn {
-    flex-shrink: 0;
-    white-space: nowrap;
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-    min-width: auto;
   }
 
   .card-footer {
@@ -402,7 +207,7 @@ app-monitor-details,
 app-storage-details,
 app-video-details {
   display: block;
-  background: #f8f9fa;
+  background: var(--ds-color-elevated);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;

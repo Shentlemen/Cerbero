@@ -1,55 +1,48 @@
-<div class="generic-container">
-  <!-- Contenedor de notificaciones -->
+<div class="generic-container devices-page">
   <app-notification-container></app-notification-container>
   
   <div class="header-section">
     <div class="title-wrapper">
       <div class="title-row">
         <h1 id="tour-devices-title"><i class="fas fa-network-wired"></i> Dispositivos de Red</h1>
-        
-        <div class="d-flex align-items-center gap-2 ms-auto">
-          <!-- Botón de imprimir/exportar PDF -->
-          <button 
-            class="btn btn-primary btn-sm print-btn" 
-            id="tour-devices-print"
-            (click)="exportarPDF()"
-            title="Exportar lista filtrada a PDF"
-            [disabled]="loading || filteredDevices.length === 0">
-            <i class="fas fa-file-pdf"></i>
-            Imprimir
-          </button>
-        </div>
-        
-      </div>
-      
-      <!-- Filtros por tipo de dispositivo -->
-      <div class="filters-container" id="tour-devices-filters">
-        <button 
-          class="filter-btn" 
-          [class.active]="activeFilter === 'all'"
-          (click)="applyFilter('all')">
-          <i class="fas fa-th-large"></i>
-          <span>Todos</span>
-          <span class="count">({{ deviceCountsByType['all'] || 0 }})</span>
-        </button>
-        
-        <button 
-          *ngFor="let deviceType of deviceTypes; trackBy: trackByTypeName" 
-          class="filter-btn" 
-          [class.active]="activeFilter === deviceType.name"
-          [style.--device-color]="deviceType.color"
-          [style.--device-bg-color]="deviceType.backgroundColor"
-          [style.--device-border-color]="deviceType.borderColor"
-          (click)="applyFilter(deviceType.name)">
-          <i class="fas" [ngClass]="deviceType.icon" [style.color]="deviceType.color"></i>
-          <span>{{ deviceType.name }}</span>
-          <span class="count">({{ deviceCountsByType[deviceType.name] || 0 }})</span>
-        </button>
       </div>
     </div>
   </div>
 
-  <div class="content-section">
+  <div class="cerbero-folder-stage">
+    <div
+      class="cerbero-folder-tabs"
+      id="tour-devices-filters"
+      role="tablist"
+      aria-label="Filtrar por tipo de dispositivo">
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="activeFilter === 'all'"
+        [attr.aria-selected]="activeFilter === 'all'"
+        [style.--tab-accent]="'var(--ds-color-accent)'"
+        (click)="applyFilter('all')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-th-large"></i></span>
+        <span class="cerbero-folder-tab-label">Todos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        *ngFor="let deviceType of deviceTypes; trackBy: trackByTypeName"
+        [class.cerbero-folder-tab--active]="activeFilter === deviceType.name"
+        [attr.aria-selected]="activeFilter === deviceType.name"
+        [style.--tab-accent]="deviceType.color"
+        (click)="applyFilter(deviceType.name)">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true">
+          <i class="fas" [ngClass]="deviceType.icon"></i>
+        </span>
+        <span class="cerbero-folder-tab-label">{{ deviceType.name }}</span>
+      </button>
+    </div>
+
+  <div class="content-section cerbero-folder-panel">
     <!-- Estado de carga -->
     <div *ngIf="loading" class="text-center p-4">
       <div class="spinner-border text-primary" role="status">
@@ -83,6 +76,16 @@
         title="Limpiar filtros de búsqueda">
         <i class="fas fa-times"></i>
         Limpiar
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm print-btn ms-auto"
+        id="tour-devices-print"
+        (click)="exportarPDF()"
+        title="Exportar lista filtrada a PDF"
+        [disabled]="loading || filteredDevices.length === 0">
+        <i class="fas fa-file-pdf"></i>
+        Imprimir
       </button>
     </div>
 
@@ -160,10 +163,10 @@
               <span class="ip-address">{{ device.mac || '—' }}</span>
             </td>
             <td>
-              <span class="type-badge" 
-                    [style.background-color]="pagedDeviceTypes[i].backgroundColor"
-                    [style.color]="pagedDeviceTypes[i].color"
-                    [style.border-color]="pagedDeviceTypes[i].borderColor">
+              <span class="type-badge"
+                    [style.--device-color]="pagedDeviceTypes[i].color"
+                    [style.--device-bg-color]="pagedDeviceTypes[i].backgroundColor"
+                    [style.--device-border-color]="pagedDeviceTypes[i].borderColor">
                 {{ device.type }}
               </span>
             </td>
@@ -174,24 +177,6 @@
               <div class="action-buttons">
                 <!-- Botones de cambio de estado solo si hay permisos -->
                 <ng-container *ngIf="canManageDeviceStates()">
-                  <button 
-                    class="btn btn-warning btn-sm estado-btn baja-btn" 
-                    (click)="darDeBaja(device); $event.stopPropagation()"
-                    [disabled]="changingStateDeviceMac === device.mac"
-                    title="Dar de baja este dispositivo (enviar al cementerio)"
-                    data-help="⚰️ Marca este dispositivo como dado de baja y lo envía al cementerio">
-                    <i class="fas" [ngClass]="changingStateDeviceMac === device.mac ? 'fa-spinner fa-spin' : 'fa-times-circle'"></i>
-                    Baja
-                  </button>
-                  <button 
-                    class="btn btn-info btn-sm estado-btn almacen-btn" 
-                    (click)="enviarAAlmacen(device); $event.stopPropagation()"
-                    [disabled]="changingStateDeviceMac === device.mac"
-                    title="Enviar este dispositivo al almacén"
-                    data-help="📦 Marca este dispositivo como almacenado">
-                    <i class="fas" [ngClass]="changingStateDeviceMac === device.mac ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
-                    Almacén
-                  </button>
                   <button 
                     class="btn btn-info btn-sm estado-btn transferir-btn" 
                     (click)="transferirDispositivo(device, $event)"
@@ -249,6 +234,7 @@
       </ngb-pagination>
     </div>
   </div>
+  </div>
 </div>
 
 <!-- Diálogo de confirmación para eliminación -->
@@ -271,46 +257,3 @@
     </div>
   </div>
 </div>
-
-<!-- Diálogo de cambio de estado -->
-<div *ngIf="showEstadoDialog" class="confirm-dialog-overlay">
-  <div class="confirm-dialog estado-dialog">
-    <div class="confirm-dialog-title">
-      <div class="estado-title-content">
-        <i class="fas" [ngClass]="estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive'"></i>
-        {{ estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén' }}
-      </div>
-      <button type="button" class="btn-close" (click)="cancelarCambioEstado()"></button>
-    </div>
-    <div class="confirm-dialog-message">
-      <div class="equipo-info">
-        <h6 class="mb-1"><strong>{{ deviceToChangeState?.name }}</strong></h6>
-        <small class="text-muted">Dispositivo seleccionado para cambio de estado</small>
-      </div>
-      <p>¿Está seguro que desea {{ getEstadoActionText() }} el dispositivo <strong>{{ deviceToChangeState?.name }}</strong>?</p>
-      <div class="observaciones-container">
-        <label for="observaciones">Observaciones (opcional):</label>
-        <textarea 
-          id="observaciones"
-          [(ngModel)]="estadoObservaciones" 
-          placeholder="Ingrese observaciones sobre el cambio de estado..."
-          maxlength="500"
-          rows="3"></textarea>
-        <small class="text-muted">{{ estadoObservaciones.length }}/500 caracteres</small>
-      </div>
-    </div>
-    <div class="confirm-dialog-buttons">
-      <button class="confirm-dialog-button cancel" (click)="cancelarCambioEstado()">
-        Cancelar
-      </button>
-      <button 
-        class="confirm-dialog-button confirm" 
-        [ngClass]="estadoAction === 'baja' ? 'baja' : 'almacen'"
-        (click)="confirmarCambioEstado()"
-        [disabled]="changingStateDeviceMac === deviceToChangeState?.mac">
-        <i class="fas" [ngClass]="changingStateDeviceMac === deviceToChangeState?.mac ? 'fa-spinner fa-spin' : (estadoAction === 'baja' ? 'fa-times-circle' : 'fa-archive')"></i>
-        {{ changingStateDeviceMac === deviceToChangeState?.mac ? 'Procesando...' : (estadoAction === 'baja' ? 'Dar de Baja' : 'Enviar a Almacén') }}
-      </button>
-    </div>
-  </div>
-</div> 

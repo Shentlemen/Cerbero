@@ -1,0 +1,21 @@
+<div class="config-hub">
+  <nav class="config-hub-tabs" id="tour-config-hub-tabs" role="tablist" aria-label="Secciones de configuración">
+    <a
+      *ngFor="let tab of visibleTabs"
+      [routerLink]="['/menu/configuracion', tab.path]"
+      routerLinkActive="config-hub-tab--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="config-hub-tab"
+      role="tab"
+      [style.--tab-accent]="tab.accent">
+      <span class="config-hub-tab-icon" aria-hidden="true">
+        <i [class]="tab.icon"></i>
+      </span>
+      <span class="config-hub-tab-label">{{ tab.label }}</span>
+    </a>
+  </nav>
+
+  <div class="config-hub-body">
+    <router-outlet></router-outlet>
+  </div>
+</div>

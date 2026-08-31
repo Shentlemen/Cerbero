@@ -20,6 +20,8 @@ export interface User {
   enabled: boolean;
   createdAt?: string;
   password?: string;
+  /** True si el usuario tiene foto de perfil. */
+  hasAvatar?: boolean;
   /** Bandeja de reclamos (rol USER). */
   ticketAreaCodigo?: string | null;
 }
@@ -49,4 +51,15 @@ export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
   password?: string; // Opcional para cambios de contraseña
+}
+
+/** Datos públicos de un usuario de la app (guía de contactos). */
+export interface ContactoUsuario {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  hasAvatar: boolean;
 } 

@@ -80,6 +80,55 @@
   color: #0d6efd;
 }
 
+.diag-health .diag-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  height: 100%;
+}
+
+.diag-card.ocs {
+  border-left: 4px solid #0d6efd;
+}
+
+.diag-card.cerbero {
+  border-left: 4px solid #198754;
+}
+
+.diag-card h6 {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+}
+
+.diag-card p {
+  margin-bottom: 0.35rem;
+}
+
+.diag-big {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.diag-controls {
+  flex-wrap: wrap;
+}
+
+.diag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.diag-filters .form-select {
+  width: auto;
+  min-width: 140px;
+}
+
 .info-box-content {
   flex: 1;
   min-width: 0;

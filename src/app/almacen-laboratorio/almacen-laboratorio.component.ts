@@ -89,7 +89,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       icon: 'fa-route',
       steps: [
         { selector: '#tour-almacen-lab-title', title: 'Almacén laboratorio', description: 'Equipos y dispositivos en almacén (distinto del cementerio): pendientes de ubicación operativa.', side: 'bottom' },
-        { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Filtrá por todos, solo equipos o solo dispositivos de red.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Pestañas para filtrar por todos, solo equipos o solo dispositivos de red.', side: 'bottom' },
         { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
         { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Cada fila muestra los datos del equipo o dispositivo y, según tus permisos, los botones de acción a la derecha.', side: 'top' },
         { selector: '.transferir-btn', title: 'Transferir',

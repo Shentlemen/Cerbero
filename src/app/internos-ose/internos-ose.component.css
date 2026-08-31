@@ -6,6 +6,420 @@
   margin-bottom: 1.25rem;
 }
 
+.internos-ose-page .header-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0.35rem 0.15rem 0;
+  margin-bottom: 0.55rem;
+}
+
+.internos-ose-page .guia-subtitle {
+  font-size: 0.95rem;
+  color: var(--ds-color-subtle);
+  margin-top: 0.25rem;
+}
+
+.internos-ose-page .guia-stage {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.internos-ose-page .guia-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  justify-content: start;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+.internos-ose-page .guia-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.internos-ose-page .guia-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.85rem 0.65rem;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  border-radius: var(--ds-radius-lg) var(--ds-radius-lg) 0 0;
+  background: var(--ds-color-recessed);
+  box-shadow: var(--ds-shadow-inset-tab);
+  cursor: pointer;
+  color: inherit;
+}
+
+.internos-ose-page .guia-tab:hover:not(.guia-tab--active) {
+  background: var(--ds-color-recessed-hover);
+}
+
+.internos-ose-page .guia-tab--active {
+  background: var(--ds-color-surface);
+  box-shadow: none;
+  z-index: 2;
+  margin-bottom: -2px;
+  padding-bottom: calc(0.65rem + 2px);
+}
+
+.internos-ose-page .guia-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: inherit;
+  pointer-events: none;
+}
+
+.internos-ose-page .guia-tab:focus-visible {
+  outline: 2px solid var(--ds-color-faint);
+  outline-offset: -2px;
+}
+
+.internos-ose-page .guia-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--tab-accent, var(--ds-color-accent));
+}
+
+.internos-ose-page .guia-tab--equipo {
+  --tab-accent: var(--ds-color-tab-equipo);
+}
+
+.internos-ose-page .guia-tab--internos {
+  --tab-accent: var(--ds-color-tab-internos);
+}
+
+.internos-ose-page .guia-tab-label {
+  font-size: var(--ds-font-2xs);
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-color-faint);
+  text-align: center;
+  max-width: 8.5rem;
+  line-height: 1.2;
+}
+
+.internos-ose-page .guia-tab--active .guia-tab-label {
+  color: var(--ds-color-subtle);
+}
+
+.internos-ose-page .guia-panel.content-section {
+  border: none;
+  /* Izquierda siempre recta: Equipo Cerbero ocupa el canto. */
+  border-radius: 0 var(--ds-radius-xl) var(--ds-radius-xl) var(--ds-radius-xl);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-shadow-sm);
+  position: relative;
+  z-index: 0;
+}
+
+@media (max-width: 991.98px) {
+  .internos-ose-page .guia-tab {
+    min-width: 0;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+  }
+
+  .internos-ose-page .guia-panel.content-section {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+.internos-ose-page .search-input-wrapper {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 520px;
+}
+
+.internos-ose-page .search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.internos-ose-page .search-input {
+  padding-left: 2.5rem;
+  padding-right: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.internos-ose-page .search-clear-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.internos-ose-page .search-clear-btn:hover {
+  color: #475569;
+}
+
+.internos-ose-page .list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.internos-ose-page .internos-filter-activos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: #475569;
+  user-select: none;
+}
+
+.internos-ose-page .pagination-container {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.internos-ose-page .interno-badge,
+.internos-ose-page .app-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+}
+
+.internos-ose-page .interno-inactivo {
+  opacity: 0.65;
+}
+
+.internos-ose-page .action-buttons .btn-info {
+  background: transparent !important;
+  border-color: #0ea5e9 !important;
+  color: #111827 !important;
+}
+
+.internos-ose-page .action-buttons .btn-info:hover,
+.internos-ose-page .action-buttons .btn-info:focus-visible {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.internos-ose-page .action-buttons .btn-danger {
+  background: transparent !important;
+  border-color: #dc3545 !important;
+  color: #111827 !important;
+}
+
+.internos-ose-page .action-buttons .btn-danger:hover,
+.internos-ose-page .action-buttons .btn-danger:focus-visible {
+  background: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: #ffffff !important;
+}
+
+.guia-equipo-grupo {
+  margin-bottom: 1.75rem;
+}
+
+.guia-equipo-grupo-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: #1e293b;
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.guia-equipo-grupo-title i {
+  color: #0ea5e9;
+  width: 1.15rem;
+  text-align: center;
+}
+
+.guia-equipo-grupo-count {
+  margin-left: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.guia-equipo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.9rem;
+}
+
+.guia-persona-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 14px;
+  padding: 1.15rem 0.9rem 1.2rem;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  min-width: 0;
+}
+
+.guia-persona-card--yo {
+  border-color: #7dd3fc;
+  box-shadow: 0 2px 12px rgba(14, 165, 233, 0.18);
+}
+
+.guia-persona-avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(145deg, #5dade2, #3498db);
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.guia-persona-avatar--photo {
+  background: #e2e8f0;
+  border: 1px solid #e2e8f0;
+}
+
+.guia-persona-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.guia-persona-nombre {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: #0f172a;
+  margin: 0 0 0.2rem;
+  line-height: 1.3;
+}
+
+.guia-persona-yo {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0284c7;
+  vertical-align: middle;
+}
+
+.guia-persona-handle {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0 0 0.4rem;
+}
+
+.guia-persona-email {
+  display: block;
+  font-size: 0.75rem;
+  color: #0369a1;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.55rem;
+}
+
+.guia-persona-email:hover {
+  text-decoration: underline;
+}
+
+.guia-persona-rol {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.guia-persona-rol--gm {
+  background: #fde8e8;
+  color: #842029;
+}
+
+.guia-persona-rol--admin {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.guia-persona-rol--user {
+  background: #cfe2ff;
+  color: #084298;
+}
+
+.guia-persona-rol--almacen {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.guia-persona-rol--inventario {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.guia-persona-rol--compras {
+  background: #ffedd5;
+  color: #b45309;
+}
+
+.guia-persona-rol--gestion_equip {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.guia-persona-rol--impresion {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.guia-persona-rol--garantia {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
 .internos-ose-page .search-input-wrapper {
   position: relative;
   flex: 1 1 280px;

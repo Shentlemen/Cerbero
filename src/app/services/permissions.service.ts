@@ -217,7 +217,7 @@ export class PermissionsService {
   }
 
   canAccessConfiguration(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin: configuración completa (subredes, tipos de compra, etc.)
+    return this.isGMOrAdmin(); // GM y Admin: tipos de compra y resto de pestañas del hub
   }
 
   /** Ubicaciones, tipos de activo y usuarios responsables: GM, Admin e Inventario. */
@@ -251,7 +251,7 @@ export class PermissionsService {
   }
 
   // Tickets / Reclamos
-  /** Directorio telefónico Internos OSE: lectura para cualquier usuario autenticado. */
+  /** Guía de contactos (equipo Cerbero + internos): lectura para cualquier usuario autenticado. */
   canAccessInternosOse(): boolean {
     return this.isLoggedIn();
   }
@@ -291,7 +291,8 @@ export class PermissionsService {
   }
 
   canManageTicketBandejas(): boolean {
-    return this.isRealGmOrAdmin();
+    // Rol efectivo: con «Ver como» se oculta si el GM simula un rol sin admin
+    return this.isGMOrAdmin();
   }
 
   // Helper method to check if user is logged in

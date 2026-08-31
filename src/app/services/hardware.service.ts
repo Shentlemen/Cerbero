@@ -36,6 +36,38 @@ export class HardwareService {
     return this.http.get<any[]>(`${this.apiUrl}/filter`, { params: filters });
   }
 
+  /**
+   * Búsqueda avanzada cruzando storages/drives/cpus/bios.
+   * Solo envía params definidos (AND en backend).
+   */
+  advancedSearch(filters: {
+    diskType?: string;
+    osName?: string;
+    processor?: string;
+    minDiskUsagePercent?: number;
+    ramGb?: number;
+    ramOp?: string;
+    smanufacturer?: string;
+    staleDays?: number;
+  }): Observable<any[]> {
+    const params: Record<string, string> = {};
+    if (filters.diskType) params['diskType'] = filters.diskType;
+    if (filters.osName) params['osName'] = filters.osName;
+    if (filters.processor) params['processor'] = filters.processor;
+    if (filters.minDiskUsagePercent != null && filters.minDiskUsagePercent !== undefined) {
+      params['minDiskUsagePercent'] = String(filters.minDiskUsagePercent);
+    }
+    if (filters.ramGb != null && filters.ramGb !== undefined && filters.ramOp) {
+      params['ramGb'] = String(filters.ramGb);
+      params['ramOp'] = filters.ramOp;
+    }
+    if (filters.smanufacturer) params['smanufacturer'] = filters.smanufacturer;
+    if (filters.staleDays != null && filters.staleDays !== undefined) {
+      params['staleDays'] = String(filters.staleDays);
+    }
+    return this.http.get<any[]>(`${this.apiUrl}/advanced-search`, { params });
+  }
+
   getHardwareByIds(ids: number[]): Observable<any[]> {
     return this.http.post<any[]>(`${this.apiUrl}/by-ids`, { ids });
   }

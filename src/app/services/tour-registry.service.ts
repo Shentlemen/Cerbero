@@ -117,6 +117,8 @@ export class TourRegistryService implements OnDestroy {
       return;
     }
 
+    tour.beforeStart?.();
+
     let steps: DriveStep[] = [];
     if (tour.buildSteps) {
       steps = tour.buildSteps();
@@ -124,10 +126,9 @@ export class TourRegistryService implements OnDestroy {
       steps = this.host.buildSteps(tour.steps);
     }
     if (steps.length === 0) {
+      tour.afterEnd?.();
       return;
     }
-
-    tour.beforeStart?.();
 
     const inst = this.host.startTour(steps, () => {
       this.activeDriver = undefined;
@@ -187,7 +188,11 @@ export class TourRegistryService implements OnDestroy {
   }
 
   private looksLikeDynamicSegment(segment: string): boolean {
-    return /^[0-9]+$/.test(segment) || /^[0-9a-f-]{8,}$/i.test(segment);
+    return (
+      /^[0-9]+$/.test(segment) ||
+      /^[0-9a-f-]{8,}$/i.test(segment) ||
+      /^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i.test(segment)
+    );
   }
 
   private normalize(section: string): string {

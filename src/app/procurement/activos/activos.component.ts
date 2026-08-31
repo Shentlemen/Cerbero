@@ -31,7 +31,7 @@ import { ServiciosGarantiaService, ServicioGarantiaDTO } from '../../services/se
 import { TiposActivoService, TipoDeActivoDTO } from '../../services/tipos-activo.service';
 import { TiposCompraService, TipoDeCompraDTO } from '../../services/tipos-compra.service';
 import { firstValueFrom, of } from 'rxjs';
-import { catchError, take } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PermissionsService } from '../../services/permissions.service';
@@ -109,7 +109,6 @@ interface PdfExportSection {
 })
 export class ActivosComponent implements OnInit, OnDestroy {
   private inventoryTour?: Driver;
-  private inventoryTourZoomSuspendCount = 0;
   private inventoryTourOpenedActivoModal = false;
   private tourCleanup?: () => void;
   private static readonly PDF_KEY_REMOTE_DEP: Partial<
@@ -141,7 +140,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
   };
 
   @ViewChild('modalActivo') modalActivo: any;
-  /** Referencia del template del modal alta/edición (para suspender zoom y layout). */
   @ViewChild('activoModal') activoModalTemplate!: TemplateRef<unknown>;
   activos: ActivoDTO[] = [];
   activosFiltrados: ActivoDTO[] = [];
@@ -428,9 +426,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
 
   pdfGenerando = false;
 
-  /** Mientras hay modal de alta/edición abierto suspendemos zoom global (`body:not(.no-global-zoom)`) para que Popper/ngb-typeahead calcule bien. */
-  private activoModalBodyZoomSuspendCount = 0;
-
   /** Columnas en orden de exportación (aplanadas desde `pdfExportSections`). */
   get pdfColumnsFlat(): ReadonlyArray<{ key: string; label: string }> {
     return this.pdfExportSections.flatMap((s) => [...s.cols]);
@@ -605,6 +600,12 @@ export class ActivosComponent implements OnInit, OnDestroy {
       '#activos-tour-title',
       'Gestión de Activos',
       'Desde esta pantalla gestionás altas, edición, filtros, búsqueda e impresión del inventario.',
+      'bottom'
+    );
+    addStep(
+      '#activos-tour-filters',
+      'Filtros por pestaña',
+      'Las pestañas de arriba recortan el inventario: un grupo por criticidad (Alta, Media, Baja) y otro por estado. La pestaña activa queda unida al panel.',
       'bottom'
     );
     addStep(
@@ -902,7 +903,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
 
   private startInventoryDriver(steps: DriveStep[]): void {
     this.inventoryTour?.destroy();
-    this.suspenderZoomGlobalParaTour();
     this.inventoryTour = driver({
       allowClose: true,
       /** No cerrar ni avanzar con clic en el oscuro: solo botones del popover y la X. */
@@ -919,7 +919,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
           this.modalService.dismissAll();
           this.inventoryTourOpenedActivoModal = false;
         }
-        this.restaurarZoomGlobalTrasTour();
         // El tour del listado salta de paso en paso por toda la página y
         // suele terminar con la tabla/PDF scrolleados; al cerrar lo dejamos
         // arriba para que la siguiente acción del usuario arranque limpia.
@@ -934,26 +933,8 @@ export class ActivosComponent implements OnInit, OnDestroy {
     this.inventoryTour.drive();
   }
 
-  private suspenderZoomGlobalParaTour(): void {
-    this.inventoryTourZoomSuspendCount += 1;
-    this.documentRef.body.classList.add('no-global-zoom');
-  }
-
-  private restaurarZoomGlobalTrasTour(): void {
-    this.inventoryTourZoomSuspendCount = Math.max(0, this.inventoryTourZoomSuspendCount - 1);
-    if (this.inventoryTourZoomSuspendCount === 0) {
-      this.documentRef.body.classList.remove('no-global-zoom');
-    }
-  }
-
   /**
    * Vuelve la pantalla al inicio cuando termina el tour.
-   *
-   * Lo posponemos dos frames porque al cerrar el tour quitamos la clase
-   * `body.no-global-zoom`, lo que restaura el `zoom: 0.8` global y reescala
-   * el documento. Scrollear en el mismo tick que ese cambio cancela el
-   * smooth (e incluso, en algunos casos, el browser decide ignorar el
-   * `scrollTo`). Esperar al layout asentado evita ambos problemas.
    */
   private resetScrollToTop(): void {
     requestAnimationFrame(() => {
@@ -2091,12 +2072,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
 
       const esModalActivo = modal === this.activoModalTemplate;
 
-      if (esModalActivo) {
-        if (this.activoModalBodyZoomSuspendCount++ === 0) {
-          this.documentRef.body.classList.add('no-global-zoom');
-        }
-      }
-
       const modalOpts: NgbModalOptions = {
         size: 'xl',
         /** En edición no cerrar por clic fuera (evita pérdida de cambios). Alta sigue igual que antes. */
@@ -2110,15 +2085,6 @@ export class ActivosComponent implements OnInit, OnDestroy {
         modalOpts.scrollable = true;
       }
       const modalRef = this.modalService.open(modal, modalOpts);
-
-      if (esModalActivo) {
-        modalRef.hidden.pipe(take(1)).subscribe(() => {
-          this.activoModalBodyZoomSuspendCount = Math.max(0, this.activoModalBodyZoomSuspendCount - 1);
-          if (this.activoModalBodyZoomSuspendCount === 0) {
-            this.documentRef.body.classList.remove('no-global-zoom');
-          }
-        });
-      }
 
       modalRef.result.then(() => {
         // Modal cerrado exitosamente

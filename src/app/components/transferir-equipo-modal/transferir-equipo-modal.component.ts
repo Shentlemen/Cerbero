@@ -123,7 +123,7 @@ import {
           
           <div *ngIf="!cargandoConfig && (esAlmacenRegular() || esAlmacenLaboratorio()) && !almacenConfig" class="alert alert-warning mt-2">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            Configure este almacén en <strong>Almacén Config</strong> para indicar estantería y estante.
+            Configure este almacén en <strong>Configuración de almacén</strong> para indicar estantería y estante.
           </div>
         </div>
 

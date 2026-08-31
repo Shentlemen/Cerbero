@@ -4,18 +4,19 @@
   min-height: 100vh;
 }
 
-.header-section {
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+.assets-container .header-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0.35rem 0.15rem 0;
+  margin-bottom: 0.55rem;
+  border-radius: 0;
 }
 
-.title-wrapper {
+.assets-container .title-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.35rem;
 }
 
 .title-wrapper h1 {
@@ -67,11 +68,8 @@
   font-size: 1rem;
 }
 
-.assets-content {
-  background: white;
-  border-radius: 15px;
+.assets-container .assets-content {
   padding: 1.5rem;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
 }
 
 .table-container {
@@ -189,11 +187,11 @@
     padding: 1rem;
   }
 
-  .header-section {
+  .assets-container .header-section {
     padding: 1rem;
   }
 
-  .assets-content {
+  .assets-container .assets-content {
     padding: 1rem;
   }
 }
@@ -245,6 +243,183 @@
   font-weight: normal;
 }
 
+.advanced-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  background: white !important;
+  color: #2c3e50 !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: none !important;
+}
+
+.advanced-toggle-btn:hover,
+.advanced-toggle-btn:focus-visible {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #000 !important;
+  box-shadow: none !important;
+}
+
+.advanced-toggle-btn:active {
+  background: #1a1a1a !important;
+  color: #fff !important;
+  border-color: #000 !important;
+}
+
+.advanced-toggle-btn.active {
+  border-color: #000 !important;
+  color: #111 !important;
+  background: #f1f5f9 !important;
+}
+
+.advanced-toggle-btn.active:hover,
+.advanced-toggle-btn.active:focus-visible {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #000 !important;
+}
+
+.advanced-toggle-btn:hover .advanced-badge,
+.advanced-toggle-btn:focus-visible .advanced-badge,
+.advanced-toggle-btn.active:hover .advanced-badge {
+  background: #fff;
+  color: #111;
+}
+
+.advanced-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #3498db;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.advanced-filters-panel {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.advanced-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.advanced-field {
+  min-width: 0;
+}
+
+.advanced-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.advanced-field-ram {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+.ram-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.ram-row select {
+  flex: 0 0 auto;
+  width: 8.75rem;
+  min-width: 8.75rem;
+  max-width: 8.75rem;
+  padding-right: 1.75rem;
+}
+
+.ram-row input {
+  flex: 1 1 auto;
+  min-width: 4.5rem;
+  width: auto;
+  max-width: none;
+}
+
+.advanced-filters-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.advanced-filters-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Evita el btn-primary gris global de styles.css */
+.advanced-apply-btn {
+  background: #000 !important;
+  border: 1px solid #000 !important;
+  color: #fff !important;
+}
+
+.advanced-apply-btn:hover:not(:disabled),
+.advanced-apply-btn:focus-visible:not(:disabled) {
+  background: #1a1a1a !important;
+  border-color: #1a1a1a !important;
+  color: #fff !important;
+}
+
+.advanced-apply-btn:disabled {
+  background: #fff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+
+.advanced-clear-btn {
+  background: #fff !important;
+  border: 1px solid #dee2e6 !important;
+  color: #2c3e50 !important;
+}
+
+.advanced-clear-btn:hover:not(:disabled),
+.advanced-clear-btn:focus-visible:not(:disabled) {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+
+.advanced-clear-btn:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed;
+}
+
+.advanced-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-left: 0.25rem;
+}
+
 .action-buttons {
   display: flex;
   gap: 0.25rem;
@@ -261,34 +436,6 @@
   text-align: center;
 }
 
-.baja-btn {
-  background: #ffc107 !important;
-  border: 1px solid #ffc107 !important;
-  color: #212529 !important;
-}
-
-.baja-btn:hover:not(:disabled) {
-  background: #e0a800 !important;
-  border-color: #d39e00 !important;
-  color: #212529 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
-}
-
-.almacen-btn {
-  background: #0f766e !important;
-  border: 1px solid #0f766e !important;
-  color: #fff !important;
-}
-
-.almacen-btn:hover:not(:disabled) {
-  background: #0d5f59 !important;
-  border-color: #0d5f59 !important;
-  color: #fff !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(15, 118, 110, 0.3);
-}
-
 .transferir-btn {
   background: #2563eb !important;
   border: 1px solid #2563eb !important;
@@ -296,11 +443,11 @@
 }
 
 .transferir-btn:hover:not(:disabled) {
-  background: #1d4ed8 !important;
-  border-color: #1d4ed8 !important;
-  color: #ffffff !important;
+  background: #0d5f59 !important;
+  border-color: #0d5f59 !important;
+  color: #fff !important;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 4px rgba(15, 118, 110, 0.3);
 }
 
 
@@ -331,7 +478,7 @@
   margin-right: 0.25rem;
 }
 
-/* Diálogos confirm / estado-dialog: estilos globales en styles.css */
+/* Diálogo de confirmación: estilos globales en styles.css */
 
 /* Responsive para botones de acción */
 @media (max-width: 768px) {

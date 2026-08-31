@@ -6,7 +6,7 @@
   box-sizing: border-box;
 }
 
-/* Vista a 100%: el zoom global del body se desactiva vía clase .no-global-zoom en app.component */
+/* Vista a tamaño real (html font-size 100% vía html:has(.crt)). */
 .crt {
   height: 100%;
   max-height: 100%;

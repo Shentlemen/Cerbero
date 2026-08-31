@@ -35,6 +35,7 @@ import {
   TicketsService
 } from '../services/tickets.service';
 import { TicketAreaDTO } from '../services/ticket-area.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-ticket-detail',
@@ -105,7 +106,8 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
     private ticketAreaService: TicketAreaService,
     private notificationService: NotificationService,
     private permissionsService: PermissionsService,
-    private unreadTicketsService: UnreadTicketsService
+    private unreadTicketsService: UnreadTicketsService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -225,8 +227,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
         } as TicketMovimiento & { usuarioNombre?: string }));
         this.comentarios = comentarios.map(c => ({
           ...c.comentario,
-          usuarioNombre: c.usuarioNombre
-        } as TicketComentario & { usuarioNombre?: string }));
+          usuarioNombre: c.usuarioNombre,
+          usuarioHasAvatar: !!c.usuarioHasAvatar
+        } as TicketComentario));
         this.adjuntos = adjuntos.map(a => ({
           ...a.adjunto,
           usuarioNombre: a.usuarioNombre
@@ -419,6 +422,14 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
         this.notificationService.showError('Error', error?.error?.message || 'No se pudo agregar comentario.');
       }
     });
+  }
+
+  onComentarioKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' || event.shiftKey) {
+      return;
+    }
+    event.preventDefault();
+    this.agregarComentario();
   }
 
   canProcessCurrentTicket(): boolean {
@@ -675,8 +686,19 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getComentarioUsuario(c: TicketComentario): string {
-    const nombre = (c as TicketComentario & { usuarioNombre?: string }).usuarioNombre;
+    const nombre = (c.usuarioNombre || '').trim();
     return nombre || `Usuario ${c.usuarioId}`;
+  }
+
+  avatarUrl(userId: number | null | undefined): string {
+    if (userId == null) {
+      return '';
+    }
+    return this.authService.getAvatarUrl(userId);
+  }
+
+  onComentarioAvatarError(c: TicketComentario): void {
+    c.usuarioHasAvatar = false;
   }
 
   /** Misma regla que comentar: creador, área actual o GM/Admin, y ticket no cerrado. */

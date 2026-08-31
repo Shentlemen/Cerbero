@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { User } from '../interfaces/auth.interface';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { UpdateProfileRequest } from '../interfaces/auth.interface';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -15,47 +16,82 @@ import { UpdateProfileRequest } from '../interfaces/auth.interface';
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.css']
 })
-export class UserProfileComponent implements OnInit {
+export class UserProfileComponent implements OnInit, OnDestroy {
   userForm: FormGroup;
   loading = false;
+  uploadingAvatar = false;
   errorMessage = '';
   successMessage = '';
   currentUser: User | null = null;
   isEditing = false;
+  private tourCleanup?: () => void;
+
+  get avatarUrl(): string {
+    return this.authService.getAvatarUrl();
+  }
 
   constructor(
     private authService: AuthService,
     private fb: FormBuilder,
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private tourRegistry: TourRegistryService
   ) {
     this.userForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
+      username: [{ value: '', disabled: true }],
       email: ['', [Validators.required, Validators.email]],
       firstName: ['', [Validators.required]],
-      lastName: ['', [Validators.required]],
+      lastName: [''],
       /* Sin minLength aquí: vacío = válido; longitud y coincidencia en onSubmit */
       password: [''],
       confirmPassword: [''],
-      role: [{ value: '', disabled: true }] // Rol deshabilitado
+      role: [{ value: '', disabled: true }]
     });
+    this.toggleFormFields(false);
   }
 
   ngOnInit(): void {
     this.loadCurrentUser();
+    this.tourCleanup = this.tourRegistry.register('user-profile', [{
+      id: 'user-profile-overview',
+      title: 'Tour de mi perfil',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-profile-title', title: 'Mi perfil', description: 'Datos de tu cuenta Cerbero: nombre, usuario, correo y foto que ven los demás en la guía de contactos.', side: 'bottom' },
+        { selector: '#tour-profile-avatar', title: 'Foto de perfil', description: 'Subí, cambiá o quitá la foto. Si no hay imagen se muestran las iniciales o el ícono de tu rol.', side: 'right' },
+        { selector: '#tour-profile-form', title: 'Información personal', description: 'Usuario, correo, nombre y apellido. El rol lo asigna un GM y no se edita desde acá.', side: 'left' },
+        { selector: '#tour-profile-edit', title: 'Editar', description: 'Habilitá los campos para guardar cambios. En modo edición también podés cambiar la contraseña.', side: 'left' }
+      ]
+    }]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   loadCurrentUser(): void {
     this.currentUser = this.authService.getCurrentUser();
-    if (this.currentUser) {
-      this.populateForm();
-    } else {
+    if (!this.currentUser) {
       this.notificationService.showError(
         'Error de Sesión',
         'No se pudo cargar la información del usuario'
       );
       this.router.navigate(['/login']);
+      return;
     }
+    this.populateForm();
+    this.authService.getCurrentUserProfile().subscribe({
+      next: (profile) => {
+        const { password: _ignored, ...safe } = profile;
+        this.authService.updateCurrentUser({ ...this.currentUser!, ...safe });
+        this.currentUser = this.authService.getCurrentUser();
+        this.populateForm();
+      },
+      error: () => {
+        /* se mantiene el usuario de sesión */
+      }
+    });
   }
 
   populateForm(): void {
@@ -63,49 +99,37 @@ export class UserProfileComponent implements OnInit {
       const u = this.currentUser;
       this.userForm.patchValue({
         username: u.username ?? '',
-        email: u.email ?? '',
-        firstName: u.firstName ?? '',
-        lastName: u.lastName ?? '',
+        email: (u.email ?? '').trim(),
+        firstName: (u.firstName ?? '').trim(),
+        lastName: (u.lastName ?? '').trim(),
         role: this.getRoleLabel(u.role)
       });
     }
   }
 
-  /** Solo campos obligatorios del perfil — contraseña es opcional y no cuenta para habilitar el botón. */
+  /** Username y rol no se envían; la contraseña es opcional. */
   canSaveChanges(): boolean {
     if (!this.isEditing || this.loading) {
       return false;
     }
-    const keys: Array<'username' | 'email' | 'firstName' | 'lastName'> = [
-      'username',
-      'email',
-      'firstName',
-      'lastName'
-    ];
-    return keys.every((key) => {
-      const c = this.userForm.get(key);
-      return c != null && !c.disabled && c.valid;
-    });
+    const email = this.userForm.get('email');
+    const firstName = this.userForm.get('firstName');
+    if (!email || !firstName || email.disabled || firstName.disabled) {
+      return false;
+    }
+    const nombre = String(firstName.value ?? '').trim();
+    const correo = String(email.value ?? '').trim();
+    return nombre.length > 0 && email.valid && correo.length > 0;
   }
 
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
     if (this.isEditing) {
-      this.userForm.get('username')?.enable();
-      this.userForm.get('email')?.enable();
-      this.userForm.get('firstName')?.enable();
-      this.userForm.get('lastName')?.enable();
-      this.userForm.get('password')?.enable();
-      this.userForm.get('confirmPassword')?.enable();
+      this.toggleFormFields(true);
       this.userForm.patchValue({ password: '', confirmPassword: '' }, { emitEvent: false });
     } else {
-      this.userForm.get('username')?.disable();
-      this.userForm.get('email')?.disable();
-      this.userForm.get('firstName')?.disable();
-      this.userForm.get('lastName')?.disable();
-      this.userForm.get('password')?.disable();
-      this.userForm.get('confirmPassword')?.disable();
-      this.populateForm(); // Restaurar valores originales
+      this.toggleFormFields(false);
+      this.populateForm();
     }
   }
 
@@ -136,9 +160,9 @@ export class UserProfileComponent implements OnInit {
       this.successMessage = '';
 
       const updateData: UpdateProfileRequest = {
-        email: this.userForm.get('email')?.value,
-        firstName: this.userForm.get('firstName')?.value,
-        lastName: this.userForm.get('lastName')?.value
+        email: String(this.userForm.get('email')?.value ?? '').trim(),
+        firstName: String(this.userForm.get('firstName')?.value ?? '').trim(),
+        lastName: String(this.userForm.get('lastName')?.value ?? '').trim()
       };
 
       // Incluir contraseña solo si se proporciona
@@ -170,7 +194,7 @@ export class UserProfileComponent implements OnInit {
       });
     } else {
       // Marcar todos los campos como touched para mostrar los errores
-      ['username', 'email', 'firstName', 'lastName'].forEach((key) => {
+      ['email', 'firstName'].forEach((key) => {
         this.userForm.get(key)?.markAsTouched();
       });
     }
@@ -185,20 +209,18 @@ export class UserProfileComponent implements OnInit {
   }
 
   private toggleFormFields(enabled: boolean): void {
-    if (enabled) {
-      this.userForm.get('username')?.enable();
-      this.userForm.get('email')?.enable();
-      this.userForm.get('firstName')?.enable();
-      this.userForm.get('lastName')?.enable();
-      this.userForm.get('password')?.enable();
-      this.userForm.get('confirmPassword')?.enable();
-    } else {
-      this.userForm.get('username')?.disable();
-      this.userForm.get('email')?.disable();
-      this.userForm.get('firstName')?.disable();
-      this.userForm.get('lastName')?.disable();
-      this.userForm.get('password')?.disable();
-      this.userForm.get('confirmPassword')?.disable();
+    const keys = ['email', 'firstName', 'lastName', 'password', 'confirmPassword'] as const;
+    for (const key of keys) {
+      const c = this.userForm.get(key);
+      if (!c) {
+        continue;
+      }
+      if (enabled) {
+        c.enable({ emitEvent: false });
+      } else {
+        c.disable({ emitEvent: false });
+      }
+      c.updateValueAndValidity({ emitEvent: false });
     }
   }
 
@@ -218,6 +240,82 @@ export class UserProfileComponent implements OnInit {
       case 'USER': return 'fas fa-user';
       default: return 'fas fa-user-circle';
     }
+  }
+
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    const tipos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+    if (!tipos.includes(file.type)) {
+      this.notificationService.showError(
+        'Archivo no válido',
+        'Solo se aceptan fotos JPG, PNG, GIF o WEBP.'
+      );
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.notificationService.showError(
+        'Archivo demasiado grande',
+        'La foto no puede superar 10 MB.'
+      );
+      return;
+    }
+    this.uploadingAvatar = true;
+    this.authService.uploadAvatar(file).subscribe({
+      next: (user) => {
+        this.currentUser = user;
+        this.uploadingAvatar = false;
+        this.notificationService.showSuccessMessage('Foto de perfil actualizada');
+      },
+      error: (err) => {
+        this.uploadingAvatar = false;
+        const msg = this.mensajeErrorAvatar(err, 'No se pudo subir la foto');
+        this.notificationService.showError('Error al subir la foto', msg);
+      }
+    });
+  }
+
+  quitarAvatar(): void {
+    if (this.uploadingAvatar) {
+      return;
+    }
+    this.uploadingAvatar = true;
+    this.authService.deleteAvatar().subscribe({
+      next: (user) => {
+        this.currentUser = user;
+        this.uploadingAvatar = false;
+        this.notificationService.showSuccessMessage('Foto de perfil eliminada');
+      },
+      error: (err) => {
+        this.uploadingAvatar = false;
+        const msg = this.mensajeErrorAvatar(err, 'No se pudo quitar la foto');
+        this.notificationService.showError('Error al quitar la foto', msg);
+      }
+    });
+  }
+
+  onAvatarImgError(): void {
+    if (this.currentUser?.hasAvatar) {
+      this.currentUser = { ...this.currentUser, hasAvatar: false };
+    }
+  }
+
+  private mensajeErrorAvatar(err: unknown, fallback: string): string {
+    const e = err as {
+      status?: number;
+      error?: { error?: string; message?: string };
+      message?: string;
+    };
+    const codigo = e?.error?.error;
+    const msg = e?.error?.message || e?.message || fallback;
+    if (e?.status === 401 || codigo === 'UNAUTHORIZED' || codigo === 'TOKEN_EXPIRED') {
+      return 'La sesión no es válida para subir la foto. No te sacamos al login: cerrá sesión y entrá de nuevo, o recargá la página, y reintentá.';
+    }
+    return msg;
   }
 
   volver(): void {

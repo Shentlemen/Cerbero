@@ -88,7 +88,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
       icon: 'fa-route',
       steps: [
         { selector: '#tour-cementerio-title', title: 'Cementerio', description: 'Equipos y dispositivos dados de baja operativamente; no aparecen en inventario activo.', side: 'bottom' },
-        { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Alterná entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
+        { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Pestañas para alternar entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
         { selector: '#tour-cementerio-search', title: 'Búsqueda', description: 'Filtrá por nombre para ubicar un registro.', side: 'bottom' },
         { selector: '#tour-cementerio-table', title: 'Tabla', description: 'Cada fila trae sus acciones: imprimir baja, transferir y reactivar (según permisos). También podés editar observaciones en línea.', side: 'top' },
         { selector: '.imprimir-baja-btn', title: 'Imprimir baja',

@@ -10,63 +10,59 @@
           Almacén Laboratorio
           <span class="subtitle">Equipos y dispositivos en almacén</span>
         </h1>
-        
-        <div class="d-flex align-items-center gap-2 ms-auto">
-          <!-- Botón de imprimir/exportar PDF -->
-          <button 
-            class="btn btn-danger btn-sm print-btn" 
-            id="tour-almacen-lab-print"
-            (click)="exportarPDF()"
-            title="Exportar lista filtrada a PDF"
-            [disabled]="loading || equiposFiltrados.length === 0">
-            <i class="fas fa-file-pdf"></i>
-            Imprimir
-          </button>
-        </div>
       </div>
-    </div>
-    
-    <!-- Filtros por tipo -->
-    <div class="filters-container" *ngIf="!loading" id="tour-almacen-lab-filters">
-      <button 
-        class="filter-btn" 
-        [class.active]="filtroTipo === 'todos'"
-        (click)="filtrarPorTipo('todos')"
-        [style.--device-color]="'#2c3e50'"
-        [style.--device-bg-color]="'#f8f9fa'"
-        [style.--device-border-color]="'#dee2e6'">
-        <i class="fas fa-th-large"></i>
-        <span>Todos</span>
-        <span class="count">({{ getTotalItems() }})</span>
-      </button>
-      
-      <button 
-        class="filter-btn" 
-        [class.active]="filtroTipo === 'equipos'"
-        [style.--device-color]="'#1976d2'"
-        [style.--device-bg-color]="'#e3f2fd'"
-        [style.--device-border-color]="'#bbdefb'"
-        (click)="filtrarPorTipo('equipos')">
-        <i class="fas fa-desktop"></i>
-        <span>Equipos</span>
-        <span class="count">({{ getTotalEquipos() }})</span>
-      </button>
-      
-      <button 
-        class="filter-btn" 
-        [class.active]="filtroTipo === 'dispositivos'"
-        [style.--device-color]="'#d32f2f'"
-        [style.--device-bg-color]="'#ffebee'"
-        [style.--device-border-color]="'#ffcdd2'"
-        (click)="filtrarPorTipo('dispositivos')">
-        <i class="fas fa-network-wired"></i>
-        <span>Dispositivos</span>
-        <span class="count">({{ getTotalDispositivos() }})</span>
-      </button>
     </div>
   </div>
 
-  <div class="content-section">
+  <div class="cerbero-folder-stage">
+    <div
+      class="cerbero-folder-tabs"
+      *ngIf="!loading"
+      id="tour-almacen-lab-filters"
+      role="tablist"
+      aria-label="Filtrar por tipo">
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="filtroTipo === 'todos'"
+        [attr.aria-selected]="filtroTipo === 'todos'"
+        [style.--tab-accent]="'var(--ds-color-accent)'"
+        (click)="filtrarPorTipo('todos')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true">
+          <i class="fas fa-th-large"></i>
+        </span>
+        <span class="cerbero-folder-tab-label">Todos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="filtroTipo === 'equipos'"
+        [attr.aria-selected]="filtroTipo === 'equipos'"
+        [style.--tab-accent]="'#1976d2'"
+        (click)="filtrarPorTipo('equipos')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true">
+          <i class="fas fa-desktop"></i>
+        </span>
+        <span class="cerbero-folder-tab-label">Equipos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="filtroTipo === 'dispositivos'"
+        [attr.aria-selected]="filtroTipo === 'dispositivos'"
+        [style.--tab-accent]="'#d32f2f'"
+        (click)="filtrarPorTipo('dispositivos')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true">
+          <i class="fas fa-network-wired"></i>
+        </span>
+        <span class="cerbero-folder-tab-label">Dispositivos</span>
+      </button>
+    </div>
+
+  <div class="content-section cerbero-folder-panel">
     <div class="table-container">
       <div *ngIf="loading" class="text-center my-4">
         <div class="spinner-border text-info" role="status">
@@ -105,6 +101,16 @@
             </span>
             <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
           </p>
+          <button
+            type="button"
+            class="btn btn-danger btn-sm print-btn"
+            id="tour-almacen-lab-print"
+            (click)="exportarPDF()"
+            title="Exportar lista filtrada a PDF"
+            [disabled]="loading || equiposFiltrados.length === 0">
+            <i class="fas fa-file-pdf"></i>
+            Imprimir
+          </button>
         </div>
 
         <div id="tour-almacen-lab-table" class="table-responsive" *ngIf="collectionSize > 0">
@@ -319,6 +325,7 @@
         </div>
       </ng-container>
     </div>
+  </div>
   </div>
 </div>
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { Router } from '@angular/router';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { AlmacenConfigService } from '../../services/almacen-config.service';
 import { AlmacenConfig, AlmacenEstanteriaDef, estanteriasOrdenadas } from '../../interfaces/almacen-config.interface';
@@ -15,16 +16,17 @@ import type { Driver, DriveStep } from 'driver.js';
 import { driver } from 'driver.js';
 
 @Component({
-  selector: 'app-config-almacenes',
+  selector: 'app-configuracion-almacen',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, NotificationContainerComponent],
-  templateUrl: './config-almacenes.component.html',
-  styleUrls: ['./config-almacenes.component.css']
+  templateUrl: './configuracion-almacen.component.html',
+  styleUrls: ['./configuracion-almacen.component.css']
 })
-export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
+export class ConfiguracionAlmacenComponent implements OnInit, OnDestroy {
   almacenes: Almacen[] = [];
   configs: AlmacenConfig[] = [];
   almacenConfigForm: FormGroup;
+  almacenAltaForm: FormGroup;
   modoEdicionConfig: boolean = false;
   configSeleccionada: AlmacenConfig | null = null;
   loadingConfigs: boolean = false;
@@ -38,6 +40,8 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
 
   /** Validación y errores API en el modal nueva/editar configuración (pie del modal). */
   configModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
+  /** Validación y errores API en el modal de alta de almacén. */
+  almacenModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
 
   /** Auxiliar: dar de alta varias estanterías con la misma forma */
   variasCantidad: number = 2;
@@ -48,6 +52,7 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
   constructor(
     private almacenService: AlmacenService,
     private almacenConfigService: AlmacenConfigService,
+    private router: Router,
     private modalService: NgbModal,
     private fb: FormBuilder,
     public permissionsService: PermissionsService,
@@ -60,9 +65,16 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
       nombre: [''],
       estanteriasRows: this.fb.array([]),
     });
+    this.almacenAltaForm = this.fb.group({
+      numero: ['', [Validators.required, Validators.maxLength(50)]],
+      nombre: ['', [Validators.required, Validators.maxLength(255)]],
+    });
 
     this.almacenConfigForm.valueChanges.subscribe(() => this.limpiarFeedbackConfigModal());
     this.estanteriasRows.valueChanges.subscribe(() => this.limpiarFeedbackConfigModal());
+    this.almacenAltaForm.valueChanges.subscribe(() => {
+      this.almacenModalValidacion = null;
+    });
   }
 
   limpiarFeedbackConfigModal(): void {
@@ -123,25 +135,27 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
     this.cargarAlmacenesYConfigs();
     const tours: TourDefinition[] = [
       {
-        id: 'config-almacenes-overview',
-        title: 'Tour de configuración de almacenes',
+        id: 'configuracion-almacen-overview',
+        title: 'Tour de configuración de almacén',
         icon: 'fa-route',
         steps: [
-          { selector: '#tour-config-almacenes-title', title: 'Configuración de almacenes', description: 'Aquí definís estanterías, cantidad de estantes y sectores por almacén. Esa estructura alimenta validaciones y la vista 3D.', side: 'bottom' },
-          { selector: '#tour-config-almacenes-actions', title: 'Alta', description: 'Creá una configuración nueva o abrí el modal desde cada tarjeta para editar.', side: 'bottom' },
-          { selector: '#tour-config-almacenes-cards', title: 'Listado', description: 'Cada almacén muestra resumen de estanterías o un aviso si aún no está configurado.', side: 'top' },
+          { selector: '#tour-configuracion-almacen-title', title: 'Configuración de almacén', description: 'Aquí definís estanterías, cantidad de estantes y sectores por almacén. Esa estructura alimenta validaciones y la planta 2D.', side: 'bottom' },
+          { selector: '#tour-configuracion-almacen-nuevo', title: 'Nuevo almacén', description: 'El alta de depósitos físicos se hace acá: número y nombre. Después podés configurar su estructura interna.', side: 'bottom' },
+          { selector: '#tour-configuracion-almacen-actions', title: 'Alta', description: 'Creá un almacén o una configuración de estanterías. Desde cada tarjeta podés editar la estructura y abrir la planta 2D.', side: 'bottom' },
+          { selector: '#tour-configuracion-almacen-cards', title: 'Listado', description: 'Cada almacén muestra resumen de estanterías. Con configuración, el botón Planta abre el editor 2D.', side: 'top' },
+          { selector: '.btn-planta', title: 'Planta 2D', description: 'Abre el editor de planta: colocá estanterías y zonas sobre una grilla. El stock usa este mapa en solo lectura.', side: 'left' },
           { selector: '.btn-eliminar-config', title: 'Eliminar configuración',
             description: '<strong>Borra la configuración</strong> del almacén (estanterías, estantes y sectores). El almacén sigue existiendo, pero pierde la estructura interna hasta que vuelvas a configurarlo. Pide confirmación antes de aplicar.', side: 'top' }
         ]
       },
       {
-        id: 'config-almacenes-crear-detalle',
+        id: 'configuracion-almacen-crear-detalle',
         title: 'Cómo crear una configuración',
         icon: 'fa-cogs',
         run: () => this.runTourCrearConfig(),
       }
     ];
-    this.tourCleanup = this.tourRegistry.register('config-almacenes', tours);
+    this.tourCleanup = this.tourRegistry.register('almacen/configuracion', tours);
   }
 
   ngOnDestroy(): void {
@@ -258,6 +272,61 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
       size: 'lg',
       backdrop: true,
       windowClass: 'config-almacen-modal-window'
+    });
+  }
+
+  abrirModalAlmacen(modal: unknown): void {
+    this.almacenModalValidacion = null;
+    this.almacenAltaForm.reset();
+    this.modalService.open(modal, {
+      size: 'lg',
+      windowClass: 'almacen-form-modal-window'
+    });
+  }
+
+  guardarAlmacen(): void {
+    if (!this.almacenAltaForm.valid) {
+      this.almacenAltaForm.markAllAsTouched();
+      const lineas: string[] = [];
+      const n = this.almacenAltaForm.get('numero');
+      const nom = this.almacenAltaForm.get('nombre');
+      if (n?.hasError('required')) {
+        lineas.push('El número es obligatorio.');
+      } else if (n?.hasError('maxlength')) {
+        lineas.push('El número no puede exceder 50 caracteres.');
+      }
+      if (nom?.hasError('required')) {
+        lineas.push('El nombre es obligatorio.');
+      } else if (nom?.hasError('maxlength')) {
+        lineas.push('El nombre no puede exceder 255 caracteres.');
+      }
+      this.almacenModalValidacion = {
+        titulo: 'Revisá el formulario antes de guardar',
+        lineas: lineas.length > 0 ? lineas : ['Completá los campos obligatorios.'],
+        esError: false
+      };
+      return;
+    }
+
+    const formData = this.almacenAltaForm.value;
+    this.almacenModalValidacion = null;
+    this.almacenService.createAlmacen({
+      numero: formData.numero,
+      nombre: formData.nombre
+    }).subscribe({
+      next: () => {
+        this.modalService.dismissAll();
+        this.cargarAlmacenesYConfigs();
+      },
+      error: (err) => {
+        const msg = this.mensajeErrorHttp(err);
+        this.almacenModalValidacion = {
+          titulo: 'Error al crear el almacén',
+          lineas: [msg],
+          esError: true
+        };
+        this.notificationService.showError('Error', msg);
+      }
     });
   }
 
@@ -540,6 +609,10 @@ export class ConfigAlmacenesComponent implements OnInit, OnDestroy {
 
   getConfigForAlmacen(almacenId: number): AlmacenConfig | undefined {
     return this.configs.find(c => c.almacen.id === almacenId);
+  }
+
+  abrirPlanta(almacen: Almacen): void {
+    this.router.navigate(['/menu/almacen/configuracion/planta', almacen.id]);
   }
 
   getDivisionesArray(divisionesEstante: string): string[] {

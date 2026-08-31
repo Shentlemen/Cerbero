@@ -4,12 +4,190 @@
   <div class="header-section">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100 mb-2">
     <div class="title-wrapper flex-grow-1 mb-0">
-      <h1 id="tour-settings-title" class="mb-0"><i class="fas fa-cog"></i> Configuración del Sistema</h1>
+      <h1 id="tour-settings-title" class="mb-0"><i class="fas fa-database"></i> Mantenimiento de bases de datos</h1>
     </div>
     </div>
   </div>
 
   <div class="content-section">
+
+  <!-- Salud del inventario -->
+  <div class="settings-section" id="tour-settings-health" *ngIf="canAccessSettings()">
+    <div class="section-header">
+      <i class="fas fa-heartbeat me-2"></i>
+      <h3>Salud del inventario</h3>
+    </div>
+    <div class="sync-controls">
+      <div class="info-box info-box-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <span>
+          Foto rápida OCS vs Cerbero: hardware, nombres únicos, duplicados, alertas abiertas y equipos sin reportar.
+          Solo lectura. Se carga al abrir la página.
+        </span>
+      </div>
+      <button
+        type="button"
+        class="btn btn-outline-primary sync-button"
+        id="tour-settings-health-btn"
+        (click)="cargarSaludInventario(true)"
+        [disabled]="isLoadingHealth">
+        <i class="fas fa-sync me-2" [class.fa-spin]="isLoadingHealth"></i>
+        {{ isLoadingHealth ? 'Actualizando...' : 'Actualizar' }}
+      </button>
+    </div>
+
+    <div *ngIf="healthError" class="alert alert-danger mt-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ healthError }}
+    </div>
+
+    <div *ngIf="healthResult" class="diag-health mt-3">
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="diag-card ocs">
+            <h6><i class="fas fa-server me-2"></i>OCS</h6>
+            <p><strong>Total:</strong> {{ healthResult.ocs.total }}</p>
+            <p><strong>Con nombre:</strong> {{ healthResult.ocs.withName }}</p>
+            <p><strong>Nombres únicos:</strong> {{ healthResult.ocs.uniqueNames }}</p>
+            <p><strong>Con IP / SO:</strong> {{ healthResult.ocs.withIp }} / {{ healthResult.ocs.withOs }}</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="diag-card cerbero">
+            <h6><i class="fas fa-database me-2"></i>Cerbero</h6>
+            <p><strong>Total:</strong> {{ healthResult.cerbero.total }}</p>
+            <p><strong>Con nombre:</strong> {{ healthResult.cerbero.withName }}</p>
+            <p><strong>Nombres únicos:</strong> {{ healthResult.cerbero.uniqueNames }}</p>
+            <p><strong>Con IP / SO:</strong> {{ healthResult.cerbero.withIp }} / {{ healthResult.cerbero.withOs }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="diag-card">
+            <h6><i class="fas fa-balance-scale me-2"></i>Diferencia nombres únicos</h6>
+            <p class="diag-big" [class.text-success]="healthResult.diffUniqueNames === 0" [class.text-warning]="healthResult.diffUniqueNames !== 0">
+              {{ healthResult.diffUniqueNames >= 0 ? '+' : '' }}{{ healthResult.diffUniqueNames }}
+            </p>
+            <p class="text-muted small mb-0">Cerbero − OCS</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="diag-card">
+            <h6><i class="fas fa-copy me-2"></i>Duplicados</h6>
+            <p><strong>OCS:</strong> {{ healthResult.duplicates.ocsGroups }} grupos ({{ healthResult.duplicates.ocsExtra }} de más)</p>
+            <p class="mb-0"><strong>Cerbero:</strong> {{ healthResult.duplicates.cerberoGroups }} grupos ({{ healthResult.duplicates.cerberoExtra }} de más)</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="diag-card">
+            <h6><i class="fas fa-bell me-2"></i>Alertas abiertas</h6>
+            <p><strong>Total:</strong> {{ healthResult.alerts.total }}</p>
+            <p class="mb-0 small">
+              Mem {{ healthResult.alerts.memory }} · Disco {{ healthResult.alerts.disk }} ·
+              IP {{ healthResult.alerts.ip }} · Video {{ healthResult.alerts.video }} ·
+              Mon {{ healthResult.alerts.monitor }} · Storage {{ healthResult.alerts.storageHw }} ·
+              Nuevos {{ healthResult.alerts.newHardware }} · SW {{ healthResult.alerts.softwareForbidden }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="diag-card">
+            <h6><i class="fas fa-clock me-2"></i>Sin reportar (OCS)</h6>
+            <p class="mb-0">7d: {{ healthResult.stale.ocs.days7 }} · 30d: {{ healthResult.stale.ocs.days30 }} · 90d: {{ healthResult.stale.ocs.days90 }}</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="diag-card">
+            <h6><i class="fas fa-clock me-2"></i>Sin reportar (Cerbero)</h6>
+            <p class="mb-0">7d: {{ healthResult.stale.cerbero.days7 }} · 30d: {{ healthResult.stale.cerbero.days30 }} · 90d: {{ healthResult.stale.cerbero.days90 }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipos sin reportar -->
+  <div class="settings-section" id="tour-settings-stale" *ngIf="canAccessSettings()">
+    <div class="section-header">
+      <i class="fas fa-ghost me-2"></i>
+      <h3>Equipos sin reportar</h3>
+    </div>
+    <div class="sync-controls diag-controls">
+      <div class="info-box info-box-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <span>
+          Equipos con <code>lastcome</code> nulo o anterior a los días elegidos. Solo lectura (máx. 500 filas).
+        </span>
+      </div>
+      <div class="diag-filters">
+        <select class="form-select" [(ngModel)]="staleSource" [disabled]="isLoadingStale">
+          <option value="cerbero">Base Cerbero</option>
+          <option value="ocs">Base OCS</option>
+        </select>
+        <select class="form-select" [(ngModel)]="staleDays" [disabled]="isLoadingStale">
+          <option [ngValue]="7">7 días</option>
+          <option [ngValue]="30">30 días</option>
+          <option [ngValue]="90">90 días</option>
+        </select>
+        <button
+          type="button"
+          class="btn btn-info sync-button"
+          (click)="cargarEquiposSinReportar()"
+          [disabled]="isLoadingStale">
+          <i class="fas fa-search me-2" [class.fa-spin]="isLoadingStale"></i>
+          {{ isLoadingStale ? 'Buscando...' : 'Listar' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="staleError" class="alert alert-danger mt-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ staleError }}
+    </div>
+
+    <div *ngIf="staleResult" class="sync-results mt-3">
+      <h4>
+        {{ staleResult.total }} equipo(s) sin reportar
+        <span class="text-muted small">({{ staleResult.source }} · {{ staleResult.days }} días)</span>
+      </h4>
+      <div *ngIf="staleResult.truncated" class="alert alert-warning">
+        Mostrando los primeros {{ staleResult.limit }} de {{ staleResult.total }}.
+      </div>
+      <div *ngIf="staleResult.items?.length === 0" class="alert alert-success">
+        No hay equipos en este criterio.
+      </div>
+      <div *ngIf="staleResult.items?.length > 0" class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>IP</th>
+              <th>SO</th>
+              <th>Usuario</th>
+              <th>Último contacto</th>
+              <th>Última fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of staleResult.items">
+              <td>{{ row.id }}</td>
+              <td>{{ row.name || 'N/A' }}</td>
+              <td>{{ row.ipaddr || 'N/A' }}</td>
+              <td>{{ row.osname || 'N/A' }}</td>
+              <td>{{ row.userid || 'N/A' }}</td>
+              <td>{{ row.lastcome ? (row.lastcome | date:'dd/MM/yyyy HH:mm') : 'Nunca' }}</td>
+              <td>{{ row.lastdate ? (row.lastdate | date:'dd/MM/yyyy HH:mm') : 'N/A' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="settings-section" id="tour-settings-ocs" *ngIf="canAccessSettings()">
     <div class="section-header">
       <i class="fas fa-database me-2"></i>
@@ -100,6 +278,45 @@
     <div *ngIf="error" class="alert alert-danger">
       <i class="fas fa-exclamation-triangle me-2"></i>
       {{error}}
+    </div>
+  </div>
+
+  <!-- Export CSV para Grafana -->
+  <div class="settings-section" id="tour-settings-grafana-export" *ngIf="canAccessSettings()">
+    <div class="section-header">
+      <i class="fas fa-file-csv me-2"></i>
+      <h3>Exportar inventario a CSV (Grafana)</h3>
+    </div>
+
+    <div class="sync-controls">
+      <div class="info-box info-box-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <div class="info-box-content">
+          <p class="mb-2">
+            Descarga un <strong>ZIP</strong> con un CSV por tabla de inventario (hardware, bios, cpu, memoria,
+            discos, monitores, video, redes, impresoras, dispositivos de red, software y subredes), más dos
+            vistas listas para Grafana: <code>software_instalado.csv</code> y <code>subnet_con_coordenadas.csv</code>.
+          </p>
+          <p class="mb-0 compare-help-note">
+            UTF-8, separador coma, encabezados en la primera fila. Puede tardar varios minutos si hay mucho software.
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-success sync-button"
+        id="tour-settings-grafana-export-btn"
+        (click)="exportarCsvGrafana()"
+        [disabled]="isExportingCsv">
+        <i class="fas fa-download me-2" [class.fa-spin]="isExportingCsv"></i>
+        {{ isExportingCsv ? 'Generando ZIP...' : 'Descargar CSV (ZIP)' }}
+      </button>
+    </div>
+
+    <div *ngIf="csvExportError" class="alert alert-danger mt-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{ csvExportError }}
     </div>
   </div>
 
@@ -435,8 +652,9 @@
         <i class="fas fa-info-circle me-2"></i>
         <span>
           Busca en la <strong>base de datos OCS</strong> (tabla <code>hardware</code>), inventario origen del agente.
-          Agrupa equipos con el <strong>mismo nombre</strong> exacto. Es solo consulta: no elimina registros en OCS
-          desde aquí. Para limpiar duplicados en Cerbero, usá la sección siguiente.
+          Agrupa equipos con el <strong>mismo nombre</strong> exacto. Podés <strong>eliminar</strong> un duplicado
+          desde la tabla: se borra ese hardware en OCS y todos sus datos relacionados (bios, software, redes, etc.).
+          Debe quedar al menos un registro con ese nombre. Esta acción no se puede deshacer.
         </span>
       </div>
 
@@ -466,7 +684,8 @@
         <div class="alert alert-warning mb-3">
           <i class="fas fa-exclamation-triangle me-2"></i>
           <strong>Se encontraron {{ ocsDuplicatesResult.length }} grupos de equipos duplicados en OCS</strong>
-          (mismo nombre en la tabla <code>hardware</code>). Conviene corregirlos en origen antes de sincronizar.
+          (mismo nombre en la tabla <code>hardware</code>). Elegí cuál borrar con el botón Eliminar;
+          se quita de OCS con todos sus datos relacionados. Debe quedar al menos 1 por nombre.
         </div>
 
         <div *ngFor="let group of ocsDuplicatesResult; let i = index" class="duplicate-group mb-4">
@@ -489,6 +708,7 @@
                   <th>Grupo de Trabajo</th>
                   <th>Tipo</th>
                   <th>Última Fecha</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -506,6 +726,17 @@
                   <td>{{ hardware.workgroup || 'N/A' }}</td>
                   <td>{{ hardware.type || 'N/A' }}</td>
                   <td>{{ hardware.lastdate ? (hardware.lastdate | date:'dd/MM/yyyy HH:mm') : 'N/A' }}</td>
+                  <td style="min-width: 200px; white-space: nowrap;">
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      (click)="eliminarDuplicadoOcs(hardware.id, hardware.name)"
+                      [disabled]="isDeletingOcs"
+                      title="Eliminar este duplicado de OCS y todos sus datos relacionados">
+                      <i class="fas fa-trash me-1"></i>
+                      Eliminar
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -637,7 +868,7 @@
       <div class="alert alert-danger text-center py-5">
         <i class="fas fa-lock fa-3x mb-3"></i>
         <h4>Acceso Denegado</h4>
-        <p>No tienes permisos para acceder a la configuración del sistema.</p>
+        <p>No tienes permisos para acceder al mantenimiento de bases de datos.</p>
         <p class="mb-0">Por favor, contacta al administrador.</p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { NetworkInfoService } from '../services/network-info.service';
@@ -9,6 +9,7 @@ import { UbicacionesService } from '../services/ubicaciones.service';
 import { UbicacionDTO } from '../interfaces/ubicacion.interface';
 import { LocationPickerModalComponent } from '../components/location-picker-modal/location-picker-modal.component';
 import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
+import { TourRegistryService } from '../services/tour-registry.service';
 
 @Component({
   selector: 'app-device-details',
@@ -17,23 +18,36 @@ import { AssetLocationPickerModalComponent } from '../components/asset-location-
   templateUrl: './device-details.component.html',
   styleUrls: ['./device-details.component.css']
 })
-export class DeviceDetailsComponent implements OnInit {
+export class DeviceDetailsComponent implements OnInit, OnDestroy {
   device?: NetworkInfoDTO;
   activeTab = 1;
   ubicacionActual?: UbicacionDTO;
   ubicacionesDisponibles: UbicacionDTO[] = [];
   loading: boolean = false;
   error: string | null = null;
+  private tourCleanup?: () => void;
 
   constructor(
     private route: ActivatedRoute,
     private networkInfoService: NetworkInfoService,
     private location: Location,
     private modalService: NgbModal,
-    private ubicacionesService: UbicacionesService
+    private ubicacionesService: UbicacionesService,
+    private tourRegistry: TourRegistryService
   ) {}
 
   ngOnInit(): void {
+    this.tourCleanup = this.tourRegistry.register('device-details', [{
+      id: 'device-details-overview',
+      title: 'Tour del dispositivo',
+      icon: 'fa-route',
+      steps: [
+        { selector: '#tour-device-details-title', title: 'Ficha del dispositivo', description: 'Detalle de un equipo de red (nombre, tipo, IP y MAC) detectado en inventario.', side: 'bottom' },
+        { selector: '#tour-device-details-tabs', title: 'General y ubicación', description: '«General» muestra identificación de red. «Ubicación» permite ver o asignar gerencia, oficina y piso.', side: 'bottom' },
+        { selector: '#tour-device-details-info', title: 'Datos de red', description: 'Nombre, tipo, IP, MAC y descripción. Estos datos vienen de OCS / inventario de red.', side: 'top' },
+        { selector: '#tour-device-details-back', title: 'Volver', description: 'Regresa al listado de dispositivos de red.', side: 'top' }
+      ]
+    }]);
     const mac = this.route.snapshot.paramMap.get('mac');
     if (mac) {
       this.loading = true;
@@ -56,6 +70,11 @@ export class DeviceDetailsComponent implements OnInit {
         }
       });
     }
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
   }
 
   cargarUbicacion() {

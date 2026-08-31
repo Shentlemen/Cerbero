@@ -14,119 +14,108 @@
           {{ errorMessage }}
           <button type="button" class="btn-close" (click)="errorMessage = null"></button>
         </div>
-        <div class="activos-filters-stack">
-          <div class="filters-toolbar-row">
-            <span class="filters-toolbar-label">Criticidad</span>
-            <div class="filters-container">
-              <button 
-                type="button"
-                class="filter-btn" 
-                [class.active]="currentFilter === ''"
-                [style.--device-color]="'#3498db'"
-                [style.--device-bg-color]="'#f8f9fa'"
-                [style.--device-border-color]="'#dee2e6'"
-                (click)="filterByCriticidad('')">
-                <i class="fas fa-th-large"></i>
-                <span>Todos</span>
-                <span class="count">({{totalActivos}})</span>
-              </button>
-              
-              <button 
-                class="filter-btn" 
-                [class.active]="currentFilter === 'ALTA'"
-                [style.--device-color]="'#dc2626'"
-                [style.--device-bg-color]="'#fee2e2'"
-                [style.--device-border-color]="'#fecaca'"
-                (click)="filterByCriticidad('ALTA')">
-                <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
-                <span>Alta</span>
-                <span class="count">({{altaCount}})</span>
-              </button>
-              
-              <button 
-                class="filter-btn" 
-                [class.active]="currentFilter === 'MEDIA'"
-                [style.--device-color]="'#d97706'"
-                [style.--device-bg-color]="'#fef3c7'"
-                [style.--device-border-color]="'#fed7aa'"
-                (click)="filterByCriticidad('MEDIA')">
-                <i class="fas fa-exclamation-circle" style="color: #d97706;"></i>
-                <span>Media</span>
-                <span class="count">({{mediaCount}})</span>
-              </button>
-              
-              <button 
-                class="filter-btn" 
-                [class.active]="currentFilter === 'BAJA'"
-                [style.--device-color]="'#16a34a'"
-                [style.--device-bg-color]="'#dcfce7'"
-                [style.--device-border-color]="'#bbf7d0'"
-                (click)="filterByCriticidad('BAJA')">
-                <i class="fas fa-info-circle" style="color: #16a34a;"></i>
-                <span>Baja</span>
-                <span class="count">({{bajaCount}})</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="filters-toolbar-row mt-2">
-            <span class="filters-toolbar-label">Estado</span>
-            <div class="filters-container">
-              <button
-                type="button"
-                class="filter-btn"
-                [class.active]="currentEstadoFilter === ''"
-                [style.--device-color]="'#3498db'"
-                [style.--device-bg-color]="'#f8f9fa'"
-                [style.--device-border-color]="'#dee2e6'"
-                (click)="filterByEstado('')">
-                <i class="fas fa-th-large"></i>
-                <span>Todos</span>
-                <span class="count">({{totalActivos}})</span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-btn"
-                [class.active]="currentEstadoFilter === 'ACTIVO'"
-                [style.--device-color]="'#16a34a'"
-                [style.--device-bg-color]="'#dcfce7'"
-                [style.--device-border-color]="'#bbf7d0'"
-                (click)="filterByEstado('ACTIVO')">
-                <i class="fas fa-check-circle" style="color: #16a34a;"></i>
-                <span>Activo</span>
-                <span class="count">({{estadoActivoCount}})</span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-btn"
-                [class.active]="currentEstadoFilter === 'INACTIVO'"
-                [style.--device-color]="'#dc2626'"
-                [style.--device-bg-color]="'#fee2e2'"
-                [style.--device-border-color]="'#fecaca'"
-                (click)="filterByEstado('INACTIVO')">
-                <i class="fas fa-ban" style="color: #dc2626;"></i>
-                <span>Inactivo</span>
-                <span class="count">({{estadoInactivoCount}})</span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-btn"
-                [class.active]="currentEstadoFilter === 'MANTENIMIENTO'"
-                [style.--device-color]="'#d97706'"
-                [style.--device-bg-color]="'#fef3c7'"
-                [style.--device-border-color]="'#fed7aa'"
-                (click)="filterByEstado('MANTENIMIENTO')">
-                <i class="fas fa-wrench" style="color: #d97706;"></i>
-                <span>Mantenimiento</span>
-                <span class="count">({{estadoMantenimientoCount}})</span>
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
+    </div>
+  </div>
+
+  <div class="cerbero-folder-stage">
+    <div class="cerbero-folder-tabs-groups" *ngIf="!loading" id="activos-tour-filters">
+      <div class="cerbero-folder-tabs" role="tablist" aria-label="Filtrar por criticidad">
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentFilter === ''"
+          [attr.aria-selected]="currentFilter === ''"
+          [style.--tab-accent]="'var(--ds-color-accent)'"
+          (click)="filterByCriticidad('')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-th-large"></i></span>
+          <span class="cerbero-folder-tab-label">Todos</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentFilter === 'ALTA'"
+          [attr.aria-selected]="currentFilter === 'ALTA'"
+          [style.--tab-accent]="'#dc2626'"
+          (click)="filterByCriticidad('ALTA')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-exclamation-triangle"></i></span>
+          <span class="cerbero-folder-tab-label">Alta</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentFilter === 'MEDIA'"
+          [attr.aria-selected]="currentFilter === 'MEDIA'"
+          [style.--tab-accent]="'#d97706'"
+          (click)="filterByCriticidad('MEDIA')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-exclamation-circle"></i></span>
+          <span class="cerbero-folder-tab-label">Media</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentFilter === 'BAJA'"
+          [attr.aria-selected]="currentFilter === 'BAJA'"
+          [style.--tab-accent]="'#16a34a'"
+          (click)="filterByCriticidad('BAJA')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-info-circle"></i></span>
+          <span class="cerbero-folder-tab-label">Baja</span>
+        </button>
+      </div>
+      <div class="cerbero-folder-tabs" role="tablist" aria-label="Filtrar por estado">
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentEstadoFilter === ''"
+          [attr.aria-selected]="currentEstadoFilter === ''"
+          [style.--tab-accent]="'var(--ds-color-accent)'"
+          (click)="filterByEstado('')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
+          <span class="cerbero-folder-tab-label">Todos los estados</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentEstadoFilter === 'ACTIVO'"
+          [attr.aria-selected]="currentEstadoFilter === 'ACTIVO'"
+          [style.--tab-accent]="'#16a34a'"
+          (click)="filterByEstado('ACTIVO')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-check-circle"></i></span>
+          <span class="cerbero-folder-tab-label">Activo</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentEstadoFilter === 'INACTIVO'"
+          [attr.aria-selected]="currentEstadoFilter === 'INACTIVO'"
+          [style.--tab-accent]="'#dc2626'"
+          (click)="filterByEstado('INACTIVO')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-ban"></i></span>
+          <span class="cerbero-folder-tab-label">Inactivo</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="currentEstadoFilter === 'MANTENIMIENTO'"
+          [attr.aria-selected]="currentEstadoFilter === 'MANTENIMIENTO'"
+          [style.--tab-accent]="'#d97706'"
+          (click)="filterByEstado('MANTENIMIENTO')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-wrench"></i></span>
+          <span class="cerbero-folder-tab-label">Mantenimiento</span>
+        </button>
+      </div>
+    </div>
+
+  <div class="content-section cerbero-folder-panel">
+    <div class="content-toolbar">
       <div class="actions d-flex align-items-center flex-wrap activos-header-actions">
         <button id="activos-tour-new-btn" type="button" class="btn btn-sm btn-export btn-agregar-nuevo" (click)="abrirModal(activoModal)" *ngIf="permissionsService.canEditAssets()">
           <i class="fas fa-plus me-2"></i>
@@ -144,9 +133,6 @@
         </button>
       </div>
     </div>
-  </div>
-
-  <div class="content-section">
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -334,6 +320,7 @@
         </div>
       </ng-container>
     </div>
+  </div>
   </div>
 </div>
 

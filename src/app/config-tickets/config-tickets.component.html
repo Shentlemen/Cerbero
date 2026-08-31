@@ -3,12 +3,12 @@
 
   <div class="header-section">
     <div class="title-wrapper">
-      <h1 class="mb-0"><i class="fas fa-ticket-alt"></i> Config tickets</h1>
+      <h1 class="mb-0" id="tour-config-tickets-title"><i class="fas fa-ticket-alt"></i> Config tickets</h1>
     </div>
   </div>
 
   <div class="content-section">
-    <div class="config-tickets-tabs" role="tablist" aria-label="Configuración de tickets">
+    <div class="config-tickets-tabs" id="tour-config-tickets-tabs" role="tablist" aria-label="Configuración de tickets">
       <button
         type="button"
         role="tab"
@@ -33,12 +33,13 @@
 
     <div class="config-tickets-panel" *ngIf="tab === 'flujos'" role="tabpanel">
       <div class="flujos-layout">
-        <div class="flujos-list-card">
+        <div class="flujos-list-card" id="tour-config-tickets-tipos">
           <div class="flujos-list-header">
             <h2>Tipos</h2>
             <button
               type="button"
               class="btn btn-sm btn-agregar-tipo"
+              id="tour-config-tickets-nuevo-tipo"
               (click)="abrirModalNuevoTipo()"
               [disabled]="creando">
               <i class="fas fa-plus me-1" aria-hidden="true"></i>
@@ -83,7 +84,7 @@
           </ul>
         </div>
 
-        <div class="flujos-editor-card">
+        <div class="flujos-editor-card" id="tour-config-tickets-editor">
           <ng-container *ngIf="tipoSeleccionado as tipo">
             <div *ngIf="tipo.esComun" class="flujos-comun-hint">
               <h2>Común</h2>

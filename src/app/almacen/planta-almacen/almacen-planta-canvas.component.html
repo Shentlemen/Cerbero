@@ -1,0 +1,13 @@
+<div
+  class="planta-canvas-wrap"
+  #wrap
+  [class.is-edit]="mode === 'edit'"
+  [class.is-placing]="!!pending"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)">
+  <div class="planta-canvas-host" #host></div>
+  <p class="planta-canvas-hint" *ngIf="mode === 'edit' && pending">
+    Clic en la grilla para colocar <strong>{{ pending.etiqueta }}</strong>
+    <span class="text-muted"> (Esc cancela)</span>
+  </p>
+</div>

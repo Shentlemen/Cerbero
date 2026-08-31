@@ -99,7 +99,7 @@
   box-shadow: 0 2px 15px rgba(0,0,0,0.05);
 }
 
-.btn {
+.footer-section .btn {
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   display: flex;
@@ -117,22 +117,6 @@
 .btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.btn-primary {
-  background: #3498db;
-  border: none;
-  color: white;
-}
-
-.btn-primary i {
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2980b9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
 }
 
 @media (max-width: 768px) {

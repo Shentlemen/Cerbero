@@ -49,7 +49,8 @@
               "node_modules/leaflet/dist/leaflet.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
               "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
-              "node_modules/@foblex/flow/styles/default.scss"
+              "node_modules/@foblex/flow/styles/default.scss",
+              "src/styles-dark.css"
             ],
             "scripts": [
               "node_modules/leaflet/dist/leaflet.js",
@@ -62,10 +63,12 @@
               "rgbcolor",
               "jspdf-autotable",
               "@canvasjs/charts",
+              "chartjs-plugin-datalabels",
               "html2canvas",
               "dompurify",
               "leaflet",
-              "leaflet.markercluster"
+              "leaflet.markercluster",
+              "konva"
             ]
           },
           "configurations": {
@@ -73,13 +76,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2mb",
-                  "maximumError": "3mb"
+                  "maximumWarning": "3mb",
+                  "maximumError": "4mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "25kb",
-                  "maximumError": "30kb"
+                  "maximumWarning": "32kb",
+                  "maximumError": "40kb"
                 }
               ],
               "outputHashing": "all",

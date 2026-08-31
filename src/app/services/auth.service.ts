@@ -1,8 +1,9 @@
 import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, throwError, switchMap } from 'rxjs';
-import { LoginRequest, AuthResponse, User, CreateUserRequest, UpdateUserRequest, UpdateProfileRequest } from '../interfaces/auth.interface';
+import { BehaviorSubject, Observable, tap, catchError, throwError, switchMap, map } from 'rxjs';
+import { LoginRequest, AuthResponse, User, CreateUserRequest, UpdateUserRequest, UpdateProfileRequest, ContactoUsuario } from '../interfaces/auth.interface';
 import { environment } from '../../environments/environment';
+import { ApiResponse } from '../interfaces/api-response.interface';
 import { PermissionsService } from './permissions.service';
 import { Router } from '@angular/router';
 import { SessionIdleService } from './session-idle.service';
@@ -17,6 +18,8 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private isRefreshing = false;
+  /** Cache-bust de la URL de avatar (img src no pasa por HttpClient). */
+  private avatarCacheBust = Date.now();
 
   constructor(
     private http: HttpClient,
@@ -39,6 +42,7 @@ export class AuthService {
             this.currentUserSubject.next(response.user);
             // Update permissions service
             this.permissionsService.setCurrentUser(response.user);
+            this.bumpAvatarCache();
             this.notifyHelperDogLoginChecks();
           }
         })
@@ -90,11 +94,13 @@ export class AuthService {
   isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
-    
+
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expirationDate = new Date(payload.exp * 1000);
-      return expirationDate > new Date();
+      const payload = this.decodeJwtPayload(token);
+      if (!payload?.exp) {
+        return false;
+      }
+      return new Date(payload.exp * 1000) > new Date();
     } catch (error) {
       console.error('Error verificando token:', error);
       return false;
@@ -159,9 +165,12 @@ export class AuthService {
   isTokenExpiringSoon(): boolean {
     const token = this.getToken();
     if (!token) return true;
-    
+
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = this.decodeJwtPayload(token);
+      if (!payload?.exp) {
+        return true;
+      }
       const expirationDate = new Date(payload.exp * 1000);
       const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
       return expirationDate <= fiveMinutesFromNow;
@@ -177,11 +186,13 @@ export class AuthService {
   isTokenExpired(): boolean {
     const token = this.getToken();
     if (!token) return true;
-    
+
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expirationDate = new Date(payload.exp * 1000);
-      return expirationDate <= new Date();
+      const payload = this.decodeJwtPayload(token);
+      if (!payload?.exp) {
+        return true;
+      }
+      return new Date(payload.exp * 1000) <= new Date();
     } catch (error) {
       console.error('Error verificando expiración del token:', error);
       return true;
@@ -289,26 +300,62 @@ export class AuthService {
     }
   }
 
+  private decodeJwtPayload(token: string): {
+    exp?: number;
+    sub?: string;
+    id?: number;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+    enabled?: boolean;
+  } {
+    const segment = token.split('.')[1];
+    if (!segment) {
+      throw new Error('JWT sin payload');
+    }
+    const base64 = segment.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    const json = decodeURIComponent(
+      Array.from(atob(padded), (c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join('')
+    );
+    return JSON.parse(json);
+  }
+
   private loadUserFromStorage(): void {
     const token = this.getToken();
     
     if (token && this.isAuthenticated()) {
       // Decodificar el token JWT para obtener la información del usuario
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = this.decodeJwtPayload(token);
         
         const user: User = {
           id: payload.id || 0,
-          username: payload.sub,
+          username: payload.sub || '',
           email: payload.email || '',
           firstName: payload.firstName || '',
           lastName: payload.lastName || '',
           role: payload.role || '',
           enabled: payload.enabled || true
         };
+        try {
+          const stored = localStorage.getItem('currentUser');
+          if (stored) {
+            const parsed = JSON.parse(stored) as User;
+            if (parsed && parsed.id === user.id) {
+              user.hasAvatar = !!parsed.hasAvatar;
+              user.ticketAreaCodigo = parsed.ticketAreaCodigo;
+              user.createdAt = parsed.createdAt;
+            }
+          }
+        } catch {
+          /* localStorage corrupto: seguir con el JWT */
+        }
         this.currentUserSubject.next(user);
         this.permissionsService.setCurrentUser(user);
         this.notifyHelperDogLoginChecks();
+        queueMicrotask(() => this.refreshCurrentUserFromApi());
       } catch (error) {
         console.error('Error decoding token:', error);
         this.logout();
@@ -371,5 +418,86 @@ export class AuthService {
 
   getCurrentUserProfile(): Observable<User> {
     return this.http.get<User>(`${this.apiUrl}/users/profile`);
+  }
+
+  /** Guía de contactos: usuarios habilitados de la app (sin contraseña). */
+  getDirectorioUsuarios(): Observable<ContactoUsuario[]> {
+    return this.http.get<ApiResponse<ContactoUsuario[]>>(`${this.apiUrl}/users/directorio`).pipe(
+      map((res) => {
+        if (!res.success) {
+          throw new Error(res.message || 'No se pudo cargar el directorio');
+        }
+        return res.data ?? [];
+      })
+    );
+  }
+
+  /** URL autenticada para <img src> (?token=; el interceptor no aplica a src). */
+  getAvatarUrl(userId?: number): string {
+    const token = this.getToken();
+    const path = userId != null
+      ? `${this.apiUrl}/users/${userId}/avatar`
+      : `${this.apiUrl}/users/profile/avatar`;
+    let url = `${path}?t=${this.avatarCacheBust}`;
+    if (token) {
+      url += `&token=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+
+  bumpAvatarCache(): void {
+    this.avatarCacheBust = Date.now();
+  }
+
+  uploadAvatar(file: File): Observable<User> {
+    const form = new FormData();
+    form.append('archivo', file);
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/users/profile/avatar`, form).pipe(
+      tap((res) => {
+        if (res.success && res.data) {
+          this.bumpAvatarCache();
+          this.updateCurrentUser(res.data);
+        }
+      }),
+      map((res) => {
+        if (!res.success || !res.data) {
+          throw new Error(res.message || 'No se pudo subir la foto');
+        }
+        return res.data;
+      })
+    );
+  }
+
+  deleteAvatar(): Observable<User> {
+    return this.http.delete<ApiResponse<User>>(`${this.apiUrl}/users/profile/avatar`).pipe(
+      tap((res) => {
+        if (res.success && res.data) {
+          this.bumpAvatarCache();
+          this.updateCurrentUser(res.data);
+        }
+      }),
+      map((res) => {
+        if (!res.success || !res.data) {
+          throw new Error(res.message || 'No se pudo quitar la foto');
+        }
+        return res.data;
+      })
+    );
+  }
+
+  private refreshCurrentUserFromApi(): void {
+    if (!this.getToken() || !this.isAuthenticated()) {
+      return;
+    }
+    this.getCurrentUserProfile().subscribe({
+      next: (profile) => {
+        const current = this.getCurrentUser();
+        const { password: _ignored, ...safe } = profile;
+        this.updateCurrentUser({ ...(current || {}), ...safe });
+      },
+      error: () => {
+        /* mantener el usuario del JWT */
+      }
+    });
   }
 } 

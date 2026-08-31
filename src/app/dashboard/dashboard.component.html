@@ -2,57 +2,97 @@
   <!-- Contenedor de notificaciones -->
   <app-notification-container></app-notification-container>
   
-  <header class="dashboard-header">
-    <div class="dashboard-header-row w-100 mb-2">
-      <h1 class="dashboard-title mb-0" id="tour-dashboard-title">
-        <i class="fas fa-chart-line"></i>
-        <span>Panel de Control</span>
-      </h1>
-    </div>
-  </header>
+  <p class="dashboard-page-label" id="tour-dashboard-title">
+    <i class="fas fa-chart-line" aria-hidden="true"></i>
+    <span>Panel de Control</span>
+  </p>
   <div class="charts-container" id="tour-dashboard-charts">
-    <div class="chart-card" *ngIf="pieChartOptions">
+    <div class="chart-card" *ngIf="pieChartData">
       <div class="chart-header">
         <h3>Terminales</h3>
-        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('terminales')" title="Ver gráfica en pantalla completa">
+        <button type="button" class="expand-chart-btn" (click)="expandChart('terminales')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
           <i class="fas fa-expand"></i>
         </button>
       </div>
       <div class="chart-body">
-        <canvasjs-chart [options]="pieChartOptions" [styles]="{width: '100%', height: '100%'}"></canvasjs-chart>
+        <div class="chart-canvas-host">
+          <canvas
+            baseChart
+            class="dashboard-chart"
+            [type]="'doughnut'"
+            [data]="pieChartData"
+            [options]="pieChartOptions"
+            [plugins]="chartPlugins"
+            [legend]="false"
+            (chartClick)="onTerminalesClick($event)">
+          </canvas>
+        </div>
       </div>
     </div>
-    <div class="chart-card main-chart" *ngIf="barChartOptions">
+    <div class="chart-card main-chart" *ngIf="barChartData">
       <div class="chart-header">
         <h3>Fabricante</h3>
-        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('fabricante')" title="Ver gráfica en pantalla completa">
+        <button type="button" class="expand-chart-btn" (click)="expandChart('fabricante')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
           <i class="fas fa-expand"></i>
         </button>
       </div>
       <div class="chart-body">
-        <canvasjs-chart [options]="barChartOptions" [styles]="{width: '100%', height: '100%'}"></canvasjs-chart>
+        <div class="chart-canvas-host">
+          <canvas
+            baseChart
+            class="dashboard-chart"
+            [type]="'bar'"
+            [data]="barChartData"
+            [options]="barChartOptions"
+            [plugins]="chartPlugins"
+            [legend]="false"
+            (chartClick)="onFabricanteClick($event)">
+          </canvas>
+        </div>
       </div>
     </div>
-    <div class="chart-card" *ngIf="pieChartOptions2">
+    <div class="chart-card" *ngIf="osChartData">
       <div class="chart-header">
         <h3>Sistema Operativo</h3>
-        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('sistema-operativo')" title="Ver gráfica en pantalla completa">
+        <button type="button" class="expand-chart-btn" (click)="expandChart('sistema-operativo')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
           <i class="fas fa-expand"></i>
         </button>
       </div>
       <div class="chart-body">
-        <canvasjs-chart [options]="pieChartOptions2" [styles]="{width: '100%', height: '100%'}"></canvasjs-chart>
+        <div class="chart-canvas-host">
+          <canvas
+            baseChart
+            class="dashboard-chart"
+            [type]="'bar'"
+            [data]="osChartData"
+            [options]="osChartOptions"
+            [plugins]="chartPlugins"
+            [legend]="false"
+            (chartClick)="onOsClick($event)">
+          </canvas>
+        </div>
       </div>
     </div>
-    <div class="chart-card" *ngIf="lineChartOptions">
+    <div class="chart-card" *ngIf="networkChartData">
       <div class="chart-header">
         <h3>Dispositivos de Red</h3>
-        <button class="btn btn-sm btn-outline-primary expand-chart-btn" (click)="expandChart('red')" title="Ver gráfica en pantalla completa">
+        <button type="button" class="expand-chart-btn" (click)="expandChart('red')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
           <i class="fas fa-expand"></i>
         </button>
       </div>
       <div class="chart-body">
-        <canvasjs-chart [options]="lineChartOptions" [styles]="{width: '100%', height: '100%'}"></canvasjs-chart>
+        <div class="chart-canvas-host">
+          <canvas
+            baseChart
+            class="dashboard-chart"
+            [type]="'doughnut'"
+            [data]="networkChartData"
+            [options]="networkChartOptions"
+            [plugins]="chartPlugins"
+            [legend]="false"
+            (chartClick)="onRedClick($event)">
+          </canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -68,31 +108,34 @@
           class="btn btn-check-changes" 
           id="tour-dashboard-btn-check"
           (click)="checkHardwareChanges()" 
-          [disabled]="isChecking"
-          title="Verificar cambios en el hardware"
-          *ngIf="canConfirmAlerts()">
-          <i class="fas fa-sync-alt" [class.spinning]="isChecking"></i>
-          {{ isChecking ? 'Verificando...' : 'Verificar cambios' }}
+          [class.action-locked]="!canConfirmAlerts()"
+          [disabled]="canConfirmAlerts() && isChecking"
+          [attr.title]="canConfirmAlerts() ? 'Verificar cambios en el hardware' : 'Requiere permisos de administrador o Game Master'"
+          [attr.aria-disabled]="!canConfirmAlerts()">
+          <i class="fas fa-sync-alt" [class.spinning]="isChecking && canConfirmAlerts()"></i>
+          {{ isChecking && canConfirmAlerts() ? 'Verificando...' : 'Verificar cambios' }}
         </button>
         <button 
           class="btn btn-update-devices" 
           id="tour-dashboard-btn-update"
           (click)="actualizarDispositivos()" 
-          [disabled]="isUpdatingDevices"
-          title="Actualizar dispositivos de red desde OCS"
-          *ngIf="canUpdateDevices()">
-          <i class="fas fa-network-wired" [class.spinning]="isUpdatingDevices"></i>
-          {{ isUpdatingDevices ? 'Actualizando...' : 'Actualizar Dispositivos' }}
+          [class.action-locked]="!canUpdateDevices()"
+          [disabled]="canUpdateDevices() && isUpdatingDevices"
+          [attr.title]="canUpdateDevices() ? 'Actualizar dispositivos de red desde OCS' : 'Requiere permisos de administrador o Game Master'"
+          [attr.aria-disabled]="!canUpdateDevices()">
+          <i class="fas fa-network-wired" [class.spinning]="isUpdatingDevices && canUpdateDevices()"></i>
+          {{ isUpdatingDevices && canUpdateDevices() ? 'Actualizando...' : 'Actualizar Dispositivos' }}
         </button>
         <button 
           class="btn btn-cleanup-alerts" 
           id="tour-dashboard-btn-cleanup"
           (click)="cleanupOrphanedAlerts()" 
-          [disabled]="isCleaning"
-          title="Verificar y limpiar todas las alertas obsoletas (hardware eliminado, software ya no prohibido, equipos 'nuevos' que ya existen, cambios que ya no son válidos)"
-          *ngIf="canConfirmAlerts()">
-          <i class="fas fa-broom" [class.spinning]="isCleaning"></i>
-          {{ isCleaning ? 'Limpiando...' : 'Limpiar alertas' }}
+          [class.action-locked]="!canConfirmAlerts()"
+          [disabled]="canConfirmAlerts() && isCleaning"
+          [attr.title]="canConfirmAlerts() ? 'Verificar y limpiar alertas obsoletas' : 'Requiere permisos de administrador o Game Master'"
+          [attr.aria-disabled]="!canConfirmAlerts()">
+          <i class="fas fa-broom" [class.spinning]="isCleaning && canConfirmAlerts()"></i>
+          {{ isCleaning && canConfirmAlerts() ? 'Limpiando...' : 'Limpiar alertas' }}
         </button>
       </div>
     </div>
@@ -232,9 +275,9 @@
                   <i class="fas fa-memory"></i> 
                   Cambio en la memoria RAM
                 </span>
-                <span class="alert-tag-value">
-                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-                </span>
+                <span class="alert-tag-value">{{ alert.valorAnterior }}</span>
+                <span class="alert-tag-arrow">→</span>
+                <span class="alert-tag-value">{{ alert.valorNuevo }}</span>
               </div>
               <div *ngIf="alert.disk" class="alert-tag-container disk">
                 <span class="alert-tag-description">
@@ -250,36 +293,36 @@
                   <i class="fas fa-network-wired"></i> 
                   Cambio de dirección IP
                 </span>
-                <span class="alert-tag-value">
-                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-                </span>
+                <span class="alert-tag-value">{{ alert.valorAnterior }}</span>
+                <span class="alert-tag-arrow">→</span>
+                <span class="alert-tag-value">{{ alert.valorNuevo }}</span>
               </div>
               <div *ngIf="alert.video" class="alert-tag-container video">
                 <span class="alert-tag-description">
                   <i class="fas fa-video"></i> 
                   Cambio en tarjeta de video
                 </span>
-                <span class="alert-tag-value">
-                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-                </span>
+                <span class="alert-tag-value">{{ alert.valorAnterior }}</span>
+                <span class="alert-tag-arrow">→</span>
+                <span class="alert-tag-value">{{ alert.valorNuevo }}</span>
               </div>
               <div *ngIf="alert.monitor" class="alert-tag-container monitor">
                 <span class="alert-tag-description">
                   <i class="fas fa-desktop"></i> 
                   Cambio en monitores
                 </span>
-                <span class="alert-tag-value">
-                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-                </span>
+                <span class="alert-tag-value">{{ alert.valorAnterior }}</span>
+                <span class="alert-tag-arrow">→</span>
+                <span class="alert-tag-value">{{ alert.valorNuevo }}</span>
               </div>
               <div *ngIf="alert.storageHw" class="alert-tag-container storage-hw">
                 <span class="alert-tag-description">
                   <i class="fas fa-database"></i> 
                   Cambio en almacenamiento físico
                 </span>
-                <span class="alert-tag-value">
-                  {{ alert.valorAnterior }} → {{ alert.valorNuevo }}
-                </span>
+                <span class="alert-tag-value">{{ alert.valorAnterior }}</span>
+                <span class="alert-tag-arrow">→</span>
+                <span class="alert-tag-value">{{ alert.valorNuevo }}</span>
               </div>
               <div *ngIf="alert.new_hardware === 1" class="alert-tag-container new-hardware">
                 <span class="alert-tag-description">
@@ -344,14 +387,50 @@
     <button type="button" class="btn-close" aria-label="Close" (click)="closeModal(modal)"></button>
   </div>
   <div class="modal-body">
-    <div class="expanded-chart-container">
-      <canvasjs-chart 
-        [options]="expandedChartOptions" 
-        [styles]="{width: '100%', height: '100%'}">
-      </canvasjs-chart>
+    <div
+      class="expanded-chart-layout"
+      [class.expanded-chart-layout--legend]="expandedLegendItems.length > 0">
+      <div class="expanded-chart-container">
+        <div class="chart-canvas-host">
+          <canvas
+            *ngIf="expandedChartData"
+            #expandedChart="base-chart"
+            baseChart
+            class="dashboard-chart dashboard-chart--expanded"
+            [type]="$any(expandedChartType)"
+            [data]="$any(expandedChartData)"
+            [options]="$any(expandedChartOptions)"
+            [plugins]="chartPlugins"
+            [legend]="false"
+            (chartClick)="onExpandedChartClick($event)">
+          </canvas>
+        </div>
+      </div>
+      <aside class="expanded-chart-legend" *ngIf="expandedLegendItems.length > 0" aria-label="Leyenda">
+        <p class="expanded-chart-legend-title">Categorías</p>
+        <ul class="expanded-chart-legend-list">
+          <li
+            *ngFor="let item of expandedLegendItems"
+            class="expanded-chart-legend-item"
+            (click)="onExpandedLegendClick(item)"
+            [attr.title]="'Ver ' + item.label">
+            <span class="expanded-chart-legend-swatch" [style.background-color]="item.color"></span>
+            <span class="expanded-chart-legend-name">{{ item.label }}</span>
+            <span class="expanded-chart-legend-value">{{ item.value }}</span>
+          </li>
+        </ul>
+      </aside>
     </div>
   </div>
   <div class="modal-footer">
+    <button type="button" class="btn chart-download-btn" (click)="downloadExpandedChart()">
+      <i class="fas fa-download me-1"></i>
+      Descargar PNG
+    </button>
+    <button type="button" class="btn print-btn" (click)="printExpandedChart()">
+      <i class="fas fa-print me-1"></i>
+      Imprimir
+    </button>
     <button type="button" class="btn btn-secondary" (click)="closeModal(modal)">Cerrar</button>
   </div>
 </ng-template>

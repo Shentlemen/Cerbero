@@ -53,8 +53,9 @@ export class TiposCompraComponent implements OnInit, OnDestroy {
       title: 'Tour de tipos de compra',
       icon: 'fa-route',
       steps: [
+        { selector: '#tour-config-hub-tabs', title: 'Secciones de configuración', description: 'Ubicaciones, tipos de activo, tipos de compra, responsables y tickets. Cada pestaña abre su catálogo en el panel de abajo.', side: 'bottom' },
         { selector: '#tour-tipos-compra-title', title: 'Tipos de compra', description: 'Clasificación para filtros y etiquetas en órdenes de compra (descripción y abreviatura opcional).', side: 'bottom' },
-        { selector: '#tour-tipos-compra-nuevo', title: 'Nuevo tipo', description: 'Alta desde modal; luego aparecerá en chips de compras.', side: 'left' },
+        { selector: '#tour-tipos-compra-nuevo', title: 'Nuevo tipo', description: 'Alta desde modal; luego aparecerá en las pestañas de tipo de la pantalla de compras.', side: 'left' },
         { selector: '#tour-tipos-compra-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por descripción o abreviatura.', side: 'bottom' },
         { selector: '#tour-tipos-compra-table', title: 'Listado', description: 'Ordená por columna, navegá con paginación, editá o eliminá tipos.', side: 'top' }
       ]

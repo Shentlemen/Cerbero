@@ -12,6 +12,7 @@ import { GuidedTourHostService, type GuidedTourStepDef } from '../services/guide
 import { TourRegistryService } from '../services/tour-registry.service';
 import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.service';
 import { TicketTipoDTO, TicketTipoService } from '../services/ticket-tipo.service';
+import { AuthService } from '../services/auth.service';
 import type { DriveStep, Driver } from 'driver.js';
 import { TicketDetailComponent } from './ticket-detail.component';
 
@@ -50,7 +51,10 @@ export class TicketsComponent implements OnInit, OnDestroy {
   /** Pestaña activa: una bandeja por vista. */
   vistaBandeja: TicketsVistaBandeja = 'area';
 
-  /** Ticket abierto en el panel derecho (sincronizado con la ruta `/tickets/:id`). */
+  /** Cards (InvGate) o lista compacta. */
+  vistaModo: 'cards' | 'list' = 'cards';
+
+  /** Ticket abierto en el panel de detalle (sincronizado con la ruta `/tickets/:id`). */
   selectedTicketId: number | null = null;
   detailScrollFragment: string | null = null;
 
@@ -66,8 +70,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
    */
   private idsNoLeidos: Set<number> = new Set();
 
-  ordenColumna: TicketsOrdenColumna | null = null;
-  ordenAsc = true;
+  ordenColumna: TicketsOrdenColumna | null = 'fechaActualizacion';
+  ordenAsc = false;
 
   /** Áreas para filtro local (incl. Laboratorio: el creador puede tener tickets derivados allí). */
   /** Áreas activas (API ticket_areas). */
@@ -135,7 +139,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
     private guidedTourHost: GuidedTourHostService,
     private tourRegistry: TourRegistryService,
     private ticketAreaService: TicketAreaService,
-    private ticketTipoService: TicketTipoService
+    private ticketTipoService: TicketTipoService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -401,6 +406,9 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   cambiarVistaBandeja(vista: TicketsVistaBandeja): void {
     this.vistaBandeja = vista;
+    if (this.selectedTicketId !== null) {
+      this.cerrarDetalle();
+    }
   }
 
   /** Filtros locales (área / búsqueda): la vista reactiva se actualiza sola. */
@@ -417,7 +425,43 @@ export class TicketsComponent implements OnInit, OnDestroy {
     }
   }
 
-  contadorNoLeidos(vista: 'area' | 'mios'): number {
+  get etiquetaVistaActiva(): string {
+    if (this.vistaBandeja === 'area') return 'Bandeja del área';
+    if (this.vistaBandeja === 'mios') return 'Mis tickets';
+    return 'Cerrados';
+  }
+
+  /** Iniciales para el avatar de la card (derivadas del nombre del creador). */
+  inicialesNombre(nombre: string): string {
+    const label = (nombre || '?').trim();
+    const parts = label.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return label.slice(0, 2).toUpperCase();
+  }
+
+  nombreCreadorTicket(ticket: Ticket): string {
+    const n = (ticket.creadoPorNombre || '').trim();
+    if (n) return n;
+    return ticket.creadoPorUserId != null ? `Usuario ${ticket.creadoPorUserId}` : 'Usuario';
+  }
+
+  avatarUrl(userId: number | null | undefined): string {
+    if (userId == null) {
+      return '';
+    }
+    return this.authService.getAvatarUrl(userId);
+  }
+
+  onCreadorAvatarError(ticket: Ticket): void {
+    ticket.creadoPorHasAvatar = false;
+  }
+
+  contadorNoLeidos(vista: TicketsVistaBandeja): number {
+    if (vista === 'cerrados') {
+      return 0;
+    }
     const lista = vista === 'area' ? this.ticketsAreaVista : this.ticketsMisCreadosVista;
     return lista.filter((t) => this.esNoLeido(t.id)).length;
   }
@@ -533,17 +577,6 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   getPrioridadLabel(prioridad: string): string {
     return this.formatBadgeLabel(prioridad);
-  }
-
-  /** Inicial(es) para la lista compacta del split view. */
-  getPrioridadShort(prioridad: string): string {
-    const map: Record<string, string> = {
-      BAJA: 'B',
-      MEDIA: 'M',
-      ALTA: 'A',
-      CRITICA: 'CR'
-    };
-    return map[(prioridad || '').toUpperCase()] || '?';
   }
 
   /** Pastilla de color por área (lista de tickets). */
@@ -866,24 +899,31 @@ export class TicketsComponent implements OnInit, OnDestroy {
         side: 'bottom'
       },
       {
-        selector: '#tour-tickets-filters',
-        title: 'Filtros',
-        description:
-          'Estado, área y búsqueda filtran la bandeja que tengas abierta en las pestañas.',
-        side: 'bottom'
-      },
-      {
         selector: '#tour-tickets-tabs',
         title: 'Bandejas',
         description:
-          'Elegí Bandeja del área, Mis tickets o Cerrados. A la izquierda la lista; a la derecha el detalle del ticket seleccionado.',
+          'Elegí Bandeja del área, Mis tickets o Cerrados. El número de cada pestaña es el total de esa vista; el punto marca tickets sin leer.',
         side: 'bottom'
       },
       {
-        selector: '#tour-tickets-panels',
-        title: 'Lista y detalle',
+        selector: '#tour-tickets-filters',
+        title: 'Búsqueda y filtros',
         description:
-          'Hacé clic en un ticket para verlo al lado (en el celular se abre a pantalla completa). Podés ordenar con los encabezados de la lista.',
+          'Buscá por código o título, recortá por área y ordená por última actualización.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-tickets-view-toggle',
+        title: 'Vista de tarjetas o lista',
+        description:
+          'Alterná entre tarjetas grandes (vista por defecto) y lista compacta. El clic en una tarjeta o fila abre el detalle.',
+        side: 'bottom'
+      },
+      {
+        selector: '#tour-tickets-cards',
+        title: 'Bandeja',
+        description:
+          'Cada tarjeta (o fila, si estás en lista) es un ticket. Hacé clic para abrir el detalle a la derecha o en pantalla completa.',
         side: 'top'
       },
       ...(this.canCreateTickets()
@@ -923,15 +963,15 @@ export class TicketsComponent implements OnInit, OnDestroy {
         selector: '#tour-ticket-nuevo-titulo',
         title: 'Título (obligatorio)',
         description:
-          'Resumen breve del reclamo (máximo 200 caracteres). Se usa en la grilla y en notificaciones, así que conviene un título claro y específico. Es obligatorio: sin título el botón "Crear" rechaza el formulario.',
+          'Resumen breve del reclamo (máximo 200 caracteres). Se usa en las tarjetas y en notificaciones, así que conviene un título claro y específico. Es obligatorio: sin título el botón "Crear" rechaza el formulario.',
         side: 'bottom'
       },
       {
-        selector: '#tour-ticket-nuevo-area',
-        title: 'Área destino (obligatorio)',
+        selector: '#tour-ticket-nuevo-tipo',
+        title: 'Tipo de ticket',
         description:
-          'El área que debe atender el ticket. El reclamo llegará a su bandeja; elegí la que corresponda al tipo de pedido.',
-        side: 'right'
+          '«Común» va a una bandeja de área (almacén, inventario, etc.). Los demás tipos siguen el flujo que configure GM/ADMIN en Configuración → Tickets.',
+        side: 'bottom'
       },
       {
         selector: '#tour-ticket-nuevo-prioridad',
@@ -939,6 +979,13 @@ export class TicketsComponent implements OnInit, OnDestroy {
         description:
           'BAJA, MEDIA, ALTA o CRÍTICA. Indicá la urgencia real para que el equipo priorice sin sobrecargar lo crítico.',
         side: 'left'
+      },
+      {
+        selector: '#tour-ticket-nuevo-area',
+        title: 'Área destino (obligatorio)',
+        description:
+          'El área que debe atender el ticket (sólo en tipo Común). El reclamo llegará a su bandeja; elegí la que corresponda al tipo de pedido.',
+        side: 'right'
       },
       {
         selector: '#tour-ticket-nuevo-descripcion',

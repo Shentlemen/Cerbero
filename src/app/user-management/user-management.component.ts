@@ -9,6 +9,8 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { TourRegistryService } from '../services/tour-registry.service';
 import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.service';
 
+type UserSortColumn = 'username' | 'email' | 'nombreCompleto' | 'role' | 'enabled' | 'createdAt';
+
 @Component({
   selector: 'app-user-management',
   standalone: true,
@@ -27,6 +29,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   editingUser: User | null = null;
   filtroEstado: 'todos' | 'activo' | 'inactivo' = 'todos';
   filtroRol: 'todos' | string = 'todos';
+  sortColumn: UserSortColumn | '' = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Diálogos de confirmación
   showDeleteDialog = false;
@@ -107,10 +111,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       return '—';
     }
     return this.getBandejaLabel(cod);
-  }
-
-  getBandejaEntradaCodigo(user: User): string | null {
-    return this.codigoBandejaEntrada(user);
   }
 
   private codigoBandejaEntrada(user: User): string | null {
@@ -213,8 +213,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       icon: 'fa-route',
       steps: [
         { selector: '#tour-users-title', title: 'Usuarios Cerbero', description: 'Alta, edición y desactivación de cuentas con roles funcionales (almacén, compras, GM, etc.).', side: 'bottom' },
+        { selector: '#tour-users-roles', title: 'Filtro por rol', description: 'Cada pestaña muestra sólo las cuentas de ese rol. «Todos» lista el directorio completo. La pestaña activa queda unida al panel.', side: 'bottom' },
         { selector: '#tour-users-nuevo', title: 'Nuevo usuario', description: 'Abre el formulario en pantalla con usuario, correo, nombre y asignación de rol.', side: 'left' },
-        { selector: '#tour-users-filters', title: 'Filtros', description: 'Búsqueda libre y recortes por estado o rol para encontrar cuentas rápido.', side: 'bottom' },
+        { selector: '#tour-users-filters', title: 'Búsqueda y estado', description: 'Búsqueda libre por usuario, correo o nombre, y recorte por activo/inactivo.', side: 'bottom' },
         { selector: '#tour-users-table', title: 'Tabla', description: 'Editá datos, cambiá estado activo/inactivo o eliminá según políticas de seguridad.', side: 'top' }
       ]
     }]);
@@ -489,6 +490,69 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   get usersFiltrados(): User[] {
+    const list = this.usersEnPestana().filter(user => {
+      return this.filtroEstado === 'todos' ||
+        (this.filtroEstado === 'activo' && user.enabled) ||
+        (this.filtroEstado === 'inactivo' && !user.enabled);
+    });
+    return this.sortUsers(list);
+  }
+
+  sortData(column: UserSortColumn): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  getSortIcon(column: UserSortColumn): string {
+    if (this.sortColumn !== column) return 'fa-sort';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  private sortUsers(list: User[]): User[] {
+    if (!this.sortColumn) return list;
+    const dir = this.sortDirection === 'asc' ? 1 : -1;
+    const column = this.sortColumn;
+    return [...list].sort((a, b) => {
+      const cmp = this.compareUsers(a, b, column);
+      return cmp === 0 ? 0 : cmp * dir;
+    });
+  }
+
+  private compareUsers(a: User, b: User, column: UserSortColumn): number {
+    switch (column) {
+      case 'username':
+        return this.compareText(a.username, b.username);
+      case 'email':
+        return this.compareText(a.email, b.email);
+      case 'nombreCompleto':
+        return this.compareText(
+          `${a.lastName || ''} ${a.firstName || ''}`.trim(),
+          `${b.lastName || ''} ${b.firstName || ''}`.trim()
+        );
+      case 'role':
+        return this.compareText(this.getRoleLabel(a.role), this.getRoleLabel(b.role));
+      case 'enabled':
+        return Number(a.enabled) - Number(b.enabled);
+      case 'createdAt': {
+        const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+        const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+        return ta - tb;
+      }
+      default:
+        return 0;
+    }
+  }
+
+  private compareText(a: string | null | undefined, b: string | null | undefined): number {
+    return (a || '').localeCompare(b || '', 'es', { sensitivity: 'base', numeric: true });
+  }
+
+  /** Usuarios de la pestaña de rol actual (y búsqueda), sin filtrar por estado. */
+  private usersEnPestana(): User[] {
     const search = (this.filterForm.get('search')?.value || '').toLowerCase().trim();
     return this.users.filter(user => {
       const matchSearch = !search ||
@@ -499,12 +563,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
          `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(search) ||
          `${user.lastName || ''} ${user.firstName || ''}`.toLowerCase().includes(search) ||
          this.getBandejaEntrada(user).toLowerCase().includes(search) ||
-         (this.getBandejaEntradaCodigo(user)?.toLowerCase().includes(search) ?? false));
-      const matchEstado = this.filtroEstado === 'todos' ||
-        (this.filtroEstado === 'activo' && user.enabled) ||
-        (this.filtroEstado === 'inactivo' && !user.enabled);
+         (this.codigoBandejaEntrada(user)?.toLowerCase().includes(search) ?? false));
       const matchRol = this.filtroRol === 'todos' || user.role === this.filtroRol;
-      return matchSearch && matchEstado && matchRol;
+      return matchSearch && matchRol;
     });
   }
 
@@ -516,12 +577,16 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.filtroRol = rol;
   }
 
+  getEstadoTodosCount(): number {
+    return this.usersEnPestana().length;
+  }
+
   getActivosCount(): number {
-    return this.users.filter(u => u.enabled).length;
+    return this.usersEnPestana().filter(u => u.enabled).length;
   }
 
   getInactivosCount(): number {
-    return this.users.filter(u => !u.enabled).length;
+    return this.usersEnPestana().filter(u => !u.enabled).length;
   }
 
   getRolCount(role: string): number {

@@ -38,7 +38,6 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
   @Output() publicado = new EventEmitter<TicketTipoDTO>();
   @ViewChild('edgeLabelInput') edgeLabelInput?: ElementRef<HTMLInputElement>;
   @ViewChild(FCanvasComponent) private canvas?: FCanvasComponent;
-  @ViewChild('canvasWrap') private canvasWrap?: ElementRef<HTMLElement>;
 
   /** El slot aparece/desaparece con *ngIf del workspace: re-enganchar ResizeObserver. */
   @ViewChild('canvasSlot')
@@ -49,9 +48,9 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
     if (!this.canvasSlotEl || typeof ResizeObserver === 'undefined') {
       return;
     }
-    this.slotResizeObserver = new ResizeObserver(() => this.compensarZoomYRedibujar());
+    this.slotResizeObserver = new ResizeObserver(() => this.redibujarCanvas());
     this.slotResizeObserver.observe(this.canvasSlotEl);
-    this.compensarZoomYRedibujar();
+    this.redibujarCanvas();
   }
 
   nodes: FlujoNodoDTO[] = [];
@@ -95,7 +94,7 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
   }
 
   ngAfterViewInit(): void {
-    this.compensarZoomYRedibujar();
+    this.redibujarCanvas();
   }
 
   ngOnDestroy(): void {
@@ -188,63 +187,18 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
   }
 
   onFlowLoaded(): void {
-    this.compensarZoomYRedibujar();
+    this.redibujarCanvas();
   }
 
-  /**
-   * Compensa body zoom (0.8) solo en el canvas de Foblex:
-   * mide el slot y setea width/height/zoom en px para llenar el 100% visual
-   * y alinear mouse/links. No toca el zoom global de header/menú.
-   */
-  private compensarZoomYRedibujar(): void {
+  private redibujarCanvas(): void {
     if (this.syncPending) {
       return;
     }
     this.syncPending = true;
     requestAnimationFrame(() => {
       this.syncPending = false;
-      const slot = this.canvasSlotEl;
-      const wrap = this.canvasWrap?.nativeElement;
-      if (!slot || !wrap) {
-        return;
-      }
-
-      const sw = slot.clientWidth;
-      const sh = slot.clientHeight;
-      if (sw <= 0 || sh <= 0) {
-        return;
-      }
-
-      const bodyZoom = this.leerZoomBody();
-      const inv = bodyZoom > 0 && Math.abs(bodyZoom - 1) > 0.001 ? 1 / bodyZoom : 1;
-
-      wrap.style.zoom = String(inv);
-      wrap.style.width = `${sw / inv}px`;
-      wrap.style.height = `${sh / inv}px`;
-
-      requestAnimationFrame(() => this.canvas?.redraw());
+      this.canvas?.redraw();
     });
-  }
-
-  private leerZoomBody(): number {
-    const raw = getComputedStyle(document.body).zoom;
-    if (raw && raw !== 'normal') {
-      if (raw.endsWith('%')) {
-        const pct = parseFloat(raw);
-        if (Number.isFinite(pct) && pct > 0) {
-          return pct / 100;
-        }
-      }
-      const n = parseFloat(raw);
-      if (Number.isFinite(n) && n > 0) {
-        return n;
-      }
-    }
-    const cssVar = getComputedStyle(document.documentElement)
-      .getPropertyValue('--app-global-zoom')
-      .trim();
-    const fromVar = parseFloat(cssVar);
-    return Number.isFinite(fromVar) && fromVar > 0 ? fromVar : 1;
   }
 
   onMoveNodes(event: FMoveNodesEvent): void {

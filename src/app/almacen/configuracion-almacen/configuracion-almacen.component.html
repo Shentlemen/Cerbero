@@ -1,25 +1,38 @@
-<div class="config-almacenes-container">
+<div class="configuracion-almacen-container">
   <app-notification-container></app-notification-container>
   
-  <div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-    <div>
-    <h2 id="tour-config-almacenes-title">
-      <i class="fas fa-cogs me-2"></i>
-      Almacén Config
-    </h2>
-    <p class="text-muted">Configure cada estantería (niveles y sectores pueden variar entre estanterías).</p>
+  <div class="header-section">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100 mb-2">
+      <div class="title-wrapper flex-grow-1">
+        <h1 id="tour-configuracion-almacen-title" style="text-align: left; justify-content: flex-start;">
+          <i class="fas fa-cogs"></i>
+          Configuración de almacén
+        </h1>
+      </div>
     </div>
+    <p class="text-muted mb-0">Configure cada estantería (niveles y sectores pueden variar entre estanterías).</p>
   </div>
   
-  <div class="controls-section mb-4" id="tour-config-almacenes-actions">
-    <button
-      type="button"
-      class="btn btn-sm btn-nueva-config-almacen"
-      (click)="abrirModalConfig(configModal)"
-      [disabled]="loadingConfigs">
-      <i class="fas fa-plus me-2"></i>
-      Nueva Configuración
-    </button>
+  <div class="controls-section mb-4" id="tour-configuracion-almacen-actions">
+    <div class="actions d-flex flex-wrap gap-2 justify-content-end">
+      <button
+        *ngIf="permissionsService.canManageWarehouseAssets()"
+        type="button"
+        class="btn btn-sm btn-export btn-agregar-nuevo"
+        id="tour-configuracion-almacen-nuevo"
+        (click)="abrirModalAlmacen(almacenModal)">
+        <i class="fas fa-plus me-2"></i>
+        Nuevo Almacén
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-export btn-agregar-nuevo"
+        (click)="abrirModalConfig(configModal)"
+        [disabled]="loadingConfigs">
+        <i class="fas fa-plus me-2"></i>
+        Nueva Configuración
+      </button>
+    </div>
   </div>
 
   <div *ngIf="loadingConfigs" class="text-center py-5">
@@ -27,17 +40,26 @@
     <p>Cargando configuraciones...</p>
   </div>
 
-  <div *ngIf="!loadingConfigs && almacenes.length > 0" class="configs-list" id="tour-config-almacenes-cards">
+  <div *ngIf="!loadingConfigs && almacenes.length > 0" class="configs-list" id="tour-configuracion-almacen-cards">
     <div *ngFor="let almacen of almacenes" class="config-card mb-3">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <div>
             <h5 class="mb-0">
-              <i class="fas fa-warehouse me-2"></i>
+              <i class="fas fa-warehouse me-2 config-card-almacen-icon"></i>
               {{almacen.numero}} - {{almacen.nombre}}
             </h5>
           </div>
           <div>
+            <button
+              class="btn btn-sm btn-planta me-2"
+              type="button"
+              (click)="abrirPlanta(almacen)"
+              *ngIf="getConfigForAlmacen(almacen.id) !== undefined"
+              title="Editar planta 2D">
+              <i class="fas fa-th me-1"></i>
+              Planta
+            </button>
             <button 
               class="btn btn-sm btn-success me-2" 
               (click)="abrirModalConfig(configModal, getConfigForAlmacen(almacen.id))"
@@ -75,10 +97,10 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let d of listaEstanteriasResumen(config); trackBy: trackByEstanteria">
-                      <td><span class="badge bg-primary">{{ d.codigo }}</span></td>
+                      <td><span class="config-chip config-chip--codigo">{{ d.codigo }}</span></td>
                       <td>{{ d.cantidadEstantes }}</td>
                       <td>
-                        <span *ngFor="let div of getDivisionesArray(d.divisionesEstante)" class="badge bg-secondary me-1">{{ div }}</span>
+                        <span *ngFor="let div of getDivisionesArray(d.divisionesEstante)" class="config-chip config-chip--sector me-1">{{ div }}</span>
                       </td>
                     </tr>
                   </tbody>
@@ -97,7 +119,7 @@
           <ng-template #sinConfig>
             <div class="text-muted">
               <i class="fas fa-exclamation-circle me-2"></i>
-              Este almacén no tiene configuración. Configure la estructura para habilitar validación y modelado 3D.
+              Este almacén no tiene configuración. Configure la estructura para habilitar validación y la planta 2D.
             </div>
           </ng-template>
         </div>
@@ -107,7 +129,7 @@
 
   <div *ngIf="!loadingConfigs && almacenes.length === 0" class="alert alert-info">
     <i class="fas fa-info-circle me-2"></i>
-    No hay almacenes disponibles. Cree almacenes primero antes de configurarlos.
+    No hay almacenes. Usá <strong>Nuevo Almacén</strong> para crear el primero y después configurá su estructura.
   </div>
 
   <ng-template #configModal let-modal>
@@ -244,6 +266,86 @@
           (click)="guardarConfig()">
           <i class="fas" [ngClass]="tourDemoActivo ? 'fa-lock' : 'fa-save'" aria-hidden="true"></i>
           {{ tourDemoActivo ? 'Modo DEMO' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #almacenModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">
+        <i class="fas fa-warehouse me-2"></i>
+        Nuevo Almacén
+      </h4>
+      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="almacenAltaForm" (ngSubmit)="guardarAlmacen()">
+        <div class="form-card">
+          <div class="form-card-header">
+            <h6 class="form-card-title">
+              <i class="fas fa-building me-2"></i>
+              Información del Almacén
+            </h6>
+          </div>
+          <div class="form-card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="alta-numero" class="form-label">Número *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="alta-numero"
+                  formControlName="numero"
+                  placeholder="Ej: ALM001, WH-01">
+                <div *ngIf="almacenAltaForm.get('numero')?.invalid && almacenAltaForm.get('numero')?.touched" class="text-danger mt-1">
+                  <small *ngIf="almacenAltaForm.get('numero')?.errors?.['required']">El número es requerido</small>
+                  <small *ngIf="almacenAltaForm.get('numero')?.errors?.['maxlength']">El número no puede exceder 50 caracteres</small>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="alta-nombre" class="form-label">Nombre *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="alta-nombre"
+                  formControlName="nombre"
+                  placeholder="Ej: Almacén Principal - Piso 6">
+                <div *ngIf="almacenAltaForm.get('nombre')?.invalid && almacenAltaForm.get('nombre')?.touched" class="text-danger mt-1">
+                  <small *ngIf="almacenAltaForm.get('nombre')?.errors?.['required']">El nombre es requerido</small>
+                  <small *ngIf="almacenAltaForm.get('nombre')?.errors?.['maxlength']">El nombre no puede exceder 255 caracteres</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer almacen-form-modal-footer-stack">
+      <div *ngIf="almacenModalValidacion" class="almacen-form-modal-validacion">
+        <div
+          class="alert mb-0 py-2 px-3 small"
+          [ngClass]="almacenModalValidacion.esError ? 'alert-danger' : 'alert-warning'"
+          role="alert">
+          <h6 class="mb-2 d-flex align-items-center gap-2" [class.text-danger]="almacenModalValidacion.esError">
+            <i class="fas" [ngClass]="almacenModalValidacion.esError ? 'fa-times-circle' : 'fa-exclamation-triangle'" aria-hidden="true"></i>
+            {{ almacenModalValidacion.titulo }}
+          </h6>
+          <ul class="mb-0 ps-3 small">
+            <li *ngFor="let linea of almacenModalValidacion.lineas">{{ linea }}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="almacen-form-modal-footer-actions">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-sm modal-btn-primario"
+          [class.modal-btn-primario--valid]="almacenAltaForm.valid"
+          [class.modal-btn-primario--invalid]="!almacenAltaForm.valid"
+          (click)="guardarAlmacen()">
+          <i class="fas fa-save" aria-hidden="true"></i>
+          Crear
         </button>
       </div>
     </div>

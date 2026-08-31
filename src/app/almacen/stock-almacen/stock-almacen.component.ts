@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, HostListener, ElementRef, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { StockAlmacenService, StockAlmacen } from '../../services/stock-almacen.service';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { PermissionsService } from '../../services/permissions.service';
@@ -12,7 +12,6 @@ import { TransferirEquipoModalComponent } from '../../components/transferir-equi
 import { RegistrarStockModalComponent } from '../../components/registrar-stock-modal/registrar-stock-modal.component';
 import { ModificarCantidadModalComponent } from '../../components/modificar-cantidad-modal/modificar-cantidad-modal.component';
 import { EditarRegistroStockModalComponent } from '../../components/editar-registro-stock-modal/editar-registro-stock-modal.component';
-import { Almacen3DComponent, StockItem } from '../../components/almacen-3d/almacen-3d.component';
 import { EstadoEquipoService, CambioEstadoRequest } from '../../services/estado-equipo.service';
 import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../../services/estado-dispositivo.service';
 import { AuthService } from '../../services/auth.service';
@@ -25,22 +24,26 @@ import {
 import { HardwareService } from '../../services/hardware.service';
 import { BiosService } from '../../services/bios.service';
 import { NetworkInfoService } from '../../services/network-info.service';
-import { forkJoin, firstValueFrom } from 'rxjs';
+import { forkJoin, firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TourRegistryService } from '../../services/tour-registry.service';
+import { AlmacenPlantaService } from '../../services/almacen-planta.service';
+import { AlmacenPlantaCanvasComponent } from '../planta-almacen/almacen-planta-canvas.component';
+import { AlmacenPlanta, AlmacenPlantaObjeto, ocupacionDe } from '../../interfaces/almacen-planta.interface';
 
 @Component({
   selector: 'app-stock-almacen',
   standalone: true,
   imports: [
+    RouterModule,
     CommonModule,
     FormsModule,
-    ReactiveFormsModule,
+    EditarRegistroStockModalComponent,
+    AlmacenPlantaCanvasComponent,
     NgbModule,
-    NotificationContainerComponent,
-    Almacen3DComponent,
-    EditarRegistroStockModalComponent
+    NotificationContainerComponent
   ],
   templateUrl: './stock-almacen.component.html',
   styleUrls: ['./stock-almacen.component.css']
@@ -109,8 +112,10 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   /** Filas por página en la tabla (menos DOM = scroll más fluido) */
   listadoPageSize = 25;
 
-  // Datos de stock para el componente 3D (solo para ALM03)
-  stockData3D: StockItem[] = [];
+  planta: AlmacenPlanta | null = null;
+  mostrarPlanta = true;
+  plantaObjetoActivo: AlmacenPlantaObjeto | null = null;
+
 
   // Configuraciones de almacenes (estanterías, estantes, secciones desde AlmacenConfig)
   almacenConfigs: Map<number, AlmacenConfig> = new Map();
@@ -118,6 +123,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   constructor(
     private stockAlmacenService: StockAlmacenService,
     private almacenService: AlmacenService,
+    private almacenConfigService: AlmacenConfigService,
     private route: ActivatedRoute,
     private router: Router,
     private modalService: NgbModal,
@@ -126,11 +132,11 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     private estadoEquipoService: EstadoEquipoService,
     private estadoDispositivoService: EstadoDispositivoService,
     private authService: AuthService,
-    private almacenConfigService: AlmacenConfigService,
     private hardwareService: HardwareService,
     private biosService: BiosService,
     private networkInfoService: NetworkInfoService,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private plantaService: AlmacenPlantaService
   ) {}
 
   ngOnInit(): void {
@@ -147,11 +153,22 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       title: 'Tour de stock del almacén',
       icon: 'fa-route',
       steps: [
-        { selector: '#tour-stock-almacen-title', title: 'Stock del almacén', description: 'Vista detallada por almacén: métricas, árbol de ubicaciones y tabla de ítems.', side: 'bottom' },
+        { selector: '#tour-stock-almacen-title', title: 'Stock del almacén', description: 'Vista detallada por almacén: métricas, planta 2D, árbol de ubicaciones y tabla de ítems.', side: 'bottom' },
         { selector: '#tour-stock-almacen-toolbar', title: 'Herramientas', description: 'Buscador con resaltado, registro de stock (si tenés permiso) e impresión/PDF del almacén activo.', side: 'bottom' },
+        { selector: '#tour-stock-almacen-planta', title: 'Planta', description: 'Mapa de solo lectura. Clic en una estantería filtra el listado y muestra el contenido en el panel.', side: 'bottom' },
         { selector: '#tour-stock-almacen-kpis', title: 'Resumen', description: 'Contadores de la vista actual (unidades, ítems visibles, estanterías y estantes).', side: 'bottom' },
         { selector: '#tour-stock-almacen-tree', title: 'Ubicaciones', description: 'Navegá por estantería y estante para filtrar el listado de la derecha.', side: 'right' },
         { selector: '#tour-stock-almacen-listado', title: 'Listado', description: 'Filas paginadas con acciones de edición, transferencia o reactivación según el tipo de registro.', side: 'top' }
+      ]
+    }, {
+      id: 'stock-almacen-planta',
+      title: 'Tour de la planta',
+      icon: 'fa-th',
+      beforeStart: () => { this.mostrarPlanta = true; },
+      steps: [
+        { selector: '#tour-stock-almacen-planta', title: 'Mapa del almacén', description: 'La planta es de solo lectura. El color indica si la estantería tiene stock. Arrastrá el mapa y usá la rueda para zoom.', side: 'bottom' },
+        { selector: '#tour-stock-almacen-tree', title: 'Clic en estantería', description: 'Al hacer clic en una estantería se filtra el árbol y el listado, y se abre un panel con el contenido.', side: 'right' },
+        { selector: '#tour-stock-almacen-listado', title: 'Contenido', description: 'Ítems y equipos de la estantería elegida. Las zonas (pasillo, muelle) no tienen stock.', side: 'top' }
       ]
     }]);
   }
@@ -163,6 +180,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     if (!changes['embeddedAlmacenId']) {
       return;
     }
+    this.mostrarPlanta = false;
+    this.plantaObjetoActivo = null;
     const id = this.embeddedAlmacenId;
     this.almacenId = id != null ? Number(id) : null;
     if (this.almacenId != null) {
@@ -231,6 +250,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       }
 
       this.cargarEquiposEspeciales();
+      this.cargarPlanta();
     }).catch(async error => {
       console.error('Error al cargar datos:', error);
       this.error = 'Error al cargar los datos';
@@ -251,12 +271,85 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         }
         this.almacenConfigs = new Map();
         this.cargarEquiposEspeciales();
+        this.cargarPlanta();
         this.error = null;
       } catch (e) {
         console.error('Fallback de carga falló:', e);
         this.loading = false;
       }
     });
+  }
+
+  cargarPlanta(): void {
+    this.plantaObjetoActivo = null;
+    if (this.almacenId == null) {
+      this.planta = null;
+      return;
+    }
+    const id = Number(this.almacenId);
+    this.plantaService.getByAlmacenId(id).pipe(catchError(() => of(null))).subscribe(doc => {
+      this.planta = doc;
+      if (this.embedStock) {
+        return;
+      }
+      this.mostrarPlanta = !!(doc && doc.objetos && doc.objetos.length > 0);
+    });
+  }
+
+  onPlantaObjectClick(obj: AlmacenPlantaObjeto): void {
+    this.plantaObjetoActivo = obj;
+    if (obj.tipo !== 'ESTANTERIA' || !obj.estanteriaCodigo) {
+      return;
+    }
+    const key = this.matchEstanteriaKey(obj.estanteriaCodigo);
+    this.seleccionarEstanteria(key || obj.estanteriaCodigo);
+  }
+
+  plantaOcupacion(): Record<string, { registros: number; unidades: number }> {
+    return this.planta?.ocupacionPorEstanteria ?? {};
+  }
+
+  plantaDrawerItems(): any[] {
+    if (!this.plantaObjetoActivo || this.plantaObjetoActivo.tipo !== 'ESTANTERIA') {
+      return [];
+    }
+    const almacenKey = this.getAlmacenActivoKey();
+    const codigo = this.plantaObjetoActivo.estanteriaCodigo;
+    if (!almacenKey || !codigo) {
+      return [];
+    }
+    const key = this.matchEstanteriaKey(codigo) || codigo;
+    return this.getItemsPorEstanteria(almacenKey, key);
+  }
+
+  plantaDrawerUnidades(): number {
+    return this.plantaDrawerItems().reduce((sum, item) => sum + (item?.cantidad || 1), 0);
+  }
+
+  ocupacionEtiqueta(codigo: string | null | undefined): string {
+    const o = ocupacionDe(this.plantaOcupacion(), codigo);
+    if (o.unidades <= 0 && o.registros <= 0) {
+      return 'Vacía';
+    }
+    return `${o.unidades} unid. · ${o.registros} ítems`;
+  }
+
+  private matchEstanteriaKey(codigo: string): string | null {
+    const almacenKey = this.getAlmacenActivoKey();
+    if (!almacenKey) {
+      return null;
+    }
+    const target = this.normalizeCodigoEstanteria(codigo);
+    const keys = Object.keys(this.stockOrganizado[almacenKey] || {});
+    return keys.find(k => this.normalizeCodigoEstanteria(k) === target) ?? null;
+  }
+
+  private normalizeCodigoEstanteria(raw: string): string {
+    const t = (raw ?? '').trim().toUpperCase();
+    if (!t) {
+      return '';
+    }
+    return t.startsWith('E') ? `E${t.slice(1).trim()}` : `E${t}`;
   }
 
   cargarEquiposEspeciales(): void {
@@ -326,7 +419,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         this.organizarStock(stockCompleto);
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al enriquecer stock:', error);
         let stockCompleto = [...this.stock];
         if (this.almacenId != null) {
@@ -662,9 +755,6 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
 
     this.stockOrganizado = grupos;
     this.ensureSelectedHierarchy();
-    
-    // Preparar datos para el componente 3D si estamos viendo ALM03
-    this.prepararStockData3D(stock);
   }
 
   onSearchTermChange(): void {
@@ -904,88 +994,6 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
 
   private normalizarClaveOrden(value: any): string {
     return String(value ?? '').trim().toLowerCase();
-  }
-
-  /**
-   * Prepara los datos de stock en formato para el componente 3D
-   * Solo para ALM03 (Almacen Principal)
-   */
-  prepararStockData3D(stock: any[]): void {
-    // Solo preparar datos si estamos viendo el almacén 3 (ALM03)
-    if (this.almacenId !== 3) {
-      this.stockData3D = [];
-      return;
-    }
-
-    // Filtrar stock del ALM03 y convertir al formato StockItem
-    const stockALM03 = stock.filter(item => 
-      item.almacen && 
-      (item.almacen.id === 3 || 
-       item.almacen.numero?.toUpperCase().includes('ALM03') ||
-       item.almacen.nombre?.toUpperCase().includes('ALMACEN PRINCIPAL'))
-    );
-
-    this.stockData3D = stockALM03.map(item => {
-      // Normalizar estantería (E1, E2, etc.)
-      let estanteria = item.estanteria?.toString().trim().toUpperCase() || '';
-      // Si no empieza con E, agregarlo
-      if (estanteria && !estanteria.startsWith('E')) {
-        // Intentar extraer número si es solo un número
-        const numMatch = estanteria.match(/\d+/);
-        if (numMatch) {
-          estanteria = `E${numMatch[0]}`;
-        }
-      }
-
-      // Normalizar estante (1, 2, 3)
-      let estante = item.estante?.toString().trim() || '';
-      // Si es un número, mantenerlo; si no, intentar extraerlo
-      if (estante && !/^\d+$/.test(estante)) {
-        const numMatch = estante.match(/\d+/);
-        if (numMatch) {
-          estante = numMatch[0];
-        }
-      }
-
-      // Normalizar sección (A, B, C)
-      let seccion = item.seccion?.toString().trim().toUpperCase() || '';
-      // Si es una letra, mantenerla; si no, intentar extraerla
-      if (seccion && !/^[A-Z]$/.test(seccion)) {
-        const letraMatch = seccion.match(/[A-Z]/);
-        if (letraMatch) {
-          seccion = letraMatch[0];
-        }
-      }
-
-      return {
-        estanteria: estanteria,
-        estante: estante,
-        seccion: seccion || undefined,
-        cantidad: item.cantidad || 1,
-        ...item
-      } as StockItem;
-    });
-
-    console.log('📦 StockData3D preparado:', this.stockData3D.length, 'items');
-    console.log('📦 Detalles:', this.stockData3D.map(item => ({
-      estanteria: item.estanteria,
-      estante: item.estante,
-      seccion: item.seccion
-    })));
-  }
-
-  /**
-   * Maneja la selección de una caja en el componente 3D
-   */
-  onCaja3DSeleccionada(cajaInfo: any): void {
-    console.log('📦 Caja seleccionada en 3D:', cajaInfo);
-    // Aquí puedes mostrar un modal con los detalles de la caja si lo deseas
-    if (cajaInfo.contenido && cajaInfo.contenido.length > 0) {
-      this.notificationService.showInfo(
-        `Caja ${cajaInfo.estanteria} - Estante ${cajaInfo.nivel} - Sección ${cajaInfo.seccion}`,
-        `Contiene ${cajaInfo.contenido.length} item(s)`
-      );
-    }
   }
 
   getAlmacenes(): string[] {
@@ -1745,7 +1753,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
             );
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error al cargar network info:', error);
           this.notificationService.showError(
             'Error',
@@ -1777,7 +1785,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
           }
         }).catch(() => {});
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar hardware:', error);
         this.notificationService.showError('Error', 'No se pudo cargar la información del equipo.');
       }
@@ -1841,7 +1849,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     });
 
     this.estadoEquipoService.transferirEquipo(hardwareId, requestData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         if (response.success) {
           this.cargarDatos();
           this.notificationService.showSuccessMessage(
@@ -1851,7 +1859,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
           throw new Error(response.message || 'Error al transferir el equipo');
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al transferir equipo:', error);
         this.notificationService.showError(
           'Error al transferir equipo',
@@ -1882,7 +1890,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     this.estadoDispositivoService.transferirDispositivo(mac, requestData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         if (response.success) {
           this.cargarDatos();
           this.notificationService.showSuccessMessage(
@@ -1892,7 +1900,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
           throw new Error(response.message || 'Error al transferir el dispositivo');
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al transferir dispositivo:', error);
         this.notificationService.showError(
           'Error al transferir dispositivo',
@@ -1973,37 +1981,25 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  private procesarReactivacionEquipo(item: any, hardwareId: number): void {
-    this.reactivandoItemId = item.id;
-
+  private procesarReactivacionEquipo(fila: any, hardwareId: number): void {
+    this.reactivandoItemId = fila.id;
     const request: CambioEstadoRequest = {
       observaciones: 'Reactivado desde almacén',
       usuario: this.authService.getUsuarioParaAuditoria()
     };
-
     this.estadoEquipoService.reactivarEquipo(hardwareId, request).subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Eliminar del stock_almacen: el equipo vuelve a assets
-          const stockId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
-          if (!isNaN(stockId)) {
-            this.stockAlmacenService.deleteStock(stockId).subscribe({
-              next: () => this.cargarDatos(),
-              error: () => this.cargarDatos()
-            });
-          } else {
-            this.cargarDatos();
-          }
-          this.notificationService.showSuccessMessage('Equipo reactivado exitosamente.');
-        } else {
-          throw new Error(response.message || 'Error al reactivar el equipo');
+      next: (response: any) => {
+        if (!response?.success) {
+          throw new Error(response?.message || 'Error al reactivar el equipo');
         }
+        this.quitarFilaStockTrasReactivar(fila);
+        this.notificationService.showSuccessMessage('Equipo reactivado exitosamente.');
       },
-      error: (error) => {
-        console.error('Error al reactivar equipo:', error);
+      error: (err: any) => {
+        console.error('Error al reactivar equipo:', err);
         this.notificationService.showError(
           'Error al reactivar equipo',
-          `No se pudo reactivar el equipo: ${error.message || 'Error desconocido'}`
+          'No se pudo reactivar el equipo: ' + (err?.message || 'Error desconocido')
         );
       },
       complete: () => {
@@ -2012,37 +2008,25 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
 
-  private procesarReactivacionDispositivo(item: any, mac: string): void {
-    this.reactivandoItemId = item.id;
-
+  private procesarReactivacionDispositivo(fila: any, mac: string): void {
+    this.reactivandoItemId = fila.id;
     const request: CambioEstadoDispositivoRequest = {
       observaciones: 'Reactivado desde almacén',
       usuario: this.authService.getUsuarioParaAuditoria()
     };
-
     this.estadoDispositivoService.reactivarDispositivo(mac, request).subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Eliminar del stock_almacen: el dispositivo vuelve a assets
-          const stockId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
-          if (!isNaN(stockId)) {
-            this.stockAlmacenService.deleteStock(stockId).subscribe({
-              next: () => this.cargarDatos(),
-              error: () => this.cargarDatos()
-            });
-          } else {
-            this.cargarDatos();
-          }
-          this.notificationService.showSuccessMessage('Dispositivo reactivado exitosamente.');
-        } else {
-          throw new Error(response.message || 'Error al reactivar el dispositivo');
+      next: (response: any) => {
+        if (!response?.success) {
+          throw new Error(response?.message || 'Error al reactivar el dispositivo');
         }
+        this.quitarFilaStockTrasReactivar(fila);
+        this.notificationService.showSuccessMessage('Dispositivo reactivado exitosamente.');
       },
-      error: (error) => {
-        console.error('Error al reactivar dispositivo:', error);
+      error: (err: any) => {
+        console.error('Error al reactivar dispositivo:', err);
         this.notificationService.showError(
           'Error al reactivar dispositivo',
-          `No se pudo reactivar el dispositivo: ${error.message || 'Error desconocido'}`
+          'No se pudo reactivar el dispositivo: ' + (err?.message || 'Error desconocido')
         );
       },
       complete: () => {
@@ -2051,30 +2035,37 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
 
-  /**
-   * Verifica si un item coincide con el término de búsqueda.
-   * Se usa tanto para filtrar como para resaltar los elementos que coinciden.
-   */
-  itemCoincideConBusqueda(item: any): boolean {
+  private quitarFilaStockTrasReactivar(fila: any): void {
+    const stockId = this.getStockAlmacenNumericId(fila);
+    if (stockId == null) {
+      this.cargarDatos();
+      return;
+    }
+    this.stockAlmacenService.deleteStock(stockId).subscribe({
+      next: () => this.cargarDatos(),
+      error: () => this.cargarDatos()
+    });
+  }
+
+  itemCoincideConBusqueda(fila: any): boolean {
     if (!this.searchTerm || !this.searchTerm.trim()) {
       return false;
     }
     const term = this.searchTerm.toLowerCase().trim();
-    const camposABuscar: string[] = [
-      item?.item?.nombreItem || '',
-      item?.item?.descripcion || '',
-      item?.numero || '',
-      item?.descripcion || '',
-      item?.almacen?.nombre || '',
-      item?.almacen?.numero || '',
-      item?.estanteria || '',
-      item?.estante || '',
-      item?.compra?.numeroCompra || ''
-    ].filter(Boolean);
-
-    return camposABuscar.some(campo =>
-      String(campo).toLowerCase().includes(term)
-    );
+    const catalogo = fila && fila.item ? fila.item : {};
+    const almacen = fila && fila.almacen ? fila.almacen : {};
+    const compra = fila && fila.compra ? fila.compra : {};
+    const campos = [
+      catalogo.nombreItem,
+      catalogo.descripcion,
+      fila && fila.numero,
+      fila && fila.descripcion,
+      almacen.nombre,
+      almacen.numero,
+      fila && fila.estanteria,
+      fila && fila.estante,
+      compra.numeroCompra
+    ];
+    return campos.some((campo) => String(campo || '').toLowerCase().includes(term));
   }
-
 } 

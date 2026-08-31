@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
@@ -7,16 +7,15 @@ import { HardwareService } from '../services/hardware.service';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BiosService } from '../services/bios.service';
-import { forkJoin, from, mergeMap } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
 import { ActivosService } from '../services/activos.service';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
-import { EstadoEquipoService, CambioEstadoRequest } from '../services/estado-equipo.service';
+import { EstadoEquipoService } from '../services/estado-equipo.service';
 import { AuthService } from '../services/auth.service';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
-import { FormularioBajaModalComponent, DatosBaja } from '../components/formulario-baja-modal/formulario-baja-modal.component';
 import { catchError, of } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -27,7 +26,7 @@ import type { DriveStep } from 'driver.js';
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -61,16 +60,18 @@ export class AssetsComponent implements OnInit, OnDestroy {
   showConfirmDialog: boolean = false; // Para controlar el diálogo de confirmación
   assetToDelete: any = null; // Para almacenar el asset a eliminar
 
-  // Variables para cambio de estado
-  showEstadoDialog: boolean = false;
-  estadoAction: 'baja' | 'almacen' | null = null;
-  assetToChangeState: any = null;
-  estadoObservaciones: string = '';
-  changingStateAssetId: number | null = null;
   transferiendoAssetId: number | null = null;
 
   // Control para el filtro de nombre
   nombreEquipoControl = new FormControl('');
+
+  /** Lista completa activa (sin filtros avanzados) para poder restaurar */
+  private allAssetsCache: any[] = [];
+  private biosMapCache = new Map<number, any>();
+  showAdvancedFilters = false;
+  advancedFiltersApplied = false;
+  applyingAdvancedFilters = false;
+  advancedFilterForm: FormGroup;
 
   constructor(
     private hardwareService: HardwareService,
@@ -94,6 +95,17 @@ export class AssetsComponent implements OnInit, OnDestroy {
       ipAddr: [''],
       biosType: [''],
       smanufacturer: ['']
+    });
+
+    this.advancedFilterForm = this.fb.group({
+      diskType: [''],
+      osName: [''],
+      processor: [''],
+      minDiskUsagePercent: [null as number | null],
+      ramGb: [null as number | null],
+      ramOp: ['lt'],
+      smanufacturer: [''],
+      staleDays: [null as number | null]
     });
 
     // Suscribirse a cambios en el filtro de nombre
@@ -217,6 +229,146 @@ export class AssetsComponent implements OnInit, OnDestroy {
     this.actualizarPaginacion();
   }
 
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
+  }
+
+  get advancedFiltersActiveCount(): number {
+    const f = this.advancedFilterForm?.value;
+    if (!f) return 0;
+    let n = 0;
+    if (f.diskType) n++;
+    if ((f.osName || '').trim()) n++;
+    if ((f.processor || '').trim()) n++;
+    if (f.minDiskUsagePercent != null && f.minDiskUsagePercent !== '' && !Number.isNaN(Number(f.minDiskUsagePercent))) n++;
+    if (f.ramGb != null && f.ramGb !== '' && !Number.isNaN(Number(f.ramGb)) && f.ramOp) n++;
+    if ((f.smanufacturer || '').trim()) n++;
+    if (f.staleDays != null && f.staleDays !== '' && !Number.isNaN(Number(f.staleDays))) n++;
+    return n;
+  }
+
+  private buildAdvancedSearchParams(): {
+    diskType?: string;
+    osName?: string;
+    processor?: string;
+    minDiskUsagePercent?: number;
+    ramGb?: number;
+    ramOp?: string;
+    smanufacturer?: string;
+    staleDays?: number;
+  } | null {
+    const f = this.advancedFilterForm.value;
+    const params: any = {};
+    if (f.diskType) params.diskType = f.diskType;
+    if ((f.osName || '').trim()) params.osName = f.osName.trim();
+    if ((f.processor || '').trim()) params.processor = f.processor.trim();
+    if (f.minDiskUsagePercent != null && f.minDiskUsagePercent !== '' && !Number.isNaN(Number(f.minDiskUsagePercent))) {
+      params.minDiskUsagePercent = Number(f.minDiskUsagePercent);
+    }
+    if (f.ramGb != null && f.ramGb !== '' && !Number.isNaN(Number(f.ramGb)) && f.ramOp) {
+      params.ramGb = Number(f.ramGb);
+      params.ramOp = f.ramOp;
+    }
+    if ((f.smanufacturer || '').trim()) params.smanufacturer = f.smanufacturer.trim();
+    if (f.staleDays != null && f.staleDays !== '' && !Number.isNaN(Number(f.staleDays))) {
+      params.staleDays = Number(f.staleDays);
+    }
+    return Object.keys(params).length ? params : null;
+  }
+
+  aplicarFiltrosAvanzados(): void {
+    const params = this.buildAdvancedSearchParams();
+    if (!params) {
+      this.limpiarFiltrosAvanzados();
+      return;
+    }
+
+    this.applyingAdvancedFilters = true;
+    this.hardwareService.advancedSearch(params).subscribe({
+      next: (hardwareList) => {
+        const allowedIds = new Set(this.allAssetsCache.map(a => a.id));
+        const list = Array.isArray(hardwareList) ? hardwareList : [];
+        this.assetsList = list
+          .filter(h => allowedIds.has(h.id))
+          .map(h => {
+            const bios = this.biosMapCache.get(h.id);
+            return {
+              ...h,
+              biosType: (bios?.type || 'DESCONOCIDO').trim().toUpperCase(),
+              smanufacturer: bios?.smanufacturer || 'DESCONOCIDO'
+            };
+          });
+        this.originalAssetsList = this.assetsList;
+        this.advancedFiltersApplied = true;
+        this.updateSummary();
+        this.aplicarFiltroNombre(this.nombreEquipoControl.value || '');
+        this.applyingAdvancedFilters = false;
+        this.notificationService.showSuccessMessage(
+          `Filtros avanzados: ${this.assetsList.length} equipo(s)`
+        );
+      },
+      error: (error) => {
+        console.error('Error en filtros avanzados', error);
+        this.applyingAdvancedFilters = false;
+        this.notificationService.showError(
+          'No se pudieron aplicar los filtros avanzados',
+          error?.message ?? 'Error desconocido'
+        );
+      }
+    });
+  }
+
+  onAdvancedFiltersEnter(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    // No disparar desde botones (Aplicar/Limpiar ya tienen su acción)
+    if (target?.tagName === 'BUTTON') {
+      return;
+    }
+    event.preventDefault();
+    if (this.applyingAdvancedFilters || this.advancedFiltersActiveCount === 0) {
+      return;
+    }
+    this.aplicarFiltrosAvanzados();
+  }
+
+  limpiarFiltrosAvanzados(): void {
+    this.advancedFilterForm.reset({
+      diskType: '',
+      osName: '',
+      processor: '',
+      minDiskUsagePercent: null,
+      ramGb: null,
+      ramOp: 'lt',
+      smanufacturer: '',
+      staleDays: null
+    });
+    this.advancedFiltersApplied = false;
+    this.assetsList = [...this.allAssetsCache];
+    this.originalAssetsList = this.assetsList;
+    this.updateSummary();
+    this.aplicarFiltroNombre(this.nombreEquipoControl.value || '');
+  }
+
+  private describeAdvancedFiltersForPdf(): string {
+    const f = this.advancedFilterForm.value;
+    const parts: string[] = [];
+    if (f.diskType) parts.push(`Disco ${f.diskType}`);
+    if ((f.osName || '').trim()) parts.push(`SO: ${f.osName.trim()}`);
+    if ((f.processor || '').trim()) parts.push(`CPU: ${f.processor.trim()}`);
+    if (f.minDiskUsagePercent != null && f.minDiskUsagePercent !== '') {
+      parts.push(`Disco ≥ ${f.minDiskUsagePercent}%`);
+    }
+    if (f.ramGb != null && f.ramGb !== '' && f.ramOp) {
+      const opLabel = (f.ramOp === 'gt' || f.ramOp === '>') ? '>' : '<';
+      parts.push(`RAM ${opLabel} ${f.ramGb} GB`);
+    }
+    if ((f.smanufacturer || '').trim()) parts.push(`Marca: ${f.smanufacturer.trim()}`);
+    if (f.staleDays != null && f.staleDays !== '') {
+      parts.push(`Sin reportar ≥ ${f.staleDays} días`);
+    }
+    return parts.join(' · ');
+  }
+
   // Método para actualizar la paginación
   private actualizarPaginacion(): void {
     this.collectionSize = this.assetsFiltrados.length;
@@ -255,6 +407,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           }
           
           const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
+          this.biosMapCache = biosMap;
           
           this.assetsList = hardwareList.map(h => ({
             ...h,
@@ -262,6 +415,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
             smanufacturer: biosMap.get(h.id)?.smanufacturer || 'DESCONOCIDO'
           }));
           
+          this.allAssetsCache = [...this.assetsList];
+          this.advancedFiltersApplied = false;
           this.originalAssetsList = this.assetsList;
           this.assetsFiltrados = [...this.originalAssetsList];
           this.actualizarPaginacion();
@@ -274,6 +429,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           console.error('❌ Error crítico al cargar los assets:', error);
           // Intentar mostrar al menos algunos datos si es posible
           this.assetsList = [];
+          this.allAssetsCache = [];
           this.originalAssetsList = [];
           this.assetsFiltrados = [];
           this.updateSummary();
@@ -285,35 +441,19 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   cargarActivosInfo(): void {
-    // Limitar a 5 peticiones simultáneas para evitar sobrecargar el servidor
-    const CONCURRENT_REQUESTS = 5;
-    
-    // Crear un array de nombres de equipos
-    const assetNames = this.assetsList.map(asset => asset.name);
-    
-    // Usar from y mergeMap para controlar la concurrencia
-    from(assetNames).pipe(
-      mergeMap(assetName => 
-        this.activosService.getActivoByName(assetName).pipe(
-          catchError(error => {
-            // Retornar null en caso de error (equipos sin activos)
-            return of(null);
-          })
-        ), 
-        CONCURRENT_REQUESTS // Limitar a 5 peticiones simultáneas
-      )
+    this.activosService.getActivos().pipe(
+      catchError(() => of([]))
     ).subscribe({
-      next: (activo) => {
-        if (activo) {
-          this.activosMap.set(activo.name, activo);
-          // console.log(`Activo cargado para PC ${activo.name}:`, activo);
+      next: (activos) => {
+        this.activosMap.clear();
+        for (const activo of activos) {
+          if (activo?.name) {
+            this.activosMap.set(activo.name, activo);
+          }
         }
       },
       error: (error) => {
         console.error('Error al cargar activos:', error);
-      },
-      complete: () => {
-        // console.log(`Carga de activos completada. Total cargados: ${this.activosMap.size}`);
       }
     });
   }
@@ -328,15 +468,19 @@ export class AssetsComponent implements OnInit, OnDestroy {
         ]).subscribe({
           next: ([hardwareList, biosList]) => {
             const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
+            this.biosMapCache = biosMap;
             
             // Filtrar la lista de hardware por los IDs obtenidos
             this.assetsList = hardwareList
               .filter(h => hardwareIds.includes(h.id))
               .map(h => ({
                 ...h,
-                biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase()
+                biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase(),
+                smanufacturer: biosMap.get(h.id)?.smanufacturer || 'DESCONOCIDO'
               }));
             
+            this.allAssetsCache = [...this.assetsList];
+            this.advancedFiltersApplied = false;
             this.originalAssetsList = this.assetsList;
             this.assetsFiltrados = [...this.originalAssetsList];
             this.actualizarPaginacion();
@@ -682,142 +826,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Métodos para cambio de estado
-  darDeBaja(asset: any): void {
-    // Abrir el formulario de baja en un modal
-    const modalRef = this.modalService.open(FormularioBajaModalComponent, { 
-      size: 'xl',
-      backdrop: 'static',
-      centered: true
-    });
-    
-    // Pasar los datos del equipo al formulario
-    const datosBaja: DatosBaja = {
-      hardwareId: asset.id,
-      nombreEquipo: asset.name,
-      descripcion: asset.type || asset.deviceType
-    };
-    modalRef.componentInstance.datos = datosBaja;
-    
-    // Manejar el resultado del modal
-    modalRef.result.then((datosFormulario: any) => {
-      if (datosFormulario) {
-        // El usuario confirmó la baja, proceder con el proceso
-        this.procesarBajaConFormulario(asset, datosFormulario);
-      }
-    }).catch(() => {
-      // Usuario canceló el modal - no hacer nada
-    });
-  }
-
-  // Procesar la baja después de completar el formulario
-  private procesarBajaConFormulario(asset: any, datosFormulario: any): void {
-    this.changingStateAssetId = asset.id;
-    
-    // Usar solo las observaciones escritas por el usuario
-    const request: CambioEstadoRequest = {
-      observaciones: datosFormulario.observaciones || '',
-      usuario: this.authService.getUsuarioParaAuditoria()
-    };
-    
-    this.estadoEquipoService.darDeBaja(asset.id, request).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.loadAssets();
-          this.notificationService.showSuccessMessage(
-            `Equipo "${asset.name}" dado de baja exitosamente.`
-          );
-        } else {
-          throw new Error(response.message || 'Error al dar de baja el equipo');
-        }
-      },
-      error: (error) => {
-        console.error('Error al dar de baja:', error);
-        if (error.status === 403) {
-          this.notificationService.showError(
-            'Sin permisos suficientes',
-            'Para dar de baja equipos necesitas rol de GM o Administrador.'
-          );
-        } else {
-          this.notificationService.showError(
-            'Error al dar de baja',
-            `No se pudo dar de baja el equipo "${asset.name}": ${error.message || 'Error desconocido'}`
-          );
-        }
-      },
-      complete: () => {
-        this.changingStateAssetId = null;
-      }
-    });
-  }
-
-  enviarAAlmacen(asset: any): void {
-    this.estadoAction = 'almacen';
-    this.assetToChangeState = asset;
-    this.estadoObservaciones = '';
-    this.showEstadoDialog = true;
-  }
-
-  confirmarCambioEstado(): void {
-    // Este método ahora solo maneja "enviar a almacén"
-    // "Dar de baja" se maneja en procesarBajaConFormulario
-    if (!this.assetToChangeState || this.estadoAction !== 'almacen') {
-      return;
-    }
-
-    this.changingStateAssetId = this.assetToChangeState.id;
-
-    const request: CambioEstadoRequest = {
-      observaciones: this.estadoObservaciones.trim(),
-      usuario: this.authService.getUsuarioParaAuditoria()
-    };
-
-    this.estadoEquipoService.enviarAAlmacen(this.assetToChangeState.id, request).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.loadAssets();
-          this.notificationService.showSuccessMessage(
-            `Equipo "${this.assetToChangeState.name}" enviado a almacén exitosamente.`
-          );
-        } else {
-          throw new Error(response.message || 'Error al enviar a almacén');
-        }
-      },
-      error: (error) => {
-        console.error('Error al enviar a almacén:', error);
-        if (error.status === 403) {
-          this.notificationService.showError(
-            'Sin permisos suficientes',
-            'Para enviar a almacén necesitas rol de GM o Administrador.'
-          );
-        } else {
-          this.notificationService.showError(
-            'Error al enviar a almacén',
-            `No se pudo enviar a almacén el equipo "${this.assetToChangeState.name}": ${error.message || 'Error desconocido'}`
-          );
-        }
-      },
-      complete: () => {
-        this.changingStateAssetId = null;
-        this.showEstadoDialog = false;
-        this.assetToChangeState = null;
-        this.estadoAction = null;
-        this.estadoObservaciones = '';
-      }
-    });
-  }
-
-  cancelarCambioEstado(): void {
-    this.showEstadoDialog = false;
-    this.assetToChangeState = null;
-    this.estadoAction = null;
-    this.estadoObservaciones = '';
-  }
-
-  getEstadoActionText(): string {
-    return this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
-  }
-
   // Método para transferir equipo
   transferirEquipo(asset: any): void {
     const modalRef = this.modalService.open(TransferirEquipoModalComponent, {
@@ -904,14 +912,27 @@ export class AssetsComponent implements OnInit, OnDestroy {
       filtroTexto = `Filtro: ${this.currentFilter}`;
     }
     if (this.nombreEquipoControl.value) {
-      filtroTexto += ' | Búsqueda activa (nombre/IP)';
+      filtroTexto += ' | Búsqueda activa (nombre/IP/usuario)';
     }
     doc.text(filtroTexto, 14, 28);
+
+    let yInfo = 34;
+    if (this.advancedFiltersApplied) {
+      const adv = this.describeAdvancedFiltersForPdf();
+      if (adv) {
+        const advLine = `Avanzados: ${adv}`;
+        const wrapped = doc.splitTextToSize(advLine, 260);
+        doc.text(wrapped, 14, yInfo);
+        yInfo += 6 * (Array.isArray(wrapped) ? wrapped.length : 1);
+      }
+    }
     
     // Fecha de generación
     const fecha = new Date().toLocaleString('es-ES');
-    doc.text(`Generado el: ${fecha}`, 14, 34);
-    doc.text(`Total de terminales: ${this.assetsFiltrados.length}`, 14, 40);
+    doc.text(`Generado el: ${fecha}`, 14, yInfo);
+    yInfo += 6;
+    doc.text(`Total de terminales: ${this.assetsFiltrados.length}`, 14, yInfo);
+    yInfo += 6;
     
     // Preparar datos para la tabla
     const tableData = this.assetsFiltrados.map(asset => [
@@ -926,11 +947,11 @@ export class AssetsComponent implements OnInit, OnDestroy {
     autoTable(doc, {
       head: [['Equipo', 'Sistema Operativo', 'IP', 'Tipo', 'Nro. Compra']],
       body: tableData,
-      startY: 46,
+      startY: yInfo,
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      margin: { top: 46, left: 14, right: 14 },
+      margin: { top: yInfo, left: 14, right: 14 },
       tableWidth: 'auto'
     });
     
@@ -951,12 +972,16 @@ export class AssetsComponent implements OnInit, OnDestroy {
   private buildTourTerminales(): DriveStep[] {
     const steps: DriveStep[] = [];
 
+    // Abrir panel para que el paso del tour tenga contexto visible
+    this.showAdvancedFilters = true;
+
     steps.push(
       ...this.guidedTourHost.buildSteps([
         { selector: '#tour-assets-title', title: 'Inventario de terminales', description: 'Listado de equipos detectados por inventario (OCS). Desde acá accedés al detalle de cada terminal.', side: 'bottom' },
-        { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Acotá la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
+        { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Pestañas para acotar la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
         { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP o último usuario conectado (campo USERID de OCS).', side: 'bottom' },
-        { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual.', side: 'left' }
+        { selector: '#tour-assets-advanced', title: 'Filtros avanzados', description: 'Abrí el panel para buscar por tipo de disco (HDD/SSD), SO, procesador, uso de disco ≥ %, RAM, fabricante o equipos sin reportar. Se combina con los chips y la búsqueda rápida.', side: 'bottom' },
+        { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual, incluyendo los filtros avanzados activos.', side: 'left' }
       ])
     );
 
@@ -966,7 +991,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
         popover: {
           title: 'Acciones rápidas del equipo',
           description:
-            'Transferir mueve el equipo al almacén que elijas. Almacén lo envía al almacén de laboratorio. Baja lo envía al cementerio, donde quedan equipos fuera de operación (dados de baja).',
+            'Transferir mueve el equipo al almacén que elijas, incluido laboratorio o cementerio (baja).',
           side: 'left',
           align: 'start'
         }
@@ -1004,13 +1029,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   /**
    * Vuelve la pantalla al inicio cuando el tour finaliza.
-   *
-   * El host del tour aplica `body.no-global-zoom` para suspender el `zoom: 0.8`
-   * global durante el recorrido y lo restaura justo después de llamar a
-   * `afterEnd`. Si scrolleamos en el mismo tick, ese cambio de escala cancela
-   * el smooth y a veces el browser decide quedarse donde estaba. Esperamos
-   * dos frames para que el layout vuelva a su escala normal y recién entonces
-   * disparamos el scroll.
    */
   private resetScrollToTop(): void {
     requestAnimationFrame(() => {

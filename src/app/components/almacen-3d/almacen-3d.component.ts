@@ -201,9 +201,6 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     this.configurarPicking();
-    if (!isRebuild) {
-      this.fixMouseCoordinates();
-    }
 
     this.sceneReady = true;
     if (!isRebuild) {
@@ -408,123 +405,6 @@ export class Almacen3DComponent implements OnInit, OnDestroy, OnChanges {
         this.engine.resize();
       }
     }, 100);
-  }
-
-  private fixMouseCoordinates(): void {
-    console.log('🔧 fixMouseCoordinates: Iniciando corrección de coordenadas...');
-    
-    // Esperar a que el canvas esté completamente renderizado
-    setTimeout(() => {
-      const canvas = this.renderCanvas.nativeElement;
-      if (!canvas) {
-        console.error('❌ fixMouseCoordinates: Canvas no encontrado');
-        return;
-      }
-      
-      console.log('✅ fixMouseCoordinates: Canvas encontrado, agregando listeners');
-      // Ya no necesitamos zoomFactor porque el canvas-container tiene zoom: 1.25
-      
-      // Interceptar clicks y usar scene.pick() directamente
-      // Ahora que el canvas-container tiene zoom: 1.25, compensa el zoom del body
-      // Las coordenadas deberían estar correctas sin ajustes adicionales
-      const handleClick = (e: MouseEvent) => {
-        e.stopPropagation(); // Detener propagación para manejar manualmente
-        e.preventDefault(); // Prevenir comportamiento por defecto
-        
-        const rect = canvas.getBoundingClientRect();
-        
-        // Calcular coordenadas relativas al canvas
-        const relativeX = e.clientX - rect.left;
-        const relativeY = e.clientY - rect.top;
-        
-        // Con zoom 1.25 en el contenedor, las coordenadas deberían estar correctas
-        // Pero verificamos si hay diferencia entre canvas.width y rect.width
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const displayWidth = rect.width;
-        const displayHeight = rect.height;
-        
-        // Solo ajustar si hay diferencia (por si acaso)
-        const scaleX = canvasWidth / displayWidth;
-        const scaleY = canvasHeight / displayHeight;
-        
-        const canvasX = relativeX * scaleX;
-        const canvasY = relativeY * scaleY;
-        
-        console.log(`🖱️ Click: Visual(${relativeX.toFixed(1)}, ${relativeY.toFixed(1)}) → Canvas(${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}) [Scale: ${scaleX.toFixed(2)}]`);
-        
-        // Usar scene.pick() con coordenadas
-        const pickResult = this.scene.pick(canvasX, canvasY);
-        
-        if (pickResult && pickResult.hit && pickResult.pickedMesh) {
-          const pickedMesh = pickResult.pickedMesh;
-          console.log('🎯 Mesh encontrado:', pickedMesh.name);
-          
-          // Verificar si es una caja o un hijo de una caja (ej. la cinta)
-          // Buscar en el mapa: primero el mesh directo, luego subir por la jerarquía de padres
-          let foundCaja: BABYLON.Mesh | undefined;
-          let meshToCheck: BABYLON.Node | null = pickedMesh;
-          while (meshToCheck) {
-            if (this.cajasMap.has(meshToCheck as BABYLON.Mesh)) {
-              foundCaja = meshToCheck as BABYLON.Mesh;
-              break;
-            }
-            meshToCheck = meshToCheck.parent;
-          }
-          
-          if (foundCaja) {
-            console.log('📦 Caja detectada!');
-            this.onCajaClick(foundCaja);
-          }
-        } else {
-          console.log('❌ No se encontró mesh en esa posición');
-        }
-      };
-      
-      // Interceptar eventos del mouse para ajustar coordenadas de la cámara
-      // Con zoom 1.25 en el contenedor, las coordenadas deberían estar correctas
-      const adjustMouseEvent = (e: MouseEvent | PointerEvent) => {
-        const rect = canvas.getBoundingClientRect();
-        const relativeX = (e as MouseEvent).clientX - rect.left;
-        const relativeY = (e as MouseEvent).clientY - rect.top;
-        
-        // Calcular escala por si hay diferencia
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        
-        const canvasX = relativeX * scaleX;
-        const canvasY = relativeY * scaleY;
-        
-        // Modificar el evento para que la cámara use las coordenadas correctas
-        try {
-          Object.defineProperty(e, 'offsetX', { 
-            value: canvasX, 
-            writable: true,
-            configurable: true 
-          });
-          Object.defineProperty(e, 'offsetY', { 
-            value: canvasY, 
-            writable: true,
-            configurable: true 
-          });
-        } catch (err) {
-          // Ignorar errores
-        }
-      };
-      
-      // Agregar listener de click para manejar picking manualmente
-      canvas.addEventListener('click', handleClick, true);
-      
-      // Agregar listeners para ajustar coordenadas de la cámara
-      canvas.addEventListener('mousedown', adjustMouseEvent, true);
-      canvas.addEventListener('mousemove', adjustMouseEvent, true);
-      canvas.addEventListener('mouseup', adjustMouseEvent, true);
-      canvas.addEventListener('pointerdown', adjustMouseEvent, true);
-      canvas.addEventListener('pointermove', adjustMouseEvent, true);
-      canvas.addEventListener('pointerup', adjustMouseEvent, true);
-      
-      console.log('✅ fixMouseCoordinates: Listeners agregados correctamente');
-    }, 500);
   }
 
   private crearPiso(): void {

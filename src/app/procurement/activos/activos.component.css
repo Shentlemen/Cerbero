@@ -1,3 +1,12 @@
+.activos-page .header-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0.35rem 0.15rem 0;
+  margin-bottom: 0.55rem;
+  border-radius: 0;
+}
+
 .activos-page .list-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -54,15 +63,15 @@
   justify-content: center;
 }
 
-/* Estilos globales para el backdrop del modal - funciona con zoom */
+/* Estilos globales para el backdrop del modal */
 ::ng-deep .modal-backdrop {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
+  width: auto !important;
+  height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
   transform: none !important;
@@ -96,9 +105,9 @@
 
 .filters-toolbar-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.5rem 1rem;
+  gap: 0.5rem 0.75rem;
 }
 
 .filters-toolbar-label {
@@ -109,6 +118,20 @@
   text-transform: uppercase;
   color: #6c757d;
   min-width: 5.75rem;
+}
+
+.activos-filters-stack .filters-container {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.activos-filters-stack .filter-btn {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 /* Compra / Ubicación / Servicio garantía / Relacionados en modal: lista bajo el input (patrón stock.component). */
@@ -979,10 +1002,11 @@ ngb-modal-window.activo-form-modal-window.modal {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--ds-color-border, #e9ecef);
   border-radius: 25px;
-  background: white;
-  color: #6c757d;
+  background: var(--ds-color-elevated, #f8f9fa);
+  color: var(--ds-color-text, #6c757d);
+  -webkit-text-fill-color: var(--ds-color-text, #6c757d);
   font-weight: 500;
   font-size: 0.9rem;
   cursor: pointer;
@@ -990,17 +1014,24 @@ ngb-modal-window.activo-form-modal-window.modal {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+.filter-btn span {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+}
+
 .filter-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   border-color: var(--device-color, #3498db);
-  color: var(--device-color, #3498db);
+  color: var(--ds-color-heading, #2c3e50);
+  -webkit-text-fill-color: var(--ds-color-heading, #2c3e50);
 }
 
 .filter-btn.active {
-  background: var(--device-bg-color, #e3f2fd);
-  border-color: var(--device-border-color, #bbdefb);
-  color: var(--device-color, #1976d2);
+  background: color-mix(in srgb, var(--device-color, var(--ds-color-accent, #1976d2)) 16%, var(--ds-color-elevated, #f8f9fa));
+  border-color: var(--device-color, var(--ds-color-accent, #1976d2));
+  color: var(--ds-color-heading, #2c3e50);
+  -webkit-text-fill-color: var(--ds-color-heading, #2c3e50);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
@@ -1017,12 +1048,17 @@ ngb-modal-window.activo-form-modal-window.modal {
 }
 
 @media (max-width: 768px) {
+  .activos-filters-stack .filters-toolbar-row,
+  .activos-filters-stack .filters-container {
+    flex-wrap: wrap;
+  }
+
   .filters-container {
     gap: 0.5rem;
   }
   
   .filter-btn {
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.7rem;
     font-size: 0.8rem;
   }
   

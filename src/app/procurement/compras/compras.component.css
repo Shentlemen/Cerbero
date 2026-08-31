@@ -1,5 +1,54 @@
 /* Estilos específicos para compras - Versión optimizada */
 
+.compras-page .compras-folder-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.65rem;
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+  scrollbar-width: none;
+}
+
+.compras-page .compras-folder-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.compras-page .compras-folder-tabs > .cerbero-folder-tabs {
+  overflow: hidden;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.compras-page .compras-folder-tabs > .cerbero-folder-tabs + .cerbero-folder-tabs {
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--ds-color-border, #e2e8f0);
+}
+
+.compras-page .cerbero-folder-tab-label {
+  max-width: 8.75rem;
+}
+
+.compras-page .empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--ds-color-faint, #7f8c8d);
+  background: transparent;
+}
+
+.compras-page .empty-state i {
+  display: block;
+  font-size: 4rem;
+  color: #27ae60;
+  margin-bottom: 1rem;
+}
+
+.compras-page .empty-state h3 {
+  color: var(--ds-color-heading, #2c3e50);
+  margin-bottom: 0.5rem;
+}
+
 .compras-page .list-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -232,10 +281,11 @@ button,
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border: 1px solid var(--device-border-color, #dee2e6);
+  border: 1px solid var(--ds-color-border, var(--device-border-color, #dee2e6));
   border-radius: 25px;
-  background: var(--device-bg-color, #ffffff);
-  color: var(--device-color, #2c3e50);
+  background: var(--ds-color-elevated, #f8f9fa);
+  color: var(--ds-color-text, var(--device-color, #2c3e50));
+  -webkit-text-fill-color: var(--ds-color-text, var(--device-color, #2c3e50));
   font-weight: 500;
   font-size: 0.9rem;
   cursor: pointer;
@@ -244,15 +294,22 @@ button,
   outline: none;
 }
 
+.filter-btn span {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+}
+
 .filter-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: var(--device-color, var(--ds-color-accent, #3498db));
 }
 
 .filter-btn.active {
-  background: var(--device-color, #2c3e50);
-  color: white;
-  border-color: var(--device-color, #2c3e50);
+  background: color-mix(in srgb, var(--device-color, var(--ds-color-accent, #2c3e50)) 16%, var(--ds-color-elevated, #f8f9fa));
+  color: var(--ds-color-heading, #2c3e50);
+  -webkit-text-fill-color: var(--ds-color-heading, #2c3e50);
+  border-color: var(--device-color, var(--ds-color-accent, #2c3e50));
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
@@ -281,9 +338,10 @@ button,
   font-size: 0.875rem;
   border-radius: 25px;
   transition: all 0.3s ease;
-  border: 1px solid var(--tipo-border-color, #dee2e6);
-  background: var(--tipo-bg-color, #ffffff);
-  color: var(--tipo-color, #2c3e50);
+  border: 1px solid var(--ds-color-border, var(--tipo-border-color, #dee2e6));
+  background: var(--ds-color-elevated, #f8f9fa);
+  color: var(--tipo-color, var(--ds-color-text, #2c3e50));
+  -webkit-text-fill-color: var(--tipo-color, var(--ds-color-text, #2c3e50));
   font-weight: 500;
   min-width: fit-content;
   white-space: nowrap;
@@ -292,15 +350,21 @@ button,
   outline: none;
 }
 
+.tipo-compra-filter-btn span {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+}
+
 .tipo-compra-filter-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .tipo-compra-filter-btn.active {
-  background: var(--tipo-color, #2c3e50);
-  color: white;
-  border-color: var(--tipo-color, #2c3e50);
+  background: color-mix(in srgb, var(--tipo-color, var(--ds-color-accent, #2c3e50)) 16%, var(--ds-color-elevated, #f8f9fa));
+  color: var(--ds-color-heading, #2c3e50);
+  -webkit-text-fill-color: var(--ds-color-heading, #2c3e50);
+  border-color: var(--tipo-color, var(--ds-color-accent, #2c3e50));
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
@@ -363,15 +427,17 @@ button,
 }
 
 .limpiar-filtro-btn {
-  background: #f8f9fa !important;
-  color: #6c757d !important;
-  border-color: #dee2e6 !important;
+  background: var(--ds-color-elevated, #f8f9fa) !important;
+  color: var(--ds-color-text, #6c757d) !important;
+  -webkit-text-fill-color: var(--ds-color-text, #6c757d) !important;
+  border-color: var(--ds-color-border, #dee2e6) !important;
 }
 
 .limpiar-filtro-btn:hover {
-  background: #e9ecef !important;
-  color: #495057 !important;
-  border-color: #adb5bd !important;
+  background: var(--ds-color-hover, #e9ecef) !important;
+  color: var(--ds-color-heading, #495057) !important;
+  -webkit-text-fill-color: var(--ds-color-heading, #495057) !important;
+  border-color: var(--ds-color-border-strong, #adb5bd) !important;
 }
 
 .tipo-compra-filter-btn .count {

@@ -1,4 +1,4 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalModule, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
@@ -8,6 +8,8 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { BandejasReclamosComponent } from '../bandejas-reclamos/bandejas-reclamos.component';
 import { TicketTipoDTO, TicketTipoService } from '../services/ticket-tipo.service';
 import { FlujoEditorComponent } from './flujo-editor.component';
+import { TourRegistryService } from '../services/tour-registry.service';
+import { GuidedTourHostService } from '../services/guided-tour-host.service';
 
 type ConfigTab = 'bandejas' | 'flujos';
 
@@ -25,7 +27,7 @@ type ConfigTab = 'bandejas' | 'flujos';
   templateUrl: './config-tickets.component.html',
   styleUrl: './config-tickets.component.css'
 })
-export class ConfigTicketsComponent implements OnInit {
+export class ConfigTicketsComponent implements OnInit, OnDestroy {
   @ViewChild('nuevoTipoModal') nuevoTipoModalTpl!: TemplateRef<unknown>;
 
   tab: ConfigTab = 'flujos';
@@ -41,18 +43,66 @@ export class ConfigTicketsComponent implements OnInit {
   /** Si el usuario editó el código a mano, no lo autocompletamos desde el nombre. */
   private codigoEditadoManual = false;
   private nuevoTipoModalRef: NgbModalRef | null = null;
+  private tourCleanup?: () => void;
 
   constructor(
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private ticketTipoService: TicketTipoService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private tourRegistry: TourRegistryService,
+    private guidedTourHost: GuidedTourHostService
   ) {}
 
   ngOnInit(): void {
     if (this.canManage()) {
       this.cargarTipos();
     }
+    this.tourCleanup = this.tourRegistry.register('config-tickets', [
+      {
+        id: 'config-tickets-flujos',
+        title: 'Tour de flujos',
+        icon: 'fa-route',
+        run: () => this.runTourFlujos()
+      },
+      {
+        id: 'config-tickets-bandejas',
+        title: 'Tour de bandejas',
+        icon: 'fa-inbox',
+        run: () => this.runTourBandejas()
+      }
+    ]);
+  }
+
+  ngOnDestroy(): void {
+    this.tourCleanup?.();
+    this.tourCleanup = undefined;
+  }
+
+  private runTourFlujos(): void {
+    this.tab = 'flujos';
+    window.setTimeout(() => {
+      const steps = this.guidedTourHost.buildSteps([
+        { selector: '#tour-config-hub-tabs', title: 'Secciones de configuración', description: 'Esta pestaña «Tickets» define tipos, flujos y bandejas. Las demás pestañas son catálogos (ubicaciones, tipos de activo, etc.).', side: 'bottom' },
+        { selector: '#tour-config-tickets-title', title: 'Config tickets', description: 'Acá se diseñan los tipos de reclamo y las bandejas extra para usuarios fuera de TI.', side: 'bottom' },
+        { selector: '#tour-config-tickets-tabs', title: 'Flujos y bandejas', description: '«Flujos» arma el circuito de cada tipo (botones y estados). «Bandejas» crea áreas asignables a usuarios rol Usuario.', side: 'bottom' },
+        { selector: '#tour-config-tickets-tipos', title: 'Tipos de ticket', description: '«Común» no tiene flujo: se gestiona a mano. Los demás tipos se seleccionan para editar o publicar su flujo.', side: 'right' },
+        { selector: '#tour-config-tickets-nuevo-tipo', title: 'Nuevo tipo', description: 'Creá un tipo con nombre visible y código interno. Después diseñás su flujo en el editor de la derecha.', side: 'left' },
+        { selector: '#tour-config-tickets-editor', title: 'Editor de flujo', description: 'Definí estados y botones del circuito. Hasta publicarlo, el tipo queda en borrador.', side: 'left' }
+      ]);
+      this.guidedTourHost.startTour(steps);
+    }, 80);
+  }
+
+  private runTourBandejas(): void {
+    this.tab = 'bandejas';
+    window.setTimeout(() => {
+      const steps = this.guidedTourHost.buildSteps([
+        { selector: '#tour-config-tickets-tabs', title: 'Bandejas', description: 'Además de las bandejas fijas de TI (almacén, inventario, etc.), acá creás áreas extra para otros sectores.', side: 'bottom' },
+        { selector: '#tour-config-tickets-bandejas', title: 'Áreas configurables', description: 'Código y nombre de la bandeja. Los usuarios rol Usuario pueden tener una asignada en Gestión de usuarios. Las áreas de TI no se eliminan desde aquí.', side: 'top' }
+      ]);
+      this.guidedTourHost.startTour(steps);
+    }, 80);
   }
 
   canManage(): boolean {

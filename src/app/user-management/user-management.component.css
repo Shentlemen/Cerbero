@@ -1,6 +1,174 @@
 /* User Management - Estilos alineados con el resto de la aplicación */
 
-/* Sección de filtros */
+.user-management-page .header-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0.35rem 0.15rem 0;
+  margin-bottom: 0.55rem;
+}
+
+.user-management-page .users-stage {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-management-page .users-role-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  justify-content: start;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+.user-management-page .users-role-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.user-management-page .users-role-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.7rem 0.65rem;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  border-radius: var(--ds-radius-lg) var(--ds-radius-lg) 0 0;
+  background: var(--ds-color-recessed);
+  box-shadow: var(--ds-shadow-inset-tab);
+  cursor: pointer;
+  color: inherit;
+}
+
+.user-management-page .users-role-tab:hover:not(.users-role-tab--active) {
+  background: var(--ds-color-recessed-hover);
+}
+
+.user-management-page .users-role-tab--active {
+  background: var(--ds-color-surface);
+  box-shadow: none;
+  z-index: 2;
+  margin-bottom: -2px;
+  padding-bottom: calc(0.65rem + 2px);
+}
+
+.user-management-page .users-role-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: inherit;
+  pointer-events: none;
+}
+
+.user-management-page .users-role-tab:focus-visible {
+  outline: 2px solid var(--ds-color-faint);
+  outline-offset: -2px;
+}
+
+.user-management-page .users-role-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--tab-accent, var(--ds-color-accent));
+}
+
+.user-management-page .users-role-tab--todos {
+  --tab-accent: var(--ds-color-accent);
+}
+
+.user-management-page .users-role-tab-label {
+  font-size: var(--ds-font-2xs);
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-color-faint);
+  text-align: center;
+  max-width: 6.5rem;
+  line-height: 1.2;
+}
+
+.user-management-page .users-role-tab--active .users-role-tab-label {
+  color: var(--ds-color-subtle);
+}
+
+.user-management-page .users-panel.content-section {
+  border: none;
+  border-radius: 0 var(--ds-radius-xl) var(--ds-radius-xl) var(--ds-radius-xl);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-shadow-sm);
+  position: relative;
+  z-index: 0;
+}
+
+.user-management-page .users-stage:not(:has(.users-role-tabs)) .users-panel.content-section {
+  border-radius: var(--ds-radius-xl);
+}
+
+@media (max-width: 991.98px) {
+  .user-management-page .users-role-tab {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .user-management-page .users-panel.content-section {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+.user-management-page .users-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.user-management-page .users-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.user-management-page .users-search-form {
+  margin: 0;
+  flex: 0 1 16.5rem;
+  min-width: 12rem;
+}
+
+.user-management-page .users-toolbar .search-container {
+  max-width: 16.5rem;
+}
+
+.user-management-page .users-toolbar .actions {
+  margin-top: 0;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 .filters-row {
   display: flex;
   flex-wrap: wrap;
@@ -10,18 +178,30 @@
 
 .filter-group {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
 .filters-section .filter-group-label {
   font-size: 0.9rem;
   font-weight: 600;
   color: #2c3e50;
+  white-space: nowrap;
+  margin: 0;
 }
 
 .filters-section .filters-container {
   margin-top: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.user-management-page .filters-section {
+  background: transparent;
+  box-shadow: none;
+  border: none;
 }
 
 /* Botones de filtro con color siempre visible (como al pasar el mouse) */
@@ -52,7 +232,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.28);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -221,15 +401,6 @@
   opacity: 0.9;
 }
 
-.bandeja-codigo {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.7rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  color: #64748b;
-  letter-spacing: 0.02em;
-}
-
 .bandeja-none {
   background: #f1f5f9;
   color: #64748b;
@@ -365,6 +536,28 @@
 
 .users-table th {
   font-size: 1rem;
+}
+
+.users-table th.sortable-header {
+  user-select: none;
+  cursor: pointer;
+}
+
+.users-table th.sortable-header .th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.users-table th.sortable-header .th-content i {
+  font-size: 0.7rem;
+  opacity: 0.55;
+}
+
+.users-table th.sortable-header.active .th-content i {
+  opacity: 1;
 }
 
 /* Responsive filtros */

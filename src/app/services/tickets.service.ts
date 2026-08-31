@@ -24,6 +24,10 @@ export interface Ticket {
   prioridad: TicketPrioridad;
   areaActual: string;
   creadoPorUserId: number;
+  /** Nombre del creador (rellenado por el backend al listar/obtener). */
+  creadoPorNombre?: string | null;
+  /** True si el creador tiene foto de perfil. */
+  creadoPorHasAvatar?: boolean;
   asignadoAUserId?: number | null;
   ticketTipoId?: number | null;
   flujoVersionId?: number | null;
@@ -59,6 +63,8 @@ export interface TicketComentario {
   comentario: string;
   esInterno: boolean;
   fechaComentario: string;
+  usuarioNombre?: string;
+  usuarioHasAvatar?: boolean;
 }
 
 export interface TicketMovimientoView {
@@ -69,6 +75,7 @@ export interface TicketMovimientoView {
 export interface TicketComentarioView {
   comentario: TicketComentario;
   usuarioNombre: string;
+  usuarioHasAvatar?: boolean;
 }
 
 export interface TicketAdjunto {
@@ -293,13 +300,20 @@ export class TicketsService {
     );
   }
 
-  /** URL para previsualizar inline (img / iframe). El backend valida permisos via JWT. */
+  /** URL para previsualizar inline (img / a). Incluye JWT en query para navegación sin header. */
   getAdjuntoVerUrl(adjuntoId: number): string {
-    return `${this.apiUrl}/adjuntos/${adjuntoId}/ver`;
+    return this.withAuthToken(`${this.apiUrl}/adjuntos/${adjuntoId}/ver`);
   }
 
   getAdjuntoDescargarUrl(adjuntoId: number): string {
-    return `${this.apiUrl}/adjuntos/${adjuntoId}/descargar`;
+    return this.withAuthToken(`${this.apiUrl}/adjuntos/${adjuntoId}/descargar`);
+  }
+
+  private withAuthToken(url: string): string {
+    const token = localStorage.getItem('token');
+    if (!token) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}token=${encodeURIComponent(token)}`;
   }
 
   /** Tickets no leidos en mi bandeja (LABORATORIO para GM/Admin; mi area para los demas). */

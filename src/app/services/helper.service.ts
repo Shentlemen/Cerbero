@@ -159,6 +159,14 @@ export class HelperService {
       relatedSections: ['procurement/activos', 'procurement/compras'],
       userLevel: 'intermediate'
     },
+    'config-tickets': {
+      message: "Configuración de tickets: tipos, flujos de estados y bandejas de área. Desde acá definís cómo se mueven los reclamos y quién los atiende.",
+      type: 'info',
+      priority: 'medium',
+      context: ['tickets', 'configuration', 'workflows'],
+      relatedSections: ['tickets', 'locations'],
+      userLevel: 'advanced'
+    },
 
     // === GESTIÓN DE REDES ===
     subnets: {
@@ -534,6 +542,9 @@ export class HelperService {
   constructor() {
     this.loadUserData();
     this.analyzeUserBehavior();
+    this.helpTips['tipos-activo'] = this.helpTips['procurement/tipos-activo'];
+    this.helpTips['tipos-compra'] = this.helpTips['procurement/tipos-compra'];
+    this.helpTips['usuarios'] = this.helpTips['procurement/usuarios'];
   }
 
   getHelpForSection(section: string): HelpTip {
@@ -629,7 +640,7 @@ export class HelperService {
       })));
     }
 
-    if (currentSection.includes('user-management') || currentSection.includes('procurement/usuarios')) {
+    if (currentSection.includes('user-management') || currentSection.includes('usuarios')) {
       const userSuggestions = this.contextualSuggestions['user_administration'];
       suggestions.push(...userSuggestions.map(s => ({
         ...s,

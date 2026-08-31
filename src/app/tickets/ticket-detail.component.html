@@ -6,23 +6,25 @@
 
   <div class="header-section" *ngIf="!embedded">
 
-    <div class="title-row">
+    <div class="title-wrapper">
 
-      <div class="title-wrapper">
+      <h1>
 
-        <h1>
+        <i class="fas fa-ticket-alt"></i>
 
-          <i class="fas fa-ticket-alt"></i>
+        Detalle de ticket
 
-          Detalle de ticket
-
-        </h1>
-
-      </div>
-
-      <a routerLink="/menu/tickets" class="btn btn-secondary btn-sm">Volver</a>
+      </h1>
 
     </div>
+
+  </div>
+
+
+
+  <div class="content-toolbar" *ngIf="!embedded">
+
+    <a routerLink="/menu/tickets" class="btn btn-secondary btn-sm">Volver</a>
 
   </div>
 
@@ -118,7 +120,7 @@
 
 
 
-    <aside class="ticket-detail-aside" aria-label="Acciones del ticket">
+    <aside id="ticket-acciones" class="ticket-detail-aside" aria-label="Acciones del ticket">
 
       <div
         class="content-section ticket-detail-aside-panel mb-0"
@@ -363,8 +365,18 @@
           <p *ngIf="comentarios.length === 0" class="ticket-feed-empty">Sin comentarios todavía.</p>
           <ul *ngIf="comentarios.length > 0" class="ticket-comment-list" role="list">
             <li *ngFor="let c of comentarios" class="ticket-comment-item">
-              <div class="ticket-comment-avatar" aria-hidden="true">
-                {{ (getComentarioUsuario(c) || '?').charAt(0).toUpperCase() }}
+              <div
+                class="ticket-comment-avatar"
+                [class.ticket-comment-avatar--photo]="c.usuarioHasAvatar"
+                aria-hidden="true">
+                <img
+                  *ngIf="c.usuarioHasAvatar"
+                  [src]="avatarUrl(c.usuarioId)"
+                  alt=""
+                  (error)="onComentarioAvatarError(c)">
+                <ng-container *ngIf="!c.usuarioHasAvatar">
+                  {{ (getComentarioUsuario(c) || '?').charAt(0).toUpperCase() }}
+                </ng-container>
               </div>
               <article class="ticket-comment-bubble">
                 <header class="ticket-comment-meta">
@@ -382,7 +394,8 @@
               class="form-control"
               rows="3"
               [(ngModel)]="comentario"
-              placeholder="Escribí un comentario para el equipo…"></textarea>
+              placeholder="Escribí un comentario para el equipo… (Enter envía, Shift+Enter nueva línea)"
+              (keydown)="onComentarioKeydown($event)"></textarea>
             <button type="button" class="btn btn-info mt-2" (click)="agregarComentario()">
               <i class="fas fa-paper-plane me-1" aria-hidden="true"></i>
               Comentar

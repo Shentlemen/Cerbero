@@ -1,57 +1,98 @@
 <div class="generic-container compras-page">
   <div class="header-section">
-    <div class="header-content">
-      <div class="d-flex flex-wrap w-100 justify-content-between align-items-start gap-2 mb-2">
-      <div class="title-wrapper flex-grow-1">
-        <h1 id="tour-compras-title"><i class="fas fa-shopping-cart"></i> Gestión de Compras</h1>
-        <div class="filters-container" id="tour-compras-filters">
-          <button 
-            class="filter-btn" 
-            [class.active]="!filterForm.get('moneda')?.value"
-            (click)="filterForm.patchValue({ moneda: '' })">
-            <i class="fas fa-th-large"></i>
-            <span>Todos</span>
-            <span class="count">({{comprasList.length}})</span>
-          </button>
-          
-          <button 
-            class="filter-btn" 
-            [class.active]="filterForm.get('moneda')?.value === 'USD'"
-            [style.--device-color]="'#0369a1'"
-            [style.--device-bg-color]="'#e0f2fe'"
-            [style.--device-border-color]="'#bae6fd'"
-            (click)="filterForm.patchValue({ moneda: 'USD' })">
-            <i class="fas fa-dollar-sign" style="color: #0369a1;"></i>
-            <span>USD</span>
-            <span class="count">({{getMonedaCount('USD')}})</span>
-          </button>
-          
-          <!-- Botón EUR eliminado -->
-          
-          <button 
-            class="filter-btn" 
-            [class.active]="filterForm.get('moneda')?.value === 'UYU'"
-            [style.--device-color]="'#00695c'"
-            [style.--device-bg-color]="'#e0f7fa'"
-            [style.--device-border-color]="'#b2ebf2'"
-            (click)="filterForm.patchValue({ moneda: 'UYU' })">
-            <i class="fas fa-money-bill-wave" style="color: #00695c;"></i>
-            <span>UYU</span>
-            <span class="count">({{getMonedaCount('UYU')}})</span>
-          </button>
-        </div>
-      </div>
-      </div>
-      <div class="actions d-flex justify-content-end align-items-center flex-wrap" style="gap: 1rem;" *ngIf="canManagePurchases()">
-        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-compras-nueva" (click)="abrirModal(compraModal)">
-          <i class="fas fa-plus me-2"></i>
-          Nueva Compra
-        </button>
+    <div class="title-wrapper">
+      <div class="title-row">
+        <h1 id="tour-compras-title">
+          <i class="fas fa-shopping-cart"></i>
+          Gestión de Compras
+        </h1>
       </div>
     </div>
   </div>
 
-  <div class="content-section">
+  <div class="cerbero-folder-stage">
+    <div class="compras-folder-tabs" *ngIf="!loading">
+      <div
+        class="cerbero-folder-tabs"
+        id="tour-compras-filters"
+        role="tablist"
+        aria-label="Filtrar por moneda">
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="!filterForm.get('moneda')?.value"
+          [attr.aria-selected]="!filterForm.get('moneda')?.value"
+          [style.--tab-accent]="'var(--ds-color-accent)'"
+          (click)="filterForm.patchValue({ moneda: '' })">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true">
+            <i class="fas fa-th-large"></i>
+          </span>
+          <span class="cerbero-folder-tab-label">Todos</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="filterForm.get('moneda')?.value === 'USD'"
+          [attr.aria-selected]="filterForm.get('moneda')?.value === 'USD'"
+          [style.--tab-accent]="'#0369a1'"
+          (click)="filterForm.patchValue({ moneda: 'USD' })">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true">
+            <i class="fas fa-dollar-sign"></i>
+          </span>
+          <span class="cerbero-folder-tab-label">USD</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="filterForm.get('moneda')?.value === 'UYU'"
+          [attr.aria-selected]="filterForm.get('moneda')?.value === 'UYU'"
+          [style.--tab-accent]="'#00695c'"
+          (click)="filterForm.patchValue({ moneda: 'UYU' })">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true">
+            <i class="fas fa-money-bill-wave"></i>
+          </span>
+          <span class="cerbero-folder-tab-label">UYU</span>
+        </button>
+      </div>
+      <div
+        class="cerbero-folder-tabs"
+        id="tour-compras-search-row"
+        role="tablist"
+        aria-label="Filtrar por tipo de compra">
+        <button
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="tipoCompraFiltroActivo === null"
+          [attr.aria-selected]="tipoCompraFiltroActivo === null"
+          [style.--tab-accent]="'var(--ds-color-accent)'"
+          (click)="filtrarPorTipoCompra(null)">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true">
+            <i class="fas fa-tags"></i>
+          </span>
+          <span class="cerbero-folder-tab-label">Todos los tipos</span>
+        </button>
+        <button
+          *ngFor="let tipo of tiposCompraList; let i = index"
+          type="button"
+          role="tab"
+          class="cerbero-folder-tab"
+          [class.cerbero-folder-tab--active]="tipoCompraFiltroActivo === tipo.idTipoCompra"
+          [attr.aria-selected]="tipoCompraFiltroActivo === tipo.idTipoCompra"
+          [style.--tab-accent]="getTipoColor(i)"
+          (click)="filtrarPorTipoCompra(tipo.idTipoCompra)">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true">
+            <i class="fas" [ngClass]="getTipoIcon(i)"></i>
+          </span>
+          <span class="cerbero-folder-tab-label">{{ tipo.abreviado || tipo.descripcion }}</span>
+        </button>
+      </div>
+    </div>
+
+  <div class="content-section cerbero-folder-panel">
     <div class="table-container" id="tour-compras-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -84,7 +125,7 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <p class="list-summary mb-0" *ngIf="comprasList.length > 0">
+          <p class="list-summary mb-0" *ngIf="collectionSize > 0">
             <span *ngIf="collectionSize === comprasList.length">
               {{ comprasList.length }} compras
             </span>
@@ -93,27 +134,10 @@
             </span>
             <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
           </p>
-        </div>
-
-        <div class="tipo-compra-filters-row" id="tour-compras-search-row">
-          <div class="tipo-compra-filters">
-            <button
-              *ngFor="let tipo of tiposCompraList; let i = index"
-              class="btn btn-outline-primary btn-sm tipo-compra-filter-btn"
-              [class.active]="tipoCompraFiltroActivo === tipo.idTipoCompra"
-              [style.--tipo-color]="getTipoColor(i)"
-              [style.--tipo-bg-color]="getTipoBgColor(i)"
-              [style.--tipo-border-color]="getTipoBorderColor(i)"
-              (click)="filtrarPorTipoCompra(tipo.idTipoCompra)">
-              <span>{{ tipo.abreviado || tipo.descripcion }}</span>
-              <span class="count">({{ getTipoCompraCount(tipo.idTipoCompra) }})</span>
-            </button>
-
-            <button
-              *ngIf="tipoCompraFiltroActivo !== null"
-              class="btn btn-outline-secondary btn-sm tipo-compra-filter-btn limpiar-filtro-btn"
-              (click)="filtrarPorTipoCompra(null)">
-              <span>Limpiar filtro tipo</span>
+          <div class="actions" *ngIf="canManagePurchases()">
+            <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-compras-nueva" (click)="abrirModal(compraModal)">
+              <i class="fas fa-plus me-2"></i>
+              Nueva Compra
             </button>
           </div>
         </div>
@@ -249,16 +273,20 @@
           </ngb-pagination>
         </div>
 
-        <div *ngIf="comprasList.length === 0" class="alert alert-info">
-          No hay compras registradas.
-        </div>
-
-        <div *ngIf="comprasList.length > 0 && collectionSize === 0" class="alert alert-info">
-          <i class="fas fa-search me-2"></i>
-          No hay compras que coincidan con los filtros aplicados.
+        <div *ngIf="collectionSize === 0" class="empty-state">
+          <i class="fas fa-smile"></i>
+          <ng-container *ngIf="comprasList.length === 0; else comprasFiltroVacio">
+            <h3>¡No hay compras registradas!</h3>
+            <p>Agregá una compra para comenzar.</p>
+          </ng-container>
+          <ng-template #comprasFiltroVacio>
+            <h3>¡No hay compras en esta categoría!</h3>
+            <p>Probá otra pestaña o ajustá la búsqueda.</p>
+          </ng-template>
         </div>
       </ng-container>
     </div>
+  </div>
   </div>
 </div>
 

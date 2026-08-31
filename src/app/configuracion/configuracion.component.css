@@ -1,0 +1,254 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  align-self: stretch;
+}
+
+.config-hub {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.config-hub-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  justify-content: start;
+  flex-shrink: 0;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  scrollbar-width: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.config-hub-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.config-hub-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem 0.65rem;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  border-radius: var(--ds-radius-lg) var(--ds-radius-lg) 0 0;
+  background: var(--ds-color-recessed);
+  box-shadow: var(--ds-shadow-inset-tab);
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.config-hub-tab:link,
+.config-hub-tab:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.config-hub-tab:hover:not(.config-hub-tab--active) {
+  background: var(--ds-color-recessed-hover);
+  color: inherit;
+  text-decoration: none;
+}
+
+.config-hub-tab--active,
+.config-hub-tab.config-hub-tab--active:hover {
+  background: var(--ds-color-surface);
+  box-shadow: none;
+  z-index: 2;
+  margin-bottom: -2px;
+  padding-bottom: calc(0.65rem + 2px);
+  color: inherit;
+  border-color: transparent;
+  text-decoration: none;
+}
+
+.config-hub-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: inherit;
+  pointer-events: none;
+}
+
+.config-hub-tab:focus,
+.config-hub-tab:focus-visible,
+.config-hub-tab:active,
+.config-hub-tab:focus-within {
+  outline: none !important;
+  color: inherit;
+  text-decoration: none;
+}
+
+.config-hub-tab:not(.config-hub-tab--active):focus,
+.config-hub-tab:not(.config-hub-tab--active):focus-visible,
+.config-hub-tab:not(.config-hub-tab--active):active {
+  box-shadow: var(--ds-shadow-inset-tab) !important;
+}
+
+.config-hub-tab--active:focus,
+.config-hub-tab--active:focus-visible,
+.config-hub-tab--active:active,
+.config-hub-tab.config-hub-tab--active:focus,
+.config-hub-tab.config-hub-tab--active:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.config-hub-tab *,
+.config-hub-tab *:focus,
+.config-hub-tab *:focus-visible,
+.config-hub-tab *:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.config-hub-tab-icon,
+.config-hub-tab-icon i,
+.config-hub-tab-icon i::before {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.config-hub-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--tab-accent, var(--ds-color-accent));
+}
+
+.config-hub-tab-icon i {
+  font-size: inherit;
+  width: auto;
+  text-align: center;
+}
+
+.config-hub-tab-label {
+  font-size: var(--ds-font-2xs);
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-color-faint);
+  text-align: center;
+  max-width: 7.25rem;
+  line-height: 1.2;
+}
+
+.config-hub-tab--active .config-hub-tab-label {
+  color: var(--ds-color-subtle);
+}
+
+.config-hub-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  border: none;
+  border-radius: 0 var(--ds-radius-xl) var(--ds-radius-xl) var(--ds-radius-xl);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-shadow-sm);
+  position: relative;
+  z-index: 0;
+  padding: 0.35rem 0.65rem 0.65rem;
+}
+
+.config-hub-body ::ng-deep router-outlet + * {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Las páginas hijas ya traen su propio marco; al anidarlas no hace falta 100vh. */
+.config-hub-body ::ng-deep .generic-container {
+  min-height: 0;
+  padding: 0.75rem 0.15rem 0.5rem;
+}
+
+/* El título de cada sección cede protagonismo a las pestañas. */
+.config-hub-body ::ng-deep .header-section {
+  padding: 0.65rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+}
+
+.config-hub-body ::ng-deep .header-content {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.config-hub-body ::ng-deep .header-content > .d-flex {
+  margin-bottom: 0 !important;
+}
+
+.config-hub-body ::ng-deep .title-wrapper {
+  gap: 0;
+}
+
+.config-hub-body ::ng-deep .header-section h1,
+.config-hub-body ::ng-deep .title-wrapper h1 {
+  font-size: 0.82rem;
+  font-weight: 650;
+  gap: 0.4rem;
+}
+
+.config-hub-body ::ng-deep .header-section h1 i,
+.config-hub-body ::ng-deep .title-wrapper h1 i {
+  font-size: 0.8rem;
+}
+
+.config-hub-body ::ng-deep .actions {
+  margin-top: 0;
+}
+
+/* El título de Config tickets queda en la pestaña del hub. */
+.config-hub-body ::ng-deep .config-tickets-page > .header-section {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .config-hub-tab {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .config-hub-body {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}

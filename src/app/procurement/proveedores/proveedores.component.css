@@ -6,6 +6,12 @@
   margin-bottom: 1.25rem;
 }
 
+.proveedores-page .list-toolbar .actions {
+  margin-top: 0;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 .proveedores-page .search-input-wrapper {
   position: relative;
   flex: 1 1 280px;
@@ -505,24 +511,24 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
   text-align: left;
 }
 
-/* Personalización de pestañas ngbNav */
-.nav-tabs .nav-link.active {
-  color: #2c3e50 !important; /* gris oscuro, igual que los títulos */
-  background-color: #f8f9fa !important;
-  border-color: #dee2e6 #dee2e6 #fff;
-  font-weight: 600;
+ngb-modal-window.proveedor-form-modal-window .modal-body {
+  background: var(--ds-color-canvas, #eef2f6);
+  padding: 0.65rem 1rem 1rem;
 }
 
-.nav-tabs .nav-link {
-  color: #888 !important;
-  font-weight: 500;
-  background: none;
-  border: none;
-  transition: color 0.2s;
+ngb-modal-window.proveedor-form-modal-window .proveedor-form-tabs {
+  min-width: 0;
 }
 
-.nav-tabs .nav-link:hover {
-  color: #41A1AF !important;
+ngb-modal-window.proveedor-form-modal-window .cerbero-folder-tab-label {
+  max-width: 9.5rem;
+}
+
+ngb-modal-window.proveedor-form-modal-window .content-section.cerbero-folder-panel.proveedor-form-tab-panel {
+  flex: none;
+  margin: 0;
+  padding: 1rem 1.15rem 0.75rem;
+  animation: none;
 }
 
 @media (max-width: 768px) {
@@ -703,9 +709,51 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
 /* Estilos para las cards de contactos en el modal de vista */
 .contactos-vista-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  padding: 1rem 0;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 0;
+}
+
+ngb-modal-window.contactos-vista-modal-window .modal-dialog {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-1 .modal-dialog {
+  max-width: min(92vw, 36rem);
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-2 .modal-dialog {
+  max-width: min(94vw, 52rem);
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-3 .modal-dialog {
+  max-width: min(96vw, 72rem);
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-many .modal-dialog {
+  max-width: min(96vw, 80rem);
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-2 .contactos-vista-container {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-3 .contactos-vista-container {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+ngb-modal-window.contactos-vista-modal-window--is-many .contactos-vista-container {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+}
+
+@media (max-width: 767.98px) {
+  ngb-modal-window.contactos-vista-modal-window--is-2 .contactos-vista-container,
+  ngb-modal-window.contactos-vista-modal-window--is-3 .contactos-vista-container,
+  ngb-modal-window.contactos-vista-modal-window--is-many .contactos-vista-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 .contacto-vista-card {
@@ -715,6 +763,7 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
   overflow: hidden;
+  min-width: 0;
 }
 
 .contacto-vista-card:hover {
@@ -746,6 +795,7 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
 
 .contacto-info-principal {
   flex: 1;
+  min-width: 0;
 }
 
 .contacto-nombre {
@@ -753,6 +803,8 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
   font-weight: 600;
   margin: 0 0 0.25rem 0;
   font-size: 1.1rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .contacto-cargo {
@@ -763,6 +815,9 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .contacto-vista-body {
@@ -771,18 +826,18 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
 
 .contacto-detalle {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   margin-bottom: 1rem;
   padding: 0.75rem;
   background: #f8f9fa;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
+  min-width: 0;
 }
 
 .contacto-detalle:hover {
   background: #e9ecef;
-  transform: translateX(4px);
 }
 
 .contacto-detalle:last-child {
@@ -791,14 +846,19 @@ ngb-modal-window.proveedor-form-modal-window .modal-footer.proveedor-form-modal-
 
 .contacto-detalle i {
   width: 20px;
+  flex-shrink: 0;
   text-align: center;
   font-size: 1rem;
+  line-height: 1.45;
 }
 
 .contacto-detalle span {
   color: #2c3e50;
   font-weight: 500;
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Responsive para las cards de contactos */

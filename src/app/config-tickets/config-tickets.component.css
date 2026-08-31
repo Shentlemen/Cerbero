@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-/* Mismo tamaño visual que el resto de la app (solo zoom global del body). */
+/* Mismo tamaño visual que el resto de la app. */
 .config-tickets-page.generic-container {
   flex: 1 1 auto;
   display: flex;

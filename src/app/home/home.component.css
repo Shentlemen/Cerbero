@@ -1,19 +1,14 @@
-/* FIX: Compensar el zoom global de 0.8 del body (styles.css) para que las partículas
-   detecten correctamente la posición del mouse. 1/0.8 = 1.25 (mismo enfoque que dashboard).
-   El wrapper tiene zoom 1.25; las dimensiones internas al 80% mantienen cobertura visual. */
-.particles-zoom-wrapper {
+.particles-layer {
   position: fixed;
-  width: 80%;
-  height: 80%;
-  left: 10%;
-  top: 10%;
-  zoom: 1.25;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 2;
   overflow: hidden;
-  pointer-events: none; /* Las partículas no interfieren con los clics del formulario */
+  pointer-events: none;
 }
 
-.particles-zoom-wrapper ngx-particles {
+.particles-layer ngx-particles {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -58,8 +53,7 @@
   justify-content: center;
   align-items: center;
   z-index: 3; /* Logo y formulario sobre las partículas */
-  /* Eliminamos la animación fadeIn */
-  /* animation: fadeIn 1s ease-out; */
+  background: transparent;
 }
 .logo {
   max-width: 45%; /* Reducido de 50% a 40% */
@@ -78,18 +72,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 320px;
-  padding: 20px;
+  width: 20rem;
+  padding: 1.25rem;
+  background: transparent;
 }
 
 .login-form input {
-  margin: 10px 0;
-  padding: 12px;
-  width: 260px;
+  margin: 0.625rem 0;
+  padding: 0.75rem;
+  width: 16.25rem;
   border-radius: 5px;
   border: 1px solid #ccc;
   background-color: #f4e4d8; /* Color blanco crema */
   color: #333; /* Color del texto */
+  caret-color: #333;
+  color-scheme: light;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-text-fill-color: #333;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
@@ -99,8 +99,8 @@
 }
 
 .login-form button {
-  margin-top: 20px;
-  padding: 12px 24px;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1.5rem;
   background-color: #1a1a1a; /* Color oscuro para el botón */
   color: white;
   border: none;
@@ -144,9 +144,9 @@
   border: 1px solid #41a1af;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border-radius: 5px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  max-width: 320px;
+  padding: 0.75rem 0.875rem;
+  margin-bottom: 1rem;
+  max-width: 20rem;
   text-align: center;
   font-size: 0.88rem;
   line-height: 1.45;

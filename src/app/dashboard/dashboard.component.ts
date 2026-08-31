@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ViewChild, TemplateRef, inject, effect } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
-import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
+import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { NgbPaginationModule, NgbModalModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
@@ -21,7 +22,20 @@ import { EstadoDispositivoService } from '../services/estado-dispositivo.service
 import { MaintenanceService } from '../services/maintenance.service';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
+import { ThemeService } from '../services/theme.service';
 import type { DriveStep } from 'driver.js';
+import {
+  ChartDatum,
+  ChartLegendItem,
+  NETWORK_COLORS,
+  TERMINAL_COLORS,
+  buildColumnChart,
+  buildDoughnutChart,
+  buildHorizontalBarChart,
+  chartClickIndex,
+  dashboardChartPlugins,
+  doughnutLegendItems
+} from './dashboard-charts';
 
 declare var bootstrap: any;
 
@@ -36,22 +50,39 @@ interface ApiResponse<T> {
   standalone: true,
   imports: [
     CommonModule,
-    CanvasJSAngularChartsModule, 
+    BaseChartDirective,
     RouterModule,
     NgbPaginationModule,
     NgbModalModule,
     NotificationContainerComponent
   ],
+  providers: [provideCharts(withDefaultRegisterables())],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('chartModal', { static: true }) chartModal!: TemplateRef<any>;
-  
-  pieChartOptions: any;
-  barChartOptions: any;
-  pieChartOptions2: any;
-  lineChartOptions: any;
+  @ViewChild('expandedChart') expandedChart?: BaseChartDirective;
+
+  pieChartData: ChartData<'doughnut'> | undefined;
+  pieChartOptions: ChartConfiguration<'doughnut'>['options'] | undefined;
+  barChartData: ChartData<'bar'> | undefined;
+  barChartOptions: ChartConfiguration<'bar'>['options'] | undefined;
+  osChartData: ChartData<'bar'> | undefined;
+  osChartOptions: ChartConfiguration<'bar'>['options'] | undefined;
+  networkChartData: ChartData<'doughnut'> | undefined;
+  networkChartOptions: ChartConfiguration<'doughnut'>['options'] | undefined;
+  expandedChartData: ChartData | undefined;
+  expandedChartOptions: ChartConfiguration['options'] | undefined;
+  expandedChartType: ChartType = 'doughnut';
+  private expandedFilterType: string | null = null;
+  private expandedClickItems: ChartDatum[] = [];
+  readonly chartPlugins = dashboardChartPlugins;
+  private terminalesItems: ChartDatum[] = [];
+  private fabricanteItems: ChartDatum[] = [];
+  private osItems: ChartDatum[] = [];
+  private redItems: ChartDatum[] = [];
+  private redChartEmpty = false;
   alerts: Alerta[] = [];
   isChecking: boolean = false;
   isCleaning: boolean = false;
@@ -62,9 +93,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   currentFilter: string = 'all';
   filteredAlerts: Alerta[] = [];
   expandedChartTitle: string = '';
-  expandedChartOptions: any = null;
+  expandedLegendItems: ChartLegendItem[] = [];
   private activeModalRef: any = null;
   private tourCleanup?: () => void;
+  private readonly theme = inject(ThemeService);
 
   private typeMap: Record<string, string> = {
     '0': 'PC',
@@ -90,14 +122,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private maintenanceService: MaintenanceService,
     private guidedTourHost: GuidedTourHostService,
     private tourRegistry: TourRegistryService
-  ) {}
-
-  private getResponsiveFontSize(base: number): number {
-    const width = window.innerWidth;
-    if (width < 600) return Math.round(base * 0.7);
-    if (width < 992) return Math.round(base * 0.85);
-    if (width < 1200) return Math.round(base * 0.95);
-    return base;
+  ) {
+    effect(() => {
+      this.theme.isDark();
+      if (this.barChartOptions || this.osChartOptions) {
+        this.buildCompactCharts();
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -141,246 +173,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           
         }
 
-        // Configuración común para todas las gráficas
-        const commonOptions = {
-          animationEnabled: true,
-          // En las tarjetas pequeñas desactivamos export para que la gente use la versión ampliada
-          // (la exportación de CanvasJS usa el tamaño real del canvas, que en las tarjetas es pequeño).
-          exportEnabled: false,
-          theme: "light2",
-          title: {
-            fontSize: this.getResponsiveFontSize(18), // Aumentado de 16 a 18
-            padding: 15, // Aumentado de 10 a 15
-            fontFamily: "Arial, sans-serif",
-            fontWeight: "bold"
-          },
-          data: [{
-            indexLabelFontSize: this.getResponsiveFontSize(14), // Aumentado de 11 a 14
-            indexLabelMaxWidth: 150, // Aumentado de 100 a 150
-            indexLabelWrap: true,
-            showInLegend: false,
-          }]
-        };
-
-        // Aplicar un valor mínimo a las porciones pequeñas para mejor visibilidad
-        const enhancedTypeData = typeData.map(item => {
-          const minValue = 25; // Reducido de 30 a 25 para mejor proporción
-          const realValue = item.y;
-          const displayValue = realValue < minValue ? minValue : realValue;
-          
-          return {
-            ...item,
-            y: displayValue,
-            toolTipContent: `${item.label}: ${realValue}`,
-            indexLabel: `${item.label}: ${realValue}`, // Mostrar "Nombre: Número"
-            indexLabelFontSize: this.getResponsiveFontSize(14) // Tamaño de fuente específico
-          };
-        });
-
-        this.pieChartOptions = {
-          ...commonOptions,
-          title: { 
-            ...commonOptions.title,
-            text: "Terminales" 
-          },
-          data: [{
-            ...commonOptions.data[0],
-            type: "doughnut",
-            indexLabel: "{label}: {y}",
-            startAngle: -90,
-            dataPoints: enhancedTypeData,
-            click: this.onChartPointClick.bind(this, 'terminales'),
-            indexLabelFontSize: this.getResponsiveFontSize(15), // Aumentado de 13 a 15
-            // Configuraciones para mejorar la visibilidad de porciones pequeñas
-            indexLabelPlacement: "outside",
-            indexLabelOrientation: "horizontal",
-            indexLabelMaxWidth: 140, // Aumentado de 120 a 140
-            indexLabelWrap: true,
-            // Ocultar la leyenda
-            showInLegend: false,
-            // Configurar colores personalizados para mejor visibilidad
-            colorSet: "customColorSet",
-            // Configurar el radio interno para hacer el anillo más grueso
-            innerRadius: "45%", // Reducido de 55% a 45% para anillo más grueso
-            // Configurar el radio externo para asegurar tamaño consistente
-            radius: "85%",
-            // Asegurar animaciones y exportación consistentes
-            animationEnabled: true,
-            exportEnabled: true
-          }],
-          // Configurar colores personalizados
-          colorSet: [
-            "#2E86AB", // Desktop - Azul
-            "#A23B72", // Mini PC - Rosa
-            "#F18F01", // Tower - Naranja
-            "#C73E1D", // Notebook - Rojo
-            "#8E44AD", // Low Profile Desktop - Púrpura
-            "#95A5A6", // Desconocido - Gris
-            "#E67E22"  // Mini Tower - Naranja oscuro
-          ]
-        };
-
-        this.barChartOptions = {
-          ...commonOptions,
-          title: { 
-            ...commonOptions.title,
-            text: "Fabricante",
-            subtitle: {
-              text: "Barras pequeñas ampliadas para mejor visibilidad",
-              fontSize: this.getResponsiveFontSize(12), // Aumentado de 10 a 12
-              fontColor: "#666"
-            }
-          },
-          axisY: { 
-            title: "Cantidad",
-            titleFontSize: this.getResponsiveFontSize(14), // Aumentado de 12 a 14
-            labelFontSize: this.getResponsiveFontSize(13), // Aumentado de 11 a 13
-            minimum: 0,
-            // Dar más espacio para las etiquetas del eje X
-            margin: 20,
-            // Configurar intervalos automáticos
-            interval: "auto",
-            // Agregar formato personalizado para mostrar valores reales
-            labelFormatter: (e: any) => {
-              const value = e.value;
-              // Si el valor es 50 pero el valor real es menor, mostrar el valor real
-              if (value === 50) {
-                const dataPoint = brandData.find(d => d.y < 50);
-                if (dataPoint) {
-                  return `< ${dataPoint.y}`;
-                }
-              }
-              return value;
-            }
-          },
-          axisX: {
-            // Dejar que CanvasJS maneje automáticamente las etiquetas
-            labelAutoFit: true,
-            labelAutoFitFontSizeMin: 8,
-            labelAutoFitFontSizeMax: 14
-          },
-          legend: {
-            cursor: "pointer",
-            itemclick: function (e: any) {
-              if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                e.dataSeries.visible = false;
-              } else {
-                e.dataSeries.visible = true;
-              }
-              e.chart.render();
-            }
-          },
-          data: [{
-            ...commonOptions.data[0],
-            type: "column",
-            dataPoints: brandData.map(d => {
-              const realY = d.y;
-              // Calcular altura mínima: si el valor real es menor a 50, usar 50 como altura visual
-              const visualY = realY < 50 ? 50 : realY;
-              const tooltipText = `${d.originalLabel || d.label}: ${realY} dispositivos`;
-              
-              return {
-                ...d,
-                y: visualY,
-                toolTipContent: tooltipText,
-                indexLabel: String(realY),
-                // Agregar color personalizado para barras pequeñas
-                color: realY < 50 ? "#e74c3c" : undefined,
-                indexLabelFontSize: this.getResponsiveFontSize(12), // Tamaño de fuente específico
-                indexLabelPlacement: "outside", // Colocar etiquetas fuera de las barras
-                indexLabelOrientation: "horizontal" // Orientación horizontal
-              };
-            }),
-            click: this.onChartPointClick.bind(this, 'marca'),
-            indexLabelFontSize: this.getResponsiveFontSize(15), // Aumentado de 13 a 15
-            // Configuraciones adicionales para mejor visibilidad
-            indexLabelMaxWidth: 100, // Limitar ancho de etiquetas de barras
-            indexLabelWrap: true, // Permitir wrap de etiquetas
-            indexLabelBackgroundColor: "rgba(255,255,255,0.8)", // Fondo para mejor legibilidad
-            indexLabelBorderColor: "#ccc", // Borde para separar
-            indexLabelBorderThickness: 1 // Grosor del borde
-          }]
-        };
-
-        this.pieChartOptions2 = {
-          ...commonOptions,
-          title: { 
-            ...commonOptions.title,
-            text: "Sistema Operativo",
-            subtitle: {
-              text: "Barras pequeñas ampliadas para mejor visibilidad",
-              fontSize: this.getResponsiveFontSize(12),
-              fontColor: "#666"
-            }
-          },
-          axisY: { 
-            title: "Cantidad", 
-            labelFontSize: this.getResponsiveFontSize(13),
-            titleFontSize: this.getResponsiveFontSize(14),
-            minimum: 0,
-            margin: 20,
-            interval: "auto",
-            labelFormatter: (e: any) => {
-              const value = e.value;
-              if (value === 50) {
-                const dataPoint = osData.find(d => d.y < 50);
-                if (dataPoint) {
-                  return `< ${dataPoint.y}`;
-                }
-              }
-              return value;
-            }
-          },
-          axisX: {
-            labelFontSize: this.getResponsiveFontSize(12),
-            labelMaxWidth: 100,
-            labelWrap: true,
-            labelAutoFit: true,
-            labelAutoFitFontSizeMin: 8,
-            labelAutoFitFontSizeMax: 14
-          },
-          data: [{
-            ...commonOptions.data[0],
-            type: "bar",
-            dataPoints: osData.map(d => {
-              const realY = d.y;
-              // Calcular altura mínima: si el valor real es menor a 50, usar 50 como altura visual
-              const visualY = realY < 50 ? 50 : realY;
-              const abbreviatedLabel = this.abbreviateOSName(d.label);
-              const tooltipText = `${d.label}: ${realY} dispositivos`;
-              
-              return {
-                ...d,
-                label: abbreviatedLabel, // Usar etiqueta abreviada para mostrar en eje X
-                originalLabel: d.label, // Guardar nombre original para tooltip y filtrado
-                y: visualY,
-                toolTipContent: tooltipText,
-                indexLabel: String(realY), // Mostrar cantidad a la derecha de la barra
-                indexLabelFontSize: this.getResponsiveFontSize(12),
-                indexLabelPlacement: "outside",
-                indexLabelOrientation: "horizontal",
-                indexLabelMaxWidth: 60,
-                indexLabelWrap: true,
-                indexLabelBackgroundColor: "rgba(255,255,255,0.9)",
-                indexLabelBorderColor: "#ddd",
-                indexLabelBorderThickness: 1,
-                // Agregar color personalizado para barras pequeñas
-                color: realY < 50 ? "#e74c3c" : undefined
-              };
-            }),
-            click: this.onChartPointClick.bind(this, 'osName')
-          }]
-        };
-
-        this.prepareNetworkChart(networkData, commonOptions);
+        this.terminalesItems = typeData;
+        this.fabricanteItems = brandData;
+        this.osItems = osData.map((d) => ({
+          label: this.abbreviateOSName(d.label),
+          originalLabel: d.label,
+          y: d.y
+        }));
+        this.buildCompactCharts();
+        this.prepareNetworkChart(networkData);
       },
       (error) => {
         console.error('Error al cargar los datos', error);
-        
-        // Verificar si es un error de autenticación (posible reseteo de base de datos)
-        if (error.status === 401) {
-          this.authService.handleDatabaseReset();
-        }
       }
     );
   }
@@ -389,17 +193,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     // Inicializar todos los tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     Array.from(tooltipTriggerList).forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-    
-    // Ajustar coordenadas del mouse para compensar el zoom del body
-    this.fixChartMouseCoordinates();
-  }
-
-  private fixChartMouseCoordinates(): void {
-    // NOTA: La corrección del desfase del mouse ahora se maneja con CSS
-    // aplicando zoom: 1.25 a .chart-card canvasjs-chart en dashboard.component.css
-    // Esto compensa el zoom: 0.8 del body (1/0.8 = 1.25)
-    // 
-    // Se mantiene esta función vacía por compatibilidad pero ya no es necesaria.
   }
 
   loadAlertas(): void {
@@ -411,11 +204,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error => {
         console.error('Error al cargar las alertas', error);
-        
-        // Verificar si es un error de autenticación (posible reseteo de base de datos)
-        if (error.status === 401) {
-          this.authService.handleDatabaseReset();
-        }
       }
     );
   }
@@ -752,6 +540,39 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }, {});
   }
 
+  onTerminalesClick(event: { active?: object[] }): void {
+    this.onChartClick('terminales', event, this.terminalesItems);
+  }
+
+  onFabricanteClick(event: { active?: object[] }): void {
+    this.onChartClick('marca', event, this.fabricanteItems);
+  }
+
+  onOsClick(event: { active?: object[] }): void {
+    this.onChartClick('osName', event, this.osItems);
+  }
+
+  onRedClick(event: { active?: object[] }): void {
+    if (this.redChartEmpty) return;
+    this.onChartClick('dispositivos', event, this.redItems);
+  }
+
+  onChartClick(
+    filterType: string,
+    event: { active?: object[] },
+    items: ChartDatum[],
+    allowEmpty = false
+  ): void {
+    const index = chartClickIndex(event);
+    if (index === null) return;
+    const point = items[index];
+    if (!point) return;
+    if (!allowEmpty && (point.label === 'Sin datos' || point.label === 'Sin dispositivos de red')) {
+      return;
+    }
+    this.onChartPointClick(filterType, { dataPoint: point });
+  }
+
   onChartPointClick(filterType: string, e: any) {
     // Usar el nombre original si está disponible, sino usar el label
     const filterValue = e.dataPoint.originalLabel || e.dataPoint.label;
@@ -784,13 +605,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   closeModal(modal: any): void {
-    // Limpiar la referencia del modal
     this.activeModalRef = null;
-    // Cerrar el modal
+    this.expandedLegendItems = [];
     modal.close();
   }
 
   checkHardwareChanges(): void {
+    if (this.denyUnless(this.canConfirmAlerts(), 'verificar cambios de hardware')) return;
     if (this.isChecking) return;
     
     // Guardar la página actual antes de verificar cambios
@@ -838,6 +659,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   cleanupOrphanedAlerts(): void {
+    if (this.denyUnless(this.canConfirmAlerts(), 'limpiar alertas')) return;
     if (this.isCleaning) return;
     
     // Guardar la página actual antes de limpiar
@@ -881,14 +703,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async actualizarDispositivos(): Promise<void> {
-    // Verificar permisos antes de proceder
-    if (!this.permissionsService.canUpdateNetworkDevices()) {
-      this.notificationService.showError(
-        'Permisos Insuficientes', 
-        'No tienes permisos para actualizar dispositivos de red. Solo los administradores y Game Masters pueden realizar esta acción.'
-      );
-      return;
-    }
+    if (this.denyUnless(this.canUpdateDevices(), 'actualizar dispositivos de red')) return;
 
     this.isUpdatingDevices = true;
     
@@ -935,35 +750,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       });
   }
 
-  private prepareNetworkChart(networkData: NetworkInfoDTO[], commonOptions: any): void {
-    // Asegurarnos de que networkData sea un array
+  private prepareNetworkChart(networkData: NetworkInfoDTO[]): void {
     const networkArray = Array.isArray(networkData) ? networkData : [];
-    
-    // Si no hay datos, mostrar un mensaje en la gráfica
+
     if (networkArray.length === 0) {
-      this.lineChartOptions = {
-        ...commonOptions,
-        title: {
-          ...commonOptions.title,
-          text: "Dispositivos de Red"
-        },
-        data: [{
-          ...commonOptions.data[0],
-          type: "pie",
-          startAngle: -90,
-          dataPoints: [{
-            label: "Sin datos",
-            y: 1,
-            indexLabel: "Sin dispositivos de red",
-            indexLabelFontSize: this.getResponsiveFontSize(14)
-          }]
-        }]
-      };
+      this.redItems = [];
+      this.redChartEmpty = true;
+      const empty = buildDoughnutChart([], NETWORK_COLORS, true, 'Sin dispositivos de red');
+      this.networkChartData = empty.data;
+      this.networkChartOptions = empty.options;
       return;
     }
 
     const devicesByType = networkArray.reduce((acc: Record<string, any[]>, device: NetworkInfoDTO) => {
-      // Asegurarnos de que el dispositivo tenga un tipo válido
       const type = device.type || 'Desconocido';
       if (!acc[type]) {
         acc[type] = [];
@@ -972,64 +771,28 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       return acc;
     }, {});
 
-            // Aplicar el mismo procesamiento de datos que en la gráfica de terminales
-        const dataPoints = Object.entries(devicesByType).map(([type, devices]) => {
-          const realValue = devices.length;
-          const minValue = 25; // Mismo valor mínimo que en terminales
-          const displayValue = realValue < minValue ? minValue : realValue;
-          
-          return {
-            label: type,
-            y: displayValue,
-            toolTipContent: `${type}: ${realValue}`,
-            indexLabel: `${type}: ${realValue}`, // Mostrar "Nombre: Número"
-            indexLabelFontSize: this.getResponsiveFontSize(14) // Tamaño de fuente específico
-          };
-        });
+    this.redItems = Object.entries(devicesByType).map(([type, devices]) => ({
+      label: type,
+      y: devices.length
+    }));
+    this.redChartEmpty = false;
+    const chart = buildDoughnutChart(this.redItems, NETWORK_COLORS, true);
+    this.networkChartData = chart.data;
+    this.networkChartOptions = chart.options;
+  }
 
-    this.lineChartOptions = {
-      ...commonOptions,
-      title: {
-        ...commonOptions.title,
-        text: "Dispositivos de Red"
-      },
-      data: [{
-        ...commonOptions.data[0],
-        type: "doughnut",
-        indexLabel: "{label}: {y}",
-        startAngle: -90,
-        dataPoints: dataPoints,
-        click: this.onChartPointClick.bind(this, 'dispositivos'),
-        indexLabelFontSize: this.getResponsiveFontSize(15),
-        // Configuraciones para mejorar la visibilidad de porciones pequeñas
-        indexLabelPlacement: "outside",
-        indexLabelOrientation: "horizontal",
-        indexLabelMaxWidth: 140,
-        indexLabelWrap: true,
-        // Ocultar la leyenda
-        showInLegend: false,
-        // Configurar colores personalizados para mejor visibilidad
-        colorSet: "customColorSet",
-        // Configurar el radio interno para hacer el anillo más grueso
-        innerRadius: "45%",
-        // Configurar el radio externo para asegurar tamaño consistente
-        radius: "85%",
-        // Asegurar animaciones y exportación consistentes
-        animationEnabled: true,
-        exportEnabled: true
-      }],
-      // Configurar colores personalizados para dispositivos de red
-      colorSet: [
-        "#3498db", // Router - Azul
-        "#e74c3c", // Switch - Rojo
-        "#2ecc71", // Access Point - Verde
-        "#f39c12", // Firewall - Naranja
-        "#9b59b6", // Modem - Púrpura
-        "#1abc9c", // Bridge - Turquesa
-        "#34495e", // Gateway - Gris oscuro
-        "#e67e22"  // Otros - Naranja oscuro
-      ]
-    };
+  private buildCompactCharts(): void {
+    const terminales = buildDoughnutChart(this.terminalesItems, TERMINAL_COLORS, true);
+    this.pieChartData = terminales.data;
+    this.pieChartOptions = terminales.options;
+
+    const fabricante = buildColumnChart(this.fabricanteItems, true);
+    this.barChartData = fabricante.data;
+    this.barChartOptions = fabricante.options;
+
+    const os = buildHorizontalBarChart(this.osItems, true, false);
+    this.osChartData = os.data;
+    this.osChartOptions = os.options;
   }
 
   showNewHardwareMessage(): void {
@@ -1053,93 +816,137 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.permissionsService.canUpdateNetworkDevices();
   }
 
+  private denyUnless(allowed: boolean, accion: string): boolean {
+    if (allowed) return false;
+    this.notificationService.showError(
+      'Sin permisos suficientes',
+      `No tenés permisos para ${accion}. Hace falta rol de administrador o Game Master.`
+    );
+    return true;
+  }
+
   expandChart(chartType: string): void {
-    let chartOptions: any = null;
-    let title: string = '';
+    let title = '';
+    let type: ChartType = 'doughnut';
+    let data: ChartData | undefined;
+    let options: ChartConfiguration['options'] | undefined;
+    let filterType: string | null = null;
+    let clickItems: ChartDatum[] = [];
+    let legend: ChartLegendItem[] = [];
 
     switch (chartType) {
-      case 'terminales':
-        chartOptions = this.pieChartOptions;
+      case 'terminales': {
         title = 'Distribución de Terminales';
+        const chart = buildDoughnutChart(this.terminalesItems, TERMINAL_COLORS, false);
+        type = 'doughnut';
+        data = chart.data;
+        options = chart.options;
+        filterType = 'terminales';
+        clickItems = this.terminalesItems;
+        legend = doughnutLegendItems(this.terminalesItems, TERMINAL_COLORS);
         break;
-      case 'fabricante':
-        chartOptions = this.barChartOptions;
+      }
+      case 'fabricante': {
         title = 'Fabricantes de Equipos';
+        const chart = buildColumnChart(this.fabricanteItems, false);
+        type = 'bar';
+        data = chart.data;
+        options = chart.options;
+        filterType = 'marca';
+        clickItems = this.fabricanteItems;
         break;
-      case 'sistema-operativo':
-        chartOptions = this.pieChartOptions2;
+      }
+      case 'sistema-operativo': {
         title = 'Sistemas Operativos';
+        const chart = buildHorizontalBarChart(this.osItems, false, true);
+        type = 'bar';
+        data = chart.data;
+        options = chart.options;
+        filterType = 'osName';
+        clickItems = this.osItems;
         break;
-      case 'red':
-        chartOptions = this.lineChartOptions;
+      }
+      case 'red': {
         title = 'Dispositivos de Red';
+        const chart = this.redChartEmpty
+          ? buildDoughnutChart([], NETWORK_COLORS, false, 'Sin dispositivos de red')
+          : buildDoughnutChart(this.redItems, NETWORK_COLORS, false);
+        type = 'doughnut';
+        data = chart.data;
+        options = chart.options;
+        filterType = this.redChartEmpty ? null : 'dispositivos';
+        clickItems = this.redItems;
+        legend = this.redChartEmpty
+          ? []
+          : doughnutLegendItems(this.redItems, NETWORK_COLORS);
         break;
+      }
       default:
         return;
     }
 
-    if (chartOptions) {
-      const isOSChart = chartType === 'sistema-operativo';
-      // Crear una copia de las opciones con configuraciones optimizadas para el modal
-      this.expandedChartOptions = {
-        ...chartOptions,
-        // En la versión ampliada sí activamos la exportación para que siempre salga grande
-        exportEnabled: true,
-        axisX: isOSChart
-          ? {
-              ...chartOptions.axisX,
-              // Evitar truncado con "...": forzamos wrap y suficiente ancho para el modal
-              labelAutoFit: false,
-              labelMaxWidth: 240,
-              labelWrap: true
-            }
-          : chartOptions.axisX,
-        title: {
-          ...chartOptions.title,
-          fontSize: 24, // Título más grande para el modal
-          padding: 20,
-          horizontalAlign: "center"
-        },
-        data: chartOptions.data.map((dataSeries: any) => {
-          const seriesCopy: any = {
-            ...dataSeries,
-            indexLabelFontSize: 16, // Etiquetas más grandes
-            indexLabelMaxWidth: 200, // Más espacio para etiquetas
-            toolTipContent: dataSeries.toolTipContent || "{label}: {y}"
-          };
+    this.expandedChartTitle = title;
+    this.expandedChartType = type;
+    this.expandedChartData = data;
+    this.expandedChartOptions = options;
+    this.expandedFilterType = filterType;
+    this.expandedClickItems = clickItems;
+    this.expandedLegendItems = legend;
 
-          // Para Sistema Operativo: en la vista chica usamos etiqueta abreviada.
-          // En el modal, mostramos el nombre completo para que no se corte.
-          if (isOSChart && Array.isArray(seriesCopy.dataPoints)) {
-            seriesCopy.dataPoints = seriesCopy.dataPoints.map((dp: any) => ({
-              ...dp,
-              label: dp.originalLabel || dp.label
-            }));
-          }
+    const withLegend = legend.length > 0;
+    this.activeModalRef = this.modalService.open(this.chartModal, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false,
+      centered: true,
+      windowClass: withLegend ? 'chart-modal-xl chart-modal-xl--legend' : 'chart-modal-xl',
+      modalDialogClass: withLegend ? 'chart-modal-dialog chart-modal-dialog--legend' : 'chart-modal-dialog'
+    });
 
-          return seriesCopy;
-        })
-      };
+    setTimeout(() => this.cdr.detectChanges(), 200);
+  }
 
-      this.expandedChartTitle = title;
+  downloadExpandedChart(): void {
+    const image = this.getExpandedChartImage();
+    if (!image) return;
+    const link = document.createElement('a');
+    link.href = image;
+    link.download = `${this.expandedChartTitle || 'grafica'}.png`;
+    link.click();
+  }
 
-      // Mostrar el modal usando NgbModal
-      this.activeModalRef = this.modalService.open(this.chartModal, {
-        size: 'xl',
-        backdrop: 'static',
-        keyboard: false,
-        centered: true,
-        windowClass: 'chart-modal-xl',
-        modalDialogClass: 'chart-modal-dialog'
-      });
-      
-      // Forzar la detección de cambios después de que el modal se abra
-      setTimeout(() => {
-        this.cdr.detectChanges();
-      }, 200);
-      
-    } else {
-    }
+  printExpandedChart(): void {
+    const image = this.getExpandedChartImage();
+    if (!image) return;
+    const popup = window.open('', '_blank');
+    if (!popup) return;
+    popup.document.write(
+      `<html><head><title>${this.expandedChartTitle}</title></head><body style="margin:0;text-align:center"><img src="${image}" style="max-width:100%"/></body></html>`
+    );
+    popup.document.close();
+    popup.focus();
+    popup.print();
+  }
+
+  private getExpandedChartImage(): string | null {
+    const fromDirective = this.expandedChart?.toBase64Image();
+    if (fromDirective) return fromDirective;
+    const canvas = document.querySelector('.expanded-chart-container canvas') as HTMLCanvasElement | null;
+    return canvas ? canvas.toDataURL('image/png', 1) : null;
+  }
+
+  onExpandedChartClick(event: { active?: object[] }): void {
+    if (!this.expandedFilterType) return;
+    this.onChartClick(this.expandedFilterType, event, this.expandedClickItems);
+  }
+
+  onExpandedLegendClick(item: ChartLegendItem): void {
+    if (!this.expandedFilterType) return;
+    const point = this.expandedClickItems.find(
+      (entry) => (entry.originalLabel || entry.label) === item.label
+    );
+    if (!point) return;
+    this.onChartPointClick(this.expandedFilterType, { dataPoint: point });
   }
 
   filterAlerts(filterType: string): void {

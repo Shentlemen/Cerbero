@@ -26,8 +26,52 @@
   padding-top: 0.15rem;
 }
 
-.subnets-header-actions .btn-export {
+.subnets-page .btn.btn-excel,
+.subnets-page .actions .btn.btn-export.btn-excel {
   white-space: nowrap;
+  background-color: #217346 !important;
+  border: 1px solid #217346 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(33, 115, 70, 0.28);
+}
+
+.subnets-page .btn.btn-excel i,
+.subnets-page .actions .btn.btn-export.btn-excel i {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.subnets-page .btn.btn-excel:hover:not(:disabled),
+.subnets-page .actions .btn.btn-export.btn-excel:hover:not(:disabled) {
+  background-color: #185c37 !important;
+  border-color: #185c37 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(33, 115, 70, 0.35);
+}
+
+.subnets-page .btn.btn-excel:hover:not(:disabled) i,
+.subnets-page .actions .btn.btn-export.btn-excel:hover:not(:disabled) i {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.subnets-page .btn.btn-excel:focus-visible,
+.subnets-page .actions .btn.btn-export.btn-excel:focus-visible {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(33, 115, 70, 0.35);
+}
+
+.subnets-page .btn.btn-excel:disabled,
+.subnets-page .actions .btn.btn-export.btn-excel:disabled {
+  background-color: #217346 !important;
+  border-color: #217346 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 0.65;
 }
 
 .subnets-toolbar {
@@ -427,6 +471,27 @@
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   border: 1px solid #e5e7eb;
+  /* Evita "Unable to preventDefault inside passive event listener" al arrastrar/zoomear */
+  touch-action: none;
+  background: #d7e3ec;
+}
+
+.subnets-map-hint--offline {
+  color: #6b7280;
+}
+
+:host ::ng-deep .leaflet-container {
+  touch-action: none;
+  background: #d7e3ec;
+}
+
+:host ::ng-deep .subnets-map--offline-basemap,
+:host ::ng-deep .subnets-map--offline-basemap.leaflet-container {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px),
+    #d7e3ec;
+  background-size: 64px 64px;
 }
 
 .subnets-map-block--dimmed {
@@ -680,24 +745,17 @@
 .subnet-hw-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1050;
   padding: 1rem;
-  animation: subnetHwFadeIn 0.15s ease-out;
 }
 
 .subnet-hw-modal-backdrop--closed {
   display: none !important;
   pointer-events: none;
-  animation: none;
-}
-
-@keyframes subnetHwFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .subnet-hw-modal {

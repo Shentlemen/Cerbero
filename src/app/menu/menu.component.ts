@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
@@ -10,6 +10,7 @@ import { User } from '../interfaces/auth.interface';
 import { PermissionsService } from '../services/permissions.service';
 import { getDefaultVersionInfo } from '../version';
 import { VersionService } from '../services/version.service';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-menu',
@@ -22,16 +23,19 @@ import { VersionService } from '../services/version.service';
     UserHeaderComponent,
     AppHeaderComponent
   ],
+  host: {
+    '[class.theme-dark]': 'isDark()'
+  },
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.css']
 })
 export class MenuComponent implements OnInit, OnDestroy {
-  /** Top del layout bajo el header (60px o 60px + franja vista previa GM). */
-  layoutTopPx = 60;
+  readonly isDark = inject(ThemeService).isDark;
+  /** Top del layout bajo el header (48px o 48px + franja vista previa GM). */
+  layoutTopPx = 48;
   private layoutSub?: Subscription;
 
   isAssetsExpanded: boolean = false;
-  isConfigExpanded: boolean = false;
   isAlmacenExpanded: boolean = false;
   isAdminExpanded: boolean = false;
   isAdquisicionesExpanded: boolean = false;
@@ -40,16 +44,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   private routerSubscription: Subscription;
 
   // Arrays con las rutas específicas de cada sección
-  private assetsRoutes = ['/menu/assets', '/menu/devices'];
-  private configRoutes = [
-    '/menu/locations',
-    '/menu/subnets',
-    '/menu/procurement/tipos-activo',
-    '/menu/procurement/tipos-compra',
-    '/menu/procurement/usuarios',
-    '/menu/almacen/config',
-    '/menu/settings'
-  ];
+  private assetsRoutes = ['/menu/assets', '/menu/devices', '/menu/subnets'];
   private adminRoutes = [
     '/menu/settings',
     '/menu/user-management'
@@ -65,6 +60,9 @@ export class MenuComponent implements OnInit, OnDestroy {
   private almacenRoutes = [
     '/menu/almacen/almacenes',
     '/menu/almacen/stock',
+    '/menu/almacen/config',
+    '/menu/almacen/configuracion',
+    '/menu/almacen/configuracion/planta',
     '/menu/almacen/3d-demo',
     '/menu/cementerio',
     '/menu/almacen-laboratorio'
@@ -83,7 +81,6 @@ export class MenuComponent implements OnInit, OnDestroy {
       
       // Verificar si la ruta actual pertenece a alguna sección
       const isAssetsRoute = this.assetsRoutes.some(route => url.startsWith(route));
-      const isConfigRoute = this.configRoutes.some(route => url.startsWith(route));
       const isAlmacenRoute = this.almacenRoutes.some(route => url.startsWith(route));
       const isAdminRoute = this.adminRoutes.some(route => url.startsWith(route));
       const isAdquisicionesRoute = this.adquisicionesRoutes.some(route => url.startsWith(route));
@@ -92,44 +89,31 @@ export class MenuComponent implements OnInit, OnDestroy {
       // Actualizar estados de los submenús
       if (isAssetsRoute) {
         this.isAssetsExpanded = true;
-        this.isConfigExpanded = false;
-        this.isAlmacenExpanded = false;
-        this.isAdminExpanded = false;
-        this.isAdquisicionesExpanded = false;
-      } else if (isConfigRoute) {
-        this.isConfigExpanded = true;
-        this.isAssetsExpanded = false;
         this.isAlmacenExpanded = false;
         this.isAdminExpanded = false;
         this.isAdquisicionesExpanded = false;
       } else if (isAlmacenRoute) {
         this.isAlmacenExpanded = true;
         this.isAssetsExpanded = false;
-        this.isConfigExpanded = false;
         this.isAdminExpanded = false;
         this.isAdquisicionesExpanded = false;
       } else if (isAdminRoute) {
         this.isAdminExpanded = true;
         this.isAssetsExpanded = false;
-        this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
         this.isAdquisicionesExpanded = false;
       } else if (isAdquisicionesRoute) {
         this.isAdquisicionesExpanded = true;
         this.isAssetsExpanded = false;
-        this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
         this.isAdminExpanded = false;
       } else if (isTicketsRoute) {
         this.isAssetsExpanded = false;
-        this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
         this.isAdminExpanded = false;
         this.isAdquisicionesExpanded = false;
       } else {
-        // Si no es ninguna de las rutas anteriores, cerrar todos los submenús
         this.isAssetsExpanded = false;
-        this.isConfigExpanded = false;
         this.isAlmacenExpanded = false;
         this.isAdminExpanded = false;
         this.isAdquisicionesExpanded = false;
@@ -154,8 +138,8 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   private updateLayoutTop(): void {
-    const mainRow = 60;
-    const previewStrip = this.permissionsService.isGmPreviewActive() ? 52 : 0;
+    const mainRow = 48;
+    const previewStrip = this.permissionsService.isGmPreviewActive() ? 42 : 0;
     this.layoutTopPx = mainRow + previewStrip;
   }
 
@@ -169,16 +153,6 @@ export class MenuComponent implements OnInit, OnDestroy {
   toggleAssetsMenu(): void {
     this.isAssetsExpanded = !this.isAssetsExpanded;
     if (this.isAssetsExpanded) {
-      this.isConfigExpanded = false;
-      this.isAlmacenExpanded = false;
-      this.isAdquisicionesExpanded = false;
-    }
-  }
-
-  toggleConfigMenu(): void {
-    this.isConfigExpanded = !this.isConfigExpanded;
-    if (this.isConfigExpanded) {
-      this.isAssetsExpanded = false;
       this.isAlmacenExpanded = false;
       this.isAdquisicionesExpanded = false;
     }
@@ -188,7 +162,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.isAlmacenExpanded = !this.isAlmacenExpanded;
     if (this.isAlmacenExpanded) {
       this.isAssetsExpanded = false;
-      this.isConfigExpanded = false;
       this.isAdquisicionesExpanded = false;
     }
   }
@@ -197,7 +170,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.isAdminExpanded = !this.isAdminExpanded;
     if (this.isAdminExpanded) {
       this.isAssetsExpanded = false;
-      this.isConfigExpanded = false;
       this.isAlmacenExpanded = false;
       this.isAdquisicionesExpanded = false;
     }
@@ -207,7 +179,6 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.isAdquisicionesExpanded = !this.isAdquisicionesExpanded;
     if (this.isAdquisicionesExpanded) {
       this.isAssetsExpanded = false;
-      this.isConfigExpanded = false;
       this.isAlmacenExpanded = false;
       this.isAdminExpanded = false;
     }
@@ -217,42 +188,21 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.permissionsService.isGM();
   }
 
-  canAccessConfiguration(): boolean {
-    return this.permissionsService.canAccessConfiguration();
+  canManageSubnets(): boolean {
+    return this.permissionsService.canManageSubnets();
   }
 
-  canAccessLocationsConfiguration(): boolean {
+  /**
+   * Hub de Configuración: GM / Admin (todas las pestañas) e INVENTARIO
+   * (ubicaciones, tipos de activo y responsables). El rol ALMACEN usa
+   * «Configuración de almacén» dentro del menú Almacén.
+   */
+  canShowConfigurationMenu(): boolean {
     return this.permissionsService.canAccessLocationsConfiguration();
-  }
-
-  canAccessTiposActivoConfiguration(): boolean {
-    return this.permissionsService.canAccessTiposActivoConfiguration();
-  }
-
-  canAccessUsuariosResponsablesConfiguration(): boolean {
-    return this.permissionsService.canAccessUsuariosResponsablesConfiguration();
   }
 
   canAccessWarehouseConfiguration(): boolean {
     return this.permissionsService.canAccessWarehouseConfiguration();
-  }
-
-  canManageTicketBandejas(): boolean {
-    return this.permissionsService.canManageTicketBandejas();
-  }
-
-  /**
-   * El submenú Configuración se muestra para:
-   *  - GM / Admin (ítems completos vía `canAccessConfiguration`).
-   *  - INVENTARIO: ubicaciones, tipos de activo y responsables.
-   *  - ALMACEN: solo «ALMACÉN CONFIG».
-   */
-  canShowConfigurationMenu(): boolean {
-    return (
-      this.canAccessConfiguration() ||
-      this.canAccessWarehouseConfiguration() ||
-      this.canAccessLocationsConfiguration()
-    );
   }
 
   canAccessAdministration(): boolean {
@@ -297,6 +247,6 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   goToProfile(): void {
-    this.router.navigate(['/user-profile']);
+    this.router.navigate(['/menu/user-profile']);
   }
 }

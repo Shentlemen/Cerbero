@@ -59,6 +59,7 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
       title: 'Tour de tipos de activo',
       icon: 'fa-route',
       steps: [
+        { selector: '#tour-config-hub-tabs', title: 'Secciones de configuración', description: 'Ubicaciones, tipos de activo, tipos de compra, responsables y tickets. Cada pestaña abre su catálogo en el panel de abajo.', side: 'bottom' },
         { selector: '#tour-tipos-activo-title', title: 'Tipos de activo', description: 'Catálogo usado al dar de alta equipos en inventario Cerbero; cada tipo puede tener usuario responsable por defecto.', side: 'bottom' },
         { selector: '#tour-tipos-activo-nuevo', title: 'Nuevo tipo', description: 'Creá descripción y vinculá el usuario responsable automático en altas.', side: 'left' },
         { selector: '#tour-tipos-activo-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por ID, descripción o usuario responsable.', side: 'bottom' },
@@ -207,7 +208,8 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
     this.tipoActivoSeleccionado = null;
     this.tipoActivoForm.reset();
     this.modalService.open(this.tipoActivoModal, {
-      backdrop: false
+      centered: true,
+      backdrop: true
     });
   }
 
@@ -219,7 +221,8 @@ export class TiposActivoComponent implements OnInit, OnDestroy {
       idUsuario: tipo.idUsuario
     });
     this.modalService.open(this.tipoActivoModal, {
-      backdrop: false
+      centered: true,
+      backdrop: true
     });
   }
 

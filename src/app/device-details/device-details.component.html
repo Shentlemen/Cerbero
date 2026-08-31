@@ -1,7 +1,7 @@
 <div class="device-details-container">
   <div class="header-section">
     <div class="title-wrapper">
-      <h1>
+        <h1 id="tour-device-details-title">
         <i class="fas fa-network-wired"></i>
         {{ device?.name || 'Dispositivo' }}
       </h1>
@@ -9,7 +9,7 @@
   </div>
 
   <div class="content-section">
-    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs" id="tour-device-details-tabs">
       <li [ngbNavItem]="1">
         <a ngbNavLink>General</a>
         <ng-template ngbNavContent>
@@ -29,7 +29,7 @@
                 {{ error }}
               </div>
 
-              <div *ngIf="!loading && !error">
+              <div *ngIf="!loading && !error" id="tour-device-details-info">
                 <div class="row">
                   <div class="col-md-4">
                     <p><strong>Nombre:</strong> {{device?.name}}</p>
@@ -55,7 +55,7 @@
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
               <h4>Ubicación del Dispositivo</h4>
-              <button class="btn btn-primary" (click)="seleccionarUbicacion()" [disabled]="loading">
+              <button class="btn btn-primary btn-sm" id="tour-device-details-ubicacion-btn" (click)="seleccionarUbicacion()" [disabled]="loading">
                 <i class="fas fa-map-marker-alt me-2"></i>
                 {{ ubicacionActual ? 'Actualizar Ubicación' : 'Asignar Ubicación' }}
               </button>
@@ -107,7 +107,7 @@
 
   <!-- Agregamos el footer con el botón volver -->
   <div class="footer-section">
-    <button class="btn btn-secondary" (click)="volver()">
+    <button class="btn btn-secondary" id="tour-device-details-back" (click)="volver()">
       <i class="fas fa-arrow-left me-2"></i>Volver
     </button>
   </div>

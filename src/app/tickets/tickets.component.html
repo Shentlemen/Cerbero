@@ -1,6 +1,6 @@
 <app-notification-container></app-notification-container>
 
-<div class="tickets-container">
+<div class="tickets-container tickets-ig">
   <div class="header-section tickets-header">
     <div class="title-row">
       <div class="title-wrapper">
@@ -9,245 +9,141 @@
           Tickets / Reclamos
         </h1>
       </div>
-      <div
-        class="actions d-flex justify-content-end align-items-center"
-        style="gap: 1rem"
-        *ngIf="canCreateTickets()">
-        <button
-          type="button"
-          class="btn btn-sm btn-export btn-agregar-nuevo"
-          id="tour-tickets-nuevo"
-          (click)="abrirModalTicketNuevo(ticketNuevoModal)">
-          <i class="fas fa-plus me-2" aria-hidden="true"></i>
-          Nuevo ticket
-        </button>
-      </div>
-    </div>
-    <div class="tickets-filter-row" id="tour-tickets-filters">
-      <label class="tickets-filter-label">Estado</label>
-      <select
-        class="form-select form-select-sm tickets-filter-select"
-        [(ngModel)]="estadoFiltro"
-        (change)="cargarTickets()">
-        <option value="">Todos</option>
-        <option *ngFor="let estado of estadosBandeja" [value]="estado">{{ getEstadoLabel(estado) }}</option>
-      </select>
-      <label class="tickets-filter-label">Área</label>
-      <select class="form-select form-select-sm tickets-filter-select" [(ngModel)]="filtroArea" (ngModelChange)="onFiltroVistaLocalChange()">
-        <option value="">Todas</option>
-        <option *ngFor="let area of areasTicket" [value]="area">{{ getAreaLabel(area) }} ({{ area }})</option>
-      </select>
-      <label class="tickets-filter-label" for="tickets-busqueda-global">Buscar</label>
-      <input
-        id="tickets-busqueda-global"
-        type="search"
-        class="form-control form-control-sm tickets-filter-input tickets-filter-busqueda"
-        [(ngModel)]="busquedaCodigoTitulo"
-        (ngModelChange)="onFiltroVistaLocalChange()"
-        placeholder="Código o título…"
-        autocomplete="off"
-        aria-describedby="tickets-busqueda-hint" />
-      <span id="tickets-busqueda-hint" class="visually-hidden">Coincidencias por código o título en la bandeja activa.</span>
-    </div>
-
-    <div class="tickets-toolbar-secondary" id="tour-tickets-tabs">
-      <div class="tickets-tabs" role="tablist" aria-label="Bandejas de tickets">
-        <button
-          type="button"
-          role="tab"
-          class="tickets-tab"
-          [class.tickets-tab--active]="vistaBandeja === 'area'"
-          [attr.aria-selected]="vistaBandeja === 'area'"
-          (click)="cambiarVistaBandeja('area')">
-          <i class="fas fa-inbox" aria-hidden="true"></i>
-          <span>Bandeja del área</span>
-          <span class="tickets-tab-badge">{{ contadorVista('area') }}</span>
-          <span *ngIf="contadorNoLeidos('area') > 0" class="tickets-tab-dot" [attr.title]="contadorNoLeidos('area') + ' sin leer'"></span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="tickets-tab"
-          [class.tickets-tab--active]="vistaBandeja === 'mios'"
-          [attr.aria-selected]="vistaBandeja === 'mios'"
-          (click)="cambiarVistaBandeja('mios')">
-          <i class="fas fa-user-check" aria-hidden="true"></i>
-          <span>Mis tickets</span>
-          <span class="tickets-tab-badge">{{ contadorVista('mios') }}</span>
-          <span *ngIf="contadorNoLeidos('mios') > 0" class="tickets-tab-dot" [attr.title]="contadorNoLeidos('mios') + ' sin leer'"></span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="tickets-tab"
-          [class.tickets-tab--active]="vistaBandeja === 'cerrados'"
-          [attr.aria-selected]="vistaBandeja === 'cerrados'"
-          (click)="cambiarVistaBandeja('cerrados')">
-          <i class="fas fa-archive" aria-hidden="true"></i>
-          <span>Cerrados</span>
-          <span class="tickets-tab-badge tickets-tab-badge--muted">{{ contadorVista('cerrados') }}</span>
-        </button>
-      </div>
     </div>
   </div>
 
-  <div class="tickets-panels" id="tour-tickets-panels">
-    <div
-      class="tickets-split"
-      [class.tickets-split--mobile-detail]="selectedTicketId !== null">
-      <aside
-        class="tickets-split-list"
-        [attr.aria-labelledby]="'tickets-panel-heading-' + vistaBandeja">
-        <h2 [id]="'tickets-panel-heading-' + vistaBandeja" class="visually-hidden">
-          {{ vistaBandeja === 'area' ? 'Bandeja del área' : vistaBandeja === 'mios' ? 'Mis tickets' : 'Tickets cerrados' }}
-        </h2>
+  <div
+    class="tickets-ig-workspace"
+    id="tour-tickets-panels"
+    [class.tickets-ig-workspace--detail]="selectedTicketId !== null">
 
-        <div class="tickets-split-list-toolbar">
-          <span class="tickets-split-list-title">
-            {{
-              vistaBandeja === 'area'
-                ? 'Bandeja del área'
-                : vistaBandeja === 'mios'
-                  ? 'Mis tickets'
-                  : 'Cerrados'
-            }}
-          </span>
-          <div class="tickets-split-list-toolbar-actions">
+    <div class="tickets-ig-stage" [attr.data-tab]="vistaBandeja">
+    <div class="tickets-ig-tabs" id="tour-tickets-tabs" role="tablist" aria-label="Bandejas de tickets">
+      <button
+        type="button"
+        role="tab"
+        class="tickets-ig-tab tickets-ig-tab--inbox"
+        [class.tickets-ig-tab--active]="vistaBandeja === 'area'"
+        [attr.aria-selected]="vistaBandeja === 'area'"
+        (click)="cambiarVistaBandeja('area')">
+        <span class="tickets-ig-tab-square" aria-hidden="true">
+          {{ contadorVista('area') }}
+          <span *ngIf="contadorNoLeidos('area') > 0" class="tickets-ig-tab-dot"></span>
+        </span>
+        <span class="tickets-ig-tab-label">Bandeja del área</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tickets-ig-tab tickets-ig-tab--mine"
+        [class.tickets-ig-tab--active]="vistaBandeja === 'mios'"
+        [attr.aria-selected]="vistaBandeja === 'mios'"
+        (click)="cambiarVistaBandeja('mios')">
+        <span class="tickets-ig-tab-square" aria-hidden="true">
+          {{ contadorVista('mios') }}
+          <span *ngIf="contadorNoLeidos('mios') > 0" class="tickets-ig-tab-dot"></span>
+        </span>
+        <span class="tickets-ig-tab-label">Mis tickets</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tickets-ig-tab tickets-ig-tab--closed"
+        [class.tickets-ig-tab--active]="vistaBandeja === 'cerrados'"
+        [attr.aria-selected]="vistaBandeja === 'cerrados'"
+        (click)="cambiarVistaBandeja('cerrados')">
+        <span class="tickets-ig-tab-square" aria-hidden="true">{{ contadorVista('cerrados') }}</span>
+        <span class="tickets-ig-tab-label">Cerrados</span>
+      </button>
+    </div>
+
+    <section class="tickets-ig-main" [attr.aria-labelledby]="'tickets-panel-heading-' + vistaBandeja">
+      <h2 [id]="'tickets-panel-heading-' + vistaBandeja" class="visually-hidden">
+        {{ etiquetaVistaActiva }}
+      </h2>
+
+      <!-- Barra búsqueda + orden (estilo InvGate) -->
+      <div class="tickets-ig-toolbar" *ngIf="selectedTicketId === null" id="tour-tickets-filters">
+        <div class="tickets-ig-search">
+          <i class="fas fa-search" aria-hidden="true"></i>
+          <input
+            id="tickets-busqueda-global"
+            type="search"
+            [(ngModel)]="busquedaCodigoTitulo"
+            (ngModelChange)="onFiltroVistaLocalChange()"
+            placeholder="Buscar por código o título…"
+            autocomplete="off"
+            aria-label="Buscar tickets" />
+        </div>
+
+        <div class="tickets-ig-toolbar-filters">
+          <select
+            class="tickets-ig-select"
+            [(ngModel)]="estadoFiltro"
+            (change)="cargarTickets()"
+            aria-label="Filtrar por estado">
+            <option value="">Estado: todos</option>
+            <option *ngFor="let estado of estadosBandeja" [value]="estado">{{ getEstadoLabel(estado) }}</option>
+          </select>
+          <select
+            class="tickets-ig-select"
+            [(ngModel)]="filtroArea"
+            (ngModelChange)="onFiltroVistaLocalChange()"
+            aria-label="Filtrar por área">
+            <option value="">Área: todas</option>
+            <option *ngFor="let area of areasTicket" [value]="area">{{ getAreaLabel(area) }}</option>
+          </select>
+        </div>
+
+        <div class="tickets-ig-toolbar-actions">
+          <button
+            type="button"
+            class="btn btn-sm btn-export btn-agregar-nuevo"
+            id="tour-tickets-nuevo"
+            *ngIf="canCreateTickets()"
+            (click)="abrirModalTicketNuevo(ticketNuevoModal)">
+            <i class="fas fa-plus me-2" aria-hidden="true"></i>
+            Nuevo ticket
+          </button>
+          <button
+            type="button"
+            class="tickets-ig-sort-btn"
+            [class.tickets-ig-sort-btn--active]="ordenColumna === 'fechaActualizacion'"
+            title="Ordenar por última actualización"
+            (click)="toggleOrden('fechaActualizacion')">
+            <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
+            Última actualización
+          </button>
+          <div class="tickets-view-toggle" id="tour-tickets-view-toggle" role="group" aria-label="Modo de vista">
             <button
               type="button"
-              class="btn btn-sm btn-outline-secondary tickets-split-sort-btn"
-              title="Ordenar por última actividad"
-              [attr.aria-label]="'Ordenar por fecha, ' + (ordenColumna === 'fechaActualizacion' ? (ordenAsc ? 'ascendente' : 'descendente') : 'sin orden')"
-              (click)="toggleOrden('fechaActualizacion')">
-              <i class="fas" [ngClass]="sortIconClass('fechaActualizacion')" aria-hidden="true"></i>
+              class="tickets-view-toggle-btn"
+              [class.tickets-view-toggle-btn--active]="vistaModo === 'cards'"
+              (click)="vistaModo = 'cards'"
+              title="Vista de tarjetas">
+              <i class="fas fa-th-large" aria-hidden="true"></i>
             </button>
-            <span class="tickets-split-list-count text-muted">{{ ticketsVistaActiva.length }}</span>
+            <button
+              type="button"
+              class="tickets-view-toggle-btn"
+              [class.tickets-view-toggle-btn--active]="vistaModo === 'list'"
+              (click)="vistaModo = 'list'"
+              title="Vista de lista">
+              <i class="fas fa-list" aria-hidden="true"></i>
+            </button>
           </div>
         </div>
+      </div>
 
-        <div class="tickets-split-list-scroll">
-          <div *ngIf="cargandoVistaActiva" class="tickets-panel-state tickets-active-loading py-3">
-            <div class="spinner-border text-primary" role="status" aria-label="Cargando"></div>
-            <span class="text-muted ms-2">Cargando tickets…</span>
-          </div>
-
-          <ng-container *ngIf="!cargandoVistaActiva">
-            <div
-              *ngIf="vistaBandeja === 'area' && ticketsArea.length === 0"
-              class="tickets-panel-state text-muted tickets-split-empty">
-              <ng-container *ngIf="esUsuarioRolGeneral(); else sinTicketsArea">
-                No hay bandeja por área para tu rol. Usá «Mis tickets» para ver lo que creaste.
-              </ng-container>
-              <ng-template #sinTicketsArea>No hay tickets en el área.</ng-template>
-            </div>
-
-            <div
-              *ngIf="vistaBandeja === 'area' && ticketsArea.length > 0 && ticketsAreaVista.length === 0"
-              class="tickets-panel-state text-muted tickets-split-empty">
-              Ningún ticket coincide con el área o el texto de búsqueda.
-            </div>
-
-            <div
-              *ngIf="vistaBandeja === 'mios' && ticketsMisCreados.length === 0"
-              class="tickets-panel-state text-muted tickets-split-empty">
-              No creaste tickets activos con los filtros actuales.
-            </div>
-
-            <div
-              *ngIf="vistaBandeja === 'mios' && ticketsMisCreados.length > 0 && ticketsMisCreadosVista.length === 0"
-              class="tickets-panel-state text-muted tickets-split-empty">
-              Ningún ticket coincide con el área o el texto de búsqueda.
-            </div>
-
-            <div
-              *ngIf="vistaBandeja === 'cerrados' && ticketsCerrados.length === 0"
-              class="tickets-panel-state text-muted tickets-split-empty">
-              No hay tickets cerrados.
-            </div>
-
-            <div
-              *ngIf="vistaBandeja === 'cerrados' && ticketsCerrados.length > 0 && ticketsCerradosVista.length === 0"
-              class="tickets-panel-state text-muted tickets-split-empty">
-              Ningún ticket coincide con el área o el texto de búsqueda.
-            </div>
-
-            <ul *ngIf="ticketsVistaActiva.length > 0" class="tickets-split-items" role="list">
-              <li
-                *ngFor="let ticket of ticketsVistaActiva"
-                class="tickets-split-item"
-                [class.tickets-split-item--selected]="esTicketSeleccionado(ticket.id)"
-                [class.tickets-split-item--no-leido]="!esVistaCerrados && esNoLeido(ticket.id)"
-                role="button"
-                tabindex="0"
-                [attr.aria-current]="esTicketSeleccionado(ticket.id) ? 'true' : null"
-                (click)="abrirDetalle(ticket.id)"
-                (keydown)="onRowKeyDown($event, ticket.id)">
-                <div class="tickets-split-item-head">
-                  <strong class="tickets-split-item-code">{{ ticket.codigo }}</strong>
-                  <span class="tickets-split-item-title" [attr.title]="ticket.titulo">{{ ticket.titulo }}</span>
-                  <span
-                    class="tickets-split-item-pri"
-                    [ngClass]="getPrioridadClass(ticket.prioridad)"
-                    [attr.title]="getPrioridadLabel(ticket.prioridad)">
-                    {{ getPrioridadShort(ticket.prioridad) }}
-                  </span>
-                </div>
-                <div class="tickets-split-item-foot">
-                  <div class="tickets-split-item-tags">
-                    <span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span>
-                    <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
-                  </div>
-                  <span class="tickets-split-item-date text-muted">
-                    {{
-                      (esVistaCerrados ? (ticket.fechaCierre || ticket.fechaActualizacion) : ticket.fechaActualizacion)
-                        | date:'dd/MM/yy HH:mm'
-                    }}
-                  </span>
-                  <div class="tickets-split-item-actions" *ngIf="tieneAdjuntos(ticket.id) || canDeleteTickets()">
-                    <button
-                      *ngIf="tieneAdjuntos(ticket.id)"
-                      type="button"
-                      class="tickets-attach-pill tickets-attach-pill--btn tickets-attach-pill--compact"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="abrirAdjuntos(ticket.id, $event)"
-                      [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s)'"
-                      [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
-                      <i class="fas fa-paperclip" aria-hidden="true"></i>
-                      <span class="tickets-attach-pill-count">{{ cantidadAdjuntos(ticket.id) }}</span>
-                    </button>
-                    <button
-                      *ngIf="canDeleteTickets()"
-                      type="button"
-                      class="btn btn-danger btn-sm tickets-split-item-delete"
-                      title="Eliminar ticket"
-                      aria-label="Eliminar ticket"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="eliminarTicket(ticket, $event)">
-                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </ng-container>
-        </div>
-      </aside>
-
-      <main class="tickets-split-detail" aria-label="Detalle del ticket">
-        <div class="tickets-split-detail-mobile-bar" *ngIf="selectedTicketId !== null">
-          <button type="button" class="btn btn-link btn-sm tickets-split-back" (click)="cerrarDetalle()">
-            <i class="fas fa-arrow-left me-1" aria-hidden="true"></i>
-            Volver a la lista
+      <!-- Detalle seleccionado -->
+      <div class="tickets-ig-detail" *ngIf="selectedTicketId !== null">
+        <div class="tickets-ig-detail-bar">
+          <button type="button" class="btn btn-secondary btn-sm tickets-ig-back-btn" (click)="cerrarDetalle()">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            Volver a la bandeja
           </button>
         </div>
-
-        <div *ngIf="!selectedTicketId" class="tickets-split-detail-empty">
-          <i class="fas fa-inbox tickets-split-detail-empty-icon" aria-hidden="true"></i>
-          <p class="mb-0 text-muted">Seleccioná un ticket de la lista para ver el detalle acá.</p>
-        </div>
-
         <app-ticket-detail
-          *ngIf="selectedTicketId"
           [embedded]="true"
           [ticketIdInput]="selectedTicketId"
           [areasActivasInput]="areasTicketActivas"
@@ -255,12 +151,221 @@
           (ticketChanged)="onTicketDetailChanged()"
           (accessDenied)="onTicketDetailAccessDenied()">
         </app-ticket-detail>
-      </main>
+      </div>
+
+      <!-- Browse: cards / lista -->
+      <div class="tickets-ig-browse" id="tour-tickets-cards" *ngIf="selectedTicketId === null">
+        <div *ngIf="cargandoVistaActiva" class="tickets-panel-state tickets-active-loading py-4">
+          <div class="spinner-border text-primary" role="status" aria-label="Cargando"></div>
+          <span class="text-muted ms-2">Cargando tickets…</span>
+        </div>
+
+        <ng-container *ngIf="!cargandoVistaActiva">
+          <div
+            *ngIf="vistaBandeja === 'area' && ticketsArea.length === 0"
+            class="tickets-panel-state text-muted tickets-split-empty">
+            <ng-container *ngIf="esUsuarioRolGeneral(); else sinTicketsArea">
+              No hay bandeja por área para tu rol. Usá «Mis tickets» para ver lo que creaste.
+            </ng-container>
+            <ng-template #sinTicketsArea>No hay tickets en el área.</ng-template>
+          </div>
+
+          <div
+            *ngIf="vistaBandeja === 'area' && ticketsArea.length > 0 && ticketsAreaVista.length === 0"
+            class="tickets-panel-state text-muted tickets-split-empty">
+            Ningún ticket coincide con el área o el texto de búsqueda.
+          </div>
+
+          <div
+            *ngIf="vistaBandeja === 'mios' && ticketsMisCreados.length === 0"
+            class="tickets-panel-state text-muted tickets-split-empty">
+            No creaste tickets activos con los filtros actuales.
+          </div>
+
+          <div
+            *ngIf="vistaBandeja === 'mios' && ticketsMisCreados.length > 0 && ticketsMisCreadosVista.length === 0"
+            class="tickets-panel-state text-muted tickets-split-empty">
+            Ningún ticket coincide con el área o el texto de búsqueda.
+          </div>
+
+          <div
+            *ngIf="vistaBandeja === 'cerrados' && ticketsCerrados.length === 0"
+            class="tickets-panel-state text-muted tickets-split-empty">
+            No hay tickets cerrados.
+          </div>
+
+          <div
+            *ngIf="vistaBandeja === 'cerrados' && ticketsCerrados.length > 0 && ticketsCerradosVista.length === 0"
+            class="tickets-panel-state text-muted tickets-split-empty">
+            Ningún ticket coincide con el área o el texto de búsqueda.
+          </div>
+
+          <!-- Grilla de cards grandes -->
+          <div *ngIf="vistaModo === 'cards' && ticketsVistaActiva.length > 0" class="tickets-ig-grid">
+            <article
+              *ngFor="let ticket of ticketsVistaActiva"
+              class="tickets-ig-card"
+              [class.tickets-ig-card--unread]="!esVistaCerrados && esNoLeido(ticket.id)"
+              role="button"
+              tabindex="0"
+              (click)="abrirDetalle(ticket.id)"
+              (keydown)="onRowKeyDown($event, ticket.id)">
+              <header class="tickets-ig-card-head">
+                <div class="tickets-ig-card-head-left">
+                  <span class="tickets-ig-ribbon-wrap">
+                    <span class="tickets-ig-ribbon-shadow">
+                      <span class="tickets-ig-ribbon" [attr.data-area]="ticket.areaActual">
+                        <i class="fas fa-caret-down" aria-hidden="true"></i>
+                        <span class="tickets-ig-card-agent-text">{{ getAreaLabel(ticket.areaActual) }}</span>
+                      </span>
+                    </span>
+                  </span>
+                  <span class="tickets-ig-card-pri" [attr.data-pri]="ticket.prioridad">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    {{ getPrioridadLabel(ticket.prioridad) }}
+                  </span>
+                </div>
+                <div class="tickets-ig-card-head-right">
+                  <span
+                    *ngIf="!esVistaCerrados && esNoLeido(ticket.id)"
+                    class="tickets-unread-badge"
+                    title="Ticket sin leer"
+                    aria-label="Ticket sin leer">!</span>
+                  <button
+                    *ngIf="tieneAdjuntos(ticket.id)"
+                    type="button"
+                    class="tickets-ig-card-icon-btn"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="abrirAdjuntos(ticket.id, $event)"
+                    [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s)'"
+                    [attr.aria-label]="cantidadAdjuntos(ticket.id) + ' adjuntos'">
+                    <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    <span>{{ cantidadAdjuntos(ticket.id) }}</span>
+                  </button>
+                  <button
+                    *ngIf="canDeleteTickets()"
+                    type="button"
+                    class="tickets-ig-card-icon-btn tickets-ig-card-icon-btn--danger"
+                    title="Eliminar ticket"
+                    aria-label="Eliminar ticket"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="eliminarTicket(ticket, $event)">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </header>
+
+              <h3 class="tickets-ig-card-title" [attr.title]="ticket.titulo">{{ ticket.titulo }}</h3>
+
+              <p class="tickets-ig-card-path">
+                <i class="fas fa-folder-open" aria-hidden="true"></i>
+                {{ getAreaLabel(ticket.areaActual) }}
+              </p>
+
+              <div class="tickets-ig-card-status-row">
+                <span class="tickets-ig-card-status-pill" [class]="getEstadoClass(ticket.estado)">
+                  {{ getEstadoLabel(ticket.estado) }}
+                </span>
+                <time class="tickets-ig-card-updated">
+                  <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                  {{
+                    (esVistaCerrados ? (ticket.fechaCierre || ticket.fechaActualizacion) : ticket.fechaActualizacion)
+                      | date:'dd/MM/yy HH:mm'
+                  }}
+                </time>
+              </div>
+
+              <footer class="tickets-ig-card-foot">
+                <div class="tickets-ig-card-user">
+                  <span
+                    class="tickets-ig-card-avatar"
+                    [class.tickets-ig-card-avatar--photo]="ticket.creadoPorHasAvatar"
+                    aria-hidden="true">
+                    <img
+                      *ngIf="ticket.creadoPorHasAvatar"
+                      [src]="avatarUrl(ticket.creadoPorUserId)"
+                      alt=""
+                      (error)="onCreadorAvatarError(ticket)">
+                    <ng-container *ngIf="!ticket.creadoPorHasAvatar">{{ inicialesNombre(nombreCreadorTicket(ticket)) }}</ng-container>
+                  </span>
+                  <div class="tickets-ig-card-user-text">
+                    <strong [attr.title]="nombreCreadorTicket(ticket)">{{ nombreCreadorTicket(ticket) }}</strong>
+                    <span>Solicitante</span>
+                  </div>
+                </div>
+                <span class="tickets-ig-card-id">#{{ ticket.codigo }}</span>
+              </footer>
+            </article>
+          </div>
+
+          <!-- Lista compacta (toggle) -->
+          <ul *ngIf="vistaModo === 'list' && ticketsVistaActiva.length > 0" class="tickets-split-items tickets-ig-list" role="list">
+            <li
+              *ngFor="let ticket of ticketsVistaActiva"
+              class="tickets-split-item"
+              [class.tickets-split-item--no-leido]="!esVistaCerrados && esNoLeido(ticket.id)"
+              role="button"
+              tabindex="0"
+              (click)="abrirDetalle(ticket.id)"
+              (keydown)="onRowKeyDown($event, ticket.id)">
+              <div class="tickets-split-item-head">
+                <strong class="tickets-split-item-code">{{ ticket.codigo }}</strong>
+                <span class="tickets-split-item-title" [attr.title]="ticket.titulo">{{ ticket.titulo }}</span>
+                <span
+                  *ngIf="!esVistaCerrados && esNoLeido(ticket.id)"
+                  class="tickets-unread-badge tickets-unread-badge--compact"
+                  title="Ticket sin leer"
+                  aria-label="Ticket sin leer">!</span>
+                <span
+                  class="tickets-split-item-pri"
+                  [ngClass]="getPrioridadClass(ticket.prioridad)"
+                  [attr.title]="getPrioridadLabel(ticket.prioridad)">
+                  {{ getPrioridadLabel(ticket.prioridad) }}
+                </span>
+              </div>
+              <div class="tickets-split-item-foot">
+                <div class="tickets-split-item-tags">
+                  <span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span>
+                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
+                </div>
+                <span class="tickets-split-item-date text-muted">
+                  {{
+                    (esVistaCerrados ? (ticket.fechaCierre || ticket.fechaActualizacion) : ticket.fechaActualizacion)
+                      | date:'dd/MM/yy HH:mm'
+                  }}
+                </span>
+                <div class="tickets-split-item-actions" *ngIf="tieneAdjuntos(ticket.id) || canDeleteTickets()">
+                  <button
+                    *ngIf="tieneAdjuntos(ticket.id)"
+                    type="button"
+                    class="tickets-attach-pill tickets-attach-pill--btn tickets-attach-pill--compact"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="abrirAdjuntos(ticket.id, $event)"
+                    [title]="cantidadAdjuntos(ticket.id) + ' adjunto(s)'">
+                    <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    <span class="tickets-attach-pill-count">{{ cantidadAdjuntos(ticket.id) }}</span>
+                  </button>
+                  <button
+                    *ngIf="canDeleteTickets()"
+                    type="button"
+                    class="btn btn-danger btn-sm tickets-split-item-delete"
+                    title="Eliminar ticket"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="eliminarTicket(ticket, $event)">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </ng-container>
+      </div>
+    </section>
     </div>
   </div>
 </div>
 
-<!-- Diálogo de confirmación al eliminar un ticket (mismo patrón que proveedores/compras) -->
+<!-- Diálogo de confirmación al eliminar un ticket -->
 <div *ngIf="showConfirmDialog" class="confirm-dialog-overlay">
   <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tickets-confirm-title">
     <div id="tickets-confirm-title" class="confirm-dialog-title">

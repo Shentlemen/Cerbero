@@ -11,7 +11,12 @@
           </div>
         </div>
       </div>
-      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="content-toolbar">
       <div class="actions">
         <button class="btn btn-export" id="tour-lotes-nueva" (click)="abrirModal(loteModal)">
           <i class="fas fa-plus me-2"></i>
@@ -19,9 +24,6 @@
         </button>
       </div>
     </div>
-  </div>
-
-  <div class="content-section">
     <div class="table-container" id="tour-lotes-table">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}

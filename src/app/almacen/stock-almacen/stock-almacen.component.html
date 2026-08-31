@@ -2,30 +2,18 @@
   <!-- Contenedor de notificaciones (el padre ya tiene uno en vista embebida) -->
   <app-notification-container *ngIf="!embedStock"></app-notification-container>
   
-  <div #stockPaginaInicio class="header-section">
+  <div #stockPaginaInicio class="header-section" [class.embed-stock-header]="embedStock">
     <div class="title-wrapper">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1" *ngIf="!embedStock">
-        <h1 class="mb-0" id="tour-stock-almacen-title">
-        <i class="fas fa-boxes"></i> 
-        <span *ngIf="almacenSeleccionado; else defaultTitle">
-          Stock del {{ almacenSeleccionado.numero }} - {{ almacenSeleccionado.nombre }}
-        </span>
-        <ng-template #defaultTitle>
-          Gestión de Stock de Almacén
+      <h1 id="tour-stock-almacen-title">
+        <i class="fas fa-boxes"></i>
+        <ng-container *ngIf="embedStock; else stockPageTitle">Stock</ng-container>
+        <ng-template #stockPageTitle>
+          <ng-container *ngIf="almacenSeleccionado; else defaultTitle">
+            Stock del {{ almacenSeleccionado.numero }} - {{ almacenSeleccionado.nombre }}
+          </ng-container>
+          <ng-template #defaultTitle>Gestión de Stock de Almacén</ng-template>
         </ng-template>
       </h1>
-      </div>
-      <ng-container *ngIf="embedStock">
-      <h1>
-        <i class="fas fa-boxes"></i> 
-        <span *ngIf="almacenSeleccionado; else defaultTitleEmbed">
-          Stock del {{ almacenSeleccionado.numero }} - {{ almacenSeleccionado.nombre }}
-        </span>
-        <ng-template #defaultTitleEmbed>
-          Gestión de Stock de Almacén
-        </ng-template>
-      </h1>
-      </ng-container>
     </div>
   </div>
 
@@ -108,6 +96,74 @@
             <span class="kpi-value">{{ getTotalEstantesVisibles() }}</span>
           </div>
         </div>
+
+        <section class="planta-stock-section" id="tour-stock-almacen-planta" *ngIf="almacenSeleccionado">
+          <div class="planta-stock-header">
+            <h3><i class="fas fa-th me-2"></i>Planta</h3>
+            <div class="planta-stock-header-actions">
+              <span class="planta-legend">
+                <span class="legend-swatch empty"></span> Vacía
+                <span class="legend-swatch full"></span> Con stock
+              </span>
+              <button type="button" class="btn btn-sm btn-ver-todo" (click)="mostrarPlanta = !mostrarPlanta">
+                {{ mostrarPlanta ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+          </div>
+          <div class="planta-stock-body" *ngIf="mostrarPlanta" [class.has-drawer]="!!plantaObjetoActivo">
+            <ng-container *ngIf="planta && planta.objetos.length > 0; else plantaVacia">
+              <div class="planta-stock-canvas">
+                <app-almacen-planta-canvas
+                  mode="view"
+                  [gridCols]="planta.gridCols"
+                  [gridRows]="planta.gridRows"
+                  [objetos]="planta.objetos"
+                  [ocupacion]="plantaOcupacion()"
+                  [selectedCodigo]="selectedEstanteriaKey"
+                  (objectClick)="onPlantaObjectClick($event)">
+                </app-almacen-planta-canvas>
+              </div>
+              <aside class="planta-stock-drawer" *ngIf="plantaObjetoActivo">
+                <div class="drawer-head">
+                  <h4>{{ plantaObjetoActivo.etiqueta || plantaObjetoActivo.estanteriaCodigo || plantaObjetoActivo.tipo }}</h4>
+                  <button type="button" class="btn btn-link drawer-close" (click)="plantaObjetoActivo = null" title="Cerrar">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <p class="drawer-tipo text-muted small mb-2">{{ plantaObjetoActivo.tipo }}</p>
+                <ng-container *ngIf="plantaObjetoActivo.tipo === 'ESTANTERIA'; else zonaSinStock">
+                  <p class="drawer-ocupacion">{{ ocupacionEtiqueta(plantaObjetoActivo.estanteriaCodigo) }}</p>
+                  <ul class="drawer-items" *ngIf="plantaDrawerItems().length > 0; else estanteriaVacia">
+                    <li *ngFor="let item of plantaDrawerItems().slice(0, 40)">
+                      <span class="drawer-item-name">{{ item?.item?.nombreItem || item?.numero || 'Sin nombre' }}</span>
+                      <span class="drawer-item-meta">
+                        {{ item?.cantidad || 1 }} · {{ item?.estanteria || '-' }}/{{ item?.estante || '-' }}<ng-container *ngIf="item?.seccion">/{{ item.seccion }}</ng-container>
+                      </span>
+                    </li>
+                  </ul>
+                  <p class="text-muted small" *ngIf="plantaDrawerItems().length > 40">
+                    +{{ plantaDrawerItems().length - 40 }} más en el listado de abajo.
+                  </p>
+                  <ng-template #estanteriaVacia>
+                    <p class="text-muted small mb-0">Sin ítems ni equipos en esta estantería.</p>
+                  </ng-template>
+                </ng-container>
+                <ng-template #zonaSinStock>
+                  <p class="text-muted small mb-0">Zona operativa: no tiene stock asociado.</p>
+                </ng-template>
+              </aside>
+            </ng-container>
+            <ng-template #plantaVacia>
+              <p class="planta-empty text-muted mb-0">
+                Este almacén todavía no tiene planta.
+                <ng-container *ngIf="permissionsService.canManageWarehouseAssets()">
+                  Configurala en
+                  <a routerLink="/menu/almacen/configuracion">Configuración de almacén</a>.
+                </ng-container>
+              </p>
+            </ng-template>
+          </div>
+        </section>
 
         <div class="layout-hibrido">
           <aside class="panel-ubicaciones" *ngIf="getAlmacenActivoKey() as almacenKey" id="tour-stock-almacen-tree">

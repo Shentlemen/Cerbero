@@ -1,0 +1,160 @@
+/*
+ * Design tokens Cerbero
+ * ----------------------
+ * Un solo origen para color y tamaño. El modo oscuro solo redefine
+ * las variables en html.theme-dark; los componentes usan var(--ds-*).
+ *
+ * --theme-* queda como alias para el CSS que ya existía.
+ */
+
+:root {
+  /* ——— Color: superficies ——— */
+  --ds-color-page: #ecf0f1;
+  --ds-color-canvas: #f0f2f5;
+  --ds-color-surface: #ffffff;
+  --ds-color-surface-muted: #f3f4f6;
+  --ds-color-surface-hover: #f7f8fa;
+  --ds-color-elevated: #f8f9fa;
+  --ds-color-input: #ffffff;
+  --ds-color-hover: #f1f5f9;
+  --ds-color-recessed: #d8dce2;
+  --ds-color-recessed-hover: #e2e5ea;
+
+  /* ——— Color: texto ——— */
+  --ds-color-text: #111111;
+  --ds-color-text-muted: #1a1a1a;
+  --ds-color-heading: #111111;
+  --ds-color-subtle: #5c6570;
+  --ds-color-faint: #8a939c;
+  --ds-color-placeholder: #b0b8bf;
+  --ds-color-on-accent: #ffffff;
+
+  /* ——— Color: borde y sombra ——— */
+  --ds-color-border: #d8dee6;
+  --ds-color-border-subtle: #e4e7ec;
+  --ds-color-border-strong: #d8dde4;
+  --ds-shadow-color: 15, 23, 42;
+  --ds-shadow-sm: 0 1px 4px rgba(var(--ds-shadow-color), 0.05);
+  --ds-shadow-md: 0 4px 12px rgba(var(--ds-shadow-color), 0.08);
+  --ds-shadow-lg: 0 8px 22px rgba(var(--ds-shadow-color), 0.09);
+  --ds-shadow-inset-tab: inset 0 -10px 12px -10px rgba(var(--ds-shadow-color), 0.28);
+
+  /* ——— Color: marca y acentos (igual en claro y oscuro) ——— */
+  --ds-color-accent: #3498db;
+  --ds-color-accent-strong: #2980b9;
+  --ds-color-danger: #e74c3c;
+  --ds-color-danger-strong: #c0392b;
+  --ds-color-success: #5aa89a;
+  --ds-color-unread: #b45c56;
+
+  --ds-color-ribbon: #af5252;
+  --ds-color-ribbon-fold: #8d4a4a;
+
+  --ds-color-tab-inbox: #c17b74;
+  --ds-color-tab-mine: #c4a06a;
+  --ds-color-tab-closed: #8e99a4;
+  --ds-color-tab-equipo: #0ea5e9;
+  --ds-color-tab-internos: #0d9488;
+
+  --ds-color-priority-critica: #c0392b;
+  --ds-color-priority-alta: #d68910;
+  --ds-color-priority-media: #7d8c3a;
+  --ds-color-priority-baja: #5c6570;
+
+  /* ——— Espacio ——— */
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.25rem;
+  --ds-space-6: 1.5rem;
+  --ds-space-2xs: 0.15rem;
+  --ds-space-xs: 0.35rem;
+  --ds-space-sm: 0.55rem;
+  --ds-space-md: 0.85rem;
+  --ds-gap: var(--ds-space-md);
+
+  /* ——— Radio ——— */
+  --ds-radius-sm: 6px;
+  --ds-radius-md: 8px;
+  --ds-radius-lg: 10px;
+  --ds-radius-xl: 12px;
+  --ds-radius-pill: 999px;
+
+  /* ——— Tipo ——— */
+  --ds-font-2xs: 0.68rem;
+  --ds-font-xs: 0.7rem;
+  --ds-font-sm: 0.78rem;
+  --ds-font-md: 0.85rem;
+  --ds-font-lg: 0.92rem;
+  --ds-font-xl: 1.05rem;
+  --ds-font-2xl: 1.25rem;
+  --ds-weight-semibold: 600;
+  --ds-weight-bold: 700;
+  --ds-weight-extrabold: 800;
+
+  /* ——— Cinta de tickets ——— */
+  --ds-ribbon-overhang: 0.7rem;
+  --ds-ribbon-fold-height: 0.7rem;
+  --ds-tab-square: 2.85rem;
+
+  /* ——— Alias de tema (CSS previo) ——— */
+  --theme-page: var(--ds-color-page);
+  --theme-canvas: var(--ds-color-canvas);
+  --theme-surface: var(--ds-color-surface);
+  --theme-elevated: var(--ds-color-elevated);
+  --theme-input: var(--ds-color-input);
+  --theme-hover: var(--ds-color-hover);
+  --theme-border: var(--ds-color-border);
+  --theme-text: var(--ds-color-text);
+  --theme-muted: var(--ds-color-subtle);
+  --theme-heading: var(--ds-color-heading);
+  --theme-shadow: var(--ds-shadow-md);
+  --primary-color: var(--ds-color-accent);
+  --primary-dark: var(--ds-color-accent-strong);
+  --danger-color: var(--ds-color-danger);
+  --danger-dark: var(--ds-color-danger-strong);
+  --background-color: var(--ds-color-page);
+  --text-color: var(--ds-color-text);
+  --border-radius: var(--ds-radius-xl);
+  --shadow-sm: var(--ds-shadow-sm);
+  --shadow-md: var(--ds-shadow-md);
+  --shadow-lg: var(--ds-shadow-lg);
+}
+
+html.theme-dark,
+.theme-dark {
+  --ds-color-page: #1a1d24;
+  --ds-color-canvas: #1a1d24;
+  --ds-color-surface: #252830;
+  --ds-color-surface-muted: #2c3340;
+  --ds-color-surface-hover: #323a48;
+  --ds-color-elevated: #2c303a;
+  --ds-color-input: #1e222b;
+  --ds-color-hover: #353a46;
+  --ds-color-recessed: #3a4250;
+  --ds-color-recessed-hover: #444c5c;
+
+  --ds-color-text: #f3f4f7;
+  --ds-color-text-muted: #e8eaee;
+  --ds-color-heading: #ffffff;
+  --ds-color-subtle: #d5dae2;
+  --ds-color-faint: #c2c8d2;
+  --ds-color-placeholder: #9aa3b0;
+
+  --ds-color-border: #3d4452;
+  --ds-color-border-subtle: #3d4452;
+  --ds-color-border-strong: #4a5566;
+  --ds-shadow-color: 0, 0, 0;
+  --ds-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.35);
+  --ds-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --ds-shadow-lg: 0 8px 22px rgba(0, 0, 0, 0.4);
+  --ds-shadow-inset-tab: inset 0 -10px 12px -10px rgba(0, 0, 0, 0.5);
+
+  --ds-color-priority-critica: #f87171;
+  --ds-color-priority-alta: #fbbf24;
+  --ds-color-priority-media: #a3e635;
+  --ds-color-priority-baja: #a8b0bc;
+
+  --ds-color-ribbon-fold: #9a5a5a;
+}

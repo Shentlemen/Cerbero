@@ -56,6 +56,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       title: 'Tour de personas',
       icon: 'fa-route',
       steps: [
+        { selector: '#tour-config-hub-tabs', title: 'Secciones de configuración', description: 'Ubicaciones, tipos de activo, tipos de compra, responsables y tickets. Cada pestaña abre su catálogo en el panel de abajo.', side: 'bottom' },
         { selector: '#tour-proc-personas-title', title: 'Personas de organización', description: 'Directorio de personas reales (cédula, unidad, cargo) usado para responsables en activos y compras — distinto de usuarios de login Cerbero.', side: 'bottom' },
         { selector: '#tour-proc-personas-nuevo', title: 'Alta', description: 'Registrá una persona para vincularla después en tipos de activo o formularios.', side: 'left' },
         { selector: '#tour-proc-personas-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por cédula, nombre, apellido, cargo o unidad.', side: 'bottom' },

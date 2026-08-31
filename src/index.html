@@ -5,9 +5,20 @@
   <title>Cerbero</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- OSM exige Referer válido en requests de tiles; no usar no-referrer -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <link rel="icon" type="image/png" href="assets/logo2.png">
   <!-- Open Sans: archivos .woff2 en assets/css/; se carga aquí (no en angular.json) para que url() relativo resuelva bien sin internet -->
   <link rel="stylesheet" href="assets/css/open-sans.css">
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('cerbero-theme') === 'dark') {
+          document.documentElement.classList.add('theme-dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

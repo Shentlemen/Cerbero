@@ -459,14 +459,15 @@ export class HelperDogComponent implements OnInit, OnDestroy {
    * (el perro vive abajo-izquierda, así el arco siempre cae dentro de la
    * pantalla aunque haya 5+ tours). Devuelve un `translate` listo para `transform`.
    *
-   * Tanto el radio como el ancho del arco se adaptan a la cantidad de tours:
-   * con pocos items el menú queda compacto y pegado al perro; con muchos
-   * abre apenas lo necesario para no superponer botones.
+   * El radio deja ~10px de aire entre el borde del perro y el del globo.
+   * El ancho del arco se adapta a la cantidad de tours para no superponer botones.
    */
   getRadialTransform(index: number, total: number): string {
-    // Órbita proporcional a --dog-size (base 100px: 92 / 96 / 102).
-    const orbitRatio = total <= 2 ? 0.92 : total === 3 ? 0.96 : 1.02;
-    const radius = Math.round(HelperDogComponent.DOG_SIZE_PX * orbitRatio);
+    const dog = HelperDogComponent.DOG_SIZE_PX;
+    const orb = dog * 0.36;
+    // Hueco entre el borde del perro y el del globo (~10px): cerca, sin pegarse.
+    const gap = 10;
+    const radius = Math.round(dog / 2 + orb / 2 + gap);
     // Separación angular entre centros de botones.
     // A radio 92, un botón cubre ~36° de arco; usar 46°-48° deja ~10-12°
     // de aire angular entre vecinos (lectura cómoda, sin amontonarse).

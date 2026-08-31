@@ -3,6 +3,128 @@
  * (--bs-btn-focus-shadow / rgba(13,110,253,.25)).
  */
 
+/* Pestañas del hub de Configuración: el anillo de Bootstrap queda en el <i>, no solo en el <a>. */
+a.config-hub-tab,
+a.config-hub-tab:focus,
+a.config-hub-tab:focus-visible,
+a.config-hub-tab:active,
+a.config-hub-tab:focus-within {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.config-hub-tab *,
+a.config-hub-tab *:focus,
+a.config-hub-tab *:focus-visible,
+a.config-hub-tab *:active,
+a.config-hub-tab .config-hub-tab-icon,
+a.config-hub-tab .config-hub-tab-icon i,
+a.config-hub-tab .config-hub-tab-icon i::before {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.config-hub-tab:not(.config-hub-tab--active):focus,
+a.config-hub-tab:not(.config-hub-tab--active):focus-visible,
+a.config-hub-tab:not(.config-hub-tab--active):active {
+  box-shadow: var(--ds-shadow-inset-tab) !important;
+}
+
+a.config-hub-tab.config-hub-tab--active:focus,
+a.config-hub-tab.config-hub-tab--active:focus-visible,
+a.config-hub-tab.config-hub-tab--active:active {
+  box-shadow: none !important;
+}
+
+/* Tickets: el anillo azul de Bootstrap gana al CSS encapsulado (carga después). */
+.tickets-ig-card,
+.tickets-ig-card:focus,
+.tickets-ig-card:focus-visible,
+.tickets-ig-card:focus-within,
+.tickets-ig-card:active,
+.tickets-ig-card *,
+.tickets-ig-card *:focus,
+.tickets-ig-card *:focus-visible,
+.tickets-ig-card *:active,
+.tickets-ig-card-title,
+.tickets-ig-tab,
+.tickets-ig-tab:focus,
+.tickets-ig-tab:focus-visible,
+.tickets-ig-tab:active,
+.tickets-ig-tab:focus-within,
+.tickets-ig-tab *,
+.tickets-ig-tab *:focus,
+.tickets-ig-tab *:focus-visible,
+.tickets-ig-tab *:active,
+.tickets-split-item,
+.tickets-split-item:focus,
+.tickets-split-item:focus-visible,
+.tickets-split-item:focus-within,
+.tickets-split-item:active,
+.tickets-split-item *:focus,
+.tickets-split-item *:focus-visible,
+.tickets-kanban-card,
+.tickets-kanban-card:focus,
+.tickets-kanban-card:focus-visible,
+.tickets-kanban-card:focus-within,
+.tickets-kanban-card:active,
+.tickets-table .tickets-row-clickable:focus,
+.tickets-table .tickets-row-clickable:focus-visible,
+.tickets-table th.tickets-sortable:focus,
+.tickets-table th.tickets-sortable:focus-visible {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tickets-ig-card *:focus,
+.tickets-ig-card *:focus-visible,
+.tickets-ig-card *:active,
+.tickets-ig-card-title,
+.tickets-ig-tab *:focus,
+.tickets-ig-tab *:focus-visible,
+.tickets-ig-tab *:active,
+.tickets-split-item *:focus,
+.tickets-split-item *:focus-visible,
+.tickets-ig-tab--active:focus,
+.tickets-ig-tab--active:focus-visible,
+.tickets-ig-tab--active:active {
+  box-shadow: none !important;
+}
+
+.tickets-ig-tab:not(.tickets-ig-tab--active):focus,
+.tickets-ig-tab:not(.tickets-ig-tab--active):focus-visible,
+.tickets-ig-tab:not(.tickets-ig-tab--active):active {
+  box-shadow: var(--ds-shadow-inset-tab) !important;
+}
+
+/* Backdrop: Bootstrap pisa --bs-backdrop-bg a #000; el color real va en background-color.
+ * Sin backdrop-filter: el blur a pantalla completa congela las animaciones del modal. */
+.modal-backdrop,
+ngb-modal-backdrop,
+.modal-backdrop.show,
+ngb-modal-backdrop.show {
+  --bs-backdrop-bg: rgba(15, 23, 42, 0.28);
+  --bs-backdrop-opacity: 1;
+  background-color: rgba(15, 23, 42, 0.28) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/*
+ * Tamaño visual de la app (~80% del CSS a 16px) sin `zoom` en el body.
+ * `zoom` desalineaba mouse, canvas, tours y modales. `rem`/`em` de Bootstrap
+ * y de la UI siguen esta raíz. Los juegos secretos vuelven a 16px.
+ */
+html {
+  font-size: 80%;
+}
+
+html:has(.crt) {
+  font-size: 100%;
+}
+
 /* Salir y cualquier botón del header sin clase .btn */
 app-header .btn-logout,
 .app-header .btn-logout {
@@ -37,4 +159,51 @@ app-header .btn-logout:focus-visible,
   outline: 2px solid rgba(255, 255, 255, 0.5) !important;
   outline-offset: 2px !important;
   box-shadow: none !important;
+}
+
+/*
+ * Títulos de página: etiqueta compacta (mismo criterio que el dashboard).
+ * Pisan los h1 grandes de cada vista; no aplica a juegos (.crt) ni modales.
+ */
+.title-wrapper {
+  gap: 0.75rem;
+}
+
+.title-wrapper h1,
+.header-section h1,
+.dashboard-page-label,
+.title-bar h2 {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  margin: 0 !important;
+  font-size: 0.82rem !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  line-height: 1.2 !important;
+}
+
+.title-wrapper h1 i,
+.header-section h1 i,
+.dashboard-page-label i,
+.title-bar h2 i {
+  font-size: 0.8rem !important;
+  color: #475569 !important;
+  opacity: 1 !important;
+  margin-right: 0 !important;
+}
+
+/*
+ * Si el recuadro del título ya no tiene filtros ni pestañas (solo la etiqueta
+ * compacta), no hace falta la tarjeta blanca: queda como el dashboard.
+ */
+.header-section:not(:has(.filters-container)):not(:has(.stats-pills)):not(:has(.tickets-ig-tabs)):not(:has(.activos-filters-stack)) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 0 0.15rem !important;
+  margin-bottom: 0.65rem !important;
 }

@@ -64,6 +64,7 @@ export class LocationsComponent implements OnInit, OnDestroy {
       title: 'Tour de ubicaciones',
       icon: 'fa-route',
       steps: [
+        { selector: '#tour-config-hub-tabs', title: 'Secciones de configuración', description: 'Ubicaciones, tipos de activo, tipos de compra, responsables y tickets. Cada pestaña abre su catálogo en el panel de abajo.', side: 'bottom' },
         { selector: '#tour-locations-title', title: 'Ubicaciones físicas', description: 'Catálogo jerárquico (gerencia, oficina, piso, puerta) usado en activos y stock.', side: 'bottom' },
         { selector: '#tour-locations-nueva', title: 'Nueva ubicación', description: 'Alta o edición mediante el selector de ubicación y validación de subred asociada si aplica.', side: 'left' },
         { selector: '#tour-locations-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por cualquier dato visible de la ubicación.', side: 'bottom' },

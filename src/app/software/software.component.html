@@ -1,77 +1,80 @@
-<div class="generic-container">
-  <!-- Contenedor de notificaciones -->
+<div class="generic-container software-page">
   <app-notification-container></app-notification-container>
   
   <div class="header-section">
     <div class="header-content">
       <div class="title-wrapper">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100 mb-2">
-          <h1 id="tour-software-title" class="mb-0"><i class="fas fa-code"></i> Software Instalado</h1>
-        </div>
-        <div class="stats-pills filters-container" id="tour-software-tabs">
-          <div
-            class="filter-btn software-filter-btn"
-            [class.active]="activeTab === 'total'"
-            [style.--device-color]="'#0ea5e9'"
-            [style.--device-bg-color]="'#e0f2fe'"
-            [style.--device-border-color]="'#bae6fd'"
-            (click)="showTotalSoftware()"
-            style="cursor:pointer;">
-            <i class="fas fa-boxes" style="color: #0ea5e9;"></i>
-            <span>Total</span>
-            <span class="count">({{totalSoftware}})</span>
-          </div>
-          <button
-            type="button"
-            class="filter-btn software-filter-btn"
-            [class.active]="activeTab === 'hidden'"
-            [style.--device-color]="'#6366f1'"
-            [style.--device-bg-color]="'#eef2ff'"
-            [style.--device-border-color]="'#c7d2fe'"
-            (click)="showOnlyHiddenSoftware()">
-            <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye'" style="color: #6366f1;"></i>
-            <span>Ocultos</span>
-            <span class="count">({{hiddenSoftwareCount}})</span>
-          </button>
-          <button
-            type="button"
-            class="filter-btn software-filter-btn"
-            [class.active]="activeTab === 'forbidden'"
-            [style.--device-color]="'#dc2626'"
-            [style.--device-bg-color]="'#fee2e2'"
-            [style.--device-border-color]="'#fecaca'"
-            (click)="showOnlyForbiddenSoftware()">
-            <i class="fas fa-ban" style="color: #dc2626;"></i>
-            <span>Prohibidos</span>
-            <span class="count">({{forbiddenSoftwareCount}})</span>
-          </button>
-          <button
-            type="button"
-            class="filter-btn software-filter-btn"
-            [class.active]="activeTab === 'driver'"
-            [style.--device-color]="'#7c3aed'"
-            [style.--device-bg-color]="'#f3e8ff'"
-            [style.--device-border-color]="'#e9d5ff'"
-            (click)="showOnlyDriverSoftware()">
-            <i class="fas fa-cog" style="color: #7c3aed;"></i>
-            <span>Drivers</span>
-            <span class="count">({{driverSoftwareCount}})</span>
-          </button>
-          <button
-            type="button"
-            class="filter-btn software-filter-btn"
-            [class.active]="activeTab === 'licenciado'"
-            [style.--device-color]="'#059669'"
-            [style.--device-bg-color]="'#ecfdf5'"
-            [style.--device-border-color]="'#a7f3d0'"
-            (click)="showOnlyLicenciadoSoftware()">
-            <i class="fas fa-key" style="color: #059669;"></i>
-            <span>Licenciados</span>
-            <span class="count">({{licenciadoSoftwareCount}})</span>
-          </button>
-        </div>
-        
-        <!-- Contenedor para buscador y selección múltiple -->
+        <h1 id="tour-software-title"><i class="fas fa-code"></i> Software Instalado</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="cerbero-folder-stage">
+    <div
+      class="cerbero-folder-tabs"
+      id="tour-software-tabs"
+      role="tablist"
+      aria-label="Filtrar software">
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="activeTab === 'total'"
+        [attr.aria-selected]="activeTab === 'total'"
+        [style.--tab-accent]="'#0ea5e9'"
+        (click)="showTotalSoftware()">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-boxes"></i></span>
+        <span class="cerbero-folder-tab-label">Total</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="activeTab === 'hidden'"
+        [attr.aria-selected]="activeTab === 'hidden'"
+        [style.--tab-accent]="'#6366f1'"
+        (click)="showOnlyHiddenSoftware()">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true">
+          <i class="fas" [ngClass]="activeTab === 'hidden' ? 'fa-eye-slash' : 'fa-eye'"></i>
+        </span>
+        <span class="cerbero-folder-tab-label">Ocultos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="activeTab === 'forbidden'"
+        [attr.aria-selected]="activeTab === 'forbidden'"
+        [style.--tab-accent]="'#dc2626'"
+        (click)="showOnlyForbiddenSoftware()">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-ban"></i></span>
+        <span class="cerbero-folder-tab-label">Prohibidos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="activeTab === 'driver'"
+        [attr.aria-selected]="activeTab === 'driver'"
+        [style.--tab-accent]="'#7c3aed'"
+        (click)="showOnlyDriverSoftware()">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-cog"></i></span>
+        <span class="cerbero-folder-tab-label">Drivers</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="activeTab === 'licenciado'"
+        [attr.aria-selected]="activeTab === 'licenciado'"
+        [style.--tab-accent]="'#059669'"
+        (click)="showOnlyLicenciadoSoftware()">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-key"></i></span>
+        <span class="cerbero-folder-tab-label">Licenciados</span>
+      </button>
+    </div>
+
+  <div class="content-section cerbero-folder-panel">
         <div class="search-and-multi-select">
           <div class="search-box">
             <div class="input-group">
@@ -89,7 +92,6 @@
             </div>
           </div>
           
-          <!-- Panel de selección múltiple -->
           <div class="multi-select-controls" *ngIf="canManageSoftware()" id="tour-software-multiselect">
             <button class="multi-select-toggle" 
                     [class.active]="multiSelectMode"
@@ -100,9 +102,6 @@
             </button>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Panel de acciones en lote -->
   <div class="batch-actions" *ngIf="multiSelectMode && selectedCount > 0">
@@ -185,7 +184,7 @@
     <p class="mt-2">Aplicando filtros...</p>
   </div>
 
-  <div class="content-section" *ngIf="!loading && !isFiltering">
+  <ng-container *ngIf="!loading && !isFiltering">
     <div class="table-container" id="tour-software-table">
       <table class="software-table" [class.multi-select]="multiSelectMode">
         <thead>
@@ -321,6 +320,8 @@
         class="custom-pagination">
       </ngb-pagination>
     </div>
+  </ng-container>
+  </div>
   </div>
 </div>
 

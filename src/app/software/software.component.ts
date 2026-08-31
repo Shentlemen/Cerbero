@@ -86,7 +86,7 @@ export class SoftwareComponent implements OnInit, OnDestroy {
       afterEnd: () => this.resetScroll(),
       steps: [
         { selector: '#tour-software-title', title: 'Software instalado', description: 'Inventario agregado de aplicaciones detectadas en los equipos. Podés clasificar y auditar uso.', side: 'bottom' },
-        { selector: '#tour-software-tabs', title: 'Vistas', description: 'Total, ocultos, prohibidos, drivers y licenciados: cada pestaña aplica un filtro rápido sobre la base.', side: 'bottom' },
+        { selector: '#tour-software-tabs', title: 'Vistas', description: 'Total, ocultos, prohibidos, drivers y licenciados: cada pestaña (estilo carpeta) aplica un filtro rápido sobre la base.', side: 'bottom' },
         { selector: '#tour-software-search', title: 'Búsqueda', description: 'Buscá por nombre o editor para acotar la tabla.', side: 'bottom' },
         { selector: '#tour-software-multiselect', title: 'Selección múltiple', description: 'Activá el modo para marcar varios ítems y aplicar visibilidad, prohibido, driver o borrado en lote (según permisos).', side: 'bottom' },
         { selector: '#tour-software-table', title: 'Listado', description: 'Revisá versiones, equipos afectados y acciones por fila. La paginación está abajo del listado.', side: 'top' }

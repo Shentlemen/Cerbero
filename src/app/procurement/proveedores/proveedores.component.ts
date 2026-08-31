@@ -3,12 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
-import { NgbPaginationModule, NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProveedoresService, ProveedorDTO } from '../../services/proveedores.service';
 import { ContactosService, ContactoDTO } from '../../services/contactos.service';
 import { PermissionsService } from '../../services/permissions.service';
 import { TourRegistryService } from '../../services/tour-registry.service';
-import { GuidedTourHostService } from '../../services/guided-tour-host.service';
 import { driver, type DriveStep, type Driver } from 'driver.js';
 
 type ProveedorSortColumn = 'nombre' | 'nombreComercial' | 'rut' | 'direccion';
@@ -25,7 +24,7 @@ interface ProveedorDemoStep {
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbNavModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './proveedores.component.html',
   styleUrls: ['./proveedores.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -74,8 +73,7 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
     private contactosService: ContactosService,
     private permissionsService: PermissionsService,
     private cdr: ChangeDetectorRef,
-    private tourRegistry: TourRegistryService,
-    private guidedTourHost: GuidedTourHostService
+    private tourRegistry: TourRegistryService
   ) {
     this.fb = fb;
 
@@ -151,8 +149,7 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Vuelve la ventana al tope tras finalizar el tour. Se usa `requestAnimationFrame` anidado
-   * para que la animación corra después de que el host de tours restaure el zoom global.
+   * Vuelve la ventana al tope tras finalizar el tour.
    */
   private resetScrollToTop(): void {
     requestAnimationFrame(() => {
@@ -591,12 +588,22 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
     this.contactosService.obtenerContactosPorProveedor(proveedor.idProveedores).subscribe({
       next: (contactos) => {
         this.contactosVista = contactos;
-        this.modalService.open(modal, { size: 'xl' });
+        this.abrirModalContactosVista(modal);
       },
       error: () => {
         this.contactosVista = [];
-        this.modalService.open(modal, { size: 'xl' });
+        this.abrirModalContactosVista(modal);
       }
+    });
+  }
+
+  private abrirModalContactosVista(modal: any): void {
+    const n = this.contactosVista.length;
+    const sizeClass = n <= 1 ? 'is-1' : n === 2 ? 'is-2' : n === 3 ? 'is-3' : 'is-many';
+    this.modalService.open(modal, {
+      centered: true,
+      scrollable: n > 3,
+      windowClass: `contactos-vista-modal-window contactos-vista-modal-window--${sizeClass}`
     });
   }
 
@@ -786,8 +793,6 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
       }
     };
 
-    this.guidedTourHost.suspendGlobalZoom();
-
     const inst: Driver = driver({
       allowClose: true,
       overlayClickBehavior: () => undefined,
@@ -820,7 +825,6 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
       onDestroyed: () => {
         this.tourDemoModalRef?.dismiss();
         this.finalizarTourDemo();
-        this.guidedTourHost.restoreGlobalZoom();
       },
       steps: driveSteps
     });

@@ -8,22 +8,24 @@
     </div>
 
     <div class="header-right" *ngIf="currentUser">
-      <div class="gm-view-as" *ngIf="isRealGm">
-        <label class="gm-view-as-label" for="gm-view-as-select">Ver como</label>
-        <select
-          id="gm-view-as-select"
-          class="form-select form-select-sm gm-view-as-select"
-          [(ngModel)]="viewAsSelectValue"
-          (ngModelChange)="onViewAsChange($event)">
-          <option *ngFor="let o of viewAsOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-
-      <div class="user-info">
-        <div class="user-details">
-          <span class="user-name" (click)="goToProfile()" title="Ver perfil">
-            {{ displayName }}
+      <div class="user-menu" #userMenu>
+        <button
+          type="button"
+          class="user-menu-trigger"
+          (click)="toggleMenu($event)"
+          [attr.aria-expanded]="menuOpen"
+          aria-haspopup="menu"
+          title="Menú de cuenta">
+          <span class="user-menu-avatar-wrap" aria-hidden="true">
+            <img
+              *ngIf="hasAvatar"
+              class="user-menu-avatar"
+              [src]="avatarUrl"
+              alt=""
+              (error)="onAvatarError()">
+            <span *ngIf="!hasAvatar" class="user-menu-avatar user-menu-avatar--initials">{{ headerInitials }}</span>
           </span>
+          <span class="user-name">{{ displayName }}</span>
           <span
             class="role-badge"
             [ngClass]="getRoleBadgeClass(effectiveRole)"
@@ -31,11 +33,62 @@
             <i class="fas role-badge-icon" [ngClass]="getRoleIcon(effectiveRole)" aria-hidden="true"></i>
             <span class="role-badge-label">{{ getRoleLabel(effectiveRole) }}</span>
           </span>
-        </div>
-        <button type="button" class="btn-logout" (click)="logout()" title="Cerrar sesión">
-          <i class="fas fa-sign-out-alt"></i>
-          <span class="logout-text">Salir</span>
+          <i class="fas fa-chevron-down user-menu-caret" [class.user-menu-caret--open]="menuOpen" aria-hidden="true"></i>
         </button>
+
+        <div class="user-menu-dropdown" *ngIf="menuOpen" role="menu">
+          <button type="button" class="user-menu-item" role="menuitem" (click)="goToProfile()">
+            <i class="fas fa-user-circle" aria-hidden="true"></i>
+            <span>Mi perfil</span>
+          </button>
+
+          <button type="button" class="user-menu-item" role="menuitem" (click)="toggleTheme()">
+            <i class="fas" [ngClass]="theme.isDark() ? 'fa-sun' : 'fa-moon'" aria-hidden="true"></i>
+            <span>{{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}</span>
+          </button>
+
+          <ng-container *ngIf="isRealGm">
+            <div class="user-menu-sep" role="separator"></div>
+            <div
+              class="user-menu-flyout"
+              [class.user-menu-flyout--open]="viewAsOpen"
+              (mouseenter)="openViewAsPanel()"
+              (mouseleave)="closeViewAsPanel()">
+              <button
+                type="button"
+                class="user-menu-item user-menu-item--flyout"
+                role="menuitem"
+                aria-haspopup="true"
+                [attr.aria-expanded]="viewAsOpen"
+                (click)="toggleViewAsPanel($event)">
+                <i class="fas fa-theater-masks" aria-hidden="true"></i>
+                <span class="user-menu-flyout-label">Ver como</span>
+                <span class="user-menu-flyout-current">{{ viewAsSelectValue ? getRoleLabel(viewAsSelectValue) : 'Game Master' }}</span>
+                <i class="fas fa-chevron-left user-menu-flyout-caret" aria-hidden="true"></i>
+              </button>
+              <div class="user-menu-roles-panel" role="menu" aria-label="Ver la aplicación como">
+                <p class="user-menu-section-label">Ver la aplicación como</p>
+                <button
+                  type="button"
+                  class="user-menu-item user-menu-item--role"
+                  *ngFor="let o of viewAsOptions"
+                  role="menuitemradio"
+                  [attr.aria-checked]="viewAsSelectValue === o.value"
+                  [class.user-menu-item--active]="viewAsSelectValue === o.value"
+                  (click)="onViewAsChange(o.value)">
+                  <i class="fas" [ngClass]="viewAsSelectValue === o.value ? 'fa-check' : getRoleIcon(o.value || 'GM')" aria-hidden="true"></i>
+                  <span>{{ o.label }}</span>
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="user-menu-sep" role="separator"></div>
+          <button type="button" class="user-menu-item user-menu-item--danger" role="menuitem" (click)="logout()">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

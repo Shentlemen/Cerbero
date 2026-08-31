@@ -141,7 +141,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapInitialFitDone = false;
   private resizeDebounceId: ReturnType<typeof setTimeout> | undefined;
   private markersRefreshId: ReturnType<typeof setTimeout> | undefined;
-  /** Modales del mapa abiertos (sin tocar el zoom global 0.8 del body). */
+  /** Modales del mapa abiertos. */
   private mapModalOpenCount = 0;
   private hardwareModalRepaintId: ReturnType<typeof setTimeout> | undefined;
   private markerPlacements = new Map<string, MarkerPlacement>();
@@ -596,6 +596,11 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /** true si OSM falló (proxy/firewall) y quedó el fondo local de respaldo. */
+  basemapFallbackActive = false;
+  private basemapTileErrorCount = 0;
+  private osmTileLayer: L.TileLayer | null = null;
+
   private async initMap(): Promise<void> {
     if (!this.map) {
       console.log('Creando mapa...');
@@ -606,10 +611,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
         maxZoom: 19
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(this.map);
+      this.addBasemapLayer();
 
       this.markerClusterGroup = L.markerClusterGroup({
         maxClusterRadius: 50,
@@ -627,6 +629,56 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('Mapa creado correctamente');
       this.scheduleMapResize();
     }
+  }
+
+  /**
+   * OSM público exige Referer válido (política reforzada recientemente).
+   * Si el proxy/firewall bloquea los tiles, tras varios errores se usa fondo local.
+   */
+  private addBasemapLayer(): void {
+    if (!this.map) {
+      return;
+    }
+
+    // Leaflet < 1.10 no setea esto solo; sin Referer OSM puede bloquear/timeout.
+    (L.TileLayer.prototype.options as L.TileLayerOptions & { referrerPolicy?: string }).referrerPolicy =
+      'strict-origin-when-cross-origin';
+
+    this.osmTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors',
+      referrerPolicy: 'strict-origin-when-cross-origin'
+    } as L.TileLayerOptions);
+
+    this.osmTileLayer.on('tileerror', () => {
+      this.basemapTileErrorCount += 1;
+      // Evitar spam de timeouts: si fallan varios, pasar a fondo local
+      if (!this.basemapFallbackActive && this.basemapTileErrorCount >= 6) {
+        this.ngZone.run(() => this.switchToOfflineBasemap());
+      }
+    });
+
+    this.osmTileLayer.on('tileload', () => {
+      // Si al menos un tile carga, resetear contador de fallos consecutivos
+      this.basemapTileErrorCount = 0;
+    });
+
+    this.osmTileLayer.addTo(this.map);
+  }
+
+  private switchToOfflineBasemap(): void {
+    if (!this.map || this.basemapFallbackActive) {
+      return;
+    }
+    this.basemapFallbackActive = true;
+    if (this.osmTileLayer) {
+      this.map.removeLayer(this.osmTileLayer);
+      this.osmTileLayer = null;
+    }
+    // Sin capa remota: el fondo CSS de .subnets-map alcanza para ubicar pins
+    const mapEl = this.map.getContainer();
+    mapEl.classList.add('subnets-map--offline-basemap');
+    console.warn('OSM no alcanzable (proxy/firewall). Usando fondo local; los marcadores siguen activos.');
   }
 
   private getUruguayBounds(): L.LatLngBounds {
@@ -833,7 +885,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /** Registra modal abierto: repinta clusters sin cambiar zoom global de la app. */
+  /** Registra modal abierto: repinta clusters. */
   private registerMapModalOpen(): void {
     this.mapModalOpenCount += 1;
   }

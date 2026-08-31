@@ -3,10 +3,105 @@
   
   <div class="header-section">
     <div class="header-content">
-      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
-      <div class="title-wrapper flex-grow-1">
+      <div class="title-wrapper">
         <h1 id="tour-users-title"><i class="fas fa-users-cog"></i> Gestión de Usuarios</h1>
       </div>
+    </div>
+  </div>
+
+  <div class="users-stage">
+    <div
+      class="users-role-tabs"
+      *ngIf="!loading && users.length > 0"
+      id="tour-users-roles"
+      role="tablist"
+      aria-label="Filtrar por rol">
+      <button
+        type="button"
+        role="tab"
+        class="users-role-tab users-role-tab--todos"
+        [class.users-role-tab--active]="filtroRol === 'todos'"
+        [attr.aria-selected]="filtroRol === 'todos'"
+        (click)="setFiltroRol('todos')">
+        <span class="users-role-tab-icon" aria-hidden="true">
+          <i class="fas fa-users"></i>
+        </span>
+        <span class="users-role-tab-label">Todos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        *ngFor="let role of roles"
+        class="users-role-tab"
+        [class.users-role-tab--active]="filtroRol === role.value"
+        [attr.aria-selected]="filtroRol === role.value"
+        [style.--tab-accent]="getRolColor(role.value)"
+        (click)="setFiltroRol(role.value)">
+        <span class="users-role-tab-icon" aria-hidden="true">
+          <i class="fas" [ngClass]="getRolIcon(role.value)"></i>
+        </span>
+        <span class="users-role-tab-label">{{ role.label }}</span>
+      </button>
+    </div>
+
+  <div class="content-section users-panel">
+    <div class="users-toolbar filters-section">
+      <div
+        class="users-toolbar-left"
+        *ngIf="!loading && users.length > 0"
+        id="tour-users-filters">
+        <form [formGroup]="filterForm" class="users-search-form">
+          <div class="search-container">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar por usuario, email o nombre..."
+              formControlName="search">
+          </div>
+        </form>
+        <div class="filter-group">
+          <div class="filter-group-label">
+            <i class="fas fa-toggle-on me-1"></i> Estado:
+          </div>
+          <div class="filters-container">
+            <button
+              type="button"
+              class="filter-btn filter-btn-colored"
+              [class.active]="filtroEstado === 'todos'"
+              (click)="setFiltroEstado('todos')"
+              [style.--device-color]="'#2c3e50'"
+              [style.--device-bg-color]="'#f8f9fa'"
+              [style.--device-border-color]="'#dee2e6'">
+              <i class="fas fa-th-large"></i>
+              <span>Todos</span>
+              <span class="count">({{ getEstadoTodosCount() }})</span>
+            </button>
+            <button
+              type="button"
+              class="filter-btn filter-btn-colored"
+              [class.active]="filtroEstado === 'activo'"
+              (click)="setFiltroEstado('activo')"
+              [style.--device-color]="'#155724'"
+              [style.--device-bg-color]="'#d4edda'"
+              [style.--device-border-color]="'#c3e6cb'">
+              <i class="fas fa-check-circle"></i>
+              <span>Activos</span>
+              <span class="count">({{ getActivosCount() }})</span>
+            </button>
+            <button
+              type="button"
+              class="filter-btn filter-btn-colored"
+              [class.active]="filtroEstado === 'inactivo'"
+              (click)="setFiltroEstado('inactivo')"
+              [style.--device-color]="'#721c24'"
+              [style.--device-bg-color]="'#f8d7da'"
+              [style.--device-border-color]="'#f5c6cb'">
+              <i class="fas fa-times-circle"></i>
+              <span>Inactivos</span>
+              <span class="count">({{ getInactivosCount() }})</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="actions">
         <button
@@ -20,9 +115,6 @@
         </button>
       </div>
     </div>
-  </div>
-
-  <div class="content-section">
     <div *ngIf="errorMessage" class="alert alert-danger mb-3">
       <i class="fas fa-exclamation-circle me-2"></i>{{ errorMessage }}
     </div>
@@ -159,95 +251,6 @@
       </div>
     </div>
 
-    <!-- Filtros -->
-    <div *ngIf="!loading && users.length > 0" class="filters-section mb-4" id="tour-users-filters">
-      <form [formGroup]="filterForm">
-        <div class="row mb-3">
-          <div class="col-12">
-            <div class="search-container" style="max-width: 400px;">
-              <input 
-                type="text" 
-                class="form-control" 
-                placeholder="Buscar por usuario, email o nombre..." 
-                formControlName="search">
-            </div>
-          </div>
-        </div>
-      </form>
-      <div class="filters-row">
-        <div class="filter-group">
-          <div class="filter-group-label">
-            <i class="fas fa-toggle-on me-1"></i> Estado:
-          </div>
-          <div class="filters-container">
-            <button 
-              class="filter-btn filter-btn-colored" 
-              [class.active]="filtroEstado === 'todos'"
-              (click)="setFiltroEstado('todos')"
-              [style.--device-color]="'#2c3e50'"
-              [style.--device-bg-color]="'#f8f9fa'"
-              [style.--device-border-color]="'#dee2e6'">
-              <i class="fas fa-th-large"></i>
-              <span>Todos</span>
-              <span class="count">({{ users.length }})</span>
-            </button>
-            <button 
-              class="filter-btn filter-btn-colored" 
-              [class.active]="filtroEstado === 'activo'"
-              (click)="setFiltroEstado('activo')"
-              [style.--device-color]="'#155724'"
-              [style.--device-bg-color]="'#d4edda'"
-              [style.--device-border-color]="'#c3e6cb'">
-              <i class="fas fa-check-circle"></i>
-              <span>Activos</span>
-              <span class="count">({{ getActivosCount() }})</span>
-            </button>
-            <button 
-              class="filter-btn filter-btn-colored" 
-              [class.active]="filtroEstado === 'inactivo'"
-              (click)="setFiltroEstado('inactivo')"
-              [style.--device-color]="'#721c24'"
-              [style.--device-bg-color]="'#f8d7da'"
-              [style.--device-border-color]="'#f5c6cb'">
-              <i class="fas fa-times-circle"></i>
-              <span>Inactivos</span>
-              <span class="count">({{ getInactivosCount() }})</span>
-            </button>
-          </div>
-        </div>
-        <div class="filter-group">
-          <div class="filter-group-label">
-            <i class="fas fa-user-tag me-1"></i> Rol:
-          </div>
-          <div class="filters-container">
-            <button 
-              class="filter-btn filter-btn-colored" 
-              [class.active]="filtroRol === 'todos'"
-              (click)="setFiltroRol('todos')"
-              [style.--device-color]="'#2c3e50'"
-              [style.--device-bg-color]="'#f8f9fa'"
-              [style.--device-border-color]="'#dee2e6'">
-              <i class="fas fa-th-large"></i>
-              <span>Todos</span>
-              <span class="count">({{ users.length }})</span>
-            </button>
-            <button 
-              *ngFor="let role of roles" 
-              class="filter-btn filter-btn-colored" 
-              [class.active]="filtroRol === role.value"
-              (click)="setFiltroRol(role.value)"
-              [style.--device-color]="getRolColor(role.value)"
-              [style.--device-bg-color]="getRolBgColor(role.value)"
-              [style.--device-border-color]="getRolBorderColor(role.value)">
-              <i class="fas" [ngClass]="getRolIcon(role.value)"></i>
-              <span>{{ role.label }}</span>
-              <span class="count">({{ getRolCount(role.value) }})</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Indicador de carga -->
     <div *ngIf="loading && !showForm" class="text-center p-5">
       <div class="spinner-border text-primary" role="status">
@@ -261,13 +264,43 @@
       <table class="generic-table users-table">
         <thead>
           <tr>
-            <th>Usuario</th>
-            <th>Email</th>
-            <th>Nombre Completo</th>
-            <th>Rol</th>
+            <th class="sortable-header" [class.active]="sortColumn === 'username'" (click)="sortData('username')">
+              <div class="th-content">
+                <span>Usuario</span>
+                <i class="fas" [ngClass]="getSortIcon('username')"></i>
+              </div>
+            </th>
+            <th class="sortable-header" [class.active]="sortColumn === 'email'" (click)="sortData('email')">
+              <div class="th-content">
+                <span>Email</span>
+                <i class="fas" [ngClass]="getSortIcon('email')"></i>
+              </div>
+            </th>
+            <th class="sortable-header" [class.active]="sortColumn === 'nombreCompleto'" (click)="sortData('nombreCompleto')">
+              <div class="th-content">
+                <span>Nombre Completo</span>
+                <i class="fas" [ngClass]="getSortIcon('nombreCompleto')"></i>
+              </div>
+            </th>
+            <th class="sortable-header" [class.active]="sortColumn === 'role'" (click)="sortData('role')">
+              <div class="th-content">
+                <span>Rol</span>
+                <i class="fas" [ngClass]="getSortIcon('role')"></i>
+              </div>
+            </th>
             <th>Bandeja de entrada</th>
-            <th>Estado</th>
-            <th>Fecha Creación</th>
+            <th class="sortable-header" [class.active]="sortColumn === 'enabled'" (click)="sortData('enabled')">
+              <div class="th-content">
+                <span>Estado</span>
+                <i class="fas" [ngClass]="getSortIcon('enabled')"></i>
+              </div>
+            </th>
+            <th class="sortable-header" [class.active]="sortColumn === 'createdAt'" (click)="sortData('createdAt')">
+              <div class="th-content">
+                <span>Fecha Creación</span>
+                <i class="fas" [ngClass]="getSortIcon('createdAt')"></i>
+              </div>
+            </th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -289,7 +322,6 @@
                 <i class="fas fa-inbox bandeja-badge-icon" aria-hidden="true"></i>
                 {{ getBandejaEntrada(user) }}
               </span>
-              <small *ngIf="getBandejaEntradaCodigo(user) as cod" class="bandeja-codigo">{{ cod }}</small>
             </td>
             <td>
               <span class="status-badge" [ngClass]="user.enabled ? 'status-active' : 'status-inactive'">
@@ -339,6 +371,7 @@
       <h5 class="text-muted">No hay usuarios que coincidan con los filtros</h5>
       <p class="text-muted">Pruebe ajustar la búsqueda o los filtros</p>
     </div>
+  </div>
   </div>
 </div>
 

@@ -1,21 +1,145 @@
 <div class="generic-container internos-ose-page">
   <div class="header-section">
     <div class="header-content">
-      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 w-100 mb-2">
-        <div class="title-wrapper flex-grow-1">
-          <h1><i class="fas fa-phone"></i> Internos OSE</h1>
-        </div>
+      <div class="title-wrapper">
+        <h1 id="tour-guia-title"><i class="fas fa-address-book"></i> Guía de contactos</h1>
+        <p class="guia-subtitle mb-0">Equipo Cerbero e internos telefónicos</p>
       </div>
-      <div class="actions" *ngIf="canManageInternos()">
-        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" (click)="abrirModal(internoModal)">
+    </div>
+  </div>
+
+  <div class="guia-stage" [attr.data-tab]="pestana">
+    <div class="guia-tabs" id="tour-guia-tabs" role="tablist" aria-label="Secciones de la guía">
+      <button
+        type="button"
+        role="tab"
+        class="guia-tab guia-tab--equipo"
+        [class.guia-tab--active]="pestana === 'equipo'"
+        [attr.aria-selected]="pestana === 'equipo'"
+        aria-controls="guia-panel-equipo"
+        (click)="cambiarPestana('equipo')">
+        <span class="guia-tab-icon" aria-hidden="true">
+          <i class="fas fa-users"></i>
+        </span>
+        <span class="guia-tab-label">Equipo Cerbero</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="guia-tab guia-tab--internos"
+        [class.guia-tab--active]="pestana === 'internos'"
+        [attr.aria-selected]="pestana === 'internos'"
+        aria-controls="guia-panel-internos"
+        (click)="cambiarPestana('internos')">
+        <span class="guia-tab-icon" aria-hidden="true">
+          <i class="fas fa-phone-alt"></i>
+        </span>
+        <span class="guia-tab-label">Internos</span>
+      </button>
+    </div>
+
+  <!-- Equipo Cerbero: tarjetas con foto -->
+  <div class="content-section guia-panel" id="guia-panel-equipo" role="tabpanel" *ngIf="pestana === 'equipo'">
+    <div class="table-container">
+      <div *ngIf="errorUsuarios" class="alert alert-danger">{{ errorUsuarios }}</div>
+
+      <div *ngIf="loadingUsuarios" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando equipo...</p>
+      </div>
+
+      <ng-container *ngIf="!loadingUsuarios">
+        <div class="list-toolbar" id="tour-guia-equipo-search">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              [(ngModel)]="searchUsuarios"
+              (ngModelChange)="onSearchUsuariosChange()"
+              placeholder="Buscar por nombre, usuario, correo o rol..."
+              autocomplete="off">
+            <button
+              *ngIf="searchUsuarios"
+              type="button"
+              class="btn btn-link search-clear-btn"
+              (click)="clearSearchUsuarios()"
+              title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="list-summary mb-0" *ngIf="usuariosList.length > 0">
+            <span *ngIf="usuariosFiltrados.length === usuariosList.length">
+              {{ usuariosList.length }} personas
+            </span>
+            <span *ngIf="usuariosFiltrados.length !== usuariosList.length">
+              {{ usuariosFiltrados.length }} de {{ usuariosList.length }} personas
+            </span>
+          </p>
+        </div>
+
+        <div *ngIf="usuariosList.length === 0 && !errorUsuarios" class="alert alert-info">
+          No hay usuarios activos para mostrar.
+        </div>
+
+        <div *ngIf="usuariosList.length > 0 && usuariosFiltrados.length === 0" class="alert alert-info">
+          <i class="fas fa-search me-2"></i>
+          No hay personas que coincidan con la búsqueda.
+        </div>
+
+        <div id="tour-guia-equipo-grid">
+        <section *ngFor="let grupo of gruposUsuarios" class="guia-equipo-grupo">
+          <h2 class="guia-equipo-grupo-title">
+            <i [class]="iconoRol(grupo.role)" aria-hidden="true"></i>
+            {{ grupo.label }}
+            <span class="guia-equipo-grupo-count">{{ grupo.usuarios.length }}</span>
+          </h2>
+          <div class="guia-equipo-grid">
+            <article
+              *ngFor="let u of grupo.usuarios"
+              class="guia-persona-card"
+              [class.guia-persona-card--yo]="esUsuarioActual(u)">
+              <div
+                class="guia-persona-avatar"
+                [class.guia-persona-avatar--photo]="u.hasAvatar">
+                <img
+                  *ngIf="u.hasAvatar"
+                  [src]="avatarUrl(u.id)"
+                  alt=""
+                  (error)="onUsuarioAvatarError(u)">
+                <span *ngIf="!u.hasAvatar">{{ inicialesUsuario(u) }}</span>
+              </div>
+              <h3 class="guia-persona-nombre">
+                {{ nombreVisible(u) }}
+                <span *ngIf="esUsuarioActual(u)" class="guia-persona-yo">Vos</span>
+              </h3>
+              <p class="guia-persona-handle">{{ '@' + u.username }}</p>
+              <a *ngIf="u.email" class="guia-persona-email" [href]="'mailto:' + u.email">
+                {{ u.email }}
+              </a>
+              <span class="guia-persona-rol" [ngClass]="'guia-persona-rol--' + (u.role || '').toLowerCase()">
+                {{ getRoleLabel(u.role) }}
+              </span>
+            </article>
+          </div>
+        </section>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Internos telefónicos -->
+  <div class="content-section guia-panel" id="guia-panel-internos" role="tabpanel" *ngIf="pestana === 'internos'">
+    <div class="content-toolbar" *ngIf="canManageInternos()">
+      <div class="actions">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-guia-interno-nuevo" (click)="abrirModal(internoModal)">
           <i class="fas fa-plus me-2"></i>
           Nuevo interno
         </button>
       </div>
     </div>
-  </div>
-
-  <div class="content-section">
     <div class="table-container">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -29,7 +153,7 @@
       </div>
 
       <ng-container *ngIf="!loading">
-        <div class="list-toolbar">
+        <div class="list-toolbar" id="tour-guia-internos-search">
           <div class="search-input-wrapper">
             <i class="fas fa-search search-icon"></i>
             <input
@@ -65,7 +189,7 @@
           </p>
         </div>
 
-        <div class="table-responsive" *ngIf="collectionSize > 0">
+        <div class="table-responsive" id="tour-guia-internos-table" *ngIf="collectionSize > 0">
           <table class="generic-table cerbero-list-table">
             <thead>
               <tr>
@@ -155,6 +279,7 @@
         </div>
       </ng-container>
     </div>
+  </div>
   </div>
 </div>
 

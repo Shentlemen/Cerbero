@@ -1,0 +1,156 @@
+.configuracion-almacen-container {
+  padding: 20px;
+}
+
+.controls-section {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.form-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.form-card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 12px 12px 0 0;
+}
+
+.form-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+}
+
+.form-card-title i {
+  color: #212529;
+  font-size: 1.1rem;
+}
+
+.form-card-body {
+  padding: 1.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.configs-list {
+  margin-top: 20px;
+}
+
+.config-card .card {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.config-card .card-header {
+  background-color: #fff;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.config-card .card-header h5 > i.config-card-almacen-icon {
+  color: #dc3545 !important;
+  -webkit-text-fill-color: #dc3545 !important;
+}
+
+.btn-planta {
+  background: var(--ds-color-elevated);
+  color: var(--ds-color-text);
+  border: 1px solid var(--ds-color-border);
+}
+
+.btn-planta:hover,
+.btn-planta:focus-visible {
+  background: var(--ds-color-hover);
+  color: var(--ds-color-heading);
+  border-color: var(--ds-color-accent);
+}
+
+:host-context(html.theme-dark) .config-card .card-header h5 > i.config-card-almacen-icon {
+  color: #f87171 !important;
+  -webkit-text-fill-color: #f87171 !important;
+}
+
+.config-details {
+  padding: 10px 0;
+}
+
+.config-details .row {
+  margin-bottom: 15px;
+}
+
+.config-details strong {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.config-chip {
+  display: inline-block;
+  padding: 0.32rem 0.72rem;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+  border: 1px solid transparent;
+}
+
+.config-chip--codigo {
+  color: var(--ds-color-ribbon);
+  -webkit-text-fill-color: var(--ds-color-ribbon);
+  background: color-mix(in srgb, var(--ds-color-ribbon) 16%, var(--ds-color-surface));
+  border-color: color-mix(in srgb, var(--ds-color-ribbon) 45%, var(--ds-color-surface));
+}
+
+.config-chip--sector {
+  color: var(--ds-color-tab-internos);
+  -webkit-text-fill-color: var(--ds-color-tab-internos);
+  background: color-mix(in srgb, var(--ds-color-tab-internos) 16%, var(--ds-color-surface));
+  border-color: color-mix(in srgb, var(--ds-color-tab-internos) 45%, var(--ds-color-surface));
+}
+
+:host-context(html.theme-dark) .config-chip--codigo {
+  color: #f0a8a8;
+  -webkit-text-fill-color: #f0a8a8;
+  background: color-mix(in srgb, var(--ds-color-ribbon) 28%, var(--ds-color-elevated));
+  border-color: color-mix(in srgb, var(--ds-color-ribbon) 55%, var(--ds-color-elevated));
+}
+
+:host-context(html.theme-dark) .config-chip--sector {
+  color: #5eead4;
+  -webkit-text-fill-color: #5eead4;
+  background: color-mix(in srgb, var(--ds-color-tab-internos) 24%, var(--ds-color-elevated));
+  border-color: color-mix(in srgb, var(--ds-color-tab-internos) 50%, var(--ds-color-elevated));
+}
+
+/* Modo DEMO del modal "Nueva Configuración" */
+:host ::ng-deep .modal-header.config-modal-header--demo {
+  background: linear-gradient(135deg, #fff4e0 0%, #ffe2b0 100%);
+  border-bottom: 2px dashed #ff9800;
+}
+
+:host ::ng-deep .modal-header.config-modal-header--demo .modal-title,
+:host ::ng-deep .modal-header.config-modal-header--demo .modal-title i {
+  color: #b15a00 !important;
+}
+
+:host ::ng-deep .modal-btn-primario--demo {
+  background: #f5f5f5 !important;
+  color: #6c757d !important;
+  border: 1px dashed #adb5bd !important;
+  cursor: not-allowed !important;
+}
+

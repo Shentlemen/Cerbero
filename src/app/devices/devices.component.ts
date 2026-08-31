@@ -10,10 +10,10 @@ import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { PermissionsService } from '../services/permissions.service';
-import { EstadoDispositivoService, CambioEstadoDispositivoRequest } from '../services/estado-dispositivo.service';
+import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
 import { AuthService } from '../services/auth.service';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { FormControl } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -113,18 +113,14 @@ export class DevicesComponent implements OnInit, OnDestroy {
 
   // Agregar propiedades
   deletingDeviceMac: string | null = null;
-  changingStateDeviceMac: string | null = null;
   transferiendoDeviceMac: string | null = null;
   showConfirmDialog: boolean = false;
   deviceToDelete: any = null;
-  showEstadoDialog: boolean = false;
-  estadoAction: 'baja' | 'almacen' | null = null;
-  deviceToChangeState: any = null;
-  estadoObservaciones: string = '';
 
   /** Búsqueda por MAC (literal o solo hex) o por IP */
   macSearchControl = new FormControl('');
   private tourCleanup?: () => void;
+  private viewAsSub?: Subscription;
 
   constructor(
     private networkInfoService: NetworkInfoService,
@@ -145,6 +141,12 @@ export class DevicesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Invalidar caché de permisos cuando el GM cambia «Ver como»
+    this.viewAsSub = this.permissionsService.viewAs$.subscribe(() => {
+      this._canManageDevicesCache = undefined;
+      this._canManageDeviceStatesCache = undefined;
+    });
+
     this.cargarDispositivos();
     this.tourCleanup = this.tourRegistry.register('devices', [{
       id: 'devices-overview',
@@ -154,13 +156,13 @@ export class DevicesComponent implements OnInit, OnDestroy {
       afterEnd: () => this.resetScroll(),
       steps: [
         { selector: '#tour-devices-title', title: 'Dispositivos de red', description: 'Periféricos y equipo activo de red excluyendo bajas y stock en almacén.', side: 'bottom' },
-        { selector: '#tour-devices-filters', title: 'Tipos', description: 'Filtrá por categoría: impresoras, switches, APs, etc.', side: 'bottom' },
+        { selector: '#tour-devices-filters', title: 'Tipos', description: 'Pestañas para filtrar por categoría: impresoras, switches, APs, etc.', side: 'bottom' },
         { selector: '#tour-devices-search', title: 'Búsqueda', description: 'Buscá por MAC o dirección IP.', side: 'bottom' },
         {
           selector: '#tour-devices-table',
           title: 'Tabla',
           description:
-            'Hacé clic en los encabezados para ordenar. Cada fila abre el detalle; con permisos, al final de la fila tenés acciones (baja, almacén, transferir, eliminar).',
+            'Hacé clic en los encabezados para ordenar. Cada fila abre el detalle; con permisos, al final de la fila tenés acciones (transferir, eliminar).',
           side: 'bottom'
         },
         { selector: '#tour-devices-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
@@ -175,6 +177,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.viewAsSub?.unsubscribe();
     this.tourCleanup?.();
     this.tourCleanup = undefined;
   }
@@ -556,79 +559,9 @@ export class DevicesComponent implements OnInit, OnDestroy {
     }
   }
 
-  darDeBaja(device: any): void {
-    this.estadoAction = 'baja';
-    this.deviceToChangeState = device;
-    this.estadoObservaciones = '';
-    this.showEstadoDialog = true;
-  }
-
-  enviarAAlmacen(device: any): void {
-    this.estadoAction = 'almacen';
-    this.deviceToChangeState = device;
-    this.estadoObservaciones = '';
-    this.showEstadoDialog = true;
-  }
-
   eliminarDevice(device: any): void {
     this.deviceToDelete = device;
     this.showConfirmDialog = true;
-  }
-
-  confirmarCambioEstado(): void {
-    if (!this.deviceToChangeState || !this.estadoAction) {
-      return;
-    }
-
-    this.changingStateDeviceMac = this.deviceToChangeState.mac;
-
-    const request: CambioEstadoDispositivoRequest = {
-      observaciones: this.estadoObservaciones.trim(),
-      usuario: this.authService.getUsuarioParaAuditoria()
-    };
-
-    const observable = this.estadoAction === 'baja' 
-      ? this.estadoDispositivoService.darDeBaja(this.deviceToChangeState.mac, request)
-      : this.estadoDispositivoService.enviarAAlmacen(this.deviceToChangeState.mac, request);
-
-    observable.subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Recargar dispositivos para actualizar la lista
-          this.cargarDispositivos();
-          
-          const accionTexto = this.estadoAction === 'baja' ? 'dado de baja' : 'enviado a almacén';
-          this.notificationService.showSuccessMessage(
-            `Dispositivo "${this.deviceToChangeState.name}" ${accionTexto} exitosamente.`
-          );
-        } else {
-          throw new Error(response.message || 'Error al cambiar el estado del dispositivo');
-        }
-      },
-      error: (error) => {
-        console.error('Error al cambiar estado:', error);
-        const accionTexto = this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
-        
-        if (error.status === 403) {
-          this.notificationService.showError(
-            'Sin permisos suficientes',
-            `Para ${accionTexto} dispositivos necesitas rol de GM o Administrador.`
-          );
-        } else {
-          this.notificationService.showError(
-            'Error al cambiar estado',
-            `No se pudo ${accionTexto} el dispositivo "${this.deviceToChangeState.name}": ${error.message || 'Error desconocido'}`
-          );
-        }
-      },
-      complete: () => {
-        this.changingStateDeviceMac = null;
-        this.showEstadoDialog = false;
-        this.deviceToChangeState = null;
-        this.estadoAction = null;
-        this.estadoObservaciones = '';
-      }
-    });
   }
 
   confirmarEliminacion(): void {
@@ -760,17 +693,6 @@ export class DevicesComponent implements OnInit, OnDestroy {
   cancelarEliminacion(): void {
     this.showConfirmDialog = false;
     this.deviceToDelete = null;
-  }
-
-  cancelarCambioEstado(): void {
-    this.showEstadoDialog = false;
-    this.deviceToChangeState = null;
-    this.estadoAction = null;
-    this.estadoObservaciones = '';
-  }
-
-  getEstadoActionText(): string {
-    return this.estadoAction === 'baja' ? 'dar de baja' : 'enviar a almacén';
   }
 
   // Métodos de filtrado

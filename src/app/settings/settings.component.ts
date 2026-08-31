@@ -11,6 +11,7 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { TourRegistryService } from '../services/tour-registry.service';
 import { SessionIdleService } from '../services/session-idle.service';
 import { OcsDuplicatesAlertService } from '../services/ocs-duplicates-alert.service';
+import { firstValueFrom, timeout } from 'rxjs';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -37,16 +38,33 @@ export class SettingsComponent implements OnInit, OnDestroy {
   duplicatesError: string | null = null;
   isDeleting: boolean = false;
 
-  // Propiedades para duplicados OCS (solo consulta)
+  // Propiedades para duplicados OCS
   isSearchingOcsDuplicates = false;
   ocsDuplicatesResult: any[] | null = null;
   ocsDuplicatesError: string | null = null;
+  isDeletingOcs = false;
   
   // Propiedades para comparación de bases de datos
   isComparingDatabases = false;
   comparisonResult: any = null;
   comparisonError: string | null = null;
-  
+
+  // Export CSV Grafana
+  isExportingCsv = false;
+  csvExportError: string | null = null;
+
+  // Diagnóstico inventario
+  isLoadingHealth = false;
+  healthResult: any = null;
+  healthError: string | null = null;
+
+  isLoadingStale = false;
+  staleResult: any = null;
+  staleError: string | null = null;
+  staleDays = 30;
+  staleSource: 'cerbero' | 'ocs' = 'cerbero';
+
+  private diagnosticsUrl: string;
   private apiUrl: string;
   private tourCleanup?: () => void;
   private routeSub?: { unsubscribe(): void };
@@ -63,24 +81,42 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private ocsDuplicatesAlert: OcsDuplicatesAlertService
   ) {
     this.apiUrl = `${this.configService.getApiUrl()}/sync`;
+    this.diagnosticsUrl = `${this.configService.getApiUrl()}/sync/inventory-diagnostics`;
   }
 
   ngOnInit(): void {
+    if (this.canAccessSettings()) {
+      void this.cargarSaludInventario();
+    }
+
     this.tourCleanup = this.tourRegistry.register('settings', [{
       id: 'settings-overview',
-      title: 'Tour de configuración',
+      title: 'Tour de mantenimiento de BD',
       icon: 'fa-route',
       beforeStart: () => this.resetScroll(),
       afterEnd: () => this.resetScroll(),
       steps: [
         {
           selector: '#tour-settings-title',
-          title: 'Configuración del sistema',
+          title: 'Mantenimiento de bases de datos',
           description:
-            'Pantalla de <strong>mantenimiento avanzado</strong> (solo GM). Desde aquí podés resetear datos OCS, ' +
-            'comparar inventarios entre bases, detectar duplicados y probar el cierre de sesión por inactividad. ' +
-            'Todas las acciones son sensibles: usalas con criterio y en ventanas de mantenimiento.',
+            'Pantalla de <strong>mantenimiento y diagnóstico</strong> de inventario (solo GM). Incluye salud OCS/Cerbero, ' +
+            'equipos sin reportar, reseteo, duplicados y export CSV.',
           side: 'bottom'
+        },
+        {
+          selector: '#tour-settings-health',
+          title: 'Salud del inventario',
+          description:
+            'Resumen de conteos OCS vs Cerbero, duplicados, alertas abiertas y equipos sin reportar (7/30/90 días). Solo lectura.',
+          side: 'top'
+        },
+        {
+          selector: '#tour-settings-stale',
+          title: 'Equipos sin reportar',
+          description:
+            'Lista equipos cuyo <code>lastcome</code> es antiguo o nulo. Podés filtrar por días y base (Cerbero u OCS).',
+          side: 'top'
         },
         {
           selector: '#tour-settings-ocs',
@@ -99,6 +135,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
             'Solo al confirmar arranca la operación; mientras corre el botón queda deshabilitado y muestra progreso. ' +
             'Al terminar verás un resumen por tabla debajo de esta sección.',
           side: 'left'
+        },
+        {
+          selector: '#tour-settings-grafana-export',
+          title: 'Exportar CSV para Grafana',
+          description:
+            'Descarga un <strong>ZIP</strong> con CSV del inventario (hardware, componentes, software, subredes) ' +
+            'más vistas denormalizadas listas para paneles Grafana. La generación puede demorar si hay mucho software.',
+          side: 'top'
         },
         {
           selector: '#tour-settings-idle',
@@ -141,8 +185,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
           title: 'Buscar duplicados en OCS',
           description:
             'Consulta la base <strong>OCS</strong> (origen del agente) y agrupa equipos con el <strong>mismo nombre</strong> en la tabla hardware. ' +
-            'Es <strong>solo lectura</strong>: no elimina registros en OCS desde Cerbero. ' +
-            'Sirve para detectar inventario sucio en origen; el badge naranja del perro también puede llevarte acá.',
+            'Desde los resultados podés <strong>eliminar</strong> un duplicado: se borra ese hardware en OCS y todos sus datos relacionados. ' +
+            'Debe quedar al menos un registro con ese nombre. El badge naranja del perro también puede llevarte acá.',
           side: 'top'
         },
         {
@@ -206,6 +250,62 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // Verificar si el usuario tiene permisos para acceder a settings
   canAccessSettings(): boolean {
     return this.permissionsService.isGM();
+  }
+
+  async cargarSaludInventario(notificar = false): Promise<void> {
+    this.isLoadingHealth = true;
+    this.healthError = null;
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<any>>(`${this.diagnosticsUrl}/health`)
+      );
+      if (response?.success) {
+        this.healthResult = response.data;
+        if (notificar) {
+          const cerbero = response.data?.cerbero?.total ?? '—';
+          const ocs = response.data?.ocs?.total ?? '—';
+          this.notificationService.showSuccessMessage(
+            `Salud del inventario actualizada. Cerbero: ${cerbero} equipos · OCS: ${ocs}.`
+          );
+        }
+      } else {
+        throw new Error(response?.message || 'Error al cargar salud del inventario');
+      }
+    } catch (err: any) {
+      const mensaje = err?.error?.message || err?.message || 'Error al cargar salud del inventario';
+      this.healthError = mensaje;
+      this.healthResult = null;
+      if (notificar) {
+        this.notificationService.showError('Salud del inventario', mensaje);
+      }
+    } finally {
+      this.isLoadingHealth = false;
+    }
+  }
+
+  async cargarEquiposSinReportar(): Promise<void> {
+    this.isLoadingStale = true;
+    this.staleError = null;
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<any>>(`${this.diagnosticsUrl}/stale`, {
+          params: {
+            days: String(this.staleDays),
+            source: this.staleSource
+          }
+        })
+      );
+      if (response?.success) {
+        this.staleResult = response.data;
+      } else {
+        throw new Error(response?.message || 'Error al listar equipos sin reportar');
+      }
+    } catch (err: any) {
+      this.staleError = err?.error?.message || err?.message || 'Error al listar equipos sin reportar';
+      this.staleResult = null;
+    } finally {
+      this.isLoadingStale = false;
+    }
   }
 
   mostrarConfirmacion(confirmModal: any) {
@@ -274,7 +374,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.ocsDuplicatesAlert.refresh(false);
       } else {
         this.ocsDuplicatesError = response?.message || 'Error al buscar duplicados en OCS';
-        this.notificationService.showError('Error al Buscar Duplicados en OCS', this.ocsDuplicatesError);
+        this.notificationService.showError(
+          'Error al Buscar Duplicados en OCS',
+          this.ocsDuplicatesError ?? 'Error desconocido'
+        );
       }
     } catch (err: any) {
       this.ocsDuplicatesError = err.message || 'Error durante la búsqueda de duplicados en OCS';
@@ -284,6 +387,53 @@ export class SettingsComponent implements OnInit, OnDestroy {
       );
     } finally {
       this.isSearchingOcsDuplicates = false;
+    }
+  }
+
+  async eliminarDuplicadoOcs(hardwareId: number, hardwareName: string): Promise<void> {
+    if (this.isDeletingOcs) {
+      return;
+    }
+    if (!this.canAccessSettings()) {
+      this.notificationService.showError(
+        'Permisos Insuficientes',
+        'Solo GM puede eliminar duplicados en OCS.'
+      );
+      return;
+    }
+
+    const confirmacion = confirm(
+      `¿Eliminar el duplicado "${hardwareName}" (ID: ${hardwareId}) de la base OCS?\n\n` +
+        'Se borrarán ese hardware y todos sus datos relacionados en OCS ' +
+        '(bios, CPU, memoria, discos, software, redes, etc.).\n' +
+        'Debe quedar al menos un equipo con ese nombre.\n\n' +
+        'Esta acción NO se puede deshacer.'
+    );
+    if (!confirmacion) {
+      return;
+    }
+
+    this.isDeletingOcs = true;
+    try {
+      const response = await this.http
+        .delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/ocs/${hardwareId}`)
+        .toPromise();
+
+      if (response && response.success) {
+        this.notificationService.showSuccessMessage(
+          response.message || `Duplicado OCS "${hardwareName}" eliminado`
+        );
+        await this.buscarDuplicadosOcs();
+        this.ocsDuplicatesAlert.refresh(false);
+      } else {
+        throw new Error(response?.message || 'Error al eliminar el duplicado en OCS');
+      }
+    } catch (err: any) {
+      const msg =
+        err?.error?.message || err?.message || 'Error al eliminar el duplicado en OCS';
+      this.notificationService.showError('Error al Eliminar Duplicado en OCS', msg);
+    } finally {
+      this.isDeletingOcs = false;
     }
   }
 
@@ -368,6 +518,69 @@ export class SettingsComponent implements OnInit, OnDestroy {
       );
     } finally {
       this.isDeleting = false;
+    }
+  }
+
+  async exportarCsvGrafana(): Promise<void> {
+    if (!this.canAccessSettings()) {
+      this.notificationService.showError(
+        'Permisos Insuficientes',
+        'Solo GM puede exportar el inventario a CSV.'
+      );
+      return;
+    }
+
+    this.isExportingCsv = true;
+    this.csvExportError = null;
+
+    try {
+      const blob = await firstValueFrom(
+        this.http
+          .get(`${this.configService.getApiUrl()}/sync/export/grafana-csv`, {
+            responseType: 'blob'
+          })
+          .pipe(timeout(30 * 60 * 1000))
+      );
+
+      if (!blob || blob.size === 0) {
+        throw new Error('El archivo descargado está vacío');
+      }
+
+      if (blob.type && blob.type.includes('application/json')) {
+        const text = await blob.text();
+        throw new Error(text || 'Error al generar el export');
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `cerbero_grafana_${stamp}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.notificationService.showSuccessMessage('Export CSV para Grafana descargado');
+    } catch (err: any) {
+      let message = err?.message || 'Error al exportar CSV';
+      if (err?.name === 'TimeoutError') {
+        message = 'La exportación tardó demasiado. Probá de nuevo o exportá en un momento de menor carga.';
+      }
+      if (err?.error instanceof Blob) {
+        try {
+          const text = await err.error.text();
+          if (text) {
+            message = text;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      this.csvExportError = message;
+      this.notificationService.showError('Error al exportar CSV', message);
+    } finally {
+      this.isExportingCsv = false;
     }
   }
 

@@ -6,8 +6,7 @@
   padding: 2rem;
   background: #f8f9fa;
   box-sizing: border-box;
-  /* Compensa el zoom global 0.8 para evitar el "corte" visual inferior */
-  min-height: calc(100vh / 0.8);
+  min-height: 100vh;
 }
 
 /* Dentro de Almacenes: no forzar altura de página completa ni duplicar fondo */
@@ -22,6 +21,28 @@
   scroll-margin-top: 0;
 }
 
+.stock-almacen-container.embed-stock .embed-stock-header {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.stock-almacen-container.embed-stock .embed-stock-header .title-wrapper {
+  align-items: flex-start;
+}
+
+.stock-almacen-container.embed-stock .embed-stock-header h1 {
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .header-section {
   background: #fff;
   border-radius: 14px;
@@ -32,12 +53,23 @@
   scroll-margin-top: 72px;
 }
 
+.title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .title-wrapper h1 {
   margin: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.75rem;
   font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
   color: #1f2937;
 }
 
@@ -206,6 +238,134 @@ button.print-btn:disabled {
   grid-template-columns: 320px 1fr;
   gap: 1rem;
   min-height: 0;
+}
+
+.planta-stock-section {
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--ds-color-surface, #fff);
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+}
+
+.planta-stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.planta-stock-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ds-color-heading, #1f2937);
+}
+
+.planta-stock-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.planta-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--ds-color-subtle, #6c757d);
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  border: 1px solid var(--ds-color-border, #cbd5e1);
+}
+
+.legend-swatch.empty { background: #cbd5e1; }
+.legend-swatch.full { background: #5aa89a; }
+
+:host-context(html.theme-dark) .legend-swatch.empty { background: #334155; }
+:host-context(html.theme-dark) .legend-swatch.full { background: #1d6b62; }
+
+.planta-stock-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  min-height: 280px;
+}
+
+.planta-stock-body.has-drawer {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+}
+
+.planta-stock-canvas {
+  min-height: 280px;
+  height: 340px;
+}
+
+.planta-stock-drawer {
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--ds-color-elevated, #f8f9fa);
+  padding: 0.75rem;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.drawer-head h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ds-color-heading, #1f2937);
+}
+
+.drawer-close {
+  padding: 0;
+  color: var(--ds-color-subtle, #6c757d);
+}
+
+.drawer-ocupacion {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ds-color-text, #111);
+}
+
+.drawer-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.drawer-items li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--ds-color-border-subtle, #eef0f3);
+}
+
+.drawer-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.drawer-item-meta {
+  font-size: 0.75rem;
+  color: var(--ds-color-subtle, #6c757d);
+}
+
+.planta-empty {
+  padding: 0.5rem 0;
 }
 
 .panel-ubicaciones,
@@ -654,6 +814,10 @@ button.print-btn:disabled {
   }
 
   .layout-hibrido {
+    grid-template-columns: 1fr;
+  }
+
+  .planta-stock-body.has-drawer {
     grid-template-columns: 1fr;
   }
 

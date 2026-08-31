@@ -14,6 +14,9 @@
 .helper-dog-container {
   --dog-size: 124px;
   --dog-half: calc(var(--dog-size) / 2);
+  /* Mismo diámetro para globos violetas (tours), rojo (tickets) y naranja (OCS). */
+  --helper-orb-size: calc(var(--dog-size) * 0.36);
+  --helper-orb-half: calc(var(--helper-orb-size) / 2);
   --bubble-stack-offset: 18px;
   --bubble-above-dog: var(--dog-size);
   --bubble-ocs-above: calc(var(--dog-size) + var(--bubble-stack-offset));
@@ -27,6 +30,9 @@
   height: var(--dog-size);
   cursor: pointer;
   border-radius: 50%;
+  /* El GIF declara transparencia, pero el canvas usa negro puro (#000).
+     El menú es #1a1a1a: sin este fondo se ve un cuadrado negro detrás. */
+  background-color: #1a1a1a;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   border: 3px solid transparent;
@@ -741,18 +747,20 @@
   position: absolute;
   top: -6px;
   left: -6px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 14px;
+  box-sizing: border-box;
+  width: var(--helper-orb-size);
+  height: var(--helper-orb-size);
+  min-width: var(--helper-orb-size);
+  padding: 0;
+  border-radius: 50%;
   background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
   color: #fff;
-  font-size: 12px;
+  font-size: calc(var(--helper-orb-size) * 0.32);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   border: 2px solid #fff;
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.55);
   z-index: 25;
@@ -773,56 +781,52 @@
 }
 
 .tickets-badge .fa-exclamation {
-  font-size: 10px;
+  font-size: calc(var(--helper-orb-size) * 0.28);
 }
 
 .tickets-badge-count {
-  font-size: 12px;
+  font-size: calc(var(--helper-orb-size) * 0.32);
   line-height: 1;
 }
 
-/* Mismo momento que se abren los tours: el badge rojo crece como el naranja (OCS). */
+/* Menú abierto: mismo tamaño que los globos violetas (sin scale extra). */
 .tickets-badge--expanded,
 .helper-dog.menu-open .tickets-badge {
   animation: none;
-  transform: scale(1.22);
-  min-width: 32px;
-  height: 32px;
-  font-size: 12px;
+  transform: none;
   z-index: 30;
   box-shadow: 0 3px 12px rgba(220, 38, 38, 0.75), 0 0 0 3px rgba(239, 68, 68, 0.28);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.3s ease,
-    min-width 0.3s ease,
-    height 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .helper-dog.menu-open .tickets-badge .fa-exclamation {
-  font-size: 11px;
+  font-size: calc(var(--helper-orb-size) * 0.28);
 }
 
 .helper-dog.menu-open .tickets-badge-count {
-  font-size: 12px;
+  font-size: calc(var(--helper-orb-size) * 0.32);
   font-weight: 800;
 }
 
 /* Badge naranja: duplicados por nombre en base OCS (GM). Abajo-derecha del perro. */
 .ocs-dup-badge {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 14px;
+  bottom: -6px;
+  right: -6px;
+  box-sizing: border-box;
+  width: var(--helper-orb-size);
+  height: var(--helper-orb-size);
+  min-width: var(--helper-orb-size);
+  padding: 0;
+  border-radius: 50%;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #fff;
-  font-size: 11px;
+  font-size: calc(var(--helper-orb-size) * 0.28);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   border: 2px solid #fff;
   box-shadow: 0 2px 8px rgba(217, 119, 6, 0.55);
   z-index: 25;
@@ -834,31 +838,20 @@
 
 .ocs-dup-badge:hover {
   transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.75);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.7);
 }
 
-/* Mismo momento que se abren los tours: el badge naranja crece para invitar al clic */
 .ocs-dup-badge--expanded,
 .helper-dog.menu-open .ocs-dup-badge {
   animation: none;
-  transform: scale(1.22);
-  min-width: 32px;
-  height: 32px;
-  font-size: 12px;
+  transform: none;
   z-index: 30;
   box-shadow: 0 3px 12px rgba(217, 119, 6, 0.75), 0 0 0 3px rgba(245, 158, 11, 0.28);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.3s ease,
-    min-width 0.3s ease,
-    height 0.3s ease;
-}
-
-.helper-dog.menu-open .ocs-dup-badge .fa-clone {
-  font-size: 11px;
+  transition: box-shadow 0.3s ease;
 }
 
 .helper-dog.menu-open .ocs-dup-badge-count {
-  font-size: 12px;
+  font-size: calc(var(--helper-orb-size) * 0.32);
   font-weight: 800;
 }
 
@@ -867,12 +860,8 @@
   outline-offset: 2px;
 }
 
-.ocs-dup-badge .fa-clone {
-  font-size: 10px;
-}
-
 .ocs-dup-badge-count {
-  font-size: 12px;
+  font-size: calc(var(--helper-orb-size) * 0.32);
   line-height: 1;
 }
 
@@ -929,27 +918,25 @@
 }
 
 .radial-item {
-  position: relative;
-  width: calc(var(--dog-size) * 0.4);
-  height: calc(var(--dog-size) * 0.4);
-  margin: calc(var(--dog-size) * -0.2) 0 0 calc(var(--dog-size) * -0.2);
+  box-sizing: border-box;
+  width: var(--helper-orb-size);
+  height: var(--helper-orb-size);
+  margin: calc(var(--helper-orb-half) * -1) 0 0 calc(var(--helper-orb-half) * -1);
   border: 2px solid #fff;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  font-size: calc(var(--dog-size) * 0.14);
+  font-size: calc(var(--helper-orb-size) * 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   pointer-events: auto;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
-    width 0.3s ease, height 0.3s ease, margin 0.3s ease, font-size 0.3s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
 .helper-dog.menu-open .radial-item {
-  width: calc(var(--dog-size) * 0.46);
   height: calc(var(--dog-size) * 0.46);
   margin: calc(var(--dog-size) * -0.23) 0 0 calc(var(--dog-size) * -0.23);
   font-size: calc(var(--dog-size) * 0.16);
@@ -1008,21 +995,8 @@
   transform: translateY(-50%) translateX(2px);
 }
 
-/* Responsive: en mobile reducimos el radio y el tamaño de cada botón. */
 @media (max-width: 768px) {
-  .radial-menu {
-    top: 40px;
-    left: 40px;
-  }
   .radial-item {
-    width: 36px;
-    height: 36px;
-    margin: -18px 0 0 -18px;
-    font-size: 12px;
-  }
-
-  .helper-dog.menu-open .radial-item {
-    width: 40px;
     height: 40px;
     margin: -20px 0 0 -20px;
     font-size: 13px;

@@ -10,18 +10,6 @@
         Gestión de subredes y coordenadas para el mapa.
       </p>
     </div>
-    <div class="subnets-header-actions flex-shrink-0">
-      <button
-        type="button"
-        class="btn btn-sm btn-export"
-        (click)="exportarExcel()"
-        [disabled]="exportingExcel || loading"
-        title="Exportar subredes, PCs y dispositivos a Excel">
-        <span *ngIf="exportingExcel" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        <i *ngIf="!exportingExcel" class="fas fa-file-excel me-2" aria-hidden="true"></i>
-        Exportar Excel
-      </button>
-    </div>
     </div>
   </div>
 
@@ -63,6 +51,18 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
+        </div>
+        <div class="actions">
+          <button
+            type="button"
+            class="btn btn-sm btn-export btn-excel"
+            (click)="exportarExcel()"
+            [disabled]="exportingExcel || loading"
+            title="Exportar subredes, PCs y dispositivos a Excel">
+            <span *ngIf="exportingExcel" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            <i *ngIf="!exportingExcel" class="fas fa-file-excel me-2" aria-hidden="true"></i>
+            Exportar Excel
+          </button>
         </div>
       </div>
 
@@ -225,6 +225,10 @@
             {{ mapEditMode ? 'Salir de edición' : 'Editar ubicaciones' }}
           </button>
         </div>
+        <p *ngIf="basemapFallbackActive" class="subnets-map-hint subnets-map-hint--offline mb-0">
+          <i class="fas fa-info-circle me-1"></i>
+          OpenStreetMap no responde desde esta red (proxy/firewall). Fondo local activo; los marcadores siguen funcionando.
+        </p>
         <p *ngIf="!mapEditMode && !isSearchFilterActive()" class="subnets-map-hint text-muted small mb-0">
           Clic en un marcador para ver PCs y dispositivos de la subred. Varios pins juntos: el mapa se acerca como con la rueda del mouse hasta que se separan solos y luego podés elegir subred.
           <span *ngIf="subnetsOnMapCount > 0">

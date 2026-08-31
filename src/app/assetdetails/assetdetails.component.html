@@ -18,77 +18,91 @@
           </div>
         </div>
       </div>
-      <div class="card-body pb-3 pt-3">
-      <!-- Misma filosofía visual que los filtros de alertas (dashboard.component) -->
-      <div class="asset-tab-filters" id="tour-assetdetails-tabs">
-        <ul class="asset-tab-strip">
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-general"
-              [class.active]="activeTab === 'general'" (click)="changeTab('general')">
-              <i class="fas fa-info-circle" aria-hidden="true"></i><span>General</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-bios"
-              [class.active]="activeTab === 'bios'" (click)="changeTab('bios')">
-              <i class="fas fa-microchip" aria-hidden="true"></i><span>BIOS</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-cpu"
-              [class.active]="activeTab === 'cpu'" (click)="changeTab('cpu')">
-              <i class="fas fa-microchip" aria-hidden="true"></i><span>CPU</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-drive"
-              [class.active]="activeTab === 'drive'" (click)="changeTab('drive')">
-              <i class="fas fa-database" aria-hidden="true"></i><span>Unidades</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-memory"
-              [class.active]="activeTab === 'memory'" (click)="changeTab('memory')">
-              <i class="fas fa-memory" aria-hidden="true"></i><span>Memoria</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-monitor"
-              [class.active]="activeTab === 'monitor'" (click)="changeTab('monitor')">
-              <i class="fas fa-tv" aria-hidden="true"></i><span>Monitor</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-storage"
-              [class.active]="activeTab === 'storage'" (click)="changeTab('storage')">
-              <i class="fas fa-hard-drive" aria-hidden="true"></i><span>Almacenamiento</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-video"
-              [class.active]="activeTab === 'video'" (click)="changeTab('video')">
-              <i class="fas fa-film" aria-hidden="true"></i><span>Video</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-ubicacion"
-              [class.active]="activeTab === 'ubicacion'" (click)="changeTab('ubicacion')">
-              <i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>Ubicación</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="asset-tab-btn" id="tour-assetdetails-tab-software"
-              [class.active]="activeTab === 'software'" (click)="changeTab('software')">
-              <i class="fas fa-cube" aria-hidden="true"></i><span>Software</span>
-            </button>
-          </li>
-        </ul>
+      <div class="card-body">
+      <div class="cerbero-folder-stage">
+      <div class="cerbero-folder-tabs" id="tour-assetdetails-tabs" role="tablist" aria-label="Secciones del activo">
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-general"
+          [class.cerbero-folder-tab--active]="activeTab === 'general'"
+          [attr.aria-selected]="activeTab === 'general'"
+          [style.--tab-accent]="'#1976d2'"
+          (click)="changeTab('general')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-info-circle"></i></span>
+          <span class="cerbero-folder-tab-label">General</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-bios"
+          [class.cerbero-folder-tab--active]="activeTab === 'bios'"
+          [attr.aria-selected]="activeTab === 'bios'"
+          [style.--tab-accent]="'#6a1b9a'"
+          (click)="changeTab('bios')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-microchip"></i></span>
+          <span class="cerbero-folder-tab-label">BIOS</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-cpu"
+          [class.cerbero-folder-tab--active]="activeTab === 'cpu'"
+          [attr.aria-selected]="activeTab === 'cpu'"
+          [style.--tab-accent]="'#303f9f'"
+          (click)="changeTab('cpu')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-microchip"></i></span>
+          <span class="cerbero-folder-tab-label">CPU</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-drive"
+          [class.cerbero-folder-tab--active]="activeTab === 'drive'"
+          [attr.aria-selected]="activeTab === 'drive'"
+          [style.--tab-accent]="'#ef6c00'"
+          (click)="changeTab('drive')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-database"></i></span>
+          <span class="cerbero-folder-tab-label">Unidades</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-memory"
+          [class.cerbero-folder-tab--active]="activeTab === 'memory'"
+          [attr.aria-selected]="activeTab === 'memory'"
+          [style.--tab-accent]="'#00695c'"
+          (click)="changeTab('memory')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-memory"></i></span>
+          <span class="cerbero-folder-tab-label">Memoria</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-monitor"
+          [class.cerbero-folder-tab--active]="activeTab === 'monitor'"
+          [attr.aria-selected]="activeTab === 'monitor'"
+          [style.--tab-accent]="'#0097a7'"
+          (click)="changeTab('monitor')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-tv"></i></span>
+          <span class="cerbero-folder-tab-label">Monitor</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-storage"
+          [class.cerbero-folder-tab--active]="activeTab === 'storage'"
+          [attr.aria-selected]="activeTab === 'storage'"
+          [style.--tab-accent]="'#455a64'"
+          (click)="changeTab('storage')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-hard-drive"></i></span>
+          <span class="cerbero-folder-tab-label">Almacenamiento</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-video"
+          [class.cerbero-folder-tab--active]="activeTab === 'video'"
+          [attr.aria-selected]="activeTab === 'video'"
+          [style.--tab-accent]="'#ad1457'"
+          (click)="changeTab('video')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-film"></i></span>
+          <span class="cerbero-folder-tab-label">Video</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-ubicacion"
+          [class.cerbero-folder-tab--active]="activeTab === 'ubicacion'"
+          [attr.aria-selected]="activeTab === 'ubicacion'"
+          [style.--tab-accent]="'#2e7d32'"
+          (click)="changeTab('ubicacion')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-map-marker-alt"></i></span>
+          <span class="cerbero-folder-tab-label">Ubicación</span>
+        </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-software"
+          [class.cerbero-folder-tab--active]="activeTab === 'software'"
+          [attr.aria-selected]="activeTab === 'software'"
+          [style.--tab-accent]="'#c62828'"
+          (click)="changeTab('software')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-cube"></i></span>
+          <span class="cerbero-folder-tab-label">Software</span>
+        </button>
       </div>
-      </div>
-    </div>
-    <!-- Contenido bajo pestañas (ya no dentro del spotlight “Ficha” del tour) -->
-    <div class="card-body border-top pt-3">
-      <div class="tab-content" id="tour-assetdetails-tab-panel" [ngSwitch]="activeTab">
+      <div class="tab-content content-section cerbero-folder-panel" id="tour-assetdetails-tab-panel" [ngSwitch]="activeTab">
         <div *ngSwitchCase="'general'">
           <!-- Contenido existente para información general -->
           <div class="row">
@@ -383,6 +397,9 @@
           <p *ngIf="!componentData.software">No hay datos de software disponibles.</p>
         </div>
       </div>
+      </div>
+    </div>
+    </div>
 
       <div *ngIf="showDeleteHistorialDialog" class="confirm-dialog-overlay">
         <div class="confirm-dialog">
@@ -404,7 +421,6 @@
           </div>
         </div>
       </div>
-    </div>
     <div class="card-footer d-flex flex-wrap justify-content-between align-items-center">
       <button class="btn btn-secondary mb-2 mb-md-0" (click)="volver()">
         <i class="fas fa-arrow-left me-2"></i>Volver

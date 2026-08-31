@@ -202,10 +202,10 @@ export class ComprasComponent implements OnInit, OnDestroy {
         icon: 'fa-route',
         steps: [
           { selector: '#tour-compras-title', title: 'Compras', description: 'Registro de adquisiciones: moneda, tipo, lotes, ítems y entregas vinculados al inventario Cerbero.', side: 'bottom' as const },
-          { selector: '#tour-compras-filters', title: 'Filtro por moneda', description: 'Acotá la lista por USD o UYU; “Todos” muestra el universo cargado.', side: 'bottom' as const },
+          { selector: '#tour-compras-filters', title: 'Filtro por moneda', description: 'Pestañas para acotar la lista por USD o UYU; «Todos» muestra el universo cargado.', side: 'bottom' as const },
           { selector: '#tour-compras-nueva', title: 'Nueva compra', description: 'Alta o edición en modal con ítems, proveedor y documentos según tus permisos.', side: 'left' as const },
           { selector: '#tour-compras-search', title: 'Búsqueda', description: 'Filtrá en tiempo real por número, descripción o tipo de compra.', side: 'bottom' as const },
-          { selector: '#tour-compras-search-row', title: 'Filtro por tipo', description: 'Refiná con chips de tipo de compra.', side: 'bottom' as const },
+          { selector: '#tour-compras-search-row', title: 'Filtro por tipo', description: 'Pestañas de tipo de compra (licitación, compra directa, etc.) para recortar la lista.', side: 'bottom' as const },
           { selector: '#tour-compras-table', title: 'Tabla', description: 'Ordená columnas y usá acciones por fila para ver detalle, editar o eliminar.', side: 'top' as const }
         ]
       },
@@ -575,6 +575,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
     this.modalService.open(modal, {
       size: 'xl',
+      centered: true,
       backdrop: true,
       windowClass: 'compra-form-modal-window'
     });
@@ -1068,6 +1069,22 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.aplicarFiltrosYOrden();
   }
 
+  getTipoIcon(index: number): string {
+    const icons = [
+      'fa-file-invoice',
+      'fa-gavel',
+      'fa-handshake',
+      'fa-clipboard-list',
+      'fa-file-contract',
+      'fa-box-open',
+      'fa-truck',
+      'fa-landmark',
+      'fa-briefcase',
+      'fa-stamp'
+    ];
+    return icons[index % icons.length];
+  }
+
   getTipoColor(index: number): string {
     const colors = [
       '#0369a1', // Azul
@@ -1157,11 +1174,11 @@ export class ComprasComponent implements OnInit, OnDestroy {
     
     
     // Abrir el modal de detalles
-    this.modalService.open(this.detallesModal, { 
-      size: 'xl', 
-      backdrop: false,  // Deshabilitar el backdrop
-      keyboard: false,
-      centered: true
+    this.modalService.open(this.detallesModal, {
+      size: 'xl',
+      centered: true,
+      backdrop: true,
+      keyboard: false
     });
   }
 
@@ -2147,6 +2164,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.prepararCompraDemo();
     this.tourDemoModalRef = this.modalService.open(this.compraModalTpl, {
       size: 'xl',
+      centered: true,
       backdrop: 'static',
       windowClass: 'compra-form-modal-window'
     });
@@ -2259,8 +2277,6 @@ export class ComprasComponent implements OnInit, OnDestroy {
       }
     };
 
-    this.guidedTourHost.suspendGlobalZoom();
-
     const inst: Driver = driver({
       allowClose: true,
       overlayClickBehavior: () => undefined,
@@ -2293,7 +2309,6 @@ export class ComprasComponent implements OnInit, OnDestroy {
       onDestroyed: () => {
         this.tourDemoModalRef?.dismiss();
         this.finalizarTourDemo();
-        this.guidedTourHost.restoreGlobalZoom();
       },
       steps: driveSteps
     });

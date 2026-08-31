@@ -17,6 +17,10 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
+    "baseUrl": ".",
+    "paths": {
+      "konva": ["node_modules/konva/lib/index.js"]
+    },
     "lib": [
       "ES2022",
       "dom"

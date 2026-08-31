@@ -4,7 +4,7 @@
   <header class="header-section user-profile-header">
     <div class="header-content user-profile-header-inner">
       <div class="title-wrapper">
-        <h1>
+        <h1 id="tour-profile-title">
           <i class="fas fa-user-circle" aria-hidden="true"></i>
           Mi perfil
         </h1>
@@ -27,8 +27,58 @@
   <div class="user-profile-body" *ngIf="currentUser">
     <aside class="user-profile-summary" aria-label="Resumen del usuario">
       <div class="user-profile-summary-card">
-        <div class="user-profile-avatar" aria-hidden="true">
-          <i [class]="getRoleIcon(currentUser.role)"></i>
+        <div class="user-profile-avatar-block" id="tour-profile-avatar">
+          <div
+            class="user-profile-avatar"
+            [class.user-profile-avatar--photo]="!!currentUser.hasAvatar">
+            <div class="user-profile-avatar-inner">
+              <img
+                *ngIf="currentUser.hasAvatar"
+                [src]="avatarUrl"
+                alt="Foto de perfil"
+                (error)="onAvatarImgError()">
+              <i *ngIf="!currentUser.hasAvatar" [class]="getRoleIcon(currentUser.role)"></i>
+            </div>
+            <button
+              type="button"
+              class="user-profile-avatar-edit"
+              (click)="avatarFileInput.click()"
+              [disabled]="uploadingAvatar"
+              title="{{ currentUser.hasAvatar ? 'Cambiar foto' : 'Subir foto' }}">
+              <i
+                class="fas"
+                [ngClass]="uploadingAvatar ? 'fa-spinner fa-spin' : 'fa-camera'"
+                aria-hidden="true"></i>
+              <span class="visually-hidden">
+                {{ currentUser.hasAvatar ? 'Cambiar foto de perfil' : 'Subir foto de perfil' }}
+              </span>
+            </button>
+          </div>
+          <input
+            #avatarFileInput
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
+            hidden
+            (change)="onAvatarSelected($event)">
+          <div class="user-profile-avatar-actions">
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="avatarFileInput.click()"
+              [disabled]="uploadingAvatar">
+              <i class="fas fa-upload me-1" aria-hidden="true"></i>
+              {{ currentUser.hasAvatar ? 'Cambiar foto' : 'Subir foto' }}
+            </button>
+            <button
+              *ngIf="currentUser.hasAvatar"
+              type="button"
+              class="btn btn-outline-danger btn-sm"
+              (click)="quitarAvatar()"
+              [disabled]="uploadingAvatar">
+              <i class="fas fa-trash-alt me-1" aria-hidden="true"></i>
+              Quitar
+            </button>
+          </div>
         </div>
         <h2 class="user-profile-name">
           {{ currentUser.firstName }} {{ currentUser.lastName }}
@@ -76,7 +126,7 @@
         {{ successMessage }}
       </div>
 
-      <section class="content-section user-profile-panel" aria-labelledby="profile-form-heading">
+      <section class="content-section user-profile-panel" id="tour-profile-form" aria-labelledby="profile-form-heading">
         <div class="user-profile-panel-head">
           <h2 id="profile-form-heading" class="user-profile-panel-title">
             <i class="fas fa-id-card me-2" aria-hidden="true"></i>
@@ -86,6 +136,7 @@
             *ngIf="!isEditing"
             type="button"
             class="btn btn-sm user-profile-btn-edit"
+            id="tour-profile-edit"
             (click)="toggleEdit()"
             [disabled]="loading">
             <i class="fas fa-pencil-alt me-2" aria-hidden="true"></i>
@@ -105,14 +156,14 @@
                 id="username"
                 class="form-control"
                 formControlName="username"
-                [readonly]="!isEditing"
+                readonly
+                tabindex="-1"
                 placeholder="Nombre de usuario"
-                [class.is-readonly-like]="!isEditing">
-              <div
-                *ngIf="userForm.get('username')?.invalid && userForm.get('username')?.touched"
-                class="invalid-feedback d-block">
-                Requerido, mínimo 3 caracteres.
-              </div>
+                [class.is-readonly-like]="true">
+              <p class="form-text mb-0">
+                <i class="fas fa-lock me-1" aria-hidden="true"></i>
+                El usuario no se modifica desde esta pantalla.
+              </p>
             </div>
 
             <div class="col-md-6">
@@ -168,11 +219,6 @@
                 [readonly]="!isEditing"
                 placeholder="Apellido"
                 [class.is-readonly-like]="!isEditing">
-              <div
-                *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched"
-                class="invalid-feedback d-block">
-                El apellido es requerido.
-              </div>
             </div>
 
             <div class="col-12">
