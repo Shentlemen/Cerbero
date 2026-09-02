@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { NotificationService } from './notification.service';
 
 export interface User {
   id?: number;
@@ -10,6 +11,15 @@ export interface User {
   role: string;
   enabled: boolean;
   ticketAreaCodigo?: string | null;
+  areaId?: number | null;
+  areaCodigo?: string | null;
+  areaNombre?: string | null;
+  permisos?: Array<{
+    componente: string;
+    puedeVer: boolean;
+    puedeEditar: boolean;
+    puedeEliminar: boolean;
+  }>;
 }
 
 @Injectable({
@@ -19,13 +29,15 @@ export class PermissionsService {
   private static readonly VIEW_AS_KEY = 'cerberoGmViewAsRole';
 
   private currentUser: User | null = null;
-  /** Solo para GM: simular otro rol en la UI (JWT y rol real no cambian). */
+  /** Solo para GM: simular otro rol/área en la UI (JWT y rol real no cambian). */
   private viewAsRole: string | null = null;
+  private viewAsAreaId: number | null = null;
+  private viewAsPermisos: User['permisos'] | undefined = undefined;
   private readonly viewAsSubject = new BehaviorSubject<string | null>(null);
   /** Emite cuando cambia la simulación (para layout / header). */
   readonly viewAs$ = this.viewAsSubject.asObservable();
 
-  constructor() {
+  constructor(private notificationService: NotificationService) {
     const userStr = localStorage.getItem('currentUser');
     if (userStr) {
       try {
@@ -41,12 +53,56 @@ export class PermissionsService {
 
   private loadViewAsFromStorage(): void {
     const raw = localStorage.getItem(PermissionsService.VIEW_AS_KEY);
-    this.viewAsRole = raw && raw.length > 0 ? raw : null;
+    if (!raw) {
+      this.viewAsRole = null;
+      this.viewAsAreaId = null;
+      this.viewAsPermisos = undefined;
+      this.viewAsSubject.next(null);
+      return;
+    }
+    try {
+      if (raw.startsWith('{')) {
+        const parsed = JSON.parse(raw) as {
+          codigo?: string;
+          areaId?: number | null;
+          permisos?: User['permisos'];
+        };
+        const codigo = (parsed.codigo || '').trim().toUpperCase();
+        this.viewAsRole = codigo || null;
+        this.viewAsAreaId = parsed.areaId ?? null;
+        this.viewAsPermisos = parsed.permisos;
+      } else {
+        this.viewAsRole = raw.trim().toUpperCase();
+        this.viewAsAreaId = null;
+        this.viewAsPermisos = undefined;
+      }
+    } catch {
+      this.viewAsRole = raw.trim().toUpperCase();
+      this.viewAsAreaId = null;
+      this.viewAsPermisos = undefined;
+    }
     this.viewAsSubject.next(this.viewAsRole);
+  }
+
+  private persistViewAs(): void {
+    if (!this.viewAsRole) {
+      localStorage.removeItem(PermissionsService.VIEW_AS_KEY);
+      return;
+    }
+    localStorage.setItem(
+      PermissionsService.VIEW_AS_KEY,
+      JSON.stringify({
+        codigo: this.viewAsRole,
+        areaId: this.viewAsAreaId,
+        permisos: this.viewAsPermisos
+      })
+    );
   }
 
   private clearViewAsInternal(): void {
     this.viewAsRole = null;
+    this.viewAsAreaId = null;
+    this.viewAsPermisos = undefined;
     localStorage.removeItem(PermissionsService.VIEW_AS_KEY);
     this.viewAsSubject.next(null);
   }
@@ -84,6 +140,14 @@ export class PermissionsService {
     return this.viewAsRole;
   }
 
+  getViewAsAreaId(): number | null {
+    return this.viewAsAreaId;
+  }
+
+  hasViewAsPermisos(): boolean {
+    return !!this.viewAsPermisos?.length;
+  }
+
   /** GM está simulando otro rol (para barra de aviso y offset del layout). */
   isGmPreviewActive(): boolean {
     return this.isRealGM() && !!this.viewAsRole;
@@ -93,7 +157,11 @@ export class PermissionsService {
    * Solo GM. Pasar null o '' para volver a vista normal.
    * No altera el token ni el objeto user en localStorage.
    */
-  setViewAsRole(role: string | null | undefined): void {
+  setViewAsRole(
+    role: string | null | undefined,
+    permisos?: User['permisos'],
+    areaId?: number | null
+  ): void {
     if (!this.isRealGM()) return;
     const next = role && role.trim().length > 0 ? role.trim().toUpperCase() : null;
     if (!next) {
@@ -101,8 +169,10 @@ export class PermissionsService {
       return;
     }
     this.viewAsRole = next;
-    localStorage.setItem(PermissionsService.VIEW_AS_KEY, next);
-    this.viewAsSubject.next(next);
+    this.viewAsAreaId = areaId ?? this.viewAsAreaId;
+    this.viewAsPermisos = permisos;
+    this.persistViewAs();
+    this.viewAsSubject.next(this.viewAsRole);
   }
 
   setCurrentUser(user: User | null): void {
@@ -164,101 +234,179 @@ export class PermissionsService {
   }
 
   // Specific permissions
-  canManageUsers(): boolean {
-    return this.isGM(); // Only GM can manage users
-  }
+  can(componente: string, accion: 'ver' | 'editar' | 'eliminar' = 'ver'): boolean {
+    if (!this.currentUser) return false;
+    if (this.isRealGM() && !this.viewAsRole) return true;
 
-  canConfirmAlerts(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can confirm alerts
-  }
-
-  canManageSoftware(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can hide/forbid software
-  }
-
-  canManageAssets(): boolean {
-    return this.isGMOrAdmin() || this.isInventario();
-  }
-
-  // Gestión completa de assets en módulos de almacén (stock, 3D, cementerio, lab)
-  canManageWarehouseAssets(): boolean {
-    return this.isGMOrAdmin() || this.isAlmacen();
-  }
-
-  // Gestión de movimientos/estado de equipos (baja, almacén, transferir, reactivar)
-  canManageEquipmentStates(): boolean {
-    return this.isGMOrAdmin() || this.isAlmacen() || this.isGestionEquip();
-  }
-
-  /** Cementerio y almacén laboratorio: transferir y reactivar excluyen rol ALMACEN. */
-  canTransferOrReactivateInCemeteryOrLabWarehouse(): boolean {
-    return this.canManageEquipmentStates() && !this.isAlmacen();
-  }
-
-  canDeleteAssets(): boolean {
-    return this.isGMOrAdmin() || this.isInventario();
-  }
-
-  /** Inventario Cerbero (procurement/activos): alta, edición y baja. */
-  canEditAssets(): boolean {
-    return this.isGMOrAdmin() || this.isInventario();
-  }
-
-  canManagePurchases(): boolean {
-    return this.isGMOrAdmin() || this.isCompras(); // GM, Admin y Compras pueden gestionar compras
-  }
-
-  canManageProviders(): boolean {
-    return this.isGMOrAdmin() || this.isCompras(); // GM, Admin y Compras pueden gestionar proveedores
-  }
-
-  canManageSubnets(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can edit subnets
-  }
-
-  canAccessConfiguration(): boolean {
-    return this.isGMOrAdmin(); // GM y Admin: tipos de compra y resto de pestañas del hub
-  }
-
-  /** Ubicaciones, tipos de activo y usuarios responsables: GM, Admin e Inventario. */
-  canAccessLocationsConfiguration(): boolean {
-    return this.isGMOrAdmin() || this.isInventario();
-  }
-
-  canAccessTiposActivoConfiguration(): boolean {
-    return this.isGMOrAdmin() || this.isInventario();
-  }
-
-  canAccessUsuariosResponsablesConfiguration(): boolean {
-    return this.isGMOrAdmin() || this.isInventario();
-  }
-
-  canAccessWarehouseConfiguration(): boolean {
-    // Configuración específica de almacenes: GM, Admin y Almacén.
-    return this.isGMOrAdmin() || this.isAlmacen();
+    const matrix = this.viewAsRole ? this.viewAsPermisos : this.currentUser.permisos;
+    const key = (componente || '').trim().toLowerCase();
+    const row = matrix?.find((p) => (p.componente || '').toLowerCase() === key);
+    if (row) {
+      if (accion === 'ver') return !!(row.puedeVer || row.puedeEditar || row.puedeEliminar);
+      if (accion === 'editar') return !!row.puedeEditar;
+      return !!row.puedeEliminar;
+    }
+    return this.legacyCan(this.getEffectiveRole(), key, accion);
   }
 
   /**
-   * Bloque «Administración» (sidebar): exclusivo de GM y Admin, no el rol USER ni personal de área.
+   * Si no hay permiso, muestra un aviso y corta la acción.
+   * Los botones deben seguir visibles (clase `.action-locked`) y clickeables.
+   * @returns true si hay que abortar (sin permiso)
    */
+  denyUnless(allowed: boolean, accion: string, event?: Event): boolean {
+    if (allowed) {
+      return false;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.notificationService.showWarning(
+      'Sin permiso',
+      `No tenés permiso para ${accion}.`
+    );
+    return true;
+  }
+
+  private legacyCan(role: string | null, componente: string, accion: 'ver' | 'editar' | 'eliminar'): boolean {
+    const r = (role || '').toUpperCase();
+    if (r === 'GM' || r === 'ADMIN') return true;
+    const verAmplio = new Set([
+      'terminales', 'dispositivos', 'inventario_activos', 'software', 'tickets',
+      'compras', 'proveedores', 'almacenes', 'cementerio', 'almacen_laboratorio',
+      'oficina_laboratorio',
+      'internos_ose', 'stock'
+    ]);
+    if (accion === 'ver' && verAmplio.has(componente)) return true;
+    if (r === 'INVENTARIO') {
+      return ['terminales', 'dispositivos', 'inventario_activos', 'ubicaciones', 'tipos_activo', 'usuarios_responsables'].includes(componente);
+    }
+    if (r === 'ALMACEN') {
+      if (componente === 'reactivar_transferir') return false;
+      return ['almacenes', 'stock', 'planta_almacen', 'config_almacen', 'cementerio', 'almacen_laboratorio', 'oficina_laboratorio', 'estados_equipo'].includes(componente);
+    }
+    if (r === 'COMPRAS') return ['compras', 'proveedores'].includes(componente);
+    if (r === 'GESTION_EQUIP') {
+      return ['estados_equipo', 'cementerio', 'almacen_laboratorio', 'oficina_laboratorio', 'reactivar_transferir'].includes(componente);
+    }
+    if (componente === 'tickets') return accion !== 'eliminar';
+    if (componente === 'internos_ose') return accion === 'ver';
+    return false;
+  }
+
+  canManageUsers(): boolean {
+    return this.isRealGM();
+  }
+
+  canConfirmAlerts(): boolean {
+    return this.can('dashboard_acciones', 'editar');
+  }
+
+  canManageSoftware(): boolean {
+    return this.can('software', 'editar');
+  }
+
+  canManageAssets(): boolean {
+    return this.can('terminales', 'editar');
+  }
+
+  canManageWarehouseAssets(): boolean {
+    return this.can('almacenes', 'editar') || this.can('stock', 'editar');
+  }
+
+  canManageEquipmentStates(): boolean {
+    return this.can('estados_equipo', 'editar');
+  }
+
+  canTransferOrReactivateInCemeteryOrLabWarehouse(): boolean {
+    return this.can('reactivar_transferir', 'editar');
+  }
+
+  canDeleteAssets(): boolean {
+    return this.can('terminales', 'eliminar');
+  }
+
+  canDeleteDevices(): boolean {
+    return this.can('dispositivos', 'eliminar');
+  }
+
+  canEditAssets(): boolean {
+    return this.can('inventario_activos', 'editar');
+  }
+
+  canDeleteInventoryAssets(): boolean {
+    return this.can('inventario_activos', 'eliminar');
+  }
+
+  canManagePurchases(): boolean {
+    return this.can('compras', 'editar');
+  }
+
+  canDeletePurchases(): boolean {
+    return this.can('compras', 'eliminar');
+  }
+
+  canManageProviders(): boolean {
+    return this.can('proveedores', 'editar');
+  }
+
+  canDeleteProviders(): boolean {
+    return this.can('proveedores', 'eliminar');
+  }
+
+  canDeleteSoftware(): boolean {
+    return this.can('software', 'eliminar');
+  }
+
+  canManageSubnets(): boolean {
+    return this.can('subredes', 'editar');
+  }
+
+  canDeleteStock(): boolean {
+    return this.can('stock', 'eliminar');
+  }
+
+  canDeleteTickets(): boolean {
+    return this.can('tickets', 'eliminar');
+  }
+
+  canDeleteInternosOse(): boolean {
+    return this.can('internos_ose', 'eliminar');
+  }
+
+  canAccessConfiguration(): boolean {
+    return this.can('tipos_compra', 'ver') || this.isGM();
+  }
+
+  canAccessLocationsConfiguration(): boolean {
+    return this.can('ubicaciones', 'ver');
+  }
+
+  canAccessTiposActivoConfiguration(): boolean {
+    return this.can('tipos_activo', 'ver');
+  }
+
+  canAccessUsuariosResponsablesConfiguration(): boolean {
+    return this.can('usuarios_responsables', 'ver');
+  }
+
+  canAccessWarehouseConfiguration(): boolean {
+    return this.can('config_almacen', 'ver');
+  }
+
   canAccessAdministrationMenu(): boolean {
-    if (this.isUser()) return false;
-    return this.isGMOrAdmin();
+    return this.isGM();
   }
 
   canUpdateNetworkDevices(): boolean {
-    return this.isGMOrAdmin(); // GM and Admin can update network devices
+    return this.can('dashboard_acciones', 'editar');
   }
 
-  // Tickets / Reclamos
-  /** Guía de contactos (equipo Cerbero + internos): lectura para cualquier usuario autenticado. */
   canAccessInternosOse(): boolean {
-    return this.isLoggedIn();
+    return this.can('internos_ose', 'ver') || this.isLoggedIn();
   }
 
-  /** Alta, edición y baja de internos: solo GM y Administración (ADMIN). */
   canManageInternosOse(): boolean {
-    return this.isGMOrAdmin();
+    return this.can('internos_ose', 'editar');
   }
 
   canAccessTickets(): boolean {
@@ -271,31 +419,31 @@ export class PermissionsService {
 
   canProcessTicketsForArea(areaCodigo: string): boolean {
     if (!this.currentUser || !areaCodigo) return false;
-    if (this.isGMOrAdmin()) return true;
-    if (this.isUser()) {
-      const asignada = this.currentUser.ticketAreaCodigo?.trim().toUpperCase();
-      return !!asignada && asignada === areaCodigo.trim().toUpperCase();
-    }
-    return this.getEffectiveRole() === areaCodigo;
+    if (this.can('tickets_globales', 'editar') || this.isGM()) return true;
+    const asignada = (this.currentUser.areaCodigo || this.currentUser.ticketAreaCodigo || this.getEffectiveRole() || '')
+      .trim().toUpperCase();
+    return !!asignada && asignada === areaCodigo.trim().toUpperCase();
   }
 
-  /** Bandeja de reclamos asignada (solo rol USER). */
   getTicketAreaCodigo(): string | null {
+    const fromArea = this.currentUser?.areaCodigo;
+    if (fromArea?.trim()) return fromArea.trim().toUpperCase();
     const c = this.currentUser?.ticketAreaCodigo;
     return c?.trim() ? c.trim().toUpperCase() : null;
   }
 
-  /** Usuario USER con bandeja de área asignada. */
   hasUserTicketBandeja(): boolean {
-    return this.isUser() && !!this.getTicketAreaCodigo();
+    return !!this.getTicketAreaCodigo() && !this.isGM();
   }
 
   canManageTicketBandejas(): boolean {
-    // Rol efectivo: con «Ver como» se oculta si el GM simula un rol sin admin
-    return this.isGMOrAdmin();
+    return this.can('config_flujos', 'editar');
   }
 
-  // Helper method to check if user is logged in
+  canManageAreas(): boolean {
+    return this.isRealGM();
+  }
+
   isLoggedIn(): boolean {
     return this.currentUser !== null;
   }

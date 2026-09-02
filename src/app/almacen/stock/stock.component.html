@@ -60,10 +60,13 @@
       </div>
       
       <!-- Botón para agregar nueva ubicación -->
-      <div class="actions-section" *ngIf="canManageUbicaciones()">
+      <div class="actions-section">
         <button 
           class="btn btn-outline-secondary" 
-          (click)="abrirModalUbicacion(modalUbicacion)">
+          [class.action-locked]="!canManageUbicaciones()"
+          (click)="abrirModalUbicacion(modalUbicacion)"
+          [attr.title]="canManageUbicaciones() ? 'Registrar stock' : 'Sin permiso para registrar stock'"
+          [attr.aria-disabled]="!canManageUbicaciones()">
           <i class="fas fa-box"></i>
           Registrar Stock
         </button>
@@ -154,7 +157,7 @@
                 <span>Descripción</span>
               </div>
             </th>
-            <th *ngIf="canManageUbicaciones()">
+            <th>
               <div class="th-content">
                 <span>Acciones</span>
               </div>
@@ -197,7 +200,7 @@
                 {{ getDescripcionResumida(ubicacion?.descripcion) }}
               </span>
             </td>
-            <td *ngIf="canManageUbicaciones()">
+            <td>
               <div class="action-buttons">
                 <button 
                   class="btn btn-info btn-sm me-1" 
@@ -207,21 +210,25 @@
                 </button>
                 <button 
                   class="btn btn-warning btn-sm me-1" 
+                  [class.action-locked]="!canManageUbicaciones()"
                   (click)="abrirModalUbicacion(modalUbicacion, ubicacion)"
-                  title="Editar ubicación">
+                  [attr.title]="canManageUbicaciones() ? 'Editar ubicación' : 'Sin permiso para editar'"
+                  [attr.aria-disabled]="!canManageUbicaciones()">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button 
                   class="btn btn-danger btn-sm" 
+                  [class.action-locked]="!canDeleteStock()"
                   (click)="confirmarEliminacion(ubicacion)"
-                  title="Eliminar ubicación">
+                  [attr.title]="canDeleteStock() ? 'Eliminar ubicación' : 'Sin permiso para eliminar'"
+                  [attr.aria-disabled]="!canDeleteStock()">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
             </td>
           </tr>
           <tr *ngIf="pagedStock.length === 0">
-            <td [attr.colspan]="canManageUbicaciones() ? 8 : 7" class="text-center p-4">
+            <td colspan="8" class="text-center p-4">
               <div class="alert alert-info m-0">
                 <i class="fas fa-info-circle me-2"></i>
                 No hay stock

@@ -65,7 +65,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     '/menu/almacen/configuracion/planta',
     '/menu/almacen/3d-demo',
     '/menu/cementerio',
-    '/menu/almacen-laboratorio'
+    '/menu/almacen-laboratorio',
+    '/menu/oficina-laboratorio'
   ];
 
   constructor(
@@ -188,17 +189,24 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.permissionsService.isGM();
   }
 
+  canModulo(codigo: string): boolean {
+    return this.permissionsService.can(codigo, 'ver');
+  }
+
   canManageSubnets(): boolean {
     return this.permissionsService.canManageSubnets();
   }
 
   /**
-   * Hub de Configuración: GM / Admin (todas las pestañas) e INVENTARIO
-   * (ubicaciones, tipos de activo y responsables). El rol ALMACEN usa
-   * «Configuración de almacén» dentro del menú Almacén.
+   * Hub de Configuración: visible si el rol efectivo puede ver alguna pestaña.
    */
   canShowConfigurationMenu(): boolean {
-    return this.permissionsService.canAccessLocationsConfiguration();
+    return this.permissionsService.isGM()
+      || this.permissionsService.canAccessLocationsConfiguration()
+      || this.permissionsService.canAccessTiposActivoConfiguration()
+      || this.permissionsService.canAccessUsuariosResponsablesConfiguration()
+      || this.permissionsService.canAccessConfiguration()
+      || this.permissionsService.can('config_flujos', 'ver');
   }
 
   canAccessWarehouseConfiguration(): boolean {

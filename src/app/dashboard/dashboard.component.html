@@ -110,7 +110,7 @@
           (click)="checkHardwareChanges()" 
           [class.action-locked]="!canConfirmAlerts()"
           [disabled]="canConfirmAlerts() && isChecking"
-          [attr.title]="canConfirmAlerts() ? 'Verificar cambios en el hardware' : 'Requiere permisos de administrador o Game Master'"
+          [attr.title]="canConfirmAlerts() ? 'Verificar cambios en el hardware' : 'Sin permiso para verificar cambios'"
           [attr.aria-disabled]="!canConfirmAlerts()">
           <i class="fas fa-sync-alt" [class.spinning]="isChecking && canConfirmAlerts()"></i>
           {{ isChecking && canConfirmAlerts() ? 'Verificando...' : 'Verificar cambios' }}
@@ -121,7 +121,7 @@
           (click)="actualizarDispositivos()" 
           [class.action-locked]="!canUpdateDevices()"
           [disabled]="canUpdateDevices() && isUpdatingDevices"
-          [attr.title]="canUpdateDevices() ? 'Actualizar dispositivos de red desde OCS' : 'Requiere permisos de administrador o Game Master'"
+          [attr.title]="canUpdateDevices() ? 'Actualizar dispositivos de red desde OCS' : 'Sin permiso para actualizar dispositivos'"
           [attr.aria-disabled]="!canUpdateDevices()">
           <i class="fas fa-network-wired" [class.spinning]="isUpdatingDevices && canUpdateDevices()"></i>
           {{ isUpdatingDevices && canUpdateDevices() ? 'Actualizando...' : 'Actualizar Dispositivos' }}
@@ -132,7 +132,7 @@
           (click)="cleanupOrphanedAlerts()" 
           [class.action-locked]="!canConfirmAlerts()"
           [disabled]="canConfirmAlerts() && isCleaning"
-          [attr.title]="canConfirmAlerts() ? 'Verificar y limpiar alertas obsoletas' : 'Requiere permisos de administrador o Game Master'"
+          [attr.title]="canConfirmAlerts() ? 'Verificar y limpiar alertas obsoletas' : 'Sin permiso para limpiar alertas'"
           [attr.aria-disabled]="!canConfirmAlerts()">
           <i class="fas fa-broom" [class.spinning]="isCleaning && canConfirmAlerts()"></i>
           {{ isCleaning && canConfirmAlerts() ? 'Limpiando...' : 'Limpiar alertas' }}

@@ -22,8 +22,12 @@ export interface User {
   password?: string;
   /** True si el usuario tiene foto de perfil. */
   hasAvatar?: boolean;
-  /** Bandeja de reclamos (rol USER). */
+  /** Bandeja de reclamos (compat). */
   ticketAreaCodigo?: string | null;
+  areaId?: number | null;
+  areaCodigo?: string | null;
+  areaNombre?: string | null;
+  permisos?: AreaPermiso[];
 }
 
 export interface CreateUserRequest {
@@ -34,6 +38,7 @@ export interface CreateUserRequest {
   lastName: string;
   role: string;
   ticketAreaCodigo?: string | null;
+  areaId?: number | null;
 }
 
 export interface UpdateUserRequest {
@@ -44,6 +49,7 @@ export interface UpdateUserRequest {
   enabled: boolean;
   password?: string;
   ticketAreaCodigo?: string | null;
+  areaId?: number | null;
 }
 
 export interface UpdateProfileRequest {
@@ -51,6 +57,15 @@ export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
   password?: string; // Opcional para cambios de contraseña
+}
+
+export interface AreaPermiso {
+  componente: string;
+  grupo?: string;
+  nombre?: string;
+  puedeVer: boolean;
+  puedeEditar: boolean;
+  puedeEliminar: boolean;
 }
 
 /** Datos públicos de un usuario de la app (guía de contactos). */

@@ -9,33 +9,33 @@
   </a>
   
   <!-- Menú expandible de Activos -->
-  <div class="menu-item" [class.expanded]="isAssetsExpanded">
+  <div class="menu-item" [class.expanded]="isAssetsExpanded" *ngIf="canModulo('terminales') || canModulo('dispositivos') || canModulo('subredes')">
     <div class="menu-header nav-tile nav-tile--cyan" (click)="toggleAssetsMenu()">
       <i class="fas fa-desktop"></i>
       <span>ACTIVOS</span>
     </div>
     <div class="submenu" [class.show]="isAssetsExpanded">
-      <a routerLink="/menu/assets" routerLinkActive="active" class="submenu-item submenu-item--sky">
+      <a *ngIf="canModulo('terminales')" routerLink="/menu/assets" routerLinkActive="active" class="submenu-item submenu-item--sky">
         <i class="fas fa-laptop"></i>
         <span>TERMINALES</span>
       </a>
-      <a routerLink="/menu/devices" routerLinkActive="active" class="submenu-item submenu-item--teal">
+      <a *ngIf="canModulo('dispositivos')" routerLink="/menu/devices" routerLinkActive="active" class="submenu-item submenu-item--teal">
         <i class="fas fa-hdd"></i>
         <span>DISPOSITIVOS</span>
       </a>
-      <a *ngIf="canManageSubnets()" routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item submenu-item--blue">
+      <a *ngIf="canModulo('subredes')" routerLink="/menu/subnets" routerLinkActive="active" class="submenu-item submenu-item--blue">
         <i class="fas fa-network-wired"></i>
         <span>SUB REDES</span>
       </a>
     </div>
   </div>
 
-  <a routerLink="/menu/software" routerLinkActive="active" class="nav-tile nav-tile--green">
+  <a *ngIf="canModulo('software')" routerLink="/menu/software" routerLinkActive="active" class="nav-tile nav-tile--green">
     <i class="fas fa-code"></i>
     <span>SOFTWARE</span>
   </a>
 
-  <a routerLink="/menu/procurement/activos" routerLinkActive="active" class="nav-tile nav-tile--orange">
+  <a *ngIf="canModulo('inventario_activos')" routerLink="/menu/procurement/activos" routerLinkActive="active" class="nav-tile nav-tile--orange">
     <i class="fas fa-box"></i>
     <span>INVENTARIO</span>
   </a>
@@ -46,17 +46,17 @@
   </a>
 
   <!-- Menú expandible de Adquisiciones -->
-  <div class="menu-item" [class.expanded]="isAdquisicionesExpanded">
+  <div class="menu-item" [class.expanded]="isAdquisicionesExpanded" *ngIf="canModulo('compras') || canModulo('proveedores')">
     <div class="menu-header nav-tile nav-tile--blue" (click)="toggleAdquisicionesMenu()">
       <i class="fas fa-shopping-cart"></i>
       <span>ADQUISICIONES</span>
     </div>
     <div class="submenu" [class.show]="isAdquisicionesExpanded">
-      <a routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item submenu-item--blue">
+      <a *ngIf="canModulo('compras')" routerLink="/menu/procurement/compras" routerLinkActive="active" class="submenu-item submenu-item--blue">
         <i class="fas fa-shopping-bag"></i>
         <span>COMPRAS</span>
       </a>
-      <a routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item submenu-item--indigo">
+      <a *ngIf="canModulo('proveedores')" routerLink="/menu/procurement/proveedores" routerLinkActive="active" class="submenu-item submenu-item--indigo">
         <i class="fas fa-industry"></i>
         <span>PROVEEDOR</span>
       </a>
@@ -68,23 +68,27 @@
   </div>
 
   <!-- Menú expandible de Almacén -->
-  <div class="menu-item" [class.expanded]="isAlmacenExpanded">
+  <div class="menu-item" [class.expanded]="isAlmacenExpanded" *ngIf="canModulo('almacenes') || canModulo('cementerio') || canModulo('almacen_laboratorio') || canModulo('oficina_laboratorio') || canAccessWarehouseConfiguration()">
     <div class="menu-header nav-tile nav-tile--amber" (click)="toggleAlmacenMenu()">
       <i class="fas fa-warehouse"></i>
       <span>ALMACÉN</span>
     </div>
     <div class="submenu" [class.show]="isAlmacenExpanded">
-      <a routerLink="/menu/almacen/almacenes" routerLinkActive="active" class="submenu-item submenu-item--amber">
+      <a *ngIf="canModulo('almacenes')" routerLink="/menu/almacen/almacenes" routerLinkActive="active" class="submenu-item submenu-item--amber">
         <i class="fas fa-building"></i>
         <span>ALMACENES</span>
       </a>
-      <a routerLink="/menu/cementerio" routerLinkActive="active" class="submenu-item submenu-item--rose">
+      <a *ngIf="canModulo('cementerio')" routerLink="/menu/cementerio" routerLinkActive="active" class="submenu-item submenu-item--rose">
         <i class="fas fa-skull-crossbones"></i>
         <span>CEMENTERIO</span>
       </a>
-      <a routerLink="/menu/almacen-laboratorio" routerLinkActive="active" class="submenu-item submenu-item--green">
+      <a *ngIf="canModulo('almacen_laboratorio')" routerLink="/menu/almacen-laboratorio" routerLinkActive="active" class="submenu-item submenu-item--green">
         <i class="fas fa-archive"></i>
         <span>ALMACEN LAB</span>
+      </a>
+      <a *ngIf="canModulo('oficina_laboratorio')" routerLink="/menu/oficina-laboratorio" routerLinkActive="active" class="submenu-item submenu-item--indigo">
+        <i class="fas fa-tools"></i>
+        <span>OFICINA LAB</span>
       </a>
       <a *ngIf="canAccessWarehouseConfiguration()" routerLink="/menu/almacen/configuracion" routerLinkActive="active" class="submenu-item submenu-item--orange">
         <i class="fas fa-cogs"></i>

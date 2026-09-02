@@ -1,7 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { PermissionsService } from '../services/permissions.service';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 
 interface ConfigHubTab {
   path: string;
@@ -14,11 +17,11 @@ interface ConfigHubTab {
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NotificationContainerComponent],
   templateUrl: './configuracion.component.html',
   styleUrl: './configuracion.component.css'
 })
-export class ConfiguracionComponent {
+export class ConfiguracionComponent implements OnInit, OnDestroy {
   readonly tabs: ConfigHubTab[] = [
     {
       path: 'locations',
@@ -49,17 +52,60 @@ export class ConfiguracionComponent {
       visible: () => this.permissions.canAccessUsuariosResponsablesConfiguration()
     },
     {
+      path: 'areas',
+      label: 'Áreas',
+      icon: 'fas fa-layer-group',
+      accent: '#0f766e',
+      visible: () => this.permissions.isGM()
+    },
+    {
+      path: 'permisos',
+      label: 'Permisos',
+      icon: 'fas fa-user-lock',
+      accent: '#be123c',
+      visible: () => this.permissions.isGM()
+    },
+    {
       path: 'config-tickets',
       label: 'Tickets',
       icon: 'fas fa-ticket-alt',
       accent: '#af5252',
-      visible: () => this.permissions.canManageTicketBandejas()
+      visible: () => this.permissions.can('config_flujos', 'ver')
     }
   ];
 
-  constructor(private permissions: PermissionsService) {}
+  private routerSub?: Subscription;
+
+  constructor(
+    private permissions: PermissionsService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    this.ensureChildTab();
+    this.routerSub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(() => this.ensureChildTab());
+  }
+
+  ngOnDestroy(): void {
+    this.routerSub?.unsubscribe();
+  }
 
   get visibleTabs(): ConfigHubTab[] {
     return this.tabs.filter((tab) => tab.visible());
+  }
+
+  private ensureChildTab(): void {
+    const visible = this.visibleTabs;
+    if (!visible.length) {
+      void this.router.navigate(['/menu/dashboard']);
+      return;
+    }
+    const child = this.route.snapshot.firstChild?.url[0]?.path;
+    if (!child || !visible.some((tab) => tab.path === child)) {
+      void this.router.navigate([visible[0].path], { relativeTo: this.route, replaceUrl: true });
+    }
   }
 }

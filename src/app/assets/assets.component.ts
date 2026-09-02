@@ -16,6 +16,7 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { EstadoEquipoService } from '../services/estado-equipo.service';
 import { AuthService } from '../services/auth.service';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { TransferirMasaModalComponent } from '../components/transferir-masa-modal/transferir-masa-modal.component';
 import { catchError, of } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -61,6 +62,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   assetToDelete: any = null; // Para almacenar el asset a eliminar
 
   transferiendoAssetId: number | null = null;
+  transfiriendoMasa = false;
 
   // Control para el filtro de nombre
   nombreEquipoControl = new FormControl('');
@@ -721,8 +723,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   // Verificar si el usuario puede gestionar estados de equipos
   canManageAssetStates(): boolean {
-    // GM, Admin, Almacén, Inventario y Gestión de Equipos
-    return this.permissionsService.canManageEquipmentStates() || this.permissionsService.isInventario();
+    return this.permissionsService.canTransferOrReactivateInCemeteryOrLabWarehouse();
   }
 
   canDeleteAssets(): boolean {
@@ -741,7 +742,11 @@ export class AssetsComponent implements OnInit, OnDestroy {
     return 'Sin rol definido';
   }
 
-  eliminarAsset(asset: any): void {
+  eliminarAsset(asset: any, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canDeleteAssets(), 'eliminar este equipo', event)) {
+      return;
+    }
     this.assetToDelete = asset;
     this.showConfirmDialog = true;
   }
@@ -826,8 +831,11 @@ export class AssetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Método para transferir equipo
-  transferirEquipo(asset: any): void {
+  transferirEquipo(asset: any, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageAssetStates(), 'transferir este equipo', event)) {
+      return;
+    }
     const modalRef = this.modalService.open(TransferirEquipoModalComponent, {
       size: 'lg',
       centered: true,
@@ -885,6 +893,82 @@ export class AssetsComponent implements OnInit, OnDestroy {
       },
       complete: () => {
         this.transferiendoAssetId = null;
+      }
+    });
+  }
+
+  abrirTransferenciaMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageAssetStates(), 'transferir equipos en masa', event)) {
+      return;
+    }
+    if (this.transfiriendoMasa) {
+      return;
+    }
+    const modalRef = this.modalService.open(TransferirMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    const fuente = (this.allAssetsCache.length ? this.allAssetsCache : this.originalAssetsList) || [];
+    modalRef.componentInstance.equipos = fuente
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }))
+      .map((asset) => ({
+        id: asset.id,
+        name: asset.name,
+        ipAddr: asset.ipAddr,
+        userid: asset.userid,
+        biosType: asset.biosType
+      }));
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData?.hardwareIds?.length) {
+        this.procesarTransferenciaMasiva(transferData);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarTransferenciaMasiva(transferData: any): void {
+    this.transfiriendoMasa = true;
+    const requestData: any = {
+      hardwareIds: transferData.hardwareIds,
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: this.authService.getUsuarioParaAuditoria()
+    };
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
+    }
+
+    this.estadoEquipoService.transferirEquiposEnMasa(requestData).subscribe({
+      next: (response) => {
+        const ok = response?.data?.ok ?? 0;
+        const fallidos = Array.isArray(response?.data?.fallidos) ? response.data.fallidos : [];
+        this.loadAssets();
+        if (fallidos.length === 0) {
+          this.notificationService.showSuccessMessage(
+            response?.message || `${ok} equipo(s) transferido(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Transferencia masiva incompleta',
+            `${ok} transferido(s), ${fallidos.length} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al transferir en masa',
+          error?.message || 'No se pudieron transferir los equipos.'
+        );
+      },
+      complete: () => {
+        this.transfiriendoMasa = false;
       }
     });
   }
@@ -981,6 +1065,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
         { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Pestañas para acotar la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
         { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP o último usuario conectado (campo USERID de OCS).', side: 'bottom' },
         { selector: '#tour-assets-advanced', title: 'Filtros avanzados', description: 'Abrí el panel para buscar por tipo de disco (HDD/SSD), SO, procesador, uso de disco ≥ %, RAM, fabricante o equipos sin reportar. Se combina con los chips y la búsqueda rápida.', side: 'bottom' },
+        { selector: '#tour-assets-bulk-transfer', title: 'Transferir en masa', description: 'Elegí almacén, estantería y estante. Pegá varios números (14506 14530) para filtrarlos y usá Seleccionar todo. Oficina Laboratorio también aparece como destino.', side: 'bottom' },
         { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual, incluyendo los filtros avanzados activos.', side: 'left' }
       ])
     );
@@ -991,7 +1076,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
         popover: {
           title: 'Acciones rápidas del equipo',
           description:
-            'Transferir mueve el equipo al almacén que elijas, incluido laboratorio o cementerio (baja).',
+            'Transferir mueve el equipo al almacén que elijas, incluyendo Oficina Laboratorio.',
           side: 'left',
           align: 'start'
         }

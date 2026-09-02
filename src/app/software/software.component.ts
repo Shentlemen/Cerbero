@@ -361,6 +361,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
 
   toggleSoftwareVisibility(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageSoftware(), 'cambiar la visibilidad del software', event)) {
+      return;
+    }
 
     this.softwareService.toggleSoftwareVisibility(software, !software.hidden).subscribe({
       next: () => {
@@ -394,6 +397,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
 
   toggleSoftwareForbidden(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageSoftware(), 'marcar software como prohibido', event)) {
+      return;
+    }
 
     this.softwareService.toggleSoftwareForbidden(software).subscribe({
       next: () => {
@@ -429,6 +435,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
 
   toggleSoftwareDriver(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageSoftware(), 'marcar software como driver', event)) {
+      return;
+    }
 
     this.softwareService.toggleSoftwareDriver(software).subscribe({
       next: () => {
@@ -464,6 +473,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
 
   toggleSoftwareLicenciado(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageSoftware(), 'marcar software como licenciado', event)) {
+      return;
+    }
 
     this.softwareService.toggleSoftwareLicenciado(software).subscribe({
       next: () => {
@@ -499,6 +511,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
 
   deleteSoftware(software: SoftwareDTO, event: Event): void {
     event.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canDeleteSoftware(), 'eliminar este software', event)) {
+      return;
+    }
     
     // Validar que el software sea válido
     if (!software || !software.idSoftware) {
@@ -544,8 +559,15 @@ export class SoftwareComponent implements OnInit, OnDestroy {
     return this.permissionsService.canManageSoftware();
   }
 
+  canDeleteSoftware(): boolean {
+    return this.permissionsService.canDeleteSoftware();
+  }
+
   // Métodos para selección múltiple
   toggleMultiSelectMode(): void {
+    if (this.permissionsService.denyUnless(this.canManageSoftware(), 'usar la selección múltiple')) {
+      return;
+    }
     this.multiSelectMode = !this.multiSelectMode;
     if (!this.multiSelectMode) {
       this.selectedSoftware.clear();
@@ -604,6 +626,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
 
   // Acciones en lote
   async updateMultipleSoftware(action: 'visibility' | 'forbidden' | 'driver' | 'licenciado', value: boolean): Promise<void> {
+    if (this.permissionsService.denyUnless(this.canManageSoftware(), 'editar software en lote')) {
+      return;
+    }
     if (this.selectedSoftware.size === 0) return;
 
     this.isUpdatingMultiple = true;
@@ -651,6 +676,9 @@ export class SoftwareComponent implements OnInit, OnDestroy {
   }
 
   async deleteMultipleSoftware(): Promise<void> {
+    if (this.permissionsService.denyUnless(this.canDeleteSoftware(), 'eliminar software en lote')) {
+      return;
+    }
     if (this.selectedSoftware.size === 0) return;
     this.showConfirmDialogMultiple = true;
   }

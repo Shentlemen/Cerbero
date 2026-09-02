@@ -31,7 +31,7 @@
       <button
         type="button"
         role="tab"
-        *ngFor="let role of roles"
+        *ngFor="let role of filtroTabs; trackBy: trackByTabValue"
         class="users-role-tab"
         [class.users-role-tab--active]="filtroRol === role.value"
         [attr.aria-selected]="filtroRol === role.value"
@@ -189,27 +189,21 @@
                   [placeholder]="editingUser ? 'Ingrese nueva contraseña (opcional)' : 'Ingrese la contraseña'">
               </div>
               <div class="col-md-6 mb-3">
-                <label for="role" class="form-label">Rol</label>
-                <select 
-                  id="role" 
-                  class="form-select" 
-                  formControlName="role">
-                  <option *ngFor="let role of roles" [value]="role.value">
-                    {{ role.label }}
+                <label for="asignacion" class="form-label">Rol / área</label>
+                <select
+                  id="asignacion"
+                  class="form-select"
+                  formControlName="asignacion">
+                  <option [ngValue]="null">Seleccioná Game Master o un área</option>
+                  <option [ngValue]="'GM'">Game Master (acceso total)</option>
+                  <option *ngFor="let b of areasParaAsignar" [ngValue]="b.id">
+                    {{ b.nombre }}
                   </option>
                 </select>
-              </div>
-            </div>
-            <div class="row" *ngIf="showTicketAreaField()">
-              <div class="col-12 mb-3">
-                <label for="ticketAreaCodigo" class="form-label">Bandeja de reclamos</label>
-                <select id="ticketAreaCodigo" class="form-select" formControlName="ticketAreaCodigo">
-                  <option value="">Sin bandeja (solo Mis tickets)</option>
-                  <option *ngFor="let b of bandejasUsuario" [value]="b.codigo">
-                    {{ b.nombre }} ({{ b.codigo }})
-                  </option>
-                </select>
-                <small class="text-muted">Opcional. Define qué tickets del área puede ver y gestionar este usuario.</small>
+                <small class="text-muted">
+                  Game Master tiene acceso total. El resto son las áreas (Almacén, Inventario, Laboratorio y las que crees):
+                  definen la bandeja de tickets y los permisos de cada módulo.
+                </small>
               </div>
             </div>
           </div>
@@ -313,8 +307,8 @@
             <td>{{ user.email }}</td>
             <td>{{ user.firstName }} {{ user.lastName }}</td>
             <td>
-              <span class="role-badge" [ngClass]="'role-' + user.role.toLowerCase()">
-                {{ getRoleLabel(user.role) }}
+              <span class="role-badge" [ngClass]="'role-' + (user.role || 'user').toLowerCase()">
+                {{ user.role === 'GM' ? 'Game Master' : (user.areaNombre || getBandejaEntrada(user) || 'Usuario') }}
               </span>
             </td>
             <td class="bandeja-cell">

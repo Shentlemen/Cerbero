@@ -1956,6 +1956,10 @@ export class ActivosComponent implements OnInit, OnDestroy {
   }
 
   async abrirModal(modal: any, activo?: any) {
+    const accion = activo ? 'editar activos' : 'crear activos';
+    if (this.permissionsService.denyUnless(this.permissionsService.canEditAssets(), accion)) {
+      return;
+    }
     try {
       if (this.ubicacionesList.length === 0) {
         try {
@@ -2464,6 +2468,9 @@ export class ActivosComponent implements OnInit, OnDestroy {
   }
 
   eliminarActivo(activo: any) {
+    if (this.permissionsService.denyUnless(this.permissionsService.canDeleteInventoryAssets(), 'eliminar este activo')) {
+      return;
+    }
     this.activoAEliminar = activo;
     this.showConfirmDialog = true;
   }

@@ -9,6 +9,12 @@ import {
   defEstanteria,
   estanteriasOrdenadas,
 } from '../../interfaces/almacen-config.interface';
+import {
+  findAlmacenCementerio,
+  findAlmacenLaboratorio,
+  findAlmacenOficinaLaboratorio,
+  OBS_OFICINA_LABORATORIO
+} from '../../utils/almacen-especial';
 
 @Component({
   selector: 'app-transferir-equipo-modal',
@@ -43,6 +49,9 @@ import {
               </option>
               <option [value]="'laboratorio'" *ngIf="almacenLaboratorio">
                 Almacén Lab ({{ almacenLaboratorio.numero }} - {{ almacenLaboratorio.nombre }})
+              </option>
+              <option [value]="'oficina_laboratorio'" *ngIf="almacenOficina">
+                Oficina Laboratorio ({{ almacenOficina.numero }} - {{ almacenOficina.nombre }})
               </option>
             </optgroup>
             <optgroup label="Almacenes Regulares" *ngIf="almacenesRegulares.length > 0">
@@ -240,6 +249,7 @@ export class TransferirEquipoModalComponent implements OnInit {
   almacenes: Almacen[] = [];
   almacenCementerio: Almacen | null = null;
   almacenLaboratorio: Almacen | null = null;
+  almacenOficina: Almacen | null = null;
   almacenesRegulares: Almacen[] = [];
   transferForm: FormGroup;
   procesando: boolean = false;
@@ -276,22 +286,15 @@ export class TransferirEquipoModalComponent implements OnInit {
         this.almacenes = almacenes;
         
         // Identificar almacenes especiales
-        this.almacenCementerio = almacenes.find(a => 
-          a.numero?.toLowerCase().trim() === 'alm01' || 
-          a.numero?.toLowerCase().trim() === 'alm 01' ||
-          a.nombre?.toLowerCase().includes('subsuelo')
-        ) || null;
+        this.almacenCementerio = findAlmacenCementerio(almacenes) || null;
+        this.almacenLaboratorio = findAlmacenLaboratorio(almacenes) || null;
+        this.almacenOficina = findAlmacenOficinaLaboratorio(almacenes) || null;
 
-        this.almacenLaboratorio = almacenes.find(a => 
-          a.numero?.toLowerCase().trim() === 'alm05' || 
-          a.numero?.toLowerCase().trim() === 'alm 05' ||
-          a.nombre?.toLowerCase().includes('pañol 3')
-        ) || null;
-
-        // Filtrar almacenes regulares (excluyendo cementerio y laboratorio)
+        // Filtrar almacenes regulares (excluyendo cementerio, laboratorio y oficina lab)
         const idsEspeciales = [
           this.almacenCementerio?.id,
-          this.almacenLaboratorio?.id
+          this.almacenLaboratorio?.id,
+          this.almacenOficina?.id
         ].filter(id => id !== undefined && id !== null);
 
         this.almacenesRegulares = almacenes.filter(a => 
@@ -318,7 +321,14 @@ export class TransferirEquipoModalComponent implements OnInit {
     
     const esCementerio = almacenId === 'cementerio';
     const esLaboratorio = almacenId === 'laboratorio';
-    const esRegular = !esCementerio && !esLaboratorio && almacenId && !isNaN(Number(almacenId));
+    const esOficina = almacenId === 'oficina_laboratorio';
+    const esRegular = !esCementerio && !esLaboratorio && !esOficina && almacenId && !isNaN(Number(almacenId));
+
+    if (esOficina) {
+      this.transferForm.get('observaciones')?.setValue(OBS_OFICINA_LABORATORIO);
+    } else if (this.transferForm.get('observaciones')?.value === OBS_OFICINA_LABORATORIO) {
+      this.transferForm.get('observaciones')?.setValue('');
+    }
     
     // Cargar AlmacenConfig para almacenes que pueden tener ubicación (regular y laboratorio)
     // Los validadores se configuran en cargarConfiguracionAlmacen según si hay config o no
@@ -428,7 +438,7 @@ export class TransferirEquipoModalComponent implements OnInit {
 
   esAlmacenRegular(): boolean {
     const almacenId = this.transferForm.get('almacenId')?.value;
-    if (!almacenId || almacenId === 'cementerio' || almacenId === 'laboratorio') {
+    if (!almacenId || almacenId === 'cementerio' || almacenId === 'laboratorio' || almacenId === 'oficina_laboratorio') {
       return false;
     }
     return !isNaN(Number(almacenId));
@@ -445,7 +455,7 @@ export class TransferirEquipoModalComponent implements OnInit {
 
   esAlmacenEspecial(): boolean {
     const almacenId = this.transferForm.get('almacenId')?.value;
-    return almacenId === 'cementerio' || almacenId === 'laboratorio';
+    return almacenId === 'cementerio' || almacenId === 'laboratorio' || almacenId === 'oficina_laboratorio';
   }
 
   getTipoEquipo(): string {
@@ -472,6 +482,9 @@ export class TransferirEquipoModalComponent implements OnInit {
       } else if (formData.almacenId === 'laboratorio' && this.almacenLaboratorio) {
         almacenIdFinal = this.almacenLaboratorio.id;
         tipoAlmacen = 'laboratorio';
+      } else if (formData.almacenId === 'oficina_laboratorio' && this.almacenOficina) {
+        almacenIdFinal = this.almacenOficina.id;
+        tipoAlmacen = 'oficina_laboratorio';
       } else {
         // Convertir almacenId a número si es string
         almacenIdFinal = typeof formData.almacenId === 'string' ? parseInt(formData.almacenId, 10) : formData.almacenId;

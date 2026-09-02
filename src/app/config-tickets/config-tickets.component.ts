@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalModule, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
-import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
-import { BandejasReclamosComponent } from '../bandejas-reclamos/bandejas-reclamos.component';
+import { AreasAdminComponent } from '../configuracion/areas-admin.component';
 import { TicketTipoDTO, TicketTipoService } from '../services/ticket-tipo.service';
 import { FlujoEditorComponent } from './flujo-editor.component';
 import { TourRegistryService } from '../services/tour-registry.service';
@@ -20,8 +19,7 @@ type ConfigTab = 'bandejas' | 'flujos';
     CommonModule,
     FormsModule,
     NgbModalModule,
-    NotificationContainerComponent,
-    BandejasReclamosComponent,
+    AreasAdminComponent,
     FlujoEditorComponent
   ],
   templateUrl: './config-tickets.component.html',
@@ -107,6 +105,10 @@ export class ConfigTicketsComponent implements OnInit, OnDestroy {
 
   canManage(): boolean {
     return this.permissionsService.canManageTicketBandejas();
+  }
+
+  canManageAreas(): boolean {
+    return this.permissionsService.isGM();
   }
 
   setTab(tab: ConfigTab): void {

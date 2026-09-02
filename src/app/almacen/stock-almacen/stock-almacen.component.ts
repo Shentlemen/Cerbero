@@ -9,6 +9,8 @@ import { PermissionsService } from '../../services/permissions.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationContainerComponent } from '../../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { TransferirMasaModalComponent } from '../../components/transferir-masa-modal/transferir-masa-modal.component';
+import { ReactivarMasaModalComponent } from '../../components/reactivar-masa-modal/reactivar-masa-modal.component';
 import { RegistrarStockModalComponent } from '../../components/registrar-stock-modal/registrar-stock-modal.component';
 import { ModificarCantidadModalComponent } from '../../components/modificar-cantidad-modal/modificar-cantidad-modal.component';
 import { EditarRegistroStockModalComponent } from '../../components/editar-registro-stock-modal/editar-registro-stock-modal.component';
@@ -32,6 +34,12 @@ import { TourRegistryService } from '../../services/tour-registry.service';
 import { AlmacenPlantaService } from '../../services/almacen-planta.service';
 import { AlmacenPlantaCanvasComponent } from '../planta-almacen/almacen-planta-canvas.component';
 import { AlmacenPlanta, AlmacenPlantaObjeto, ocupacionDe } from '../../interfaces/almacen-planta.interface';
+import {
+  esAlmacenOficinaLaboratorio,
+  findAlmacenCementerio,
+  findAlmacenLaboratorio,
+  findAlmacenOficinaLaboratorio
+} from '../../utils/almacen-especial';
 
 @Component({
   selector: 'app-stock-almacen',
@@ -72,6 +80,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   // Almacenes especiales
   almacenCementerio: Almacen | null = null; // alm01 subsuelo
   almacenLaboratorio: Almacen | null = null; // alm05 pañol 3
+  almacenOficinaLaboratorio: Almacen | null = null;
 
   // Estado de exportación
   isExporting: boolean = false;
@@ -82,6 +91,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   
   // Estado de reactivación
   reactivandoItemId: string | number | null = null;
+  transfiriendoMasa = false;
+  reactivandoMasa = false;
 
   /** Eliminación de fila ítem en curso (`stock_almacen.id`). */
   eliminandoStockId: number | null = null;
@@ -154,7 +165,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       icon: 'fa-route',
       steps: [
         { selector: '#tour-stock-almacen-title', title: 'Stock del almacén', description: 'Vista detallada por almacén: métricas, planta 2D, árbol de ubicaciones y tabla de ítems.', side: 'bottom' },
-        { selector: '#tour-stock-almacen-toolbar', title: 'Herramientas', description: 'Buscador con resaltado, registro de stock (si tenés permiso) e impresión/PDF del almacén activo.', side: 'bottom' },
+        { selector: '#tour-stock-almacen-toolbar', title: 'Herramientas', description: 'Buscador, registro de stock, transferir/reactivar en masa e impresión/PDF de la <strong>vista filtrada</strong> (incluye ítems de stock).', side: 'bottom' },
         { selector: '#tour-stock-almacen-planta', title: 'Planta', description: 'Mapa de solo lectura. Clic en una estantería filtra el listado y muestra el contenido en el panel.', side: 'bottom' },
         { selector: '#tour-stock-almacen-kpis', title: 'Resumen', description: 'Contadores de la vista actual (unidades, ítems visibles, estanterías y estantes).', side: 'bottom' },
         { selector: '#tour-stock-almacen-tree', title: 'Ubicaciones', description: 'Navegá por estantería y estante para filtrar el listado de la derecha.', side: 'right' },
@@ -221,18 +232,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         this.almacenes = almacenes;
         
         // Encontrar los almacenes especiales (búsqueda case-insensitive y flexible)
-        this.almacenCementerio = almacenes.find((a: Almacen) => 
-          a.numero?.toLowerCase().trim() === 'alm01' || 
-          a.numero?.toLowerCase().trim() === 'alm 01' ||
-          a.nombre?.toLowerCase().includes('subsuelo') ||
-          a.nombre?.toLowerCase().includes('cementerio')
-        ) || null;
-        
-        this.almacenLaboratorio = almacenes.find((a: Almacen) => 
-          a.numero?.toLowerCase().trim() === 'alm05' || 
-          a.numero?.toLowerCase().trim() === 'alm 05' ||
-          a.nombre?.toLowerCase().includes('pañol 3')
-        ) || null;
+        this.almacenCementerio = findAlmacenCementerio(almacenes) || null;
+        this.almacenLaboratorio = findAlmacenLaboratorio(almacenes) || null;
+        this.almacenOficinaLaboratorio = findAlmacenOficinaLaboratorio(almacenes) || null;
         
         // Encontrar el almacén seleccionado (comparar como número)
         if (this.almacenId != null) {
@@ -263,8 +265,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         if (stock) this.stock = stock;
         if (almacenes) {
           this.almacenes = almacenes;
-          this.almacenCementerio = almacenes.find((a: Almacen) => a.numero?.toLowerCase().trim() === 'alm01' || a.nombre?.toLowerCase().includes('subsuelo')) || null;
-          this.almacenLaboratorio = almacenes.find((a: Almacen) => a.numero?.toLowerCase().trim() === 'alm05' || a.nombre?.toLowerCase().includes('pañol 3')) || null;
+          this.almacenCementerio = findAlmacenCementerio(almacenes) || null;
+          this.almacenLaboratorio = findAlmacenLaboratorio(almacenes) || null;
+          this.almacenOficinaLaboratorio = findAlmacenOficinaLaboratorio(almacenes) || null;
           if (this.almacenId != null) {
             this.almacenSeleccionado = almacenes.find((a: Almacen) => Number(a.id) === Number(this.almacenId)) || null;
           }
@@ -954,6 +957,35 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     return 'Todas las ubicaciones';
   }
 
+  etiquetaItemStock(item: any): string {
+    return (item?.item?.nombreItem || item?.descripcion || item?.numero || 'Sin nombre').toString();
+  }
+
+  tipoItemStock(item: any): string {
+    if (this.esEquipoEspecial(item)) {
+      return this.getTipoEquipo(item) === 'DISPOSITIVO' ? 'Dispositivo' : 'Equipo';
+    }
+    return 'Ítem';
+  }
+
+  ubicacionItemStock(item: any): string {
+    const partes = [item?.estanteria, item?.estante, item?.seccion]
+      .map((p) => (p == null ? '' : String(p).trim()))
+      .filter((p) => p && p !== '-');
+    return partes.length ? partes.join(' / ') : 'Sin ubicación';
+  }
+
+  private filaPdfStock(item: any): string[] {
+    return [
+      this.tipoItemStock(item),
+      this.etiquetaItemStock(item),
+      String(item?.cantidad ?? 1),
+      this.ubicacionItemStock(item),
+      item?.numero || '-',
+      item?.descripcion || item?.item?.descripcion || '-'
+    ];
+  }
+
   private ensureSelectedHierarchy(): void {
     const almacenes = this.getAlmacenes();
     if (almacenes.length === 0) {
@@ -1028,11 +1060,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     return !this.tieneConfigConEstructura(almacenKey);
   }
 
-  /** Indica si el almacén es cementerio (ALM01) o laboratorio (ALM05) - para estilos de items, no para layout */
+  /** Indica si el almacén es cementerio, laboratorio u oficina lab — para estilos de items, no para layout */
   esAlmacenCementerioOLaboratorio(almacenKey: string): boolean {
     const k = (almacenKey || '').toLowerCase();
     return k.includes('alm01') || k.includes('alm 01') || k.includes('cementerio') || k.includes('subsuelo') ||
-           k.includes('alm05') || k.includes('alm 05') || k.includes('pañol 3') || k.includes('laboratorio');
+           k.includes('alm05') || k.includes('alm 05') || k.includes('pañol 3') ||
+           k.includes('ofilab') || k.includes('oficina laboratorio') ||
+           (k.includes('laboratorio') && !k.includes('oficina'));
   }
 
   getEstanterias(almacen: string): string[] {
@@ -1175,8 +1209,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     if (item?.esEquipoEspecial) {
       return;
     }
-    if (!this.canManageStock()) {
-      this.notificationService.showError('Permisos insuficientes', 'No tienes permisos para modificar el stock.');
+    if (this.permissionsService.denyUnless(this.canManageStock(), 'modificar el stock')) {
       return;
     }
     const stockId = this.getStockAlmacenNumericId(item);
@@ -1208,11 +1241,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    if (!this.canManageStock()) {
-      this.notificationService.showError(
-        'Permisos Insuficientes',
-        'No tienes permisos para modificar el stock.'
-      );
+    if (this.permissionsService.denyUnless(this.canManageStock(), 'modificar el stock')) {
       return;
     }
 
@@ -1227,8 +1256,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     if (item?.esEquipoEspecial) {
       return;
     }
-    if (!this.canManageStock()) {
-      this.notificationService.showError('Permisos insuficientes', 'No tienes permisos para eliminar stock.');
+    if (this.permissionsService.denyUnless(this.canDeleteStock(), 'eliminar stock')) {
       return;
     }
     const stockId = this.getStockAlmacenNumericId(item);
@@ -1277,12 +1305,22 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
    * Verifica si el usuario puede gestionar stock
    */
   canManageStock(): boolean {
-    // En Stock por almacén, GM, Admin y Almacén pueden gestionar stock
     return this.permissionsService.canManageWarehouseAssets();
+  }
+
+  canDeleteStock(): boolean {
+    return this.permissionsService.canDeleteStock();
+  }
+
+  canTransferStock(): boolean {
+    return this.permissionsService.canTransferOrReactivateInCemeteryOrLabWarehouse();
   }
 
   /** Abre el modal de registrar stock sin cambiar de pantalla, con el almacén actual pre-seleccionado */
   irARegistrarStock(): void {
+    if (this.permissionsService.denyUnless(this.canManageStock(), 'registrar stock')) {
+      return;
+    }
     if (this.almacenId == null) return;
     const modalRef = this.modalService.open(RegistrarStockModalComponent, { size: 'lg', backdrop: true });
     modalRef.componentInstance.almacenIdPreseleccionado = this.almacenId;
@@ -1317,7 +1355,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * Identifica el tipo de almacén de un item: 'cementerio', 'laboratorio', o 'regular'
    */
-  getTipoAlmacen(item: any): 'cementerio' | 'laboratorio' | 'regular' | null {
+  getTipoAlmacen(item: any): 'cementerio' | 'laboratorio' | 'oficina_laboratorio' | 'regular' | null {
     if (!this.esEquipoEspecial(item)) {
       return 'regular';
     }
@@ -1335,8 +1373,14 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       if (this.almacenCementerio && almacenId === this.almacenCementerio.id) {
         return 'cementerio';
       }
+      if (this.almacenOficinaLaboratorio && almacenId === this.almacenOficinaLaboratorio.id) {
+        return 'oficina_laboratorio';
+      }
       if (this.almacenLaboratorio && almacenId === this.almacenLaboratorio.id) {
         return 'laboratorio';
+      }
+      if (item?.almacen && esAlmacenOficinaLaboratorio(item.almacen)) {
+        return 'oficina_laboratorio';
       }
       // Si tiene almacenId pero no es cementerio ni laboratorio, es regular
       return 'regular';
@@ -1349,8 +1393,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     if (almacenNumero.includes('alm01') || almacenNombre.includes('subsuelo') || almacenNombre.includes('cementerio')) {
       return 'cementerio';
     }
+
+    if (almacenNumero.includes('ofilab') || almacenNombre.includes('oficina laboratorio')) {
+      return 'oficina_laboratorio';
+    }
     
-    if (almacenNumero.includes('alm05') || almacenNombre.includes('pañol 3') || almacenNombre.includes('laboratorio')) {
+    if (almacenNumero.includes('alm05') || almacenNombre.includes('pañol 3') ||
+        (almacenNombre.includes('laboratorio') && !almacenNombre.includes('oficina'))) {
       return 'laboratorio';
     }
 
@@ -1370,6 +1419,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     switch (tipoAlmacen) {
       case 'cementerio':
         return 'fa-skull-crossbones'; // Icono de cementerio
+      case 'oficina_laboratorio':
+        return 'fa-tools';
       case 'laboratorio':
         return 'fa-flask'; // Icono de laboratorio
       case 'regular':
@@ -1388,6 +1439,8 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     switch (tipoAlmacen) {
       case 'cementerio':
         return 'bg-danger';
+      case 'oficina_laboratorio':
+        return 'bg-warning';
       case 'laboratorio':
         return 'bg-info';
       case 'regular':
@@ -1398,13 +1451,13 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Exporta el contenido de una estantería a PDF
+   * Exporta el contenido de una estantería a PDF (vista filtrada de esa estantería).
    */
   exportarPDFEstanteria(almacenKey: string, estanteriaKey: string): void {
-    const items = this.getStockPorEstanteria(almacenKey, estanteriaKey);
-    
+    const items = this.getItemsPorEstanteria(almacenKey, estanteriaKey);
+
     if (items.length === 0) {
-      this.notificationService.showInfo('Sin items', 'No hay items para exportar en esta estantería.');
+      this.notificationService.showInfo('Sin items', 'No hay items para exportar en esta estantería con el filtro actual.');
       return;
     }
 
@@ -1421,55 +1474,45 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       minute: '2-digit'
     });
 
-    // Título
     doc.setFontSize(18);
     doc.text(`Estantería ${estanteriaKey} - ${almacenKey}`, 14, 22);
 
-    // Información
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Almacén: ${almacenKey}`, 14, 30);
     doc.text(`Total de items: ${items.length}`, 14, 35);
     doc.text(`Fecha de generación: ${fechaGeneracion}`, 14, 40);
+    if (this.searchTerm.trim()) {
+      doc.text(`Búsqueda: ${this.searchTerm.trim()}`, 14, 45);
+    }
 
-    // Organizar items por estante
     const itemsPorEstante: { [key: string]: any[] } = {};
     items.forEach(item => {
-      const estante = item.estante;
+      const estante = item.estante || 'Sin ubicación';
       if (!itemsPorEstante[estante]) {
         itemsPorEstante[estante] = [];
       }
       itemsPorEstante[estante].push(item);
     });
 
-    let startY = 50;
+    let startY = this.searchTerm.trim() ? 55 : 50;
     const estantes = Object.keys(itemsPorEstante).sort();
+    const head = [['Tipo', 'Item', 'Cantidad', 'Ubicación', 'Número', 'Descripción']];
 
-    estantes.forEach((estante, index) => {
+    estantes.forEach((estante) => {
       if (startY > 180) {
         doc.addPage();
         startY = 20;
       }
 
-      // Título del estante
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text(`Estante ${estante}`, 14, startY);
       startY += 8;
 
-      // Preparar datos para la tabla
-      const head = [['Item', 'Cantidad', 'Número', 'Descripción']];
-      const body = itemsPorEstante[estante].map(item => [
-        item.item?.nombreItem || 'N/A',
-        item.cantidad?.toString() || '1',
-        item.numero || 'N/A',
-        item.descripcion || item.item?.descripcion || 'Sin descripción'
-      ]);
-
-      // Generar tabla
       autoTable(doc, {
-        head: head,
-        body: body,
+        head,
+        body: itemsPorEstante[estante].map((item) => this.filaPdfStock(item)),
         startY: startY,
         theme: 'striped',
         styles: {
@@ -1491,7 +1534,6 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       startY = (doc as any).lastAutoTable.finalY + 10;
     });
 
-    // Footer en cada página
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -1527,23 +1569,20 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Exporta todo el contenido del almacén a PDF
+   * Exporta la vista actual del almacén (ubicación + búsqueda), incluyendo ítems de stock.
    */
   exportarPDFAlmacen(almacenKey: string): void {
-    const almacenes = this.getAlmacenes();
-    if (!almacenes.includes(almacenKey)) {
-      this.notificationService.showInfo('Almacén no encontrado', 'El almacén especificado no existe.');
-      return;
-    }
-
-    const estanterias = this.getEstanterias(almacenKey);
-    if (estanterias.length === 0) {
-      this.notificationService.showInfo('Sin estanterías', 'No hay estanterías para exportar en este almacén.');
+    const items = this.getItemsVistaActual();
+    if (items.length === 0) {
+      this.notificationService.showInfo(
+        'Sin items',
+        'No hay items en la vista filtrada para exportar.'
+      );
       return;
     }
 
     this.isExporting = true;
-    this.notificationService.showInfo('Generando PDF', 'Generando PDF del almacén completo...');
+    this.notificationService.showInfo('Generando PDF', 'Generando PDF de la vista filtrada...');
 
     const doc = new jsPDF('landscape');
     const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
@@ -1553,19 +1592,49 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
       hour: '2-digit',
       minute: '2-digit'
     });
+    const unidades = this.getTotalUnidadesVistaActual();
+    const busqueda = this.searchTerm.trim();
 
-    // Título
     doc.setFontSize(18);
-    doc.text(`Reporte Completo - ${almacenKey}`, 14, 22);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Stock - ${almacenKey}`, 14, 22);
 
-    // Información
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Almacén: ${almacenKey}`, 14, 30);
-    doc.text(`Total de estanterías: ${estanterias.length}`, 14, 35);
-    doc.text(`Fecha de generación: ${fechaGeneracion}`, 14, 40);
+    let yInfo = 30;
+    doc.text(`Almacén: ${almacenKey}`, 14, yInfo);
+    yInfo += 5;
+    doc.text(`Vista: ${this.getEtiquetaSeleccionActual()}`, 14, yInfo);
+    yInfo += 5;
+    if (busqueda) {
+      doc.text(`Búsqueda: ${busqueda}`, 14, yInfo);
+      yInfo += 5;
+    }
+    doc.text(`Items: ${items.length}  ·  Unidades: ${unidades}  ·  ${fechaGeneracion}`, 14, yInfo);
+    yInfo += 8;
 
-    let startY = 50;
+    const porEstanteria: { [key: string]: { [key: string]: any[] } } = {};
+    items.forEach((item) => {
+      const estanteria = (item?.estanteria && String(item.estanteria).trim() && item.estanteria !== '-')
+        ? String(item.estanteria)
+        : 'Sin ubicación';
+      const estante = (item?.estante && String(item.estante).trim() && item.estante !== '-')
+        ? String(item.estante)
+        : 'Sin estante';
+      if (!porEstanteria[estanteria]) {
+        porEstanteria[estanteria] = {};
+      }
+      if (!porEstanteria[estanteria][estante]) {
+        porEstanteria[estanteria][estante] = [];
+      }
+      porEstanteria[estanteria][estante].push(item);
+    });
+
+    let startY = yInfo;
+    const head = [['Tipo', 'Item', 'Cantidad', 'Ubicación', 'Número', 'Descripción']];
+    const estanterias = Object.keys(porEstanteria).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true })
+    );
 
     estanterias.forEach((estanteria, estanteriaIndex) => {
       if (startY > 170) {
@@ -1573,25 +1642,14 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         startY = 20;
       }
 
-      // Título de la estantería
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text(`Estantería ${estanteria}`, 14, startY);
       startY += 8;
 
-      const items = this.getStockPorEstanteria(almacenKey, estanteria);
-      
-      // Organizar items por estante
-      const itemsPorEstante: { [key: string]: any[] } = {};
-      items.forEach(item => {
-        const estante = item.estante;
-        if (!itemsPorEstante[estante]) {
-          itemsPorEstante[estante] = [];
-        }
-        itemsPorEstante[estante].push(item);
-      });
-
-      const estantes = Object.keys(itemsPorEstante).sort();
+      const estantes = Object.keys(porEstanteria[estanteria]).sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true })
+      );
 
       estantes.forEach((estante) => {
         if (startY > 180) {
@@ -1599,26 +1657,15 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
           startY = 20;
         }
 
-        // Subtítulo del estante
-        doc.setFontSize(12);
+        doc.setFontSize(11);
         doc.setTextColor(50, 50, 50);
-        doc.text(`  Estante ${estante}`, 14, startY);
+        doc.text(`Estante ${estante}`, 14, startY);
         startY += 6;
 
-        // Preparar datos para la tabla
-        const head = [['Item', 'Cantidad', 'Número', 'Descripción']];
-        const body = itemsPorEstante[estante].map(item => [
-          item.item?.nombreItem || 'N/A',
-          item.cantidad?.toString() || '1',
-          item.numero || 'N/A',
-          item.descripcion || item.item?.descripcion || 'Sin descripción'
-        ]);
-
-        // Generar tabla
         autoTable(doc, {
-          head: head,
-          body: body,
-          startY: startY,
+          head,
+          body: porEstanteria[estanteria][estante].map((item) => this.filaPdfStock(item)),
+          startY,
           theme: 'striped',
           styles: {
             fontSize: 7,
@@ -1639,13 +1686,11 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
         startY = (doc as any).lastAutoTable.finalY + 8;
       });
 
-      // Espacio entre estanterías
       if (estanteriaIndex < estanterias.length - 1) {
-        startY += 5;
+        startY += 4;
       }
     });
 
-    // Footer en cada página
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -1655,7 +1700,7 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
 
     const nombreArchivo = `almacen_${almacenKey.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(nombreArchivo);
-    this.notificationService.showSuccess('PDF Generado', 'PDF del almacén completo generado exitosamente.');
+    this.notificationService.showSuccess('PDF Generado', 'PDF de la vista filtrada generado exitosamente.');
     this.isExporting = false;
   }
 
@@ -1668,12 +1713,276 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * Equipos y dispositivos especiales del almacén que se está viendo.
+   */
+  private itemsEspecialesDelAlmacen(): any[] {
+    const key = this.getAlmacenActivoKey();
+    if (!key) {
+      return [];
+    }
+    const porEstanteria = this.stockOrganizado[key] || {};
+    const items: any[] = [];
+    const vistos = new Set<string>();
+    for (const lista of Object.values(porEstanteria)) {
+      for (const item of lista || []) {
+        if (!this.esEquipoEspecial(item)) {
+          continue;
+        }
+        const dedupe = `${this.getTipoEquipo(item)}:${item.itemId || item.estadoInfo?.hardwareId || item.numero || item.estadoInfo?.mac || item.id}`;
+        if (vistos.has(dedupe)) {
+          continue;
+        }
+        vistos.add(dedupe);
+        items.push(item);
+      }
+    }
+    return items;
+  }
+
+  hardwareIdDeItem(item: any): number | null {
+    const id = item?.itemId || item?.estadoInfo?.hardwareId;
+    const n = Number(id);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  macDeItem(item: any): string | null {
+    const mac = (item?.numero || item?.estadoInfo?.mac || '').toString().trim();
+    return mac || null;
+  }
+
+  get equiposParaTransferirMasa(): any[] {
+    return this.itemsEspecialesDelAlmacen().filter(
+      (item) => this.getTipoEquipo(item) === 'EQUIPO' && this.hardwareIdDeItem(item) != null
+    );
+  }
+
+  get itemsParaReactivarMasa(): any[] {
+    return this.itemsEspecialesDelAlmacen().filter((item) => {
+      const tipo = this.getTipoEquipo(item);
+      if (tipo === 'EQUIPO') {
+        return this.hardwareIdDeItem(item) != null;
+      }
+      if (tipo === 'DISPOSITIVO') {
+        return !!this.macDeItem(item);
+      }
+      return false;
+    });
+  }
+
+  abrirTransferenciaMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferStock(), 'transferir equipos en masa', event)) {
+      return;
+    }
+    if (this.transfiriendoMasa) {
+      return;
+    }
+    const equipos = this.equiposParaTransferirMasa;
+    if (!equipos.length) {
+      this.notificationService.showError(
+        'Sin equipos para transferir',
+        'No hay equipos (PCs) en este almacén. Los insumos y dispositivos no se transfieren desde acá.'
+      );
+      return;
+    }
+    const modalRef = this.modalService.open(TransferirMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Transferir en masa';
+    modalRef.componentInstance.tituloLista = 'Equipos del almacén';
+    const excluir: string[] = [];
+    if (this.almacenLaboratorio && Number(this.almacenId) === Number(this.almacenLaboratorio.id)) {
+      excluir.push('laboratorio');
+    }
+    if (this.almacenOficinaLaboratorio && Number(this.almacenId) === Number(this.almacenOficinaLaboratorio.id)) {
+      excluir.push('oficina_laboratorio');
+    }
+    modalRef.componentInstance.excluirDestinos = excluir;
+    modalRef.componentInstance.equipos = equipos
+      .slice()
+      .sort((a, b) =>
+        (a.numero || a.item?.nombreItem || '').localeCompare(b.numero || b.item?.nombreItem || '', 'es', { sensitivity: 'base' })
+      )
+      .map((item) => ({
+        id: this.hardwareIdDeItem(item),
+        name: item.numero || item.item?.nombreItem,
+        ipAddr: item.ipAddr || '',
+        userid: item.userid || '',
+        biosType: item.item?.descripcion || item.descripcion || ''
+      }));
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData?.hardwareIds?.length) {
+        this.procesarTransferenciaMasiva(transferData);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarTransferenciaMasiva(transferData: any): void {
+    this.transfiriendoMasa = true;
+    const requestData: any = {
+      hardwareIds: transferData.hardwareIds,
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: this.authService.getUsuarioParaAuditoria()
+    };
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
+    }
+
+    this.estadoEquipoService.transferirEquiposEnMasa(requestData).subscribe({
+      next: (response) => {
+        const ok = response?.data?.ok ?? 0;
+        const fallidos = Array.isArray(response?.data?.fallidos) ? response.data.fallidos : [];
+        this.cargarDatos();
+        if (fallidos.length === 0) {
+          this.notificationService.showSuccessMessage(
+            response?.message || `${ok} equipo(s) transferido(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Transferencia masiva incompleta',
+            `${ok} transferido(s), ${fallidos.length} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al transferir en masa',
+          error?.message || 'No se pudieron transferir los equipos.'
+        );
+      },
+      complete: () => {
+        this.transfiriendoMasa = false;
+      }
+    });
+  }
+
+  abrirReactivacionMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferStock(), 'reactivar en masa', event)) {
+      return;
+    }
+    if (this.reactivandoMasa) {
+      return;
+    }
+    const items = this.itemsParaReactivarMasa;
+    if (!items.length) {
+      this.notificationService.showError(
+        'Sin items para reactivar',
+        'No hay equipos ni dispositivos en este almacén.'
+      );
+      return;
+    }
+    const modalRef = this.modalService.open(ReactivarMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Reactivar en masa';
+    modalRef.componentInstance.tituloLista = 'Equipos y dispositivos del almacén';
+    modalRef.componentInstance.items = items
+      .slice()
+      .sort((a, b) =>
+        (a.numero || a.item?.nombreItem || a.mac || '').localeCompare(
+          b.numero || b.item?.nombreItem || b.mac || '',
+          'es',
+          { sensitivity: 'base' }
+        )
+      )
+      .map((item, index) => {
+        const tipo = this.getTipoEquipo(item) === 'DISPOSITIVO' ? 'DISPOSITIVO' : 'EQUIPO';
+        const id = this.hardwareIdDeItem(item);
+        const mac = tipo === 'DISPOSITIVO' ? this.macDeItem(item) : null;
+        const name = item.numero || item.item?.nombreItem || mac || (id != null ? `ID ${id}` : `Item ${index + 1}`);
+        return {
+          key: `${tipo === 'EQUIPO' ? 'e' : 'd'}:${id ?? mac ?? 'x'}:${index}`,
+          tipo,
+          id,
+          mac,
+          name,
+          ipAddr: item.ipAddr || ''
+        };
+      });
+
+    modalRef.result.then((data: { hardwareIds?: number[]; macs?: string[] }) => {
+      if (data?.hardwareIds?.length || data?.macs?.length) {
+        this.procesarReactivacionMasiva(data);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarReactivacionMasiva(data: { hardwareIds?: number[]; macs?: string[] }): void {
+    this.reactivandoMasa = true;
+    const usuario = this.authService.getUsuarioParaAuditoria();
+    const llamadas = [];
+    if (data.hardwareIds?.length) {
+      llamadas.push(this.estadoEquipoService.reactivarEquiposEnMasa({
+        hardwareIds: data.hardwareIds,
+        observaciones: '',
+        usuario
+      }));
+    }
+    if (data.macs?.length) {
+      llamadas.push(this.estadoDispositivoService.reactivarDispositivosEnMasa({
+        macs: data.macs,
+        observaciones: '',
+        usuario
+      }));
+    }
+    if (!llamadas.length) {
+      this.reactivandoMasa = false;
+      return;
+    }
+    forkJoin(llamadas).subscribe({
+      next: (responses) => {
+        let ok = 0;
+        let fallidos = 0;
+        for (const response of responses as any[]) {
+          ok += response?.data?.ok ?? 0;
+          fallidos += Array.isArray(response?.data?.fallidos) ? response.data.fallidos.length : 0;
+        }
+        this.cargarDatos();
+        if (fallidos === 0) {
+          this.notificationService.showSuccessMessage(
+            `${ok} item(s) reactivado(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Reactivación masiva incompleta',
+            `${ok} reactivado(s), ${fallidos} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al reactivar en masa',
+          error?.message || 'No se pudieron reactivar los items.'
+        );
+      },
+      complete: () => {
+        this.reactivandoMasa = false;
+      }
+    });
+  }
+
+  /**
    * Método para transferir equipo o dispositivo (solo para equipos especiales)
    */
   transferirEquipo(item: any, event?: Event): void {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
+    }
+    if (this.permissionsService.denyUnless(this.canTransferStock(), 'transferir este equipo', event)) {
+      return;
     }
     this.cerrarDropdown();
 
@@ -1939,6 +2248,9 @@ export class StockAlmacenComponent implements OnInit, OnDestroy, OnChanges {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
+    }
+    if (this.permissionsService.denyUnless(this.canTransferStock(), 'reactivar este equipo', event)) {
+      return;
     }
     this.cerrarDropdown();
 

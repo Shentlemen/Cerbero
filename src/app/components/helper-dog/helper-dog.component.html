@@ -74,8 +74,7 @@
       [attr.aria-label]="ticketsNoLeidos + ' tickets nuevos en tu bandeja. Click para ver.'"
       [title]="ticketsNoLeidos + ' tickets nuevos en tu bandeja'"
       (click)="onTicketsBadgeClick($event)">
-      <i class="fas fa-exclamation" aria-hidden="true"></i>
-      <span class="tickets-badge-count">{{ ticketsNoLeidos > 9 ? '9+' : ticketsNoLeidos }}</span>
+      {{ ticketsNoLeidos > 9 ? '9+' : ticketsNoLeidos }}
     </button>
 
     <img

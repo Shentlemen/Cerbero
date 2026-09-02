@@ -59,7 +59,9 @@ export class BandejasReclamosComponent implements OnInit {
   }
 
   esBandejaConfigurable(area: TicketAreaDTO): boolean {
-    return (area.rolAsociado || '').toUpperCase() === 'USER';
+  esBandejaConfigurable(area: TicketAreaDTO): boolean {
+    return !area.sistema;
+  }
   }
 
   crearBandejaTicket(): void {

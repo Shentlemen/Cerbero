@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -15,12 +15,20 @@ import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
-import { forkJoin } from 'rxjs';
+import { TransferirMasaModalComponent } from '../components/transferir-masa-modal/transferir-masa-modal.component';
+import { ReactivarMasaModalComponent } from '../components/reactivar-masa-modal/reactivar-masa-modal.component';
+import { RegistrarEquipoPendienteModalComponent } from '../components/registrar-equipo-pendiente-modal/registrar-equipo-pendiente-modal.component';
+import { RegistrarStockLabModalComponent } from '../components/registrar-stock-lab-modal/registrar-stock-lab-modal.component';
+import { AlmacenService } from '../services/almacen.service';
+import { StockAlmacenService, StockAlmacen } from '../services/stock-almacen.service';
+import { findAlmacenLaboratorio, findAlmacenOficinaLaboratorio } from '../utils/almacen-especial';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TourRegistryService } from '../services/tour-registry.service';
 
-type AlmacenLabSortColumn = 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion';
+type AlmacenLabSortColumn = 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion' | 'cantidad';
 
 @Component({
   selector: 'app-almacen-laboratorio',
@@ -36,6 +44,8 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
   equiposFiltrados: any[] = [];
   dispositivosEnAlmacen: any[] = [];
   dispositivosFiltrados: any[] = [];
+  stockEnAlmacen: StockAlmacen[] = [];
+  stockFiltrado: StockAlmacen[] = [];
   loading: boolean = true;
   
   // Paginación
@@ -45,7 +55,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
 
   // Búsqueda y filtros
   searchTerm = '';
-  filtroTipo: 'todos' | 'equipos' | 'dispositivos' = 'todos';
+  filtroTipo: 'todos' | 'equipos' | 'dispositivos' | 'stock' = 'todos';
 
   // Ordenamiento (por defecto: nombre ascendente)
   sortColumn: AlmacenLabSortColumn = 'nombre';
@@ -58,6 +68,19 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
   reactivatingItemId: string | number | null = null;
   itemToReactivar: any = null;
   transferiendoItemId: string | number | null = null;
+  transfiriendoMasa = false;
+  reactivandoMasa = false;
+  registrandoPendiente = false;
+  registrandoStock = false;
+  eliminandoStockId: number | null = null;
+  actualizandoCantidadId: number | null = null;
+  showEliminarStockDialog = false;
+  stockAEliminar: StockAlmacen | null = null;
+  showEliminarPendienteDialog = false;
+  equipoAEliminarPendiente: any = null;
+  eliminandoPendienteId: number | null = null;
+  esModoOficina = false;
+  almacenDestinoId: number | null = null;
 
   // Edición de observaciones
   editingObservacionesId: string | number | null = null;
@@ -78,25 +101,43 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
     private modalService: NgbModal,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private route: ActivatedRoute,
+    private almacenService: AlmacenService,
+    private stockAlmacenService: StockAlmacenService
   ) {}
 
   ngOnInit(): void {
+    this.esModoOficina = this.route.snapshot.data['modoAlmacen'] === 'oficina';
     this.loadItemsEnAlmacen();
-    this.tourCleanup = this.tourRegistry.register('almacen-laboratorio', [{
-      id: 'almacen-laboratorio-overview',
-      title: 'Tour del almacén laboratorio',
+    const titulo = this.esModoOficina ? 'Oficina laboratorio' : 'Almacén laboratorio';
+    const desc = this.esModoOficina
+      ? 'Equipos en preparación/configuración. Sin estanterías; no aparecen en inventario activo ni en gráficas.'
+      : 'Equipos y dispositivos en almacén (distinto del cementerio): pendientes de ubicación operativa.';
+    this.tourCleanup = this.tourRegistry.register(this.esModoOficina ? 'oficina-laboratorio' : 'almacen-laboratorio', [{
+      id: this.esModoOficina ? 'oficina-laboratorio-overview' : 'almacen-laboratorio-overview',
+      title: `Tour de ${titulo.toLowerCase()}`,
       icon: 'fa-route',
       steps: [
-        { selector: '#tour-almacen-lab-title', title: 'Almacén laboratorio', description: 'Equipos y dispositivos en almacén (distinto del cementerio): pendientes de ubicación operativa.', side: 'bottom' },
-        { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Pestañas para filtrar por todos, solo equipos o solo dispositivos de red.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-title', title: titulo, description: desc, side: 'bottom' },
+        { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Pestañas para filtrar por todos, equipos, dispositivos de red o stock de insumos (RAM, placas, etc.).', side: 'bottom' },
         { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-registrar', title: 'Registrar equipo',
+          description: 'Si una PC está en el depósito pero todavía no pasó por OCS, anotá el nombre. Queda en esta lista como <strong>Pendiente OCS</strong>.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-stock', title: 'Registrar stock',
+          description: 'En la pestaña Stock anotá insumos con descripción y cantidad: RAM, placas, discos, cables. Después subí o bajá la cantidad con + y −.', side: 'bottom' },
         { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Cada fila muestra los datos del equipo o dispositivo y, según tus permisos, los botones de acción a la derecha.', side: 'top' },
         { selector: '.transferir-btn', title: 'Transferir',
-          description: 'Mueve el equipo a <strong>otro almacén</strong> (cementerio o almacén regular). Útil cuando ya está listo para asignarse o cuando se debe dar de baja.', side: 'top' },
+          description: 'Mueve el equipo a <strong>otro almacén</strong> (cementerio, oficina laboratorio o almacén regular).', side: 'top' },
         { selector: '.reactivar-btn', title: 'Reactivar',
           description: 'Pone el equipo o dispositivo <strong>nuevamente activo</strong> en la lista de inventario. Pide confirmación antes de aplicar el cambio.', side: 'top' },
-        { selector: '#tour-almacen-lab-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+        { selector: '.eliminar-pendiente-btn', title: 'Eliminar pendiente',
+          description: 'Solo en PCs dadas de alta a mano que <strong>todavía no detectó OCS</strong>. Sirve para borrar un nombre mal escrito y volver a registrar.', side: 'top' },
+        { selector: '#tour-almacen-lab-bulk-transfer', title: 'Transferir en masa',
+          description: 'Elegí destino y marcá varios equipos. Pegá números separados por espacio (14506 14530) y usá <strong>Seleccionar todo</strong> para tildar los que coincidan.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-bulk-reactivar', title: 'Reactivar en masa',
+          description: 'Devolvé varios equipos o dispositivos a inventario activo. <strong>Seleccionar todo</strong> marca lo filtrado en el momento.', side: 'bottom' },
+        { selector: '#tour-almacen-lab-print', title: 'PDF', description: 'Exportá lo que ves ahora: pestaña, búsqueda y, en Todos, también el stock de insumos.', side: 'left' }
       ]
     }]);
   }
@@ -106,72 +147,143 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     this.tourCleanup = undefined;
   }
 
+  get tituloPagina(): string {
+    return this.esModoOficina ? 'Oficina Laboratorio' : 'Almacén Laboratorio';
+  }
+
+  get subtituloPagina(): string {
+    return this.esModoOficina
+      ? 'Equipos en preparación / configuración'
+      : 'Equipos y dispositivos en almacén';
+  }
+
+  get iconoPagina(): string {
+    return this.esModoOficina ? 'fa-tools' : 'fa-archive';
+  }
+
   loadItemsEnAlmacen(): void {
     this.loading = true;
-    
-    forkJoin({
-      equipos: this.estadoEquipoService.getEquiposEnAlmacen(),
-      dispositivos: this.estadoDispositivoService.getDispositivosEnAlmacen(),
-      hardware: this.hardwareService.getHardware(),
-      bios: this.biosService.getAllBios(),
-      networkInfo: this.networkInfoService.getNetworkInfo()
-    }).subscribe({
-      next: (response) => {
-        // Procesar equipos en almacén
-        if (response.equipos.success) {
-          const estadosEnAlmacen: EstadoEquipo[] = response.equipos.data;
-          const biosMap = new Map(response.bios.map((b: any) => [b.hardwareId, b]));
-          
-          this.equiposEnAlmacen = estadosEnAlmacen.map(estado => {
-            const hardware = response.hardware.find((h: any) => h.id === estado.hardwareId);
-            const bios = biosMap.get(estado.hardwareId);
-            
-            return {
-              ...hardware,
-              estadoInfo: estado,
-              biosType: (bios?.type || 'DESCONOCIDO').trim().toUpperCase(),
-              smanufacturer: bios?.smanufacturer || 'DESCONOCIDO',
-              fechaAlmacen: estado.fechaCambio,
-              observaciones: estado.observaciones,
-              usuarioCambio: estado.usuarioCambio,
-              tipo: 'EQUIPO'
-            };
-          }).filter(equipo => equipo.id);
+    this.almacenService.getAllAlmacenes().subscribe({
+      next: (almacenes) => {
+        const oficina = findAlmacenOficinaLaboratorio(almacenes);
+        const lab = findAlmacenLaboratorio(almacenes);
+        this.almacenDestinoId = this.esModoOficina ? (oficina?.id ?? null) : (lab?.id ?? null);
+
+        if (this.esModoOficina && this.almacenDestinoId == null) {
+          this.notificationService.showError(
+            'Almacén no encontrado',
+            'No existe el almacén Oficina Laboratorio (OFILAB). Reiniciá el backend para crearlo o crealo a mano.'
+          );
+          this.equiposEnAlmacen = [];
+          this.dispositivosEnAlmacen = [];
+          this.stockEnAlmacen = [];
+          this.aplicarFiltrosYOrden();
+          this.loading = false;
+          return;
         }
 
-        // Procesar dispositivos en almacén
-        if (response.dispositivos.success && response.networkInfo.success) {
-          const estadosEnAlmacen = response.dispositivos.data;
-          const networkInfoMap = new Map(
-            response.networkInfo.data.map((device: any) => [device.mac, device])
-          );
-          
-          this.dispositivosEnAlmacen = estadosEnAlmacen.map((estado: any) => {
-            const networkInfo = networkInfoMap.get(estado.mac);
-            
-            return {
-              ...networkInfo, // Incluir name, type, ip, description
-              mac: estado.mac,
-              tipo: 'DISPOSITIVO',
-              fechaAlmacen: estado.fechaCambio,
-              observaciones: estado.observaciones,
-              usuarioCambio: estado.usuarioCambio
-            };
-          }).filter((dispositivo: any) => dispositivo.mac); // Solo incluir si tiene MAC
-        }
-        
-        this.aplicarFiltrosYOrden();
-        this.loading = false;
+        const equipos$ = this.almacenDestinoId != null
+          ? this.estadoEquipoService.getEquiposPorAlmacenId(this.almacenDestinoId)
+          : this.estadoEquipoService.getEquiposEnAlmacen();
+        const dispositivos$ = this.almacenDestinoId != null
+          ? this.estadoDispositivoService.getDispositivosPorAlmacenId(this.almacenDestinoId)
+          : this.estadoDispositivoService.getDispositivosEnAlmacen();
+
+        const stock$ = this.almacenDestinoId != null
+          ? this.stockAlmacenService.getStockByAlmacenId(this.almacenDestinoId).pipe(catchError(() => of([] as StockAlmacen[])))
+          : of([] as StockAlmacen[]);
+
+        forkJoin({
+          equipos: equipos$,
+          dispositivos: dispositivos$,
+          hardware: this.hardwareService.getHardware(),
+          bios: this.biosService.getAllBios(),
+          networkInfo: this.networkInfoService.getNetworkInfo(),
+          stock: stock$
+        }).subscribe({
+          next: (response) => {
+            this.procesarRespuestaItems(response, oficina?.id ?? null);
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error al cargar items en almacén:', error);
+            this.notificationService.showError(
+              'Error al cargar datos',
+              'No se pudieron cargar los items en almacén: ' + (error.message || 'Error desconocido')
+            );
+            this.loading = false;
+          }
+        });
       },
       error: (error) => {
-        console.error('Error al cargar items en almacén:', error);
+        console.error('Error al cargar almacenes:', error);
         this.notificationService.showError(
           'Error al cargar datos',
-          'No se pudieron cargar los items en almacén: ' + (error.message || 'Error desconocido')
+          'No se pudieron cargar los almacenes: ' + (error.message || 'Error desconocido')
         );
         this.loading = false;
       }
     });
+  }
+
+  private procesarRespuestaItems(response: any, oficinaLabId: number | null): void {
+    if (response.equipos.success) {
+      const estadosEnAlmacen: EstadoEquipo[] = response.equipos.data || [];
+      const biosMap = new Map<number, any>(
+        (response.bios || []).map((b: any) => [b.hardwareId, b] as [number, any])
+      );
+
+      this.equiposEnAlmacen = estadosEnAlmacen.map(estado => {
+        const hardware: any = (response.hardware || []).find((h: any) => h.id === estado.hardwareId) || {};
+        const bios: any = biosMap.get(estado.hardwareId);
+
+        return {
+          ...hardware,
+          estadoInfo: estado,
+          biosType: (bios?.type || 'DESCONOCIDO').trim().toUpperCase(),
+          smanufacturer: bios?.smanufacturer || 'DESCONOCIDO',
+          fechaAlmacen: estado.fechaCambio,
+          observaciones: estado.observaciones,
+          usuarioCambio: estado.usuarioCambio,
+          tipo: 'EQUIPO',
+          pendienteOcs: this.esPendienteOcs(hardware)
+        };
+      }).filter(equipo => {
+        if (!equipo.id) return false;
+        if (this.almacenDestinoId != null) return true;
+        if (oficinaLabId != null && equipo.estadoInfo?.almacenId === oficinaLabId) return false;
+        return true;
+      });
+    }
+
+    if (response.dispositivos.success && response.networkInfo.success) {
+      const estadosEnAlmacen = response.dispositivos.data || [];
+      const networkInfoMap = new Map<string, any>(
+        (response.networkInfo.data || []).map((device: any) => [device.mac, device] as [string, any])
+      );
+
+      this.dispositivosEnAlmacen = estadosEnAlmacen.map((estado: any) => {
+        const networkInfo: any = networkInfoMap.get(estado.mac) || {};
+
+        return {
+          ...networkInfo,
+          mac: estado.mac,
+          tipo: 'DISPOSITIVO',
+          fechaAlmacen: estado.fechaCambio,
+          observaciones: estado.observaciones,
+          usuarioCambio: estado.usuarioCambio,
+          estadoInfo: estado
+        };
+      }).filter((dispositivo: any) => {
+        if (!dispositivo.mac) return false;
+        if (this.almacenDestinoId != null) return true;
+        if (oficinaLabId != null && dispositivo.estadoInfo?.almacenId === oficinaLabId) return false;
+        return true;
+      });
+    }
+
+    this.stockEnAlmacen = Array.isArray(response.stock) ? response.stock : [];
+    this.aplicarFiltrosYOrden();
   }
 
   onSearchTermChange(): void {
@@ -188,26 +300,36 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
    * Aplica filtros (tipo y búsqueda) y ordena la lista.
    */
   private aplicarFiltrosYOrden(resetPage: boolean = true): void {
-    let itemsFiltrados: any[] = [];
-
-    if (this.filtroTipo === 'equipos') {
-      itemsFiltrados = [...this.equiposEnAlmacen];
-    } else if (this.filtroTipo === 'dispositivos') {
-      itemsFiltrados = [...this.dispositivosEnAlmacen];
-    } else {
-      itemsFiltrados = [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen];
-    }
-
     const term = this.searchTerm.trim().toLowerCase();
-    if (term) {
-      itemsFiltrados = itemsFiltrados.filter((item) =>
-        (item.name || item.mac || '').toLowerCase().includes(term)
-      );
-    }
 
-    this.ordenarLista(itemsFiltrados);
-    this.equiposFiltrados = itemsFiltrados;
-    this.collectionSize = itemsFiltrados.length;
+    if (this.filtroTipo === 'stock') {
+      let stock = [...this.stockEnAlmacen];
+      if (term) {
+        stock = stock.filter((item) => this.etiquetaStock(item).toLowerCase().includes(term));
+      }
+      this.ordenarStock(stock);
+      this.stockFiltrado = stock;
+      this.equiposFiltrados = [];
+      this.collectionSize = stock.length;
+    } else {
+      let itemsFiltrados: any[] = [];
+      if (this.filtroTipo === 'equipos') {
+        itemsFiltrados = [...this.equiposEnAlmacen];
+      } else if (this.filtroTipo === 'dispositivos') {
+        itemsFiltrados = [...this.dispositivosEnAlmacen];
+      } else {
+        itemsFiltrados = [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen];
+      }
+      if (term) {
+        itemsFiltrados = itemsFiltrados.filter((item) =>
+          (item.name || item.mac || '').toLowerCase().includes(term)
+        );
+      }
+      this.ordenarLista(itemsFiltrados);
+      this.equiposFiltrados = itemsFiltrados;
+      this.stockFiltrado = [];
+      this.collectionSize = itemsFiltrados.length;
+    }
 
     if (resetPage) {
       this.page = 1;
@@ -219,7 +341,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  filtrarPorTipo(tipo: 'todos' | 'equipos' | 'dispositivos'): void {
+  filtrarPorTipo(tipo: 'todos' | 'equipos' | 'dispositivos' | 'stock'): void {
     this.filtroTipo = tipo;
     this.page = 1;
     this.aplicarFiltrosYOrden();
@@ -233,7 +355,11 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       this.sortDirection = 'asc';
     }
     this.page = 1;
-    this.ordenarLista(this.equiposFiltrados);
+    if (this.filtroTipo === 'stock') {
+      this.ordenarStock(this.stockFiltrado);
+    } else {
+      this.ordenarLista(this.equiposFiltrados);
+    }
   }
 
   isSortActive(columna: AlmacenLabSortColumn): boolean {
@@ -282,6 +408,8 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
         return (item.usuarioCambio || '').toLowerCase();
       case 'ubicacion':
         return this.getUbicacionDisplay(item).toLowerCase();
+      case 'cantidad':
+        return Number(item.cantidad) || 0;
       default:
         return '';
     }
@@ -350,25 +478,84 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     return this.equiposFiltrados.slice(startItem, startItem + this.pageSize);
   }
 
-  /**
-   * Obtiene el total de equipos en el almacén
-   */
+  get pagedStock(): StockAlmacen[] {
+    const startItem = (this.page - 1) * this.pageSize;
+    return this.stockFiltrado.slice(startItem, startItem + this.pageSize);
+  }
+
+  get mostrandoStock(): boolean {
+    return this.filtroTipo === 'stock';
+  }
+
+  etiquetaStock(item: StockAlmacen | any): string {
+    return (item?.descripcion || item?.numero || item?.item?.nombreItem || 'Sin descripción').toString();
+  }
+
+  stockCoincidenteConBusqueda(): StockAlmacen[] {
+    const term = this.searchTerm.trim().toLowerCase();
+    let stock = [...this.stockEnAlmacen];
+    if (term) {
+      stock = stock.filter((item) => this.etiquetaStock(item).toLowerCase().includes(term));
+    }
+    return stock;
+  }
+
+  hayDatosParaImprimir(): boolean {
+    if (this.filtroTipo === 'stock') {
+      return this.stockFiltrado.length > 0;
+    }
+    if (this.filtroTipo === 'todos') {
+      return this.equiposFiltrados.length > 0 || this.stockCoincidenteConBusqueda().length > 0;
+    }
+    return this.equiposFiltrados.length > 0;
+  }
+
+  private ordenarStock(lista: StockAlmacen[]): void {
+    const col = this.sortColumn === 'cantidad' ? 'cantidad' : this.sortColumn === 'fecha' ? 'fecha' : 'nombre';
+    const mult = this.sortDirection === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      let valA: string | number;
+      let valB: string | number;
+      if (col === 'cantidad') {
+        valA = Number(a.cantidad) || 0;
+        valB = Number(b.cantidad) || 0;
+      } else if (col === 'fecha') {
+        valA = a.fechaRegistro ? new Date(a.fechaRegistro).getTime() : 0;
+        valB = b.fechaRegistro ? new Date(b.fechaRegistro).getTime() : 0;
+      } else {
+        valA = this.etiquetaStock(a).toLowerCase();
+        valB = this.etiquetaStock(b).toLowerCase();
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return (valA - valB) * mult;
+      }
+      return String(valA).localeCompare(String(valB), 'es', { sensitivity: 'base' }) * mult;
+    });
+  }
+
   getTotalEquipos(): number {
     return this.equiposEnAlmacen.length;
   }
 
-  /**
-   * Obtiene el total de dispositivos en el almacén
-   */
   getTotalDispositivos(): number {
     return this.dispositivosEnAlmacen.length;
   }
 
-  /**
-   * Obtiene el total de items (equipos + dispositivos) en el almacén
-   */
+  getTotalStock(): number {
+    return this.stockEnAlmacen.length;
+  }
+
   getTotalItems(): number {
-    return this.equiposFiltrados.length;
+    if (this.mostrandoStock) {
+      return this.stockEnAlmacen.length;
+    }
+    if (this.filtroTipo === 'equipos') {
+      return this.equiposEnAlmacen.length;
+    }
+    if (this.filtroTipo === 'dispositivos') {
+      return this.dispositivosEnAlmacen.length;
+    }
+    return this.equiposEnAlmacen.length + this.dispositivosEnAlmacen.length;
   }
 
   verDetallesEquipo(equipo: any): void {
@@ -387,6 +574,79 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
   /** Transferir y reactivar: no rol ALMACEN en esta pantalla. */
   canTransferOrReactivate(): boolean {
     return this.permissionsService.canTransferOrReactivateInCemeteryOrLabWarehouse();
+  }
+
+  canRegistrarPendiente(): boolean {
+    return this.canTransferOrReactivate() || this.canManageAssets();
+  }
+
+  canRegistrarStock(): boolean {
+    return this.canRegistrarPendiente() || this.permissionsService.canManageWarehouseAssets();
+  }
+
+  canEliminarStock(): boolean {
+    return this.canRegistrarStock() || this.permissionsService.canDeleteStock();
+  }
+
+  esPendienteOcs(item: any): boolean {
+    const deviceId = (item?.deviceId || item?.DEVICEID || '').toString();
+    return deviceId.toUpperCase().startsWith('PENDING-');
+  }
+
+  canEliminarPendiente(): boolean {
+    return this.canRegistrarPendiente();
+  }
+
+  pedirEliminarPendiente(item: any, event?: Event): void {
+    event?.stopPropagation();
+    if (item?.tipo !== 'EQUIPO' || !this.esPendienteOcs(item) || !item?.id) {
+      return;
+    }
+    if (this.permissionsService.denyUnless(this.canEliminarPendiente(), 'eliminar equipos pendientes de OCS', event)) {
+      return;
+    }
+    this.equipoAEliminarPendiente = item;
+    this.showEliminarPendienteDialog = true;
+  }
+
+  cancelarEliminarPendiente(): void {
+    this.showEliminarPendienteDialog = false;
+    this.equipoAEliminarPendiente = null;
+  }
+
+  confirmarEliminarPendiente(): void {
+    const item = this.equipoAEliminarPendiente;
+    if (!item?.id || this.eliminandoPendienteId != null) {
+      return;
+    }
+    this.eliminandoPendienteId = item.id;
+    this.estadoEquipoService.eliminarEquipoPendiente(item.id).subscribe({
+      next: (response) => {
+        if (response?.success) {
+          this.showEliminarPendienteDialog = false;
+          this.equipoAEliminarPendiente = null;
+          this.loadItemsEnAlmacen();
+          this.notificationService.showSuccessMessage(
+            `Se eliminó el equipo pendiente "${item.name}". Ya podés registrarlo de nuevo con el nombre correcto.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Error al eliminar',
+            response?.message || 'No se pudo eliminar el equipo pendiente.'
+          );
+        }
+      },
+      error: (error) => {
+        this.eliminandoPendienteId = null;
+        this.notificationService.showError(
+          'Error al eliminar',
+          error?.error?.message || error?.message || 'No se pudo eliminar el equipo pendiente.'
+        );
+      },
+      complete: () => {
+        this.eliminandoPendienteId = null;
+      }
+    });
   }
 
   formatFecha(fecha: string): string {
@@ -446,6 +706,13 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
 
   // Métodos para manejar tanto equipos como dispositivos
   verDetallesItem(item: any): void {
+    if (item.tipo === 'EQUIPO' && this.esPendienteOcs(item)) {
+      this.notificationService.showInfo(
+        'Pendiente de OCS',
+        'Este equipo todavía no tiene ficha de inventario. Cuando OCS lo detecte con el mismo nombre se completan los datos.'
+      );
+      return;
+    }
     if (item.tipo === 'EQUIPO' && item.id) {
       this.router.navigate(['/menu/asset-details', item.id]);
     } else if (item.tipo === 'DISPOSITIVO' && item.mac) {
@@ -508,12 +775,9 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     return configMap[deviceType] || { backgroundColor: '#f8f9fa', color: '#6c757d' };
   }
 
-  reactivarItem(item: any): void {
-    if (!this.canTransferOrReactivate()) {
-      this.notificationService.showError(
-        'Operación no permitida',
-        'No tiene permiso para reactivar equipos o dispositivos en el almacén de laboratorio.'
-      );
+  reactivarItem(item: any, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'reactivar en almacén de laboratorio', event)) {
       return;
     }
     console.log('🔄 reactivarItem llamado con:', item);
@@ -650,6 +914,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       event.stopPropagation();
     }
     if (!this.canManageAssets()) {
+      this.permissionsService.denyUnless(false, 'editar observaciones', event);
       return;
     }
     const itemId = item.tipo === 'EQUIPO' ? item.id : item.mac;
@@ -744,8 +1009,406 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     return this.editingObservacionesId === itemId;
   }
 
+  get equiposFiltradosParaTransferir(): any[] {
+    return (this.equiposFiltrados || []).filter((item) => item.tipo === 'EQUIPO' && item.id);
+  }
+
+  abrirRegistroPendiente(event?: Event): void {
+    event?.stopPropagation();
+    if (this.esModoOficina) {
+      return;
+    }
+    if (this.permissionsService.denyUnless(this.canRegistrarPendiente(), 'registrar equipos pendientes', event)) {
+      return;
+    }
+    if (this.registrandoPendiente) {
+      return;
+    }
+    const modalRef = this.modalService.open(RegistrarEquipoPendienteModalComponent, {
+      size: 'md',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.result.then((data: { name: string; observaciones?: string }) => {
+      if (!data?.name) {
+        return;
+      }
+      this.registrandoPendiente = true;
+      this.estadoEquipoService.registrarEquipoPendienteLaboratorio({
+        name: data.name,
+        observaciones: data.observaciones || '',
+        usuario: this.authService.getUsuarioParaAuditoria()
+      }).subscribe({
+        next: (response) => {
+          if (response?.success) {
+            this.loadItemsEnAlmacen();
+            this.notificationService.showSuccessMessage(
+              `Equipo "${data.name}" registrado en laboratorio.`
+            );
+          } else {
+            this.notificationService.showError(
+              'Error al registrar equipo',
+              response?.message || 'No se pudo registrar el equipo pendiente.'
+            );
+          }
+        },
+        error: (error) => {
+          this.registrandoPendiente = false;
+          this.notificationService.showError(
+            'Error al registrar equipo',
+            error?.error?.message || error?.message || 'No se pudo registrar el equipo pendiente.'
+          );
+        },
+        complete: () => {
+          this.registrandoPendiente = false;
+        }
+      });
+    }).catch(() => {});
+  }
+
+  abrirRegistroStock(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canRegistrarStock(), 'registrar stock en laboratorio', event)) {
+      return;
+    }
+    if (this.registrandoStock || this.almacenDestinoId == null) {
+      if (this.almacenDestinoId == null) {
+        this.notificationService.showError(
+          'Almacén no encontrado',
+          'No se pudo determinar el almacén laboratorio.'
+        );
+      }
+      return;
+    }
+    const modalRef = this.modalService.open(RegistrarStockLabModalComponent, {
+      size: 'md',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.result.then((data: { descripcion: string; cantidad: number }) => {
+      if (!data?.descripcion || this.almacenDestinoId == null) {
+        return;
+      }
+      this.registrandoStock = true;
+      this.stockAlmacenService.createStock({
+        almacenId: this.almacenDestinoId,
+        cantidad: data.cantidad,
+        descripcion: data.descripcion,
+        estanteria: '-',
+        estante: '-'
+      }).subscribe({
+        next: () => {
+          this.loadItemsEnAlmacen();
+        },
+        error: () => {
+          this.registrandoStock = false;
+        },
+        complete: () => {
+          this.registrandoStock = false;
+        }
+      });
+    }).catch(() => {});
+  }
+
+  pedirEliminarStock(item: StockAlmacen, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canEliminarStock(), 'eliminar stock', event)) {
+      return;
+    }
+    this.stockAEliminar = item;
+    this.showEliminarStockDialog = true;
+  }
+
+  ajustarCantidadStock(item: StockAlmacen, delta: number, event?: Event): void {
+    event?.stopPropagation();
+    const actual = Number(item?.cantidad) || 0;
+    this.persistirCantidadStock(item, actual + delta, event);
+  }
+
+  onCantidadStockInput(item: StockAlmacen, input: HTMLInputElement, event?: Event): void {
+    event?.stopPropagation();
+    const nueva = Math.floor(Number(input.value));
+    if (nueva === 0) {
+      input.value = String(item.cantidad ?? 1);
+      this.pedirEliminarStock(item, event);
+      return;
+    }
+    if (!Number.isFinite(nueva) || nueva < 1) {
+      input.value = String(item.cantidad ?? 1);
+      return;
+    }
+    if (nueva === Number(item.cantidad)) {
+      return;
+    }
+    this.persistirCantidadStock(item, nueva, event);
+  }
+
+  private persistirCantidadStock(item: StockAlmacen, nueva: number, event?: Event): void {
+    if (this.permissionsService.denyUnless(this.canRegistrarStock(), 'ajustar cantidad de stock', event)) {
+      return;
+    }
+    if (!item?.id || this.actualizandoCantidadId != null) {
+      return;
+    }
+    if (!Number.isFinite(nueva) || nueva < 1) {
+      this.notificationService.showError(
+        'Cantidad inválida',
+        'La cantidad debe ser 1 o más. Para sacar el ítem, eliminalo.'
+      );
+      return;
+    }
+    if (nueva === Number(item.cantidad)) {
+      return;
+    }
+    this.actualizandoCantidadId = item.id;
+    this.stockAlmacenService.updateStockQuantity(item.id, nueva, { silent: true }).subscribe({
+      next: () => {
+        const stored = this.stockEnAlmacen.find((s) => s.id === item.id);
+        if (stored) {
+          stored.cantidad = nueva;
+        }
+        item.cantidad = nueva;
+        this.aplicarFiltrosYOrden(false);
+      },
+      error: () => {
+        this.actualizandoCantidadId = null;
+        this.cdr.detectChanges();
+      },
+      complete: () => {
+        this.actualizandoCantidadId = null;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cancelarEliminarStock(): void {
+    this.showEliminarStockDialog = false;
+    this.stockAEliminar = null;
+  }
+
+  confirmarEliminarStock(): void {
+    const item = this.stockAEliminar;
+    if (!item?.id || this.eliminandoStockId != null) {
+      return;
+    }
+    this.eliminandoStockId = item.id;
+    this.stockAlmacenService.deleteStock(item.id).subscribe({
+      next: () => {
+        this.showEliminarStockDialog = false;
+        this.stockAEliminar = null;
+        this.loadItemsEnAlmacen();
+      },
+      error: () => {
+        this.eliminandoStockId = null;
+      },
+      complete: () => {
+        this.eliminandoStockId = null;
+      }
+    });
+  }
+
+  abrirTransferenciaMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'transferir equipos en masa', event)) {
+      return;
+    }
+    if (this.transfiriendoMasa) {
+      return;
+    }
+    const equipos = this.equiposFiltradosParaTransferir;
+    if (!equipos.length) {
+      this.notificationService.showError(
+        'Sin equipos para transferir',
+        'No hay equipos (PCs) en el listado filtrado. Los dispositivos no se transfieren desde acá.'
+      );
+      return;
+    }
+    const modalRef = this.modalService.open(TransferirMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Transferir en masa';
+    modalRef.componentInstance.tituloLista = 'Equipos filtrados';
+    modalRef.componentInstance.excluirDestinos = this.esModoOficina
+      ? ['oficina_laboratorio']
+      : ['laboratorio'];
+    modalRef.componentInstance.equipos = equipos
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }))
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        ipAddr: item.ipAddr,
+        userid: item.usuarioCambio,
+        biosType: item.biosType
+      }));
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData?.hardwareIds?.length) {
+        this.procesarTransferenciaMasiva(transferData);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarTransferenciaMasiva(transferData: any): void {
+    this.transfiriendoMasa = true;
+    const requestData: any = {
+      hardwareIds: transferData.hardwareIds,
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: this.authService.getUsuarioParaAuditoria()
+    };
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
+    }
+
+    this.estadoEquipoService.transferirEquiposEnMasa(requestData).subscribe({
+      next: (response) => {
+        const ok = response?.data?.ok ?? 0;
+        const fallidos = Array.isArray(response?.data?.fallidos) ? response.data.fallidos : [];
+        this.loadItemsEnAlmacen();
+        if (fallidos.length === 0) {
+          this.notificationService.showSuccessMessage(
+            response?.message || `${ok} equipo(s) transferido(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Transferencia masiva incompleta',
+            `${ok} transferido(s), ${fallidos.length} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al transferir en masa',
+          error?.message || 'No se pudieron transferir los equipos.'
+        );
+      },
+      complete: () => {
+        this.transfiriendoMasa = false;
+      }
+    });
+  }
+
+  abrirReactivacionMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'reactivar en masa', event)) {
+      return;
+    }
+    if (this.reactivandoMasa) {
+      return;
+    }
+    const fuente = (this.equiposFiltrados?.length
+      ? this.equiposFiltrados
+      : [...this.equiposEnAlmacen, ...this.dispositivosEnAlmacen]);
+    const items = (fuente || []).filter((item) =>
+      (item.tipo === 'EQUIPO' && (item.id || item.estadoInfo?.hardwareId))
+      || (item.tipo === 'DISPOSITIVO' && item.mac)
+    );
+    if (!items.length) {
+      this.notificationService.showError(
+        'Sin items para reactivar',
+        'No hay equipos ni dispositivos en el listado filtrado.'
+      );
+      return;
+    }
+    const modalRef = this.modalService.open(ReactivarMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Reactivar en masa';
+    modalRef.componentInstance.tituloLista = 'Listado filtrado';
+    modalRef.componentInstance.items = items
+      .slice()
+      .sort((a, b) => (a.name || a.mac || '').localeCompare(b.name || b.mac || '', 'es', { sensitivity: 'base' }))
+      .map((item, index) => {
+        const tipo = item.tipo === 'DISPOSITIVO' ? 'DISPOSITIVO' : 'EQUIPO';
+        const id = item.id ?? item.estadoInfo?.hardwareId ?? item.hardwareId ?? null;
+        const mac = item.mac || item.MAC || null;
+        const name = item.name || item.NAME || item.mac || (id != null ? `ID ${id}` : `Item ${index + 1}`);
+        return {
+          key: `${tipo === 'EQUIPO' ? 'e' : 'd'}:${id ?? mac ?? 'x'}:${index}`,
+          tipo,
+          id,
+          mac,
+          name,
+          ipAddr: item.ipAddr || item.ip || item.IPADDR || ''
+        };
+      });
+
+    modalRef.result.then((data: { hardwareIds?: number[]; macs?: string[] }) => {
+      if (data?.hardwareIds?.length || data?.macs?.length) {
+        this.procesarReactivacionMasiva(data);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarReactivacionMasiva(data: { hardwareIds?: number[]; macs?: string[] }): void {
+    this.reactivandoMasa = true;
+    const usuario = this.authService.getUsuarioParaAuditoria();
+    const llamadas = [];
+    if (data.hardwareIds?.length) {
+      llamadas.push(this.estadoEquipoService.reactivarEquiposEnMasa({
+        hardwareIds: data.hardwareIds,
+        observaciones: '',
+        usuario
+      }));
+    }
+    if (data.macs?.length) {
+      llamadas.push(this.estadoDispositivoService.reactivarDispositivosEnMasa({
+        macs: data.macs,
+        observaciones: '',
+        usuario
+      }));
+    }
+    if (!llamadas.length) {
+      this.reactivandoMasa = false;
+      return;
+    }
+    forkJoin(llamadas).subscribe({
+      next: (responses) => {
+        let ok = 0;
+        let fallidos = 0;
+        for (const response of responses as any[]) {
+          ok += response?.data?.ok ?? 0;
+          fallidos += Array.isArray(response?.data?.fallidos) ? response.data.fallidos.length : 0;
+        }
+        this.loadItemsEnAlmacen();
+        if (fallidos === 0) {
+          this.notificationService.showSuccessMessage(
+            `${ok} item(s) reactivado(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Reactivación masiva incompleta',
+            `${ok} reactivado(s), ${fallidos} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al reactivar en masa',
+          error?.message || 'No se pudieron reactivar los items.'
+        );
+      },
+      complete: () => {
+        this.reactivandoMasa = false;
+      }
+    });
+  }
+
   // Método para transferir equipo
-  transferirEquipo(item: any): void {
+  transferirEquipo(item: any, event?: Event): void {
+    event?.stopPropagation();
     // Solo permitir transferir equipos (no dispositivos)
     if (item.tipo !== 'EQUIPO') {
       this.notificationService.showError(
@@ -754,11 +1417,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       );
       return;
     }
-    if (!this.canTransferOrReactivate()) {
-      this.notificationService.showError(
-        'Operación no permitida',
-        'No tiene permiso para transferir equipos desde el almacén de laboratorio.'
-      );
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'transferir equipos desde almacén de laboratorio', event)) {
       return;
     }
 
@@ -826,9 +1485,16 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Método para exportar la lista filtrada a PDF
+  // Método para exportar la vista filtrada a PDF (equipos/dispositivos y stock de insumos).
   exportarPDF(): void {
-    if (this.equiposFiltrados.length === 0) {
+    const incluirEquipos = this.filtroTipo !== 'stock';
+    const incluirStock = this.filtroTipo === 'stock' || this.filtroTipo === 'todos';
+    const equipos = incluirEquipos ? this.equiposFiltrados : [];
+    const stock = incluirStock
+      ? (this.filtroTipo === 'stock' ? this.stockFiltrado : this.stockCoincidenteConBusqueda())
+      : [];
+
+    if (equipos.length === 0 && stock.length === 0) {
       this.notificationService.showError(
         'No hay datos para exportar',
         'No hay items filtrados para exportar a PDF.'
@@ -836,58 +1502,101 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const doc = new jsPDF('landscape'); // Orientación horizontal para más espacio
-    
-    // Título del documento
-    doc.setFontSize(18);
-    doc.text('Almacén Laboratorio', 14, 20);
-    
-    // Información del filtro aplicado
-    doc.setFontSize(10);
-    let filtroTexto = 'Todos los items';
-    if (this.searchTerm.trim()) {
-      filtroTexto = `Búsqueda: ${this.searchTerm.trim()}`;
-    }
-    doc.text(filtroTexto, 14, 28);
-    
-    // Fecha de generación
+    const doc = new jsPDF('landscape');
+    const etiquetaFiltro = this.etiquetaFiltroPdf();
     const fecha = new Date().toLocaleString('es-ES');
+
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.text(this.tituloPagina, 14, 20);
+
+    doc.setFontSize(10);
+    doc.text(etiquetaFiltro, 14, 28);
     doc.text(`Generado el: ${fecha}`, 14, 34);
-    doc.text(`Total de items: ${this.equiposFiltrados.length}`, 14, 40);
-    
-    // Preparar datos para la tabla
-    const tableData = this.equiposFiltrados.map(item => [
-      item.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo',
-      item.name || item.mac || 'N/A',
-      item.tipo === 'EQUIPO' 
-        ? `${item.biosType || 'N/A'} | ${item.osName || 'N/A'}`
-        : `${item.type || 'N/A'} | ${item.description || 'Sin descripción'}`,
-      item.tipo === 'EQUIPO' ? (item.ipAddr || 'N/A') : (item.ip || 'N/A'),
-      this.formatFecha(item.fechaAlmacen),
-      item.usuarioCambio || 'No especificado',
-      this.getUbicacionDisplay(item),
-      this.extraerSoloObservaciones(item.observaciones) || 'Sin observaciones'
-    ]);
-    
-    // Crear la tabla
-    autoTable(doc, {
-      head: [['Tipo', 'Nombre', 'Detalles', 'IP', 'Fecha de Almacén', 'Usuario', 'Ubicación', 'Observaciones']],
-      body: tableData,
-      startY: 46,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [23, 162, 184], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      margin: { top: 46, left: 14, right: 14 },
-      tableWidth: 'auto'
-    });
-    
-    // Guardar el PDF
-    const nombreArchivo = `almacen_${new Date().toISOString().split('T')[0]}.pdf`;
+    const totales: string[] = [];
+    if (equipos.length) {
+      totales.push(`${equipos.length} equipo(s)/dispositivo(s)`);
+    }
+    if (stock.length) {
+      totales.push(`${stock.length} ítem(s) de stock`);
+    }
+    doc.text(`Total: ${totales.join(' · ')}`, 14, 40);
+
+    let startY = 46;
+
+    if (equipos.length) {
+      autoTable(doc, {
+        head: [['Tipo', 'Nombre', 'Detalles', 'IP', 'Fecha de Almacén', 'Usuario', 'Ubicación', 'Observaciones']],
+        body: equipos.map((item) => [
+          item.tipo === 'EQUIPO' ? 'Equipo' : 'Dispositivo',
+          item.tipo === 'EQUIPO'
+            ? `${item.name || 'N/A'}${this.esPendienteOcs(item) ? ' (pendiente OCS)' : ''}`
+            : (item.name || item.mac || 'N/A'),
+          item.tipo === 'EQUIPO'
+            ? (this.esPendienteOcs(item)
+              ? 'Pendiente de OCS'
+              : `${item.biosType || 'N/A'} | ${item.osName || 'N/A'}`)
+            : `${item.type || 'N/A'} | ${item.description || 'Sin descripción'}`,
+          item.tipo === 'EQUIPO' ? (item.ipAddr || 'N/A') : (item.ip || 'N/A'),
+          this.formatFecha(item.fechaAlmacen),
+          item.usuarioCambio || 'No especificado',
+          this.getUbicacionDisplay(item),
+          this.extraerSoloObservaciones(item.observaciones) || 'Sin observaciones'
+        ]),
+        startY,
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [23, 162, 184], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: 14, right: 14 },
+        tableWidth: 'auto'
+      });
+      startY = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    if (stock.length) {
+      if (startY > 170) {
+        doc.addPage();
+        startY = 20;
+      }
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Stock (insumos)', 14, startY);
+      startY += 4;
+      autoTable(doc, {
+        head: [['Descripción', 'Cantidad', 'Fecha']],
+        body: stock.map((item) => [
+          this.etiquetaStock(item),
+          String(item.cantidad ?? ''),
+          this.formatFecha(item.fechaRegistro)
+        ]),
+        startY,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [217, 119, 6], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [255, 247, 237] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+
+    const nombreArchivo = `${this.esModoOficina ? 'oficina_laboratorio' : 'almacen_laboratorio'}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(nombreArchivo);
-    
-    this.notificationService.showSuccessMessage(
-      `PDF exportado exitosamente: ${nombreArchivo}`
-    );
+    this.notificationService.showSuccessMessage(`PDF exportado exitosamente: ${nombreArchivo}`);
+  }
+
+  private etiquetaFiltroPdf(): string {
+    const partes: string[] = [];
+    if (this.filtroTipo === 'todos') {
+      partes.push('Filtro: Todos (equipos, dispositivos y stock)');
+    } else if (this.filtroTipo === 'equipos') {
+      partes.push('Filtro: Equipos');
+    } else if (this.filtroTipo === 'dispositivos') {
+      partes.push('Filtro: Dispositivos');
+    } else {
+      partes.push('Filtro: Stock');
+    }
+    if (this.searchTerm.trim()) {
+      partes.push(`Búsqueda: ${this.searchTerm.trim()}`);
+    }
+    return partes.join(' · ');
   }
 
 }

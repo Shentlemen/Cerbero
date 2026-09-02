@@ -43,6 +43,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
   ocsDuplicatesResult: any[] | null = null;
   ocsDuplicatesError: string | null = null;
   isDeletingOcs = false;
+  showDeleteOcsDialog = false;
+  ocsDuplicateToDelete: { id: number; name: string } | null = null;
+
+  showDeleteCerberoDialog = false;
+  cerberoDuplicateToDelete: { id: number; name: string } | null = null;
   
   // Propiedades para comparación de bases de datos
   isComparingDatabases = false;
@@ -390,7 +395,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async eliminarDuplicadoOcs(hardwareId: number, hardwareName: string): Promise<void> {
+  eliminarDuplicadoOcs(hardwareId: number, hardwareName: string): void {
     if (this.isDeletingOcs) {
       return;
     }
@@ -401,27 +406,32 @@ export class SettingsComponent implements OnInit, OnDestroy {
       );
       return;
     }
+    this.ocsDuplicateToDelete = { id: hardwareId, name: hardwareName };
+    this.showDeleteOcsDialog = true;
+  }
 
-    const confirmacion = confirm(
-      `¿Eliminar el duplicado "${hardwareName}" (ID: ${hardwareId}) de la base OCS?\n\n` +
-        'Se borrarán ese hardware y todos sus datos relacionados en OCS ' +
-        '(bios, CPU, memoria, discos, software, redes, etc.).\n' +
-        'Debe quedar al menos un equipo con ese nombre.\n\n' +
-        'Esta acción NO se puede deshacer.'
-    );
-    if (!confirmacion) {
+  cancelarEliminarDuplicadoOcs(): void {
+    this.showDeleteOcsDialog = false;
+    this.ocsDuplicateToDelete = null;
+  }
+
+  async confirmarEliminarDuplicadoOcs(): Promise<void> {
+    const pending = this.ocsDuplicateToDelete;
+    if (!pending || this.isDeletingOcs) {
       return;
     }
+    this.showDeleteOcsDialog = false;
+    this.ocsDuplicateToDelete = null;
 
     this.isDeletingOcs = true;
     try {
       const response = await this.http
-        .delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/ocs/${hardwareId}`)
+        .delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/ocs/${pending.id}`)
         .toPromise();
 
       if (response && response.success) {
         this.notificationService.showSuccessMessage(
-          response.message || `Duplicado OCS "${hardwareName}" eliminado`
+          response.message || `Duplicado OCS "${pending.name}" eliminado`
         );
         await this.buscarDuplicadosOcs();
         this.ocsDuplicatesAlert.refresh(false);
@@ -486,35 +496,45 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async eliminarDuplicado(hardwareId: number, hardwareName: string) {
-    if (this.isDeleting) return;
-    
-    const confirmacion = confirm(
-      `¿Eliminar el duplicado "${hardwareName}" (ID: ${hardwareId}) de la base Cerbero?\n\n` +
-        'Se borrarán todos los datos relacionados con ese hardware en Cerbero. Esta acción NO se puede deshacer.'
-    );
-    
-    if (!confirmacion) return;
-    
+  eliminarDuplicado(hardwareId: number, hardwareName: string): void {
+    if (this.isDeleting) {
+      return;
+    }
+    this.cerberoDuplicateToDelete = { id: hardwareId, name: hardwareName };
+    this.showDeleteCerberoDialog = true;
+  }
+
+  cancelarEliminarDuplicado(): void {
+    this.showDeleteCerberoDialog = false;
+    this.cerberoDuplicateToDelete = null;
+  }
+
+  async confirmarEliminarDuplicado(): Promise<void> {
+    const pending = this.cerberoDuplicateToDelete;
+    if (!pending || this.isDeleting) {
+      return;
+    }
+    this.showDeleteCerberoDialog = false;
+    this.cerberoDuplicateToDelete = null;
+
     this.isDeleting = true;
-    
     try {
-      console.log(`Eliminando duplicado ID: ${hardwareId}`);
-              const response = await this.http.delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/${hardwareId}`).toPromise();
-      
+      const response = await this.http
+        .delete<ApiResponse<any>>(`${this.apiUrl}/duplicates/${pending.id}`)
+        .toPromise();
+
       if (response && response.success) {
-        console.log('Duplicado eliminado exitosamente:', response.message);
-        // Recargar la lista de duplicados
         await this.buscarDuplicados();
-        this.notificationService.showSuccessMessage(`Duplicado "${hardwareName}" eliminado exitosamente`);
+        this.notificationService.showSuccessMessage(
+          `Duplicado "${pending.name}" eliminado exitosamente`
+        );
       } else {
         throw new Error(response?.message || 'Error al eliminar el duplicado');
       }
     } catch (err: any) {
-      console.error('Error al eliminar duplicado:', err);
       this.notificationService.showError(
         'Error al Eliminar Duplicado',
-        `No se pudo eliminar el duplicado "${hardwareName}": ${err.message}`
+        `No se pudo eliminar el duplicado "${pending.name}": ${err.message}`
       );
     } finally {
       this.isDeleting = false;

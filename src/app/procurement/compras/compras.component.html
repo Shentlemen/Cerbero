@@ -134,8 +134,14 @@
             </span>
             <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
           </p>
-          <div class="actions" *ngIf="canManagePurchases()">
-            <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-compras-nueva" (click)="abrirModal(compraModal)">
+          <div class="actions">
+            <button type="button"
+              class="btn btn-sm btn-export btn-agregar-nuevo"
+              id="tour-compras-nueva"
+              [class.action-locked]="!canManagePurchases()"
+              (click)="abrirModal(compraModal)"
+              [attr.title]="canManagePurchases() ? 'Nueva compra' : 'Sin permiso para crear compras'"
+              [attr.aria-disabled]="!canManagePurchases()">
               <i class="fas fa-plus me-2"></i>
               Nueva Compra
             </button>
@@ -234,25 +240,24 @@
                 </div>
               </td>
               <td>
-                <div class="action-buttons" *ngIf="canManagePurchases()">
+                <div class="action-buttons">
                   <button class="btn btn-info btn-sm me-2" (click)="verDetallesCompra(compra)" title="Ver detalles completos">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-warning btn-sm me-2" (click)="abrirModal(compraModal, compra)">
+                  <button class="btn btn-warning btn-sm me-2"
+                    [class.action-locked]="!canManagePurchases()"
+                    (click)="abrirModal(compraModal, compra)"
+                    [attr.title]="canManagePurchases() ? 'Editar compra' : 'Sin permiso para editar'"
+                    [attr.aria-disabled]="!canManagePurchases()">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="eliminarCompra(compra.idCompra)">
+                  <button class="btn btn-danger btn-sm"
+                    [class.action-locked]="!canDeletePurchases()"
+                    (click)="eliminarCompra(compra.idCompra)"
+                    [attr.title]="canDeletePurchases() ? 'Eliminar compra' : 'Sin permiso para eliminar'"
+                    [attr.aria-disabled]="!canDeletePurchases()">
                     <i class="fas fa-trash-alt"></i>
                   </button>
-                </div>
-                <div class="action-buttons" *ngIf="!canManagePurchases()">
-                  <button class="btn btn-info btn-sm me-2" (click)="verDetallesCompra(compra)" title="Ver detalles completos">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <span class="read-only-badge">
-                    <i class="fas fa-lock"></i>
-                    Sin permisos
-                  </span>
                 </div>
               </td>
             </tr>

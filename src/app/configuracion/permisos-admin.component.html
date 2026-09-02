@@ -1,0 +1,54 @@
+<ng-container *ngIf="canManage(); else noAccess">
+  <div class="permisos-admin">
+    <p class="permisos-intro">
+      Cada tarjeta es un <strong>componente</strong> de Cerbero. Marcá qué puede hacer el área:
+      <span class="permisos-chip permisos-chip--ver">Ver</span> entrar y ver listas/detalle,
+      <span class="permisos-chip permisos-chip--editar">Editar</span> crear o cambiar datos,
+      <span class="permisos-chip permisos-chip--eliminar">Eliminar</span> borrar (si aplica).
+    </p>
+    <div class="permisos-toolbar">
+      <div class="permisos-area-field">
+        <label class="form-label small mb-1" for="permisos-area">Área</label>
+        <select id="permisos-area" class="form-select form-select-sm" [(ngModel)]="areaId" (ngModelChange)="cargarPermisos()">
+          <option *ngFor="let a of areas" [ngValue]="a.id">{{ a.nombre }}</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-sm btn-primary" (click)="guardar()" [disabled]="saving || loading || !areaId">
+        <i class="fas fa-save me-1"></i> Guardar matriz
+      </button>
+    </div>
+    <div *ngIf="error" class="alert alert-danger py-2">{{ error }}</div>
+    <div *ngIf="loading" class="text-muted small">Cargando permisos…</div>
+    <div *ngIf="!loading && permisos.length" class="permisos-groups">
+      <section *ngFor="let g of grupos()" class="permisos-grupo">
+        <h2 class="permisos-grupo-title">{{ g }}</h2>
+        <div class="permisos-cards">
+          <article *ngFor="let p of permisosDeGrupo(g)" class="permisos-card" [attr.data-componente]="p.componente">
+            <header class="permisos-card-head">
+              <h3 class="permisos-card-title">{{ p.nombre }}</h3>
+              <p class="permisos-card-desc">{{ p.descripcion || p.nombre }}</p>
+            </header>
+            <div class="permisos-toggles">
+              <label class="permisos-toggle">
+                <input type="checkbox" [(ngModel)]="p.puedeVer" (ngModelChange)="onVerChange(p)">
+                <span class="permisos-toggle-label">Ver</span>
+              </label>
+              <label class="permisos-toggle">
+                <input type="checkbox" [(ngModel)]="p.puedeEditar" (ngModelChange)="onEditarChange(p)">
+                <span class="permisos-toggle-label">Editar</span>
+              </label>
+              <label class="permisos-toggle" *ngIf="p.usaEliminar !== false">
+                <input type="checkbox" [(ngModel)]="p.puedeEliminar" (ngModelChange)="onEliminarChange(p)">
+                <span class="permisos-toggle-label">Eliminar</span>
+              </label>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #noAccess>
+  <div class="alert alert-warning">Solo GM puede asignar permisos a las áreas.</div>
+</ng-template>

@@ -1,19 +1,27 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../interfaces/auth.interface';
 import { PermissionsService } from '../../services/permissions.service';
 import { ThemeService } from '../../services/theme.service';
+import { TicketAreaDTO, TicketAreaService } from '../../services/ticket-area.service';
+
+interface ViewAsOption {
+  value: string;
+  label: string;
+  areaId?: number;
+}
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './app-header.component.html',
-  styleUrls: ['./app-header.component.css']
+    selector: 'app-header',
+    standalone: true,
+    imports: [CommonModule],
+    templateUrl: './app-header.component.html',
+    styleUrls: ['./app-header.component.css']
 })
-export class AppHeaderComponent implements OnInit {
+export class AppHeaderComponent implements OnInit, OnDestroy {
   @ViewChild('userMenu') userMenu?: ElementRef<HTMLElement>;
 
   currentUser: User | null = null;
@@ -24,18 +32,10 @@ export class AppHeaderComponent implements OnInit {
   previewRole = '';
   menuOpen = false;
   viewAsOpen = false;
+  viewAsOptions: ViewAsOption[] = [{ value: '', label: 'Game Master' }];
 
-  readonly viewAsOptions: { value: string; label: string }[] = [
-    { value: '', label: 'Game Master' },
-    { value: 'USER', label: 'Usuario' },
-    { value: 'ADMIN', label: 'Administrador' },
-    { value: 'ALMACEN', label: 'Almacén' },
-    { value: 'INVENTARIO', label: 'Inventario' },
-    { value: 'COMPRAS', label: 'Compras' },
-    { value: 'GESTION_EQUIP', label: 'Gestión equipos' },
-    { value: 'IMPRESION', label: 'Impresión' },
-    { value: 'GARANTIA', label: 'Garantía' }
-  ];
+  private areas: TicketAreaDTO[] = [];
+  private areasSub?: Subscription;
 
   get roleBadgeTitle(): string {
     if (this.isRealGm && this.previewRole) {
@@ -81,6 +81,7 @@ export class AppHeaderComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private permissionsService: PermissionsService,
+    private ticketAreaService: TicketAreaService,
     public theme: ThemeService
   ) {}
 
@@ -88,8 +89,49 @@ export class AppHeaderComponent implements OnInit {
     this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.syncFromPermissions();
+      if (this.permissionsService.isRealGM()) {
+        this.cargarAreasParaViewAs();
+      }
     });
     this.permissionsService.viewAs$.subscribe(() => this.syncFromPermissions());
+  }
+
+  ngOnDestroy(): void {
+    this.areasSub?.unsubscribe();
+  }
+
+  private cargarAreasParaViewAs(): void {
+    this.areasSub?.unsubscribe();
+    this.areasSub = this.ticketAreaService.listarTodasAdmin().subscribe({
+      next: (areas) => {
+        this.areas = areas;
+        this.viewAsOptions = [
+          { value: '', label: 'Game Master' },
+          ...areas.map((a) => ({
+            value: (a.codigo || '').toUpperCase(),
+            label: a.activa === false ? `${a.nombre} (inactiva)` : a.nombre,
+            areaId: a.id
+          }))
+        ];
+        this.syncFromPermissions();
+        this.restaurarPermisosViewAsSiFaltan();
+      },
+      error: () => {
+        this.viewAsOptions = [{ value: '', label: 'Game Master' }];
+      }
+    });
+  }
+
+  private restaurarPermisosViewAsSiFaltan(): void {
+    const codigo = this.permissionsService.getViewAsRole();
+    if (!codigo || this.permissionsService.hasViewAsPermisos()) {
+      return;
+    }
+    const area = this.areas.find((a) => (a.codigo || '').toUpperCase() === codigo);
+    if (!area) {
+      return;
+    }
+    this.aplicarViewAs(area.codigo, area.id);
   }
 
   private syncFromPermissions(): void {
@@ -145,9 +187,47 @@ export class AppHeaderComponent implements OnInit {
     this.closeMenu();
   }
 
-  onViewAsChange(value: string): void {
-    this.permissionsService.setViewAsRole(value || null);
+  onViewAsChange(option: ViewAsOption): void {
+    if (!option.value) {
+      this.permissionsService.setViewAsRole(null);
+      this.closeMenu();
+      return;
+    }
+    this.aplicarViewAs(option.value, option.areaId ?? null, true);
     this.closeMenu();
+  }
+
+  private aplicarViewAs(codigo: string, areaId: number | null | undefined, navegarADashboard = false): void {
+    if (!areaId) {
+      this.permissionsService.setViewAsRole(codigo);
+      if (navegarADashboard) {
+        void this.router.navigate(['/menu/dashboard']);
+      }
+      return;
+    }
+    this.ticketAreaService.listarPermisos(areaId).subscribe({
+      next: (permisos) => {
+        this.permissionsService.setViewAsRole(
+          codigo,
+          permisos.map((p) => ({
+            componente: p.componente,
+            puedeVer: p.puedeVer,
+            puedeEditar: p.puedeEditar,
+            puedeEliminar: p.puedeEliminar
+          })),
+          areaId
+        );
+        if (navegarADashboard) {
+          void this.router.navigate(['/menu/dashboard']);
+        }
+      },
+      error: () => {
+        this.permissionsService.setViewAsRole(codigo, undefined, areaId);
+        if (navegarADashboard) {
+          void this.router.navigate(['/menu/dashboard']);
+        }
+      }
+    });
   }
 
   clearPreview(): void {
@@ -156,8 +236,14 @@ export class AppHeaderComponent implements OnInit {
   }
 
   getRoleLabel(role: string): string {
-    switch (role) {
+    const key = (role || '').toUpperCase();
+    const fromArea = this.viewAsOptions.find((o) => o.value === key);
+    if (fromArea?.label) {
+      return fromArea.label.replace(/ \(inactiva\)$/, '');
+    }
+    switch (key) {
       case 'GM':
+      case '':
         return 'Game Master';
       case 'ADMIN':
         return 'Administrador';
@@ -175,6 +261,8 @@ export class AppHeaderComponent implements OnInit {
         return 'Impresión';
       case 'GARANTIA':
         return 'Garantía';
+      case 'LABORATORIO':
+        return 'Laboratorio';
       default:
         return role || '-';
     }
@@ -191,7 +279,8 @@ export class AppHeaderComponent implements OnInit {
       'COMPRAS',
       'GESTION_EQUIP',
       'IMPRESION',
-      'GARANTIA'
+      'GARANTIA',
+      'LABORATORIO'
     ];
     return known.includes(key) ? `role-badge--${key.toLowerCase()}` : 'role-badge--default';
   }
@@ -199,8 +288,10 @@ export class AppHeaderComponent implements OnInit {
   getRoleIcon(role: string): string {
     switch ((role || '').toUpperCase()) {
       case 'GM':
+      case '':
         return 'fa-crown';
       case 'ADMIN':
+      case 'LABORATORIO':
         return 'fa-user-shield';
       case 'USER':
         return 'fa-user';

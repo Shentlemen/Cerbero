@@ -124,8 +124,49 @@ export class EstadoEquipoService {
     return this.http.post(`${this.apiUrl}/${hardwareId}/transferir`, transferData);
   }
 
+  transferirEquiposEnMasa(transferData: {
+    hardwareIds: number[];
+    almacenId: number;
+    tipoAlmacen: string;
+    observaciones?: string;
+    usuario: string;
+    estanteria?: string;
+    estante?: string;
+    seccion?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/transferir-masa`, transferData);
+  }
+
+  reactivarEquiposEnMasa(requestData: {
+    hardwareIds: number[];
+    observaciones?: string;
+    usuario: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/reactivar-masa`, requestData);
+  }
+
+  enviarAOficinaLaboratorio(hardwareId: number, usuario: string): Observable<any> {
+    return this.transferirEquipo(hardwareId, {
+      tipoAlmacen: 'oficina_laboratorio',
+      observaciones: 'Enviado a Oficina Laboratorio para configuración',
+      usuario
+    });
+  }
+
   // Obtener equipos por almacen_id
   getEquiposPorAlmacenId(almacenId: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/por-almacen/${almacenId}`);
+  }
+
+  registrarEquipoPendienteLaboratorio(request: {
+    name: string;
+    observaciones?: string;
+    usuario: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/pendiente-laboratorio`, request);
+  }
+
+  eliminarEquipoPendiente(hardwareId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${hardwareId}/pendiente`);
   }
 } 

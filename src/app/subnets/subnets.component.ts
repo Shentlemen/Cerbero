@@ -472,6 +472,9 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   saveCoordinates(subnet: ExtendedSubnet): void {
+    if (this.permissionsService.denyUnless(this.canManageSubnets(), 'guardar coordenadas de subred')) {
+      return;
+    }
     if (!this.isValidCoordinates(subnet)) {
       this.errorMessage = 'Las coordenadas no son válidas';
       return;
@@ -496,10 +499,16 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   editCoordinates(subnet: ExtendedSubnet): void {
+    if (this.permissionsService.denyUnless(this.canManageSubnets(), 'editar coordenadas de subred')) {
+      return;
+    }
     subnet.editing = true;
   }
 
   updateCoordinates(subnet: ExtendedSubnet): void {
+    if (this.permissionsService.denyUnless(this.canManageSubnets(), 'actualizar coordenadas de subred')) {
+      return;
+    }
     if (!this.isValidCoordinates(subnet)) {
       this.errorMessage = 'Las coordenadas no son válidas';
       return;
@@ -1210,7 +1219,9 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleMapEditMode(): void {
-    if (!this.canManageSubnets()) return;
+    if (this.permissionsService.denyUnless(this.canManageSubnets(), 'editar ubicaciones en el mapa')) {
+      return;
+    }
     if (this.mapEditMode) {
       this.exitMapEditMode();
       return;

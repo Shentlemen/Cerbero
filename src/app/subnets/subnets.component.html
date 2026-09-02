@@ -147,29 +147,38 @@
                     title="Ver PCs y dispositivos de esta subred">
                     <i class="fas fa-desktop"></i> Activos
                   </button>
-                  <ng-container *ngIf="canManageSubnets()">
+                  <ng-container>
                     <button
                       *ngIf="!subnet.hasCoordinates"
                       type="button"
                       class="btn btn-primary btn-sm"
+                      [class.action-locked]="!canManageSubnets()"
                       (click)="saveCoordinates(subnet)"
-                      [disabled]="!isValidCoordinates(subnet) || loading">
+                      [disabled]="canManageSubnets() && (!isValidCoordinates(subnet) || loading)"
+                      [attr.title]="canManageSubnets() ? 'Guardar coordenadas' : 'Sin permiso para editar'"
+                      [attr.aria-disabled]="!canManageSubnets()">
                       <i class="fas fa-save"></i> Guardar
                     </button>
                     <button
                       *ngIf="subnet.hasCoordinates && !subnet.editing"
                       type="button"
                       class="btn btn-warning btn-sm text-white"
+                      [class.action-locked]="!canManageSubnets()"
                       (click)="editCoordinates(subnet)"
-                      [disabled]="loading">
+                      [disabled]="canManageSubnets() && loading"
+                      [attr.title]="canManageSubnets() ? 'Editar coordenadas' : 'Sin permiso para editar'"
+                      [attr.aria-disabled]="!canManageSubnets()">
                       <i class="fas fa-edit"></i> Editar
                     </button>
                     <button
                       *ngIf="subnet.hasCoordinates && subnet.editing"
                       type="button"
                       class="btn btn-success btn-sm"
+                      [class.action-locked]="!canManageSubnets()"
                       (click)="updateCoordinates(subnet)"
-                      [disabled]="!isValidCoordinates(subnet) || loading">
+                      [disabled]="canManageSubnets() && (!isValidCoordinates(subnet) || loading)"
+                      [attr.title]="canManageSubnets() ? 'Actualizar coordenadas' : 'Sin permiso para editar'"
+                      [attr.aria-disabled]="!canManageSubnets()">
                       <i class="fas fa-check"></i> Actualizar
                     </button>
                     <button
@@ -182,9 +191,6 @@
                     </button>
                   </ng-container>
                 </div>
-                <span *ngIf="!canManageSubnets()" class="read-only-badge">
-                  <i class="fas fa-eye"></i> Solo lectura
-                </span>
               </td>
             </tr>
           </tbody>
@@ -214,13 +220,15 @@
             Mapa de subredes
           </h2>
           <button
-            *ngIf="canManageSubnets()"
             type="button"
             class="btn btn-sm"
             [class.btn-outline-primary]="!mapEditMode"
             [class.btn-warning]="mapEditMode"
+            [class.action-locked]="!canManageSubnets()"
             (click)="toggleMapEditMode()"
-            [disabled]="loading || subnetsOnMapCount === 0">
+            [disabled]="canManageSubnets() && (loading || subnetsOnMapCount === 0)"
+            [attr.title]="canManageSubnets() ? (mapEditMode ? 'Salir de edición' : 'Editar ubicaciones') : 'Sin permiso para editar'"
+            [attr.aria-disabled]="!canManageSubnets()">
             <i class="fas" [ngClass]="mapEditMode ? 'fa-times' : 'fa-arrows-alt'"></i>
             {{ mapEditMode ? 'Salir de edición' : 'Editar ubicaciones' }}
           </button>

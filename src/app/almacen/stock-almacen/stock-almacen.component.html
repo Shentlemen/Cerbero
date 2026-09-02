@@ -58,21 +58,49 @@
 
         <div class="toolbar-actions" *ngIf="getAlmacenActivoKey() as almacenKey">
           <button
-            *ngIf="canManageStock() && almacenSeleccionado"
             type="button"
             class="btn registrar-stock-btn"
-            (click)="irARegistrarStock()">
-            <i class="fas fa-box me-2"></i>
+            [class.action-locked]="!canManageStock()"
+            (click)="irARegistrarStock()"
+            [attr.title]="canManageStock() ? 'Registrar stock' : 'Sin permiso para registrar stock'"
+            [attr.aria-disabled]="!canManageStock()">
+            <i class="fas fa-box"></i>
             Registrar Stock
           </button>
           <button
             type="button"
-            class="btn btn-danger btn-sm print-btn"
+            class="btn bulk-transfer-btn"
+            id="tour-almacenes-bulk-transfer"
+            [class.action-locked]="!canTransferStock()"
+            (click)="abrirTransferenciaMasiva($event)"
+            [disabled]="canTransferStock() && (loading || equiposParaTransferirMasa.length === 0 || transfiriendoMasa)"
+            [attr.title]="canTransferStock() ? 'Transferir varios equipos a otro almacén' : 'Sin permiso para transferir'"
+            [attr.aria-disabled]="!canTransferStock()"
+            data-help="📦 Pegá varios números (14506 14530), usá Seleccionar todo y elegí el destino.">
+            <i class="fas" [ngClass]="transfiriendoMasa ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+            Transferir en masa
+          </button>
+          <button
+            type="button"
+            class="btn bulk-reactivar-btn"
+            id="tour-almacenes-bulk-reactivar"
+            [class.action-locked]="!canTransferStock()"
+            (click)="abrirReactivacionMasiva($event)"
+            [disabled]="canTransferStock() && (loading || itemsParaReactivarMasa.length === 0 || reactivandoMasa)"
+            [attr.title]="canTransferStock() ? 'Reactivar varios equipos o dispositivos' : 'Sin permiso para reactivar'"
+            [attr.aria-disabled]="!canTransferStock()"
+            data-help="🔄 Devolvé varios items a inventario activo. Seleccionar todo marca los del almacén.">
+            <i class="fas" [ngClass]="reactivandoMasa ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+            Reactivar en masa
+          </button>
+          <button
+            type="button"
+            class="btn print-btn"
             (click)="exportarPDFAlmacen(almacenKey)"
-            [disabled]="loading || isExporting"
-            title="Exportar almacén a PDF">
-            <i class="fas me-2" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
-            {{ isExporting ? 'Generando...' : 'Imprimir almacén' }}
+            [disabled]="loading || isExporting || getListadoCollectionSize() === 0"
+            title="Exportar la vista filtrada a PDF">
+            <i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
+            {{ isExporting ? 'Generando...' : 'Imprimir' }}
           </button>
         </div>
       </div>
@@ -222,7 +250,7 @@
                     <th>Numero</th>
                     <th>Descripcion</th>
                     <th>Tipo</th>
-                    <th *ngIf="canManageStock()">Acciones</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -252,13 +280,16 @@
                       </span>
                       <span *ngIf="!esEquipoEspecial(item)" class="stock-tipo-etiqueta stock-tipo-etiqueta--item">Ítem</span>
                     </td>
-                    <td *ngIf="canManageStock()">
+                    <td>
                       <div class="acciones-col">
                         <button
                           *ngIf="!esEquipoEspecial(item) && getStockAlmacenNumericId(item) != null"
                           type="button"
                           class="btn btn-sm editar-datos-btn"
-                          (click)="abrirModalEditarRegistro(item)">
+                          [class.action-locked]="!canManageStock()"
+                          (click)="abrirModalEditarRegistro(item)"
+                          [attr.title]="canManageStock() ? 'Editar datos' : 'Sin permiso para editar'"
+                          [attr.aria-disabled]="!canManageStock()">
                           <i class="fas fa-edit me-1" aria-hidden="true"></i>
                           Editar datos
                         </button>
@@ -266,7 +297,10 @@
                           *ngIf="!esEquipoEspecial(item) && getStockAlmacenNumericId(item) != null"
                           type="button"
                           class="btn btn-sm editar-cantidad-btn"
-                          (click)="abrirModalCantidad(item)">
+                          [class.action-locked]="!canManageStock()"
+                          (click)="abrirModalCantidad(item)"
+                          [attr.title]="canManageStock() ? 'Editar cantidad' : 'Sin permiso para editar'"
+                          [attr.aria-disabled]="!canManageStock()">
                           <i class="fas fa-boxes me-1" aria-hidden="true"></i>
                           Editar cantidad
                         </button>
@@ -274,12 +308,17 @@
                           *ngIf="!esEquipoEspecial(item) && getStockAlmacenNumericId(item) != null"
                           type="button"
                           class="btn btn-sm eliminar-stock-btn"
+                          [class.action-locked]="!canDeleteStock()"
                           [disabled]="
+                            canDeleteStock() && (
                             eliminandoStockId === getStockAlmacenNumericId(item) ||
                             transferiendoItemId === item.id ||
                             reactivandoItemId === item.id
+                            )
                           "
-                          (click)="eliminarRegistroStock(item)">
+                          (click)="eliminarRegistroStock(item)"
+                          [attr.title]="canDeleteStock() ? 'Eliminar' : 'Sin permiso para eliminar'"
+                          [attr.aria-disabled]="!canDeleteStock()">
                           <i
                             class="fas me-1"
                             aria-hidden="true"
@@ -291,16 +330,22 @@
                           <button
                             type="button"
                             class="btn btn-sm transferir-btn"
-                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
-                            (click)="transferirEquipo(item, $event)">
+                            [class.action-locked]="!canTransferStock()"
+                            [disabled]="canTransferStock() && (transferiendoItemId === item.id || reactivandoItemId === item.id)"
+                            (click)="transferirEquipo(item, $event)"
+                            [attr.title]="canTransferStock() ? 'Transferir' : 'Sin permiso para transferir'"
+                            [attr.aria-disabled]="!canTransferStock()">
                             <i class="fas" [ngClass]="transferiendoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
                             {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
                           </button>
                           <button
                             type="button"
                             class="btn btn-sm reactivar-btn"
-                            [disabled]="transferiendoItemId === item.id || reactivandoItemId === item.id"
-                            (click)="reactivarEquipo(item, $event)">
+                            [class.action-locked]="!canTransferStock()"
+                            [disabled]="canTransferStock() && (transferiendoItemId === item.id || reactivandoItemId === item.id)"
+                            (click)="reactivarEquipo(item, $event)"
+                            [attr.title]="canTransferStock() ? 'Reactivar' : 'Sin permiso para reactivar'"
+                            [attr.aria-disabled]="!canTransferStock()">
                             <i class="fas" [ngClass]="reactivandoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
                             {{ reactivandoItemId === item.id ? 'Reactivando...' : 'Reactivar' }}
                           </button>
@@ -309,7 +354,7 @@
                     </td>
                   </tr>
                   <tr *ngIf="getListadoCollectionSize() === 0">
-                    <td [attr.colspan]="canManageStock() ? 7 : 6" class="text-center text-muted py-4">
+                    <td colspan="7" class="text-center text-muted py-4">
                       No hay items para la selección actual.
                     </td>
                   </tr>

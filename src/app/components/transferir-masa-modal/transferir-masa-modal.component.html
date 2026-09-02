@@ -1,0 +1,187 @@
+<div class="modal-body transferir-modal-body transferir-masa-body">
+  <div class="transferir-box-header">
+    <h4 class="modal-title d-flex align-items-center gap-2 mb-0">
+      <i class="fas fa-exchange-alt text-dark"></i>
+      {{ titulo }}
+    </h4>
+    <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+  </div>
+
+  <form [formGroup]="transferForm">
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Almacén destino *</label>
+        <select class="form-select" formControlName="almacenId" (change)="onAlmacenChange()">
+          <option value="">Seleccione un almacén...</option>
+          <optgroup label="Almacenes especiales">
+            <option [value]="'cementerio'" *ngIf="almacenCementerio && !excluyeDestino('cementerio')">
+              Cementerio ({{ almacenCementerio.numero }} - {{ almacenCementerio.nombre }})
+            </option>
+            <option [value]="'laboratorio'" *ngIf="almacenLaboratorio && !excluyeDestino('laboratorio')">
+              Almacén Lab ({{ almacenLaboratorio.numero }} - {{ almacenLaboratorio.nombre }})
+            </option>
+            <option [value]="'oficina_laboratorio'" *ngIf="almacenOficina && !excluyeDestino('oficina_laboratorio')">
+              Oficina Laboratorio ({{ almacenOficina.numero }} - {{ almacenOficina.nombre }})
+            </option>
+          </optgroup>
+          <optgroup label="Almacenes regulares" *ngIf="almacenesRegulares.length > 0">
+            <option *ngFor="let almacen of almacenesRegulares" [value]="almacen.id">
+              {{ almacen.numero }} - {{ almacen.nombre }}
+            </option>
+          </optgroup>
+        </select>
+      </div>
+
+      <ng-container *ngIf="tieneCamposUbicacion()">
+        <div class="col-md-4" *ngIf="!cargandoConfig">
+          <label class="form-label">Estantería *</label>
+          <select class="form-select" formControlName="estanteria" (change)="onEstanteriaUbicacionChange()">
+            <option value="">Seleccione estantería...</option>
+            <option *ngFor="let estanteria of estanteriasDisponibles" [value]="estanteria">
+              {{ estanteria }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-4" *ngIf="!cargandoConfig">
+          <label class="form-label">Estante *</label>
+          <select class="form-select" formControlName="estante">
+            <option value="">Seleccione estante...</option>
+            <option *ngFor="let estante of estantesDisponibles" [value]="estante">
+              Estante {{ estante }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-4" *ngIf="!cargandoConfig && seccionesDisponibles.length > 0">
+          <label class="form-label">Sección *</label>
+          <select class="form-select" formControlName="seccion">
+            <option value="">Seleccione sección...</option>
+            <option *ngFor="let seccion of seccionesDisponibles" [value]="seccion">
+              Sección {{ seccion }}
+            </option>
+          </select>
+        </div>
+        <div class="col-12" *ngIf="cargandoConfig">
+          <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <small class="d-block mt-1 text-muted">Cargando configuración del almacén...</small>
+          </div>
+        </div>
+        <div class="col-12" *ngIf="!cargandoConfig && (esAlmacenRegular() || esAlmacenLaboratorio()) && !almacenConfig">
+          <div class="alert alert-warning mb-0 py-2">
+            Configure este almacén en <strong>Configuración de almacén</strong> para indicar estantería y estante.
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div *ngIf="esAlmacenEspecial()" class="mb-3">
+      <label class="form-label">Observaciones</label>
+      <textarea
+        class="form-control"
+        formControlName="observaciones"
+        rows="2"
+        maxlength="500"
+        placeholder="Observaciones de la transferencia..."></textarea>
+    </div>
+  </form>
+
+  <div class="transferir-masa-grid">
+    <div class="transferir-masa-pane">
+      <div class="transferir-masa-pane-header">
+        <strong>{{ tituloLista }}</strong>
+        <span class="text-muted small">
+          {{ equiposFiltrados.length }} de {{ equipos.length }}
+          <ng-container *ngIf="tokensSinCoincidencia.length">
+            · <span class="transferir-masa-missing-count">{{ tokensSinCoincidencia.length }} no encontrado{{ tokensSinCoincidencia.length === 1 ? '' : 's' }}</span>
+          </ng-container>
+        </span>
+        <button
+          type="button"
+          class="btn btn-sm transferir-masa-select-all"
+          (click)="seleccionarTodoFiltrado()"
+          [disabled]="equiposFiltrados.length === 0">
+          {{ todosFiltradosSeleccionados ? 'Quitar visibles' : 'Seleccionar todo' }}
+        </button>
+      </div>
+      <textarea
+        class="form-control form-control-sm mb-1"
+        [(ngModel)]="busqueda"
+        [ngModelOptions]="{standalone: true}"
+        rows="2"
+        placeholder="14506 14530 — o pegá varios números separados por espacio, coma o salto de línea"
+        autocomplete="off"></textarea>
+      <p class="text-muted small mb-2 transferir-masa-search-hint">
+        Podés pegar varios equipos de una. Luego usá <strong>Seleccionar todo</strong> para tildar los que coincidan.
+      </p>
+      <div class="transferir-masa-missing-banner" *ngIf="tokensSinCoincidencia.length">
+        <strong>No aparecen en la lista:</strong>
+        <span
+          class="transferir-masa-missing-chip"
+          *ngFor="let token of tokensSinCoincidencia; trackBy: trackByToken">
+          {{ token }}
+        </span>
+      </div>
+      <div class="transferir-masa-list" *ngIf="equiposFiltrados.length > 0 || tokensSinCoincidencia.length; else vacioActivos">
+        <label
+          class="transferir-masa-row"
+          *ngFor="let equipo of equiposFiltrados; trackBy: trackByEquipoId"
+          [class.is-selected]="isSelected(equipo.id)">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            [checked]="isSelected(equipo.id)"
+            (change)="onCheckboxChange(equipo, $event)">
+          <span class="transferir-masa-name">{{ equipo.name || ('ID ' + equipo.id) }}</span>
+          <span class="transferir-masa-meta">{{ equipo.ipAddr || 'Sin IP' }}</span>
+        </label>
+        <div
+          class="transferir-masa-row is-missing"
+          *ngFor="let token of tokensSinCoincidencia; trackBy: trackByToken">
+          <i class="fas fa-exclamation-circle transferir-masa-missing-icon" aria-hidden="true"></i>
+          <span class="transferir-masa-name">{{ token }}</span>
+          <span class="transferir-masa-meta">No encontrado</span>
+        </div>
+      </div>
+      <ng-template #vacioActivos>
+        <p class="text-muted small mb-0 py-3 text-center">No hay equipos que coincidan con la búsqueda.</p>
+      </ng-template>
+    </div>
+
+    <div class="transferir-masa-pane">
+      <div class="transferir-masa-pane-header">
+        <strong>Seleccionados</strong>
+        <span class="text-muted small">{{ selectedIds.length }}</span>
+      </div>
+      <div class="transferir-masa-list" *ngIf="seleccionados.length > 0; else vacioSel">
+        <div class="transferir-masa-row is-picked" *ngFor="let equipo of seleccionados; trackBy: trackByEquipoId">
+          <span class="transferir-masa-name">{{ equipo.name || ('ID ' + equipo.id) }}</span>
+          <button
+            type="button"
+            class="btn btn-sm btn-link transferir-masa-remove"
+            (click)="quitarSeleccionado(equipo.id)"
+            title="Quitar de la lista">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <ng-template #vacioSel>
+        <p class="text-muted small mb-0 py-3 text-center">Marcá los equipos de la izquierda para armar el lote.</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn-transferir"
+      [disabled]="!puedeEnviar()"
+      (click)="confirmar()">
+      <i class="fas fa-paper-plane me-1"></i>
+      Enviar{{ selectedIds.length ? ' (' + selectedIds.length + ')' : '' }}
+    </button>
+  </div>
+</div>

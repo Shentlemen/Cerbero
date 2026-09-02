@@ -212,9 +212,9 @@
               (keydown)="onRowKeyDown($event, ticket.id)">
               <header class="tickets-ig-card-head">
                 <div class="tickets-ig-card-head-left">
-                  <span class="tickets-ig-ribbon-wrap">
+                  <span class="tickets-ig-ribbon-wrap" [ngStyle]="getRibbonStyle(ticket.areaActual)">
                     <span class="tickets-ig-ribbon-shadow">
-                      <span class="tickets-ig-ribbon" [attr.data-area]="ticket.areaActual">
+                      <span class="tickets-ig-ribbon" [attr.data-area]="ticket.areaActual" [ngStyle]="getRibbonStyle(ticket.areaActual)">
                         <i class="fas fa-caret-down" aria-hidden="true"></i>
                         <span class="tickets-ig-card-agent-text">{{ getAreaLabel(ticket.areaActual) }}</span>
                       </span>
@@ -243,11 +243,12 @@
                     <span>{{ cantidadAdjuntos(ticket.id) }}</span>
                   </button>
                   <button
-                    *ngIf="canDeleteTickets()"
                     type="button"
                     class="tickets-ig-card-icon-btn tickets-ig-card-icon-btn--danger"
-                    title="Eliminar ticket"
+                    [class.action-locked]="!canDeleteTickets()"
+                    [attr.title]="canDeleteTickets() ? 'Eliminar ticket' : 'Sin permiso para eliminar'"
                     aria-label="Eliminar ticket"
+                    [attr.aria-disabled]="!canDeleteTickets()"
                     (mousedown)="$event.preventDefault()"
                     (click)="eliminarTicket(ticket, $event)">
                     <i class="fas fa-trash-alt" aria-hidden="true"></i>
@@ -326,7 +327,7 @@
               <div class="tickets-split-item-foot">
                 <div class="tickets-split-item-tags">
                   <span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span>
-                  <span [class]="getAreaPillClass(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
+                  <span [class]="getAreaPillClass(ticket.areaActual)" [ngStyle]="getAreaPillStyle(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </div>
                 <span class="tickets-split-item-date text-muted">
                   {{
@@ -334,7 +335,7 @@
                       | date:'dd/MM/yy HH:mm'
                   }}
                 </span>
-                <div class="tickets-split-item-actions" *ngIf="tieneAdjuntos(ticket.id) || canDeleteTickets()">
+                <div class="tickets-split-item-actions">
                   <button
                     *ngIf="tieneAdjuntos(ticket.id)"
                     type="button"
@@ -346,10 +347,11 @@
                     <span class="tickets-attach-pill-count">{{ cantidadAdjuntos(ticket.id) }}</span>
                   </button>
                   <button
-                    *ngIf="canDeleteTickets()"
                     type="button"
                     class="btn btn-danger btn-sm tickets-split-item-delete"
-                    title="Eliminar ticket"
+                    [class.action-locked]="!canDeleteTickets()"
+                    [attr.title]="canDeleteTickets() ? 'Eliminar ticket' : 'Sin permiso para eliminar'"
+                    [attr.aria-disabled]="!canDeleteTickets()"
                     (mousedown)="$event.preventDefault()"
                     (click)="eliminarTicket(ticket, $event)">
                     <i class="fas fa-trash-alt" aria-hidden="true"></i>

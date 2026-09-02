@@ -139,7 +139,7 @@
                 }"></i>
               </div>
             </th>
-            <th *ngIf="canManageDevices()">
+            <th>
               <div class="th-content">
                 <span>Acciones</span>
               </div>
@@ -173,32 +173,37 @@
             <td>
               <span class="description">{{ device.description }}</span>
             </td>
-            <td *ngIf="canManageDevices()">
+            <td>
               <div class="action-buttons">
-                <!-- Botones de cambio de estado solo si hay permisos -->
-                <ng-container *ngIf="canManageDeviceStates()">
+                <button
+                    class="btn btn-sm estado-btn preparacion-btn"
+                    [class.action-locked]="!canManageDeviceStates()"
+                    (click)="enviarAPreparacion(device, $event)"
+                    [disabled]="canManageDeviceStates() && (enviandoPreparacionMac === device.mac || transferiendoDeviceMac === device.mac)"
+                    [attr.title]="canManageDeviceStates() ? 'Enviar a Oficina Laboratorio para configuración' : 'Sin permiso para enviar a preparación'"
+                    [attr.aria-disabled]="!canManageDeviceStates()"
+                    data-help="⚡ Manda el dispositivo a Oficina Laboratorio sin confirmación. Desaparece de gráficas e inventario activo.">
+                    <i class="fas" [ngClass]="enviandoPreparacionMac === device.mac ? 'fa-spinner fa-spin' : 'fa-tools'"></i>
+                    Preparación
+                  </button>
                   <button 
-                    class="btn btn-info btn-sm estado-btn transferir-btn" 
+                    class="btn btn-info btn-sm estado-btn transferir-btn"
+                    [class.action-locked]="!canManageDeviceStates()"
                     (click)="transferirDispositivo(device, $event)"
-                    [disabled]="transferiendoDeviceMac === device.mac"
-                    title="Transferir este dispositivo a otro almacén"
+                    [disabled]="canManageDeviceStates() && (transferiendoDeviceMac === device.mac || enviandoPreparacionMac === device.mac)"
+                    [attr.title]="canManageDeviceStates() ? 'Transferir este dispositivo a otro almacén' : 'Sin permiso para transferir'"
+                    [attr.aria-disabled]="!canManageDeviceStates()"
                     data-help="🚚 Mueve este dispositivo a otro almacén (cementerio, laboratorio o regular)">
                     <i class="fas" [ngClass]="transferiendoDeviceMac === device.mac ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
                     Transferir
                   </button>
-                </ng-container>
-                
-                <!-- Mensaje informativo si no hay permisos para cambio de estado -->
-                <small *ngIf="!canManageDeviceStates()" class="text-muted">
-                  Requiere permisos de GM o Administrador
-                </small>
-                
-                <!-- Botón de eliminar (siempre disponible si puede gestionar devices) -->
                 <button 
                   class="btn btn-danger btn-sm delete-btn" 
-                  (click)="eliminarDevice(device); $event.stopPropagation()"
-                  [disabled]="deletingDeviceMac === device.mac"
-                  title="Eliminar este dispositivo de la base de datos OCS"
+                  [class.action-locked]="!canDeleteDevices()"
+                  (click)="eliminarDevice(device, $event)"
+                  [disabled]="canDeleteDevices() && deletingDeviceMac === device.mac"
+                  [attr.title]="canDeleteDevices() ? 'Eliminar este dispositivo de la base de datos OCS' : 'Sin permiso para eliminar'"
+                  [attr.aria-disabled]="!canDeleteDevices()"
                   data-help="️ Elimina permanentemente este dispositivo de la base de datos OCS">
                   <i class="fas" [ngClass]="deletingDeviceMac === device.mac ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
                   {{ deletingDeviceMac === device.mac ? 'Eliminando...' : 'Eliminar' }}

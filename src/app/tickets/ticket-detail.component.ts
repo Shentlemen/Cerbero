@@ -570,6 +570,10 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getHeroAreaLabel(area?: string | null): string {
+    const dto = this.resolveArea(area);
+    if (dto?.nombre) {
+      return dto.nombre;
+    }
     return this.formatClaveLegible(area ?? undefined);
   }
 
@@ -597,6 +601,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getHeroAreaClass(area: string): string {
+    if (this.getAreaColor(area)) {
+      return 'td-area--dynamic';
+    }
     const key = (area || '').trim().toUpperCase();
     const map: Record<string, string> = {
       ALMACEN: 'td-area--almacen',
@@ -608,6 +615,31 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
       LABORATORIO: 'td-area--laboratorio'
     };
     return map[key] || 'td-area--default';
+  }
+
+  private resolveArea(codigo?: string | null): TicketAreaDTO | undefined {
+    const key = (codigo || '').trim().toUpperCase();
+    if (!key) {
+      return undefined;
+    }
+    const fromInput = this.areasActivasInput?.find((a) => (a.codigo || '').toUpperCase() === key);
+    if (fromInput) {
+      return fromInput;
+    }
+    return this.areasDerivacion.find((a) => (a.codigo || '').toUpperCase() === key);
+  }
+
+  getAreaColor(codigo?: string | null): string | null {
+    const color = (this.resolveArea(codigo)?.color || '').trim();
+    return color || null;
+  }
+
+  getAreaPillStyle(codigo?: string | null): Record<string, string> {
+    const color = this.getAreaColor(codigo);
+    if (!color) {
+      return {};
+    }
+    return { borderColor: color };
   }
 
   /** CREACION, CAMBIO_ESTADO, etc. → texto sin guiones bajos. */

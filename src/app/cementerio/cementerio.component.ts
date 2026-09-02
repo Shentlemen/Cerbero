@@ -15,6 +15,8 @@ import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
+import { TransferirMasaModalComponent } from '../components/transferir-masa-modal/transferir-masa-modal.component';
+import { ReactivarMasaModalComponent } from '../components/reactivar-masa-modal/reactivar-masa-modal.component';
 import { FormularioBajaModalComponent, DatosBaja } from '../components/formulario-baja-modal/formulario-baja-modal.component';
 import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
@@ -59,6 +61,8 @@ export class CementerioComponent implements OnInit, OnDestroy {
   reactivatingItemId: string | number | null = null;
   itemToReactivar: any = null;
   transferiendoItemId: string | number | null = null;
+  transfiriendoMasa = false;
+  reactivandoMasa = false;
 
   // Edición de observaciones
   editingObservacionesId: string | number | null = null;
@@ -90,14 +94,18 @@ export class CementerioComponent implements OnInit, OnDestroy {
         { selector: '#tour-cementerio-title', title: 'Cementerio', description: 'Equipos y dispositivos dados de baja operativamente; no aparecen en inventario activo.', side: 'bottom' },
         { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Pestañas para alternar entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
         { selector: '#tour-cementerio-search', title: 'Búsqueda', description: 'Filtrá por nombre para ubicar un registro.', side: 'bottom' },
+        { selector: '#tour-cementerio-bulk-transfer', title: 'Transferir en masa',
+          description: 'Mové <strong>varios equipos</strong> fuera del cementerio. Pegá números separados por espacio y usá <strong>Seleccionar todo</strong>.', side: 'bottom' },
+        { selector: '#tour-cementerio-bulk-reactivar', title: 'Reactivar en masa',
+          description: 'Devolvé varios equipos o dispositivos al inventario activo. <strong>Seleccionar todo</strong> marca lo filtrado.', side: 'bottom' },
+        { selector: '#tour-cementerio-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' },
         { selector: '#tour-cementerio-table', title: 'Tabla', description: 'Cada fila trae sus acciones: imprimir baja, transferir y reactivar (según permisos). También podés editar observaciones en línea.', side: 'top' },
         { selector: '.imprimir-baja-btn', title: 'Imprimir baja',
           description: 'Genera el <strong>formulario F-890 de baja</strong> del equipo para archivo/firma. Sólo aparece en filas de tipo <em>Equipo</em>.', side: 'top' },
         { selector: '.transferir-btn', title: 'Transferir',
-          description: '<strong>Saca al equipo del cementerio</strong> y lo manda al almacén que elijas (regular o laboratorio). El historial de baja queda registrado.', side: 'top' },
+          description: '<strong>Saca al equipo del cementerio</strong> y lo manda al almacén que elijas (regular, laboratorio u oficina laboratorio). El historial de baja queda registrado.', side: 'top' },
         { selector: '.reactivar-btn', title: 'Reactivar',
-          description: 'Devuelve el equipo o dispositivo al <strong>inventario activo</strong>. Pide confirmación antes de volverlo a poner en circulación.', side: 'top' },
-        { selector: '#tour-cementerio-print', title: 'PDF', description: 'Exportá el listado filtrado.', side: 'left' }
+          description: 'Devuelve el equipo o dispositivo al <strong>inventario activo</strong>. Pide confirmación antes de volverlo a poner en circulación.', side: 'top' }
       ]
     }]);
   }
@@ -240,6 +248,10 @@ export class CementerioComponent implements OnInit, OnDestroy {
    */
   getTotalItems(): number {
     return this.equiposEnBaja.length + this.dispositivosEnBaja.length;
+  }
+
+  get equiposFiltradosParaTransferir(): any[] {
+    return (this.equiposFiltrados || []).filter((item) => item.tipo === 'EQUIPO' && item.id);
   }
 
   sortData(columna: CementerioSortColumn): void {
@@ -487,12 +499,9 @@ export class CementerioComponent implements OnInit, OnDestroy {
     return configMap[deviceType] || { backgroundColor: '#f8f9fa', color: '#6c757d' };
   }
 
-  reactivarItem(item: any): void {
-    if (!this.canTransferOrReactivate()) {
-      this.notificationService.showError(
-        'Operación no permitida',
-        'No tiene permiso para reactivar equipos o dispositivos en el cementerio.'
-      );
+  reactivarItem(item: any, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'reactivar en el cementerio', event)) {
       return;
     }
     console.log('🔄 reactivarItem llamado con:', item);
@@ -595,6 +604,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
       event.stopPropagation();
     }
     if (!this.canManageAssets()) {
+      this.permissionsService.denyUnless(false, 'editar observaciones', event);
       return;
     }
     const itemId = item.tipo === 'EQUIPO' ? item.id : item.mac;
@@ -691,8 +701,200 @@ export class CementerioComponent implements OnInit, OnDestroy {
     return this.editingObservacionesId === itemId;
   }
 
-  // Método para transferir equipo
-  transferirEquipo(item: any): void {
+  abrirTransferenciaMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'transferir equipos en masa', event)) {
+      return;
+    }
+    if (this.transfiriendoMasa) {
+      return;
+    }
+    const equipos = this.equiposFiltradosParaTransferir;
+    if (!equipos.length) {
+      this.notificationService.showError(
+        'Sin equipos para transferir',
+        'No hay equipos (PCs) en el listado filtrado. Los dispositivos no se transfieren desde acá.'
+      );
+      return;
+    }
+    const modalRef = this.modalService.open(TransferirMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Transferir en masa';
+    modalRef.componentInstance.tituloLista = 'Equipos filtrados';
+    modalRef.componentInstance.excluirDestinos = ['cementerio'];
+    modalRef.componentInstance.equipos = equipos
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }))
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        ipAddr: item.ipAddr,
+        userid: item.usuarioCambio,
+        biosType: item.biosType
+      }));
+
+    modalRef.result.then((transferData: any) => {
+      if (transferData?.hardwareIds?.length) {
+        this.procesarTransferenciaMasiva(transferData);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarTransferenciaMasiva(transferData: any): void {
+    this.transfiriendoMasa = true;
+    const requestData: any = {
+      hardwareIds: transferData.hardwareIds,
+      almacenId: transferData.almacenId,
+      tipoAlmacen: transferData.tipoAlmacen,
+      observaciones: transferData.observaciones || '',
+      usuario: this.authService.getUsuarioParaAuditoria()
+    };
+    if (transferData.tipoAlmacen === 'regular' || transferData.tipoAlmacen === 'laboratorio') {
+      requestData.estanteria = transferData.estanteria || '';
+      requestData.estante = transferData.estante || '';
+      requestData.seccion = transferData.seccion != null ? transferData.seccion : '';
+    }
+
+    this.estadoEquipoService.transferirEquiposEnMasa(requestData).subscribe({
+      next: (response) => {
+        const ok = response?.data?.ok ?? 0;
+        const fallidos = Array.isArray(response?.data?.fallidos) ? response.data.fallidos : [];
+        this.loadItemsEnBaja();
+        if (fallidos.length === 0) {
+          this.notificationService.showSuccessMessage(
+            response?.message || `${ok} equipo(s) transferido(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Transferencia masiva incompleta',
+            `${ok} transferido(s), ${fallidos.length} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al transferir en masa',
+          error?.message || 'No se pudieron transferir los equipos.'
+        );
+      },
+      complete: () => {
+        this.transfiriendoMasa = false;
+      }
+    });
+  }
+
+  abrirReactivacionMasiva(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'reactivar en masa', event)) {
+      return;
+    }
+    if (this.reactivandoMasa) {
+      return;
+    }
+    const items = (this.equiposFiltrados || []).filter((item) =>
+      (item.tipo === 'EQUIPO' && (item.id || item.estadoInfo?.hardwareId))
+      || (item.tipo === 'DISPOSITIVO' && item.mac)
+    );
+    if (!items.length) {
+      this.notificationService.showError(
+        'Sin items para reactivar',
+        'No hay equipos ni dispositivos en el listado filtrado.'
+      );
+      return;
+    }
+    const modalRef = this.modalService.open(ReactivarMasaModalComponent, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Reactivar en masa';
+    modalRef.componentInstance.tituloLista = 'Listado filtrado';
+    modalRef.componentInstance.items = items
+      .slice()
+      .sort((a, b) => (a.name || a.mac || '').localeCompare(b.name || b.mac || '', 'es', { sensitivity: 'base' }))
+      .map((item, index) => {
+        const tipo = item.tipo === 'DISPOSITIVO' ? 'DISPOSITIVO' : 'EQUIPO';
+        const id = item.id ?? item.estadoInfo?.hardwareId ?? item.hardwareId ?? null;
+        const mac = item.mac || item.MAC || null;
+        const name = item.name || item.NAME || item.mac || (id != null ? `ID ${id}` : `Item ${index + 1}`);
+        return {
+          key: `${tipo === 'EQUIPO' ? 'e' : 'd'}:${id ?? mac ?? 'x'}:${index}`,
+          tipo,
+          id,
+          mac,
+          name,
+          ipAddr: item.ipAddr || item.ip || item.IPADDR || ''
+        };
+      });
+
+    modalRef.result.then((data: { hardwareIds?: number[]; macs?: string[] }) => {
+      if (data?.hardwareIds?.length || data?.macs?.length) {
+        this.procesarReactivacionMasiva(data);
+      }
+    }).catch(() => {});
+  }
+
+  private procesarReactivacionMasiva(data: { hardwareIds?: number[]; macs?: string[] }): void {
+    this.reactivandoMasa = true;
+    const usuario = this.authService.getUsuarioParaAuditoria();
+    const llamadas = [];
+    if (data.hardwareIds?.length) {
+      llamadas.push(this.estadoEquipoService.reactivarEquiposEnMasa({
+        hardwareIds: data.hardwareIds,
+        observaciones: '',
+        usuario
+      }));
+    }
+    if (data.macs?.length) {
+      llamadas.push(this.estadoDispositivoService.reactivarDispositivosEnMasa({
+        macs: data.macs,
+        observaciones: '',
+        usuario
+      }));
+    }
+    if (!llamadas.length) {
+      this.reactivandoMasa = false;
+      return;
+    }
+    forkJoin(llamadas).subscribe({
+      next: (responses) => {
+        let ok = 0;
+        let fallidos = 0;
+        for (const response of responses as any[]) {
+          ok += response?.data?.ok ?? 0;
+          fallidos += Array.isArray(response?.data?.fallidos) ? response.data.fallidos.length : 0;
+        }
+        this.loadItemsEnBaja();
+        if (fallidos === 0) {
+          this.notificationService.showSuccessMessage(
+            `${ok} item(s) reactivado(s) exitosamente.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Reactivación masiva incompleta',
+            `${ok} reactivado(s), ${fallidos} con error.`
+          );
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al reactivar en masa',
+          error?.message || 'No se pudieron reactivar los items.'
+        );
+      },
+      complete: () => {
+        this.reactivandoMasa = false;
+      }
+    });
+  }
+
+  transferirEquipo(item: any, event?: Event): void {
+    event?.stopPropagation();
     // Solo permitir transferir equipos (no dispositivos)
     if (item.tipo !== 'EQUIPO') {
       this.notificationService.showError(
@@ -701,11 +903,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
       );
       return;
     }
-    if (!this.canTransferOrReactivate()) {
-      this.notificationService.showError(
-        'Operación no permitida',
-        'No tiene permiso para transferir equipos desde el cementerio.'
-      );
+    if (this.permissionsService.denyUnless(this.canTransferOrReactivate(), 'transferir equipos desde el cementerio', event)) {
       return;
     }
 
@@ -727,6 +925,9 @@ export class CementerioComponent implements OnInit, OnDestroy {
 
   imprimirFormularioBaja(item: any, event?: Event): void {
     event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageAssets(), 'imprimir el formulario de baja', event)) {
+      return;
+    }
 
     if (item.tipo !== 'EQUIPO') {
       return;
@@ -818,9 +1019,12 @@ export class CementerioComponent implements OnInit, OnDestroy {
     
     // Información del filtro aplicado
     doc.setFontSize(10);
-    let filtroTexto = 'Todos los items';
+    const etiquetaFiltro = this.filtroTipo === 'todos'
+      ? 'Todos los items'
+      : (this.filtroTipo === 'equipos' ? 'Filtro: Equipos' : 'Filtro: Dispositivos');
+    let filtroTexto = etiquetaFiltro;
     if (this.searchTerm.trim()) {
-      filtroTexto = `Búsqueda: ${this.searchTerm.trim()}`;
+      filtroTexto = `${etiquetaFiltro} · Búsqueda: ${this.searchTerm.trim()}`;
     }
     doc.text(filtroTexto, 14, 28);
     

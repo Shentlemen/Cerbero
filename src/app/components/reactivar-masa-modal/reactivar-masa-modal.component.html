@@ -1,0 +1,97 @@
+<div class="modal-body transferir-modal-body transferir-masa-body">
+  <div class="transferir-box-header">
+    <h4 class="modal-title d-flex align-items-center gap-2 mb-0">
+      <i class="fas fa-undo text-dark"></i>
+      {{ titulo }}
+    </h4>
+    <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+  </div>
+
+  <p class="text-muted small mb-3">
+    Los items vuelven a la lista de activos y salen de este almacén. Seleccioná el lote a reactivar.
+  </p>
+
+  <div class="transferir-masa-grid">
+    <div class="transferir-masa-pane">
+      <div class="transferir-masa-pane-header">
+        <strong>{{ tituloLista }}</strong>
+        <span class="text-muted small">{{ itemsFiltrados.length }} de {{ items.length }}</span>
+        <button
+          type="button"
+          class="btn btn-sm transferir-masa-select-all"
+          (click)="seleccionarTodoFiltrado()"
+          [disabled]="itemsFiltrados.length === 0">
+          {{ todosFiltradosSeleccionados ? 'Quitar visibles' : 'Seleccionar todo' }}
+        </button>
+      </div>
+      <input
+        type="text"
+        class="form-control form-control-sm mb-2"
+        [(ngModel)]="busqueda"
+        [ngModelOptions]="{standalone: true}"
+        placeholder="Buscar por nombre, IP o MAC"
+        autocomplete="off">
+      @if (itemsFiltrados.length > 0) {
+        <ul class="transferir-masa-list">
+          @for (item of itemsFiltrados; track item.key) {
+            <li
+              class="transferir-masa-row"
+              [class.is-selected]="isSelected(item)"
+              (click)="toggleItem(item, !isSelected(item))">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                [checked]="isSelected(item)"
+                (click)="$event.stopPropagation()"
+                (change)="onCheckboxChange(item, $event)">
+              <span class="transferir-masa-name">{{ etiquetaItem(item) }}</span>
+              <span class="transferir-masa-meta">{{ metaItem(item) }}</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="text-muted small mb-0 py-3 text-center">No hay items que coincidan con la búsqueda.</p>
+      }
+    </div>
+
+    <div class="transferir-masa-pane">
+      <div class="transferir-masa-pane-header">
+        <strong>Seleccionados</strong>
+        <span class="text-muted small">{{ seleccionados.length }}</span>
+      </div>
+      @if (seleccionados.length > 0) {
+        <ul class="transferir-masa-list">
+          @for (item of seleccionados; track item.key) {
+            <li class="transferir-masa-row is-picked">
+              <span class="transferir-masa-name">{{ etiquetaItem(item) }}</span>
+              <button
+                type="button"
+                class="btn btn-sm btn-link transferir-masa-remove"
+                (click)="quitarSeleccionado(item)"
+                title="Quitar de la lista">
+                <i class="fas fa-times"></i>
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="text-muted small mb-0 py-3 text-center">Marcá los items de la izquierda o usá Seleccionar todo.</p>
+      }
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button type="button" class="btn btn-secondary" (click)="activeModal.dismiss()">
+      <i class="fas fa-times me-1"></i>
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn-transferir"
+      [disabled]="!puedeEnviar()"
+      (click)="confirmar()">
+      <i class="fas fa-undo me-1"></i>
+      Reactivar{{ seleccionados.length ? ' (' + seleccionados.length + ')' : '' }}
+    </button>
+  </div>
+</div>

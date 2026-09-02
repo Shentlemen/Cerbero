@@ -269,6 +269,10 @@ export class InternosOseComponent implements OnInit, OnDestroy {
     return this.permissionsService.canManageInternosOse();
   }
 
+  canDeleteInternos(): boolean {
+    return this.permissionsService.canDeleteInternosOse();
+  }
+
   loadInternos(): void {
     this.loading = true;
     this.error = null;
@@ -402,7 +406,8 @@ export class InternosOseComponent implements OnInit, OnDestroy {
   }
 
   abrirModal(modal: unknown, interno?: InternoOseDTO): void {
-    if (!this.canManageInternos()) {
+    const accion = interno ? 'editar internos' : 'crear internos';
+    if (this.permissionsService.denyUnless(this.canManageInternos(), accion)) {
       return;
     }
     if (interno) {
@@ -490,7 +495,7 @@ export class InternosOseComponent implements OnInit, OnDestroy {
   }
 
   eliminarInterno(interno: InternoOseDTO): void {
-    if (!this.canManageInternos()) {
+    if (this.permissionsService.denyUnless(this.canDeleteInternos(), 'eliminar este interno')) {
       return;
     }
     this.internoToDelete = interno;

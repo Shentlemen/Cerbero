@@ -101,16 +101,44 @@
             </span>
             <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
           </p>
-          <button
-            type="button"
-            class="btn btn-primary btn-sm print-btn"
-            id="tour-cementerio-print"
-            (click)="exportarPDF()"
-            title="Exportar lista filtrada a PDF"
-            [disabled]="loading || equiposFiltrados.length === 0">
-            <i class="fas fa-file-pdf"></i>
-            Imprimir
-          </button>
+          <div class="list-toolbar-actions">
+            <button
+              type="button"
+              class="btn bulk-transfer-btn"
+              id="tour-cementerio-bulk-transfer"
+              [class.action-locked]="!canTransferOrReactivate()"
+              (click)="abrirTransferenciaMasiva($event)"
+              [disabled]="canTransferOrReactivate() && (loading || equiposFiltradosParaTransferir.length === 0 || transfiriendoMasa)"
+              [attr.title]="canTransferOrReactivate() ? 'Transferir varios equipos a otro almacén' : 'Sin permiso para transferir'"
+              [attr.aria-disabled]="!canTransferOrReactivate()"
+              data-help="📦 Pegá varios números (14506 14530), usá Seleccionar todo y elegí el destino.">
+              <i class="fas" [ngClass]="transfiriendoMasa ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+              Transferir en masa
+            </button>
+            <button
+              type="button"
+              class="btn bulk-reactivar-btn"
+              id="tour-cementerio-bulk-reactivar"
+              [class.action-locked]="!canTransferOrReactivate()"
+              (click)="abrirReactivacionMasiva($event)"
+              [disabled]="canTransferOrReactivate() && (loading || equiposFiltrados.length === 0 || reactivandoMasa)"
+              [attr.title]="canTransferOrReactivate() ? 'Reactivar varios equipos o dispositivos' : 'Sin permiso para reactivar'"
+              [attr.aria-disabled]="!canTransferOrReactivate()"
+              data-help="🔄 Devolvé varios items a inventario activo. Seleccionar todo marca lo filtrado.">
+              <i class="fas" [ngClass]="reactivandoMasa ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+              Reactivar en masa
+            </button>
+            <button
+              type="button"
+              class="btn print-btn"
+              id="tour-cementerio-print"
+              (click)="exportarPDF()"
+              title="Exportar la vista filtrada a PDF"
+              [disabled]="loading || equiposFiltrados.length === 0">
+              <i class="fas fa-file-pdf"></i>
+              Imprimir
+            </button>
+          </div>
         </div>
 
         <div id="tour-cementerio-table" class="table-responsive" *ngIf="collectionSize > 0">
@@ -167,7 +195,7 @@
                     <span>Observaciones</span>
                   </div>
                 </th>
-                <th *ngIf="canManageAssets()">
+                <th>
                   <div class="th-content">
                     <span>Acciones</span>
                   </div>
@@ -256,35 +284,40 @@
                 </div>
               </div>
             </td>
-            <td *ngIf="canManageAssets()">
+            <td>
               <div class="action-buttons">
                 <button
                   *ngIf="item.tipo === 'EQUIPO'"
                   type="button"
                   class="btn btn-sm imprimir-baja-btn"
+                  [class.action-locked]="!canManageAssets()"
                   (click)="imprimirFormularioBaja(item, $event)"
-                  title="Imprimir formulario de baja F-890">
+                  [attr.title]="canManageAssets() ? 'Imprimir formulario de baja F-890' : 'Sin permiso para esta acción'"
+                  [attr.aria-disabled]="!canManageAssets()">
                   <i class="fas fa-print"></i>
                   Imprimir baja
                 </button>
                 <button 
-                  *ngIf="item.tipo === 'EQUIPO' && canTransferOrReactivate()"
+                  *ngIf="item.tipo === 'EQUIPO'"
                   type="button"
                   class="btn btn-sm transferir-btn" 
-                  (click)="transferirEquipo(item); $event.stopPropagation()"
-                  [disabled]="transferiendoItemId === item.id"
-                  title="Transferir este equipo a otro almacén"
-                  data-help="🔄 Permite transferir el equipo a cualquier almacén (laboratorio o almacén regular)">
+                  [class.action-locked]="!canTransferOrReactivate()"
+                  (click)="transferirEquipo(item, $event)"
+                  [disabled]="canTransferOrReactivate() && transferiendoItemId === item.id"
+                  [attr.title]="canTransferOrReactivate() ? 'Transferir este equipo a otro almacén' : 'Sin permiso para transferir'"
+                  [attr.aria-disabled]="!canTransferOrReactivate()"
+                  data-help="🔄 Transferí el equipo a laboratorio, oficina laboratorio u otro almacén.">
                   <i class="fas" [ngClass]="transferiendoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
                   {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
                 </button>
                 <button 
-                  *ngIf="canTransferOrReactivate()"
                   type="button"
                   class="btn btn-sm reactivar-btn" 
-                  (click)="reactivarItem(item); $event.stopPropagation()"
-                  [disabled]="reactivatingItemId === (item.id || item.mac)"
-                  [title]="'Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')"
+                  [class.action-locked]="!canTransferOrReactivate()"
+                  (click)="reactivarItem(item, $event)"
+                  [disabled]="canTransferOrReactivate() && reactivatingItemId === (item.id || item.mac)"
+                  [attr.title]="canTransferOrReactivate() ? ('Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')) : 'Sin permiso para reactivar'"
+                  [attr.aria-disabled]="!canTransferOrReactivate()"
                   [attr.data-help]="'🔄 Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo') + ' y devolverlo a la lista activa'">
                   <i class="fas" [ngClass]="reactivatingItemId === (item.id || item.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
                   {{ reactivatingItemId === (item.id || item.mac) ? 'Reactivando...' : 'Reactivar' }}

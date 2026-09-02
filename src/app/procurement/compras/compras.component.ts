@@ -482,6 +482,10 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   abrirModal(modal: any, compra?: CompraConTipo): void {
+    const accion = compra ? 'editar compras' : 'crear compras';
+    if (this.permissionsService.denyUnless(this.canManagePurchases(), accion)) {
+      return;
+    }
     this.compraModalValidacion = null;
     this.activeTab = '1';
     if (compra) {
@@ -905,6 +909,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   eliminarCompra(id: number): void {
+    if (this.permissionsService.denyUnless(this.canDeletePurchases(), 'eliminar esta compra')) {
+      return;
+    }
     this.compraToDelete = id;
     this.showConfirmDialog = true;
   }
@@ -1053,6 +1060,10 @@ export class ComprasComponent implements OnInit, OnDestroy {
 
   canManagePurchases(): boolean {
     return this.permissionsService.canManagePurchases();
+  }
+
+  canDeletePurchases(): boolean {
+    return this.permissionsService.canDeletePurchases();
   }
 
   getMonedaCount(moneda: string): number {

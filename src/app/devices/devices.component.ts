@@ -78,6 +78,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
    */
   private _canManageDevicesCache?: boolean;
   private _canManageDeviceStatesCache?: boolean;
+  private _canDeleteDevicesCache?: boolean;
   errorMessage: string | null = null;
   loading: boolean = true;
   
@@ -114,6 +115,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
   // Agregar propiedades
   deletingDeviceMac: string | null = null;
   transferiendoDeviceMac: string | null = null;
+  enviandoPreparacionMac: string | null = null;
   showConfirmDialog: boolean = false;
   deviceToDelete: any = null;
 
@@ -145,6 +147,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
     this.viewAsSub = this.permissionsService.viewAs$.subscribe(() => {
       this._canManageDevicesCache = undefined;
       this._canManageDeviceStatesCache = undefined;
+      this._canDeleteDevicesCache = undefined;
     });
 
     this.cargarDispositivos();
@@ -559,7 +562,11 @@ export class DevicesComponent implements OnInit, OnDestroy {
     }
   }
 
-  eliminarDevice(device: any): void {
+  eliminarDevice(device: any, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canDeleteDevices(), 'eliminar este dispositivo', event)) {
+      return;
+    }
     this.deviceToDelete = device;
     this.showConfirmDialog = true;
   }
@@ -572,9 +579,47 @@ export class DevicesComponent implements OnInit, OnDestroy {
     }
   }
 
+  enviarAPreparacion(device: any, event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canManageDeviceStates(), 'enviar a Oficina Laboratorio', event)) {
+      return;
+    }
+    if (!device?.mac) {
+      return;
+    }
+    this.enviandoPreparacionMac = device.mac;
+    this.estadoDispositivoService.enviarAOficinaLaboratorio(
+      device.mac,
+      this.authService.getUsuarioParaAuditoria()
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.cargarDispositivos();
+          this.notificationService.showSuccessMessage(
+            `"${device.name || device.mac}" enviado a Oficina Laboratorio.`
+          );
+        } else {
+          throw new Error(response.message || 'Error al enviar a preparación');
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          'Error al enviar a preparación',
+          `No se pudo enviar el dispositivo: ${error.message || 'Error desconocido'}`
+        );
+      },
+      complete: () => {
+        this.enviandoPreparacionMac = null;
+      }
+    });
+  }
+
   transferirDispositivo(device: any, event?: Event): void {
     if (event) {
       event.stopPropagation();
+    }
+    if (this.permissionsService.denyUnless(this.canManageDeviceStates(), 'transferir este dispositivo', event)) {
+      return;
     }
 
     const modalRef = this.modalService.open(TransferirEquipoModalComponent, {
@@ -671,7 +716,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
   // fila y por ciclo de change detection; el resultado no cambia en runtime).
   canManageDevices(): boolean {
     if (this._canManageDevicesCache === undefined) {
-      this._canManageDevicesCache = this.permissionsService.canManageAssets();
+      this._canManageDevicesCache = this.permissionsService.can('dispositivos', 'editar');
     }
     return this._canManageDevicesCache;
   }
@@ -679,14 +724,21 @@ export class DevicesComponent implements OnInit, OnDestroy {
   canManageDeviceStates(): boolean {
     if (this._canManageDeviceStatesCache === undefined) {
       this._canManageDeviceStatesCache =
-        this.permissionsService.isGM() || this.permissionsService.isAdmin();
+        this.permissionsService.canTransferOrReactivateInCemeteryOrLabWarehouse();
     }
     return this._canManageDeviceStatesCache;
   }
 
-  /** Columnas actuales de la tabla (nombre, IP, MAC, tipo, descripción [, acciones]). */
+  canDeleteDevices(): boolean {
+    if (this._canDeleteDevicesCache === undefined) {
+      this._canDeleteDevicesCache = this.permissionsService.canDeleteDevices();
+    }
+    return this._canDeleteDevicesCache;
+  }
+
+  /** Columnas actuales de la tabla (nombre, IP, MAC, tipo, descripción, acciones). */
   get columnasTablaDispositivos(): number {
-    return this.canManageDevices() ? 6 : 5;
+    return 6;
   }
 
   // Métodos para los modales

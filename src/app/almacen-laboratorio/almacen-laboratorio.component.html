@@ -1,4 +1,4 @@
-<div class="generic-container almacen-lab-page">
+<div class="generic-container almacen-lab-page" [class.oficina-lab-page]="esModoOficina">
   <!-- Contenedor de notificaciones -->
   <app-notification-container></app-notification-container>
   
@@ -6,9 +6,9 @@
     <div class="title-wrapper">
       <div class="title-row">
         <h1 id="tour-almacen-lab-title">
-          <i class="fas fa-archive"></i> 
-          Almacén Laboratorio
-          <span class="subtitle">Equipos y dispositivos en almacén</span>
+          <i class="fas" [ngClass]="iconoPagina"></i> 
+          {{ tituloPagina }}
+          <span class="subtitle">{{ subtituloPagina }}</span>
         </h1>
       </div>
     </div>
@@ -60,6 +60,19 @@
         </span>
         <span class="cerbero-folder-tab-label">Dispositivos</span>
       </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="filtroTipo === 'stock'"
+        [attr.aria-selected]="filtroTipo === 'stock'"
+        [style.--tab-accent]="'#d97706'"
+        (click)="filtrarPorTipo('stock')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true">
+          <i class="fas fa-boxes"></i>
+        </span>
+        <span class="cerbero-folder-tab-label">Stock</span>
+      </button>
     </div>
 
   <div class="content-section cerbero-folder-panel">
@@ -80,7 +93,7 @@
               class="form-control search-input"
               [(ngModel)]="searchTerm"
               (ngModelChange)="onSearchTermChange()"
-              placeholder="Buscar por nombre o MAC..."
+              placeholder="{{ mostrandoStock ? 'Buscar por descripción...' : 'Buscar por nombre o MAC...' }}"
               autocomplete="off"
               data-help="🔍 Busca equipos específicos en el almacén">
             <button
@@ -94,26 +107,84 @@
           </div>
           <p class="list-summary mb-0" *ngIf="getTotalItems() > 0">
             <span *ngIf="collectionSize === getTotalItems()">
-              {{ getTotalItems() }} registros en almacén
+              {{ getTotalItems() }} {{ mostrandoStock ? 'ítems de stock' : 'registros en almacén' }}
             </span>
             <span *ngIf="collectionSize !== getTotalItems()">
               {{ collectionSize }} de {{ getTotalItems() }} registros
             </span>
             <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
           </p>
-          <button
-            type="button"
-            class="btn btn-danger btn-sm print-btn"
-            id="tour-almacen-lab-print"
-            (click)="exportarPDF()"
-            title="Exportar lista filtrada a PDF"
-            [disabled]="loading || equiposFiltrados.length === 0">
-            <i class="fas fa-file-pdf"></i>
-            Imprimir
-          </button>
+          <div class="list-toolbar-actions">
+            <button
+              *ngIf="!esModoOficina && !mostrandoStock"
+              type="button"
+              class="btn registrar-pendiente-btn"
+              id="tour-almacen-lab-registrar"
+              [class.action-locked]="!canRegistrarPendiente()"
+              (click)="abrirRegistroPendiente($event)"
+              [disabled]="canRegistrarPendiente() && (loading || registrandoPendiente)"
+              [attr.title]="canRegistrarPendiente() ? 'Registrar una PC que todavía no está en OCS' : 'Sin permiso para registrar'"
+              [attr.aria-disabled]="!canRegistrarPendiente()"
+              data-help="🖥️ Anotá el nombre de una PC del depósito que todavía no inventarió OCS.">
+              <i class="fas" [ngClass]="registrandoPendiente ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+              Registrar equipo
+            </button>
+            <button
+              *ngIf="mostrandoStock"
+              type="button"
+              class="btn registrar-stock-btn"
+              id="tour-almacen-lab-stock"
+              [class.action-locked]="!canRegistrarStock()"
+              (click)="abrirRegistroStock($event)"
+              [disabled]="canRegistrarStock() && (loading || registrandoStock || almacenDestinoId == null)"
+              [attr.title]="canRegistrarStock() ? 'Registrar insumos (RAM, placas, etc.)' : 'Sin permiso para registrar stock'"
+              [attr.aria-disabled]="!canRegistrarStock()"
+              data-help="📦 Anotá descripción y cantidad de insumos del depósito.">
+              <i class="fas" [ngClass]="registrandoStock ? 'fa-spinner fa-spin' : 'fa-boxes'"></i>
+              Registrar stock
+            </button>
+            <button
+              *ngIf="!mostrandoStock"
+              type="button"
+              class="btn bulk-transfer-btn"
+              id="tour-almacen-lab-bulk-transfer"
+              [class.action-locked]="!canTransferOrReactivate()"
+              (click)="abrirTransferenciaMasiva($event)"
+              [disabled]="canTransferOrReactivate() && (loading || equiposFiltradosParaTransferir.length === 0 || transfiriendoMasa)"
+              [attr.title]="canTransferOrReactivate() ? 'Transferir varios equipos a otro almacén' : 'Sin permiso para transferir'"
+              [attr.aria-disabled]="!canTransferOrReactivate()"
+              data-help="📦 Pegá varios números (14506 14530), usá Seleccionar todo y elegí el destino.">
+              <i class="fas" [ngClass]="transfiriendoMasa ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+              Transferir en masa
+            </button>
+            <button
+              *ngIf="!mostrandoStock"
+              type="button"
+              class="btn bulk-reactivar-btn"
+              id="tour-almacen-lab-bulk-reactivar"
+              [class.action-locked]="!canTransferOrReactivate()"
+              (click)="abrirReactivacionMasiva($event)"
+              [disabled]="canTransferOrReactivate() && (loading || equiposFiltrados.length === 0 || reactivandoMasa)"
+              [attr.title]="canTransferOrReactivate() ? 'Reactivar varios equipos o dispositivos' : 'Sin permiso para reactivar'"
+              [attr.aria-disabled]="!canTransferOrReactivate()"
+              data-help="🔄 Devolvé varios items a inventario activo. Seleccionar todo marca lo filtrado.">
+              <i class="fas" [ngClass]="reactivandoMasa ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+              Reactivar en masa
+            </button>
+            <button
+              type="button"
+              class="btn print-btn"
+              id="tour-almacen-lab-print"
+              (click)="exportarPDF()"
+              title="Exportar la vista filtrada a PDF"
+              [disabled]="loading || !hayDatosParaImprimir()">
+              <i class="fas fa-file-pdf"></i>
+              Imprimir
+            </button>
+          </div>
         </div>
 
-        <div id="tour-almacen-lab-table" class="table-responsive" *ngIf="collectionSize > 0">
+        <div id="tour-almacen-lab-table" class="table-responsive" *ngIf="!mostrandoStock && collectionSize > 0">
           <table class="generic-table cerbero-list-table">
             <thead>
               <tr>
@@ -177,7 +248,7 @@
                     <span>Observaciones</span>
                   </div>
                 </th>
-                <th *ngIf="canManageAssets()">
+                <th>
                   <div class="th-content">
                     <span>Acciones</span>
                   </div>
@@ -201,7 +272,10 @@
               <div class="item-name">
                 <i class="fas equipment-icon" [ngClass]="getItemIcon(item)"></i>
                 <div class="item-info">
-                  <span class="name">{{ item.name || item.mac }}</span>
+                  <span class="name">
+                    {{ item.name || item.mac }}
+                    <span class="pendiente-ocs-badge" *ngIf="esPendienteOcs(item)">Pendiente OCS</span>
+                  </span>
                   <small class="ip" *ngIf="item.ipAddr || item.ip">{{ item.ipAddr || item.ip }}</small>
                 </div>
               </div>
@@ -210,13 +284,19 @@
               <div class="item-details">
                 <!-- Para equipos -->
                 <div *ngIf="item.tipo === 'EQUIPO'">
-                  <span class="type-badge" [ngClass]="getTypeBadgeClass(item.biosType)">
-                    {{ item.biosType || 'Desconocido' }}
-                  </span>
-                  <div class="os-badge" [ngClass]="{'windows': item.osName?.includes('Windows'), 'linux': item.osName?.includes('Linux')}">
-                    <i class="fab" [ngClass]="{'fa-windows': item.osName?.includes('Windows'), 'fa-linux': item.osName?.includes('Linux')}"></i>
-                    {{ item.osName || 'Desconocido' }}
-                  </div>
+                  <ng-container *ngIf="esPendienteOcs(item); else equipoInventariado">
+                    <span class="type-badge pendiente-ocs">Pendiente OCS</span>
+                    <small class="description">Sin datos de inventario todavía</small>
+                  </ng-container>
+                  <ng-template #equipoInventariado>
+                    <span class="type-badge" [ngClass]="getTypeBadgeClass(item.biosType)">
+                      {{ item.biosType || 'Desconocido' }}
+                    </span>
+                    <div class="os-badge" [ngClass]="{'windows': item.osName?.includes('Windows'), 'linux': item.osName?.includes('Linux')}">
+                      <i class="fab" [ngClass]="{'fa-windows': item.osName?.includes('Windows'), 'fa-linux': item.osName?.includes('Linux')}"></i>
+                      {{ item.osName || 'Desconocido' }}
+                    </div>
+                  </ng-template>
                 </div>
                 <!-- Para dispositivos -->
                 <div *ngIf="item.tipo === 'DISPOSITIVO'">
@@ -269,34 +349,166 @@
                 </div>
               </div>
             </td>
-            <td *ngIf="canManageAssets()">
+            <td>
               <div class="action-buttons">
                 <button 
-                  *ngIf="item.tipo === 'EQUIPO' && canTransferOrReactivate()"
+                  *ngIf="item.tipo === 'EQUIPO'"
                   type="button"
                   class="btn btn-sm transferir-btn" 
-                  (click)="transferirEquipo(item); $event.stopPropagation()"
-                  [disabled]="transferiendoItemId === item.id"
-                  title="Transferir este equipo a otro almacén"
-                  data-help="🔄 Permite transferir el equipo a cualquier almacén (cementerio o almacén regular)">
+                  [class.action-locked]="!canTransferOrReactivate()"
+                  (click)="transferirEquipo(item, $event)"
+                  [disabled]="canTransferOrReactivate() && transferiendoItemId === item.id"
+                  [attr.title]="canTransferOrReactivate() ? 'Transferir este equipo a otro almacén' : 'Sin permiso para transferir'"
+                  [attr.aria-disabled]="!canTransferOrReactivate()"
+                  data-help="🔄 Transferí el equipo a cementerio, oficina laboratorio u otro almacén.">
                   <i class="fas" [ngClass]="transferiendoItemId === item.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
                   {{ transferiendoItemId === item.id ? 'Transferiendo...' : 'Transferir' }}
                 </button>
                 <button 
-                  *ngIf="canTransferOrReactivate()"
                   type="button"
                   class="btn btn-sm reactivar-btn" 
-                  (click)="reactivarItem(item); $event.stopPropagation()"
-                  [disabled]="reactivatingItemId === (item.id || item.mac)"
-                  [title]="'Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')"
+                  [class.action-locked]="!canTransferOrReactivate()"
+                  (click)="reactivarItem(item, $event)"
+                  [disabled]="canTransferOrReactivate() && reactivatingItemId === (item.id || item.mac)"
+                  [attr.title]="canTransferOrReactivate() ? ('Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo')) : 'Sin permiso para reactivar'"
+                  [attr.aria-disabled]="!canTransferOrReactivate()"
                   [attr.data-help]="'🔄 Reactivar ' + (item.tipo === 'EQUIPO' ? 'equipo' : 'dispositivo') + ' y devolverlo a la lista activa'">
                   <i class="fas" [ngClass]="reactivatingItemId === (item.id || item.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
                   {{ reactivatingItemId === (item.id || item.mac) ? 'Reactivando...' : 'Reactivar' }}
+                </button>
+                <button
+                  *ngIf="item.tipo === 'EQUIPO' && esPendienteOcs(item)"
+                  type="button"
+                  class="btn btn-sm eliminar-pendiente-btn"
+                  [class.action-locked]="!canEliminarPendiente()"
+                  (click)="pedirEliminarPendiente(item, $event)"
+                  [disabled]="canEliminarPendiente() && eliminandoPendienteId === item.id"
+                  [attr.title]="canEliminarPendiente() ? 'Eliminar este equipo pendiente de OCS' : 'Sin permiso para eliminar pendientes'"
+                  [attr.aria-disabled]="!canEliminarPendiente()"
+                  data-help="🗑️ Borra una PC registrada a mano que todavía no detectó OCS (por ejemplo un nombre mal escrito).">
+                  <i class="fas" [ngClass]="eliminandoPendienteId === item.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                  {{ eliminandoPendienteId === item.id ? 'Eliminando...' : 'Eliminar' }}
                 </button>
               </div>
             </td>
           </tr>
         </tbody>
+          </table>
+        </div>
+
+        <div class="table-responsive" *ngIf="mostrandoStock && collectionSize > 0">
+          <table class="generic-table cerbero-list-table">
+            <thead>
+              <tr>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('nombre')"
+                  (click)="sortData('nombre')"
+                  title="Ordenar por descripción">
+                  <div class="th-content">
+                    <span>Descripción</span>
+                    <i class="fas" [ngClass]="getSortIcon('nombre')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('cantidad')"
+                  (click)="sortData('cantidad')"
+                  title="Ordenar por cantidad">
+                  <div class="th-content">
+                    <span>Cantidad</span>
+                    <i class="fas" [ngClass]="getSortIcon('cantidad')"></i>
+                  </div>
+                </th>
+                <th
+                  class="sortable-header"
+                  [class.active]="isSortActive('fecha')"
+                  (click)="sortData('fecha')"
+                  title="Ordenar por fecha">
+                  <div class="th-content">
+                    <span>Fecha</span>
+                    <i class="fas" [ngClass]="getSortIcon('fecha')"></i>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <span>Acciones</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of pagedStock" class="generic-row item-row">
+                <td>
+                  <div class="item-name">
+                    <i class="fas fa-box equipment-icon"></i>
+                    <div class="item-info">
+                      <span class="name">{{ etiquetaStock(item) }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="stock-cantidad-stepper">
+                    <button
+                      type="button"
+                      class="stock-cantidad-btn"
+                      [class.action-locked]="!canRegistrarStock()"
+                      (click)="ajustarCantidadStock(item, -1, $event)"
+                      [disabled]="canRegistrarStock() && (actualizandoCantidadId === item.id || (item.cantidad || 0) <= 1)"
+                      [attr.title]="canRegistrarStock() ? 'Bajar cantidad' : 'Sin permiso para ajustar stock'"
+                      [attr.aria-label]="'Bajar cantidad de ' + etiquetaStock(item)"
+                      [attr.aria-disabled]="!canRegistrarStock()">
+                      <i class="fas fa-minus"></i>
+                    </button>
+                    <input
+                      type="number"
+                      class="stock-cantidad-input"
+                      [class.action-locked]="!canRegistrarStock()"
+                      min="1"
+                      step="1"
+                      [ngModel]="item.cantidad"
+                      [ngModelOptions]="{standalone: true}"
+                      [disabled]="canRegistrarStock() && actualizandoCantidadId === item.id"
+                      (click)="$event.stopPropagation()"
+                      (change)="onCantidadStockInput(item, $any($event.target), $event)"
+                      [attr.title]="canRegistrarStock() ? 'Escribí la cantidad y salí del campo para guardar' : 'Sin permiso para ajustar stock'"
+                      [attr.aria-label]="'Cantidad de ' + etiquetaStock(item)">
+                    <button
+                      type="button"
+                      class="stock-cantidad-btn"
+                      [class.action-locked]="!canRegistrarStock()"
+                      (click)="ajustarCantidadStock(item, 1, $event)"
+                      [disabled]="canRegistrarStock() && actualizandoCantidadId === item.id"
+                      [attr.title]="canRegistrarStock() ? 'Subir cantidad' : 'Sin permiso para ajustar stock'"
+                      [attr.aria-label]="'Subir cantidad de ' + etiquetaStock(item)"
+                      [attr.aria-disabled]="!canRegistrarStock()">
+                      <i class="fas" [ngClass]="actualizandoCantidadId === item.id ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <div class="fecha-almacen">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>{{ formatFecha(item.fechaRegistro) }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      [class.action-locked]="!canEliminarStock()"
+                      (click)="pedirEliminarStock(item, $event)"
+                      [disabled]="canEliminarStock() && eliminandoStockId === item.id"
+                      [attr.title]="canEliminarStock() ? 'Eliminar este ítem de stock' : 'Sin permiso para eliminar'"
+                      [attr.aria-disabled]="!canEliminarStock()">
+                      <i class="fas" [ngClass]="eliminandoStockId === item.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
 
@@ -314,9 +526,15 @@
         </div>
 
         <div *ngIf="getTotalItems() === 0" class="empty-state">
-          <i class="fas fa-smile"></i>
-          <h3>¡No hay equipos en el almacén!</h3>
-          <p>Todos los equipos están activos o en el cementerio.</p>
+          <i class="fas" [ngClass]="mostrandoStock ? 'fa-boxes' : (esModoOficina ? 'fa-tools' : 'fa-smile')"></i>
+          <h3>{{ mostrandoStock
+            ? 'No hay stock registrado'
+            : (esModoOficina ? 'No hay equipos en preparación' : '¡No hay equipos en el almacén!') }}</h3>
+          <p>{{ mostrandoStock
+            ? 'Registrá insumos con descripción y cantidad (RAM, placas, discos, cables).'
+            : (esModoOficina
+              ? 'Mandá equipos desde Terminales, Dispositivos u otros almacenes con Transferir (destino Oficina laboratorio).'
+              : 'Mandá equipos desde Terminales o registrá una PC pendiente con su nombre.') }}</p>
         </div>
 
         <div *ngIf="getTotalItems() > 0 && collectionSize === 0" class="alert alert-info">
@@ -350,6 +568,56 @@
         [disabled]="reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac)">
         <i class="fas" [ngClass]="reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac) ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
         {{ reactivatingItemId === (itemToReactivar?.id || itemToReactivar?.mac) ? 'Reactivando...' : 'Reactivar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showEliminarPendienteDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-trash"></i>
+      Eliminar equipo pendiente
+    </div>
+    <div class="confirm-dialog-message">
+      <p>¿Eliminar <strong>{{ equipoAEliminarPendiente?.name }}</strong>?</p>
+      <p class="text-muted">Solo se puede borrar porque todavía no fue detectado por OCS. Después podés registrarlo de nuevo con el nombre correcto.</p>
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminarPendiente()" [disabled]="eliminandoPendienteId != null">
+        Cancelar
+      </button>
+      <button
+        class="confirm-dialog-button confirm"
+        (click)="confirmarEliminarPendiente()"
+        [disabled]="eliminandoPendienteId != null">
+        <i class="fas" [ngClass]="eliminandoPendienteId != null ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+        {{ eliminandoPendienteId != null ? 'Eliminando...' : 'Eliminar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showEliminarStockDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-trash"></i>
+      Eliminar stock
+    </div>
+    <div class="confirm-dialog-message">
+      <p>¿Eliminar <strong>{{ etiquetaStock(stockAEliminar) }}</strong> ({{ stockAEliminar?.cantidad }})?</p>
+      <p class="text-muted">Esta acción saca el ítem del stock del almacén.</p>
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button class="confirm-dialog-button cancel" (click)="cancelarEliminarStock()">
+        Cancelar
+      </button>
+      <button
+        class="confirm-dialog-button confirm"
+        (click)="confirmarEliminarStock()"
+        [disabled]="eliminandoStockId === stockAEliminar?.id">
+        <i class="fas" [ngClass]="eliminandoStockId === stockAEliminar?.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+        {{ eliminandoStockId === stockAEliminar?.id ? 'Eliminando...' : 'Eliminar' }}
       </button>
     </div>
   </div>

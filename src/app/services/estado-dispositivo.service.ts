@@ -62,6 +62,14 @@ export class EstadoDispositivoService {
     return this.http.post(`${this.apiUrl}/estado-dispositivos/reactivar/${mac}`, request);
   }
 
+  reactivarDispositivosEnMasa(requestData: {
+    macs: string[];
+    observaciones?: string;
+    usuario: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/estado-dispositivos/reactivar-masa`, requestData);
+  }
+
   // Eliminar dispositivo de OCS
   eliminarDispositivo(mac: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/estado-dispositivos/${mac}`);
@@ -75,6 +83,14 @@ export class EstadoDispositivoService {
   // Transferir dispositivo
   transferirDispositivo(mac: string, transferData: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/estado-dispositivos/${mac}/transferir`, transferData);
+  }
+
+  enviarAOficinaLaboratorio(mac: string, usuario: string): Observable<any> {
+    return this.transferirDispositivo(mac, {
+      tipoAlmacen: 'oficina_laboratorio',
+      observaciones: 'Enviado a Oficina Laboratorio para configuración',
+      usuario
+    });
   }
 
   // Obtener dispositivos por almacen_id

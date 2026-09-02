@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { BaseRestService } from './base-rest.service';
 import { NotificationService } from './notification.service';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
+import { ApiResponse } from '../interfaces/api-response.interface';
 import { StockAlmacenCreateWithItem } from '../interfaces/stock-almacen.interface';
 
 export interface StockAlmacen {
@@ -129,12 +130,16 @@ export class StockAlmacenService extends BaseRestService {
   }
 
   // ✅ ACTUALIZAR CANTIDAD DE STOCK
-  updateStockQuantity(id: number, cantidad: number): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/${id}/cantidad`, { cantidad }).pipe(
+  updateStockQuantity(id: number, cantidad: number, options?: { silent?: boolean }): Observable<void> {
+    return this.http.patch<ApiResponse<void>>(`${this.apiUrl}/${id}/cantidad`, { cantidad }).pipe(
+      map(response => this.handleSuccessResponse(response)),
       map(result => {
-        this.showSuccessMessage('Cantidad de stock actualizada exitosamente');
+        if (!options?.silent) {
+          this.showSuccessMessage('Cantidad de stock actualizada exitosamente');
+        }
         return result;
-      })
+      }),
+      catchError(error => this.handleError(error, 'Actualizar cantidad'))
     );
   }
 

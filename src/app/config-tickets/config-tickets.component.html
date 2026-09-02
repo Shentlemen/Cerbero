@@ -1,5 +1,4 @@
 <div class="generic-container config-tickets-page" *ngIf="canManage(); else noAccess">
-  <app-notification-container></app-notification-container>
 
   <div class="header-section">
     <div class="title-wrapper">
@@ -23,6 +22,7 @@
         type="button"
         role="tab"
         class="config-tickets-tab"
+        *ngIf="canManageAreas()"
         [class.config-tickets-tab--active]="tab === 'bandejas'"
         [attr.aria-selected]="tab === 'bandejas'"
         (click)="setTab('bandejas')">
@@ -103,7 +103,7 @@
     </div>
 
     <div class="config-tickets-panel" *ngIf="tab === 'bandejas'" role="tabpanel">
-      <app-bandejas-reclamos [embedded]="true"></app-bandejas-reclamos>
+      <app-areas-admin></app-areas-admin>
     </div>
   </div>
 </div>

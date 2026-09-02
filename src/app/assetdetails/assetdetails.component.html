@@ -287,16 +287,13 @@
               <button 
                 class="btn btn-sm location-action-btn" 
                 (click)="seleccionarUbicacion()" 
-                [disabled]="loading"
-                *ngIf="canManageAssetLocations()"
-                title="Asignar o actualizar la ubicación del equipo">
+                [disabled]="canManageAssetLocations() && loading"
+                [class.action-locked]="!canManageAssetLocations()"
+                [attr.title]="canManageAssetLocations() ? 'Asignar o actualizar la ubicación del equipo' : 'Sin permiso para cambiar la ubicación'"
+                [attr.aria-disabled]="!canManageAssetLocations()">
                 <i class="fas fa-map-marker-alt me-2"></i>
                 {{ ubicacionActual ? 'Actualizar Ubicación' : 'Asignar Ubicación' }}
               </button>
-              <div *ngIf="!canManageAssetLocations()" class="permission-info">
-                <i class="fas fa-eye me-1"></i>
-                Solo visualización
-              </div>
             </div>
             <div class="card-body">
               <div *ngIf="loading" class="text-center p-4">
@@ -362,7 +359,7 @@
                           <th>Tipo</th>
                           <th>De</th>
                           <th>A</th>
-                          <th *ngIf="canDeleteAssetLocationHistory()">Acciones</th>
+                          <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -373,13 +370,15 @@
                           <td>{{ item.tipoCambio }}</td>
                           <td>{{ item.ubicacionAnteriorNombre || 'N/A' }}</td>
                           <td>{{ item.ubicacionNuevaNombre || 'N/A' }}</td>
-                          <td *ngIf="canDeleteAssetLocationHistory()">
+                          <td>
                             <button
                               type="button"
                               class="btn btn-sm btn-outline-danger"
-                              [disabled]="deletingHistorialId === item.id"
+                              [class.action-locked]="!canDeleteAssetLocationHistory()"
+                              [disabled]="canDeleteAssetLocationHistory() && deletingHistorialId === item.id"
                               (click)="solicitarEliminarMovimientoHistorial(item)"
-                              title="Eliminar movimiento del historial">
+                              [attr.title]="canDeleteAssetLocationHistory() ? 'Eliminar movimiento del historial' : 'Sin permiso para eliminar'"
+                              [attr.aria-disabled]="!canDeleteAssetLocationHistory()">
                               <i class="fas fa-trash-alt"></i>
                             </button>
                           </td>

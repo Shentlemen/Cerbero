@@ -270,6 +270,10 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
   }
 
   abrirModal(modal: any, proveedor?: ProveedorDTO): void {
+    const accion = proveedor ? 'editar proveedores' : 'crear proveedores';
+    if (this.permissionsService.denyUnless(this.canManageProviders(), accion)) {
+      return;
+    }
     this.activeTab = 1;
     this.proveedorModalValidacion = null;
     if (proveedor) {
@@ -554,6 +558,9 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
   }
 
   eliminarProveedor(id: number): void {
+    if (this.permissionsService.denyUnless(this.canDeleteProviders(), 'eliminar este proveedor')) {
+      return;
+    }
     this.proveedorToDelete = id;
     this.showConfirmDialog = true;
   }
@@ -609,6 +616,10 @@ export class ProveedoresComponent implements OnInit, OnDestroy {
 
   canManageProviders(): boolean {
     return this.permissionsService.canManageProviders();
+  }
+
+  canDeleteProviders(): boolean {
+    return this.permissionsService.canDeleteProviders();
   }
 
   getDisplayUrl(url: string): string {

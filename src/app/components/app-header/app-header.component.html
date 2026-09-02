@@ -75,7 +75,7 @@
                   role="menuitemradio"
                   [attr.aria-checked]="viewAsSelectValue === o.value"
                   [class.user-menu-item--active]="viewAsSelectValue === o.value"
-                  (click)="onViewAsChange(o.value)">
+                  (click)="onViewAsChange(o)">
                   <i class="fas" [ngClass]="viewAsSelectValue === o.value ? 'fa-check' : getRoleIcon(o.value || 'GM')" aria-hidden="true"></i>
                   <span>{{ o.label }}</span>
                 </button>
@@ -97,7 +97,7 @@
     <i class="fas fa-theater-masks gm-preview-bar-icon" aria-hidden="true"></i>
     <span class="gm-preview-bar-text">
       Vista previa como <strong>{{ getRoleLabel(previewRole) }}</strong>.
-      Tu sesión sigue siendo <strong>Game Master</strong>; el servidor aplica el rol real del token.
+      Tu sesión sigue siendo <strong>Game Master</strong>; el servidor aplica tus permisos reales.
     </span>
     <button type="button" class="btn btn-sm gm-preview-bar-btn" (click)="clearPreview()">
       Volver a GM

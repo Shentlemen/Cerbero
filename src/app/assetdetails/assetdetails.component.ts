@@ -777,6 +777,9 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   }
 
   solicitarEliminarMovimientoHistorial(item: UbicacionHistorialDTO): void {
+    if (this.permissionsService.denyUnless(this.canDeleteAssetLocationHistory(), 'eliminar movimientos del historial')) {
+      return;
+    }
     if (!item?.id || this.deletingHistorialId !== null) return;
     this.historialPendienteEliminar = item;
     this.showDeleteHistorialDialog = true;
@@ -858,6 +861,9 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   }
 
   seleccionarUbicacion() {
+    if (this.permissionsService.denyUnless(this.canManageAssetLocations(), 'cambiar la ubicación del equipo')) {
+      return;
+    }
     this.loading = true;
     this.error = null;
     
@@ -943,11 +949,12 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
    * Solo administradores y Game Masters pueden modificar ubicaciones
    */
   canManageAssetLocations(): boolean {
-    return this.permissionsService.canManageAssets();
+    return this.permissionsService.can('ubicaciones', 'editar')
+      || this.permissionsService.canManageAssets();
   }
 
   canDeleteAssetLocationHistory(): boolean {
-    return this.permissionsService.isGMOrAdmin();
+    return this.permissionsService.canDeleteAssets();
   }
 
   /** Al abrir esta pantalla conviene quedar arriba (evita recuperar scroll de navegaciones largas previas). */

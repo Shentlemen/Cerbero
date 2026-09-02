@@ -817,12 +817,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private denyUnless(allowed: boolean, accion: string): boolean {
-    if (allowed) return false;
-    this.notificationService.showError(
-      'Sin permisos suficientes',
-      `No tenés permisos para ${accion}. Hace falta rol de administrador o Game Master.`
-    );
-    return true;
+    return this.permissionsService.denyUnless(allowed, accion);
   }
 
   expandChart(chartType: string): void {

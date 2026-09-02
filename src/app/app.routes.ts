@@ -61,6 +61,7 @@ export const routes: Routes = [
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },
       { path: 'cementerio', loadComponent: () => import('./cementerio/cementerio.component').then(m => m.CementerioComponent) },
       { path: 'almacen-laboratorio', loadComponent: () => import('./almacen-laboratorio/almacen-laboratorio.component').then(m => m.AlmacenLaboratorioComponent) },
+      { path: 'oficina-laboratorio', loadComponent: () => import('./almacen-laboratorio/almacen-laboratorio.component').then(m => m.AlmacenLaboratorioComponent), data: { modoAlmacen: 'oficina' } },
       { path: 'asset-details/:id', loadComponent: () => import('./assetdetails/assetdetails.component').then(m => m.AssetdetailsComponent) },
       { path: 'software', component: SoftwareComponent },
       { path: 'internos-ose', loadComponent: () => import('./internos-ose/internos-ose.component').then(m => m.InternosOseComponent) },
@@ -68,44 +69,63 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent),
         canActivate: [RoleGuard],
-        data: { roles: ['GM'] }
+        data: { gmOnly: true }
       },
       {
         path: 'configuracion',
         loadComponent: () => import('./configuracion/configuracion.component').then(m => m.ConfiguracionComponent),
         canActivate: [RoleGuard],
-        data: { roles: ['GM', 'ADMIN', 'INVENTARIO'] },
+        data: {
+          anyPermissions: [
+            'ubicaciones',
+            'tipos_activo',
+            'tipos_compra',
+            'usuarios_responsables',
+            'config_flujos'
+          ]
+        },
         children: [
-          { path: '', redirectTo: 'locations', pathMatch: 'full' },
           {
             path: 'locations',
             loadComponent: () => import('./locations/locations.component').then(m => m.LocationsComponent),
             canActivate: [RoleGuard],
-            data: { roles: ['GM', 'ADMIN', 'INVENTARIO'] }
+            data: { permission: 'ubicaciones' }
           },
           {
             path: 'tipos-activo',
             loadComponent: () => import('./procurement/tipos-activo/tipos-activo.component').then(m => m.TiposActivoComponent),
             canActivate: [RoleGuard],
-            data: { roles: ['GM', 'ADMIN', 'INVENTARIO'] }
+            data: { permission: 'tipos_activo' }
           },
           {
             path: 'tipos-compra',
             loadComponent: () => import('./procurement/tipos-compra/tipos-compra.component').then(m => m.TiposCompraComponent),
             canActivate: [RoleGuard],
-            data: { roles: ['GM', 'ADMIN'] }
+            data: { permission: 'tipos_compra' }
           },
           {
             path: 'usuarios',
             loadComponent: () => import('./procurement/usuarios/usuarios.component').then(m => m.UsuariosComponent),
             canActivate: [RoleGuard],
-            data: { roles: ['GM', 'ADMIN', 'INVENTARIO'] }
+            data: { permission: 'usuarios_responsables' }
+          },
+          {
+            path: 'areas',
+            loadComponent: () => import('./configuracion/areas-admin.component').then(m => m.AreasAdminComponent),
+            canActivate: [RoleGuard],
+            data: { gmOnly: true }
+          },
+          {
+            path: 'permisos',
+            loadComponent: () => import('./configuracion/permisos-admin.component').then(m => m.PermisosAdminComponent),
+            canActivate: [RoleGuard],
+            data: { gmOnly: true }
           },
           {
             path: 'config-tickets',
             loadComponent: () => import('./config-tickets/config-tickets.component').then(m => m.ConfigTicketsComponent),
             canActivate: [RoleGuard],
-            data: { roles: ['GM', 'ADMIN'] }
+            data: { permission: 'config_flujos' }
           }
         ]
       },
@@ -115,7 +135,7 @@ export const routes: Routes = [
         path: 'user-management',
         loadComponent: () => import('./user-management/user-management.component').then(m => m.UserManagementComponent),
         canActivate: [RoleGuard],
-        data: { roles: ['GM'] }
+        data: { gmOnly: true }
       },
       { path: 'procurement', component: ProcurementComponent },
       { path: 'procurement/activos', loadComponent: () => import('./procurement/activos/activos.component').then(m => m.ActivosComponent) },
@@ -132,7 +152,7 @@ export const routes: Routes = [
         path: 'subnets',
         component: SubnetsComponent,
         canActivate: [RoleGuard],
-        data: { roles: ['GM', 'ADMIN'] }
+        data: { permission: 'subredes' }
       },
       { path: 'devices', component: DevicesComponent },
       { path: 'device-details/:mac', component: DeviceDetailsComponent },
@@ -149,13 +169,13 @@ export const routes: Routes = [
         path: 'almacen/configuracion/planta/:almacenId',
         loadComponent: () => import('./almacen/planta-almacen/planta-almacen-editor.component').then(m => m.PlantaAlmacenEditorComponent),
         canActivate: [RoleGuard],
-        data: { roles: ['GM', 'ADMIN', 'ALMACEN'] }
+        data: { permission: 'planta_almacen' }
       },
       {
         path: 'almacen/configuracion',
         loadComponent: () => import('./almacen/configuracion-almacen/configuracion-almacen.component').then(m => m.ConfiguracionAlmacenComponent),
         canActivate: [RoleGuard],
-        data: { roles: ['GM', 'ADMIN', 'ALMACEN'] }
+        data: { permission: 'config_almacen' }
       },
       { path: 'tickets', loadComponent: () => import('./tickets/tickets.component').then(m => m.TicketsComponent) },
       { path: 'tickets/nuevo', redirectTo: 'tickets', pathMatch: 'full' },

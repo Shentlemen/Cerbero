@@ -132,9 +132,13 @@
 
   <!-- Internos telefónicos -->
   <div class="content-section guia-panel" id="guia-panel-internos" role="tabpanel" *ngIf="pestana === 'internos'">
-    <div class="content-toolbar" *ngIf="canManageInternos()">
+    <div class="content-toolbar">
       <div class="actions">
-        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-guia-interno-nuevo" (click)="abrirModal(internoModal)">
+        <button type="button" class="btn btn-sm btn-export btn-agregar-nuevo" id="tour-guia-interno-nuevo"
+          [class.action-locked]="!canManageInternos()"
+          (click)="abrirModal(internoModal)"
+          [attr.title]="canManageInternos() ? 'Nuevo interno' : 'Sin permiso para crear internos'"
+          [attr.aria-disabled]="!canManageInternos()">
           <i class="fas fa-plus me-2"></i>
           Nuevo interno
         </button>
@@ -210,7 +214,7 @@
                 </th>
                 <th><div class="th-content"><span>Colectivo</span></div></th>
                 <th><div class="th-content"><span>Activo</span></div></th>
-                <th *ngIf="canManageInternos()"><div class="th-content"><span>Acciones</span></div></th>
+                <th><div class="th-content"><span>Acciones</span></div></th>
               </tr>
             </thead>
             <tbody>
@@ -236,12 +240,20 @@
                     {{ interno.activo ? 'Sí' : 'No' }}
                   </span>
                 </td>
-                <td *ngIf="canManageInternos()">
+                <td>
                   <div class="action-buttons">
-                    <button class="btn btn-info btn-sm me-2" (click)="abrirModal(internoModal, interno)" title="Editar">
+                    <button class="btn btn-info btn-sm me-2"
+                      [class.action-locked]="!canManageInternos()"
+                      (click)="abrirModal(internoModal, interno)"
+                      [attr.title]="canManageInternos() ? 'Editar' : 'Sin permiso para editar'"
+                      [attr.aria-disabled]="!canManageInternos()">
                       <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-danger btn-sm" (click)="eliminarInterno(interno)" title="Eliminar">
+                    <button class="btn btn-danger btn-sm"
+                      [class.action-locked]="!canDeleteInternos()"
+                      (click)="eliminarInterno(interno)"
+                      [attr.title]="canDeleteInternos() ? 'Eliminar' : 'Sin permiso para eliminar'"
+                      [attr.aria-disabled]="!canDeleteInternos()">
                       <i class="fas fa-trash-alt"></i>
                     </button>
                   </div>

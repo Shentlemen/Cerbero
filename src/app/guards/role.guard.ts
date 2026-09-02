@@ -1,11 +1,16 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, ActivatedRouteSnapshot } from '@angular/router';
+import { CanActivate, Router, ActivatedRouteSnapshot, UrlTree } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { PermissionsService } from '../services/permissions.service';
 
 /**
- * Protege rutas por rol efectivo (respeta «Ver como» del GM).
- * Usar data.roles: string[] — al menos uno debe coincidir con getEffectiveRole().
+ * Protege rutas por matriz de permisos y, si no hay permission, por rol efectivo.
+ * GM (rol efectivo, sin simulación) pasa cualquier chequeo de permiso vía PermissionsService.can().
+ *
+ * data.permission + data.action?: un componente (ver/editar/eliminar)
+ * data.anyPermissions?: al menos un componente con ver
+ * data.gmOnly: solo GM efectivo
+ * data.roles / data.role: fallback histórico
  */
 @Injectable({
   providedIn: 'root'
@@ -18,10 +23,35 @@ export class RoleGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(route: ActivatedRouteSnapshot): boolean {
+  canActivate(route: ActivatedRouteSnapshot): boolean | UrlTree {
     if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login']);
-      return false;
+      return this.router.createUrlTree(['/login']);
+    }
+
+    if (route.data['gmOnly'] === true) {
+      if (this.permissionsService.isGM()) {
+        return true;
+      }
+      return this.router.createUrlTree(['/menu/dashboard']);
+    }
+
+    const permission = route.data['permission'] as string | undefined;
+    const action = (route.data['action'] as 'ver' | 'editar' | 'eliminar' | undefined) || 'ver';
+    if (permission) {
+      if (this.permissionsService.can(permission, action)) {
+        return true;
+      }
+      return this.router.createUrlTree(['/menu/dashboard']);
+    }
+
+    const anyPermissions = route.data['anyPermissions'] as string[] | undefined;
+    if (anyPermissions?.length) {
+      const ok = anyPermissions.some((p) => this.permissionsService.can(p, 'ver'))
+        || this.permissionsService.isGM();
+      if (ok) {
+        return true;
+      }
+      return this.router.createUrlTree(['/menu/dashboard']);
     }
 
     const roles = route.data['roles'] as string[] | undefined;
@@ -42,12 +72,10 @@ export class RoleGuard implements CanActivate {
       return true;
     }
 
-    // Compat: data.role === 'ADMIN' también aceptaba GM (isGMOrAdmin)
     if (legacyRole === 'ADMIN' && this.permissionsService.isGMOrAdmin()) {
       return true;
     }
 
-    this.router.navigate(['/menu/dashboard']);
-    return false;
+    return this.router.createUrlTree(['/menu/dashboard']);
   }
 }

@@ -350,6 +350,77 @@ html.theme-dark .software-row:hover > * {
   color: var(--theme-text) !important;
 }
 
+/* table-warning/info/success: Bootstrap pinta #fff3cd (y similares) con
+   --bs-table-bg + box-shadow inset; el tema ya fuerza texto claro → ilegible. */
+html.theme-dark .table-warning {
+  --bs-table-color: var(--ds-color-text);
+  --bs-table-bg: rgba(245, 158, 11, 0.16);
+  --bs-table-border-color: rgba(251, 191, 36, 0.28);
+  --bs-table-striped-bg: rgba(245, 158, 11, 0.12);
+  --bs-table-striped-color: var(--ds-color-text);
+  --bs-table-hover-bg: rgba(245, 158, 11, 0.22);
+  --bs-table-hover-color: var(--ds-color-text);
+  --bs-table-accent-bg: transparent;
+}
+
+html.theme-dark .table-info {
+  --bs-table-color: var(--ds-color-text);
+  --bs-table-bg: rgba(56, 189, 248, 0.14);
+  --bs-table-border-color: rgba(56, 189, 248, 0.28);
+  --bs-table-striped-bg: rgba(56, 189, 248, 0.1);
+  --bs-table-striped-color: var(--ds-color-text);
+  --bs-table-hover-bg: rgba(56, 189, 248, 0.2);
+  --bs-table-hover-color: var(--ds-color-text);
+  --bs-table-accent-bg: transparent;
+}
+
+html.theme-dark .table-success {
+  --bs-table-color: var(--ds-color-text);
+  --bs-table-bg: rgba(74, 222, 128, 0.12);
+  --bs-table-border-color: rgba(74, 222, 128, 0.28);
+  --bs-table-striped-bg: rgba(74, 222, 128, 0.1);
+  --bs-table-striped-color: var(--ds-color-text);
+  --bs-table-hover-bg: rgba(74, 222, 128, 0.18);
+  --bs-table-hover-color: var(--ds-color-text);
+  --bs-table-accent-bg: transparent;
+}
+
+html.theme-dark .table-warning th,
+html.theme-dark .table-warning td,
+html.theme-dark tr.table-warning > *,
+html.theme-dark thead.table-warning th,
+html.theme-dark thead.table-warning td {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+  box-shadow: none !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: rgba(251, 191, 36, 0.28) !important;
+}
+
+html.theme-dark .table-info th,
+html.theme-dark .table-info td,
+html.theme-dark tr.table-info > *,
+html.theme-dark thead.table-info th,
+html.theme-dark thead.table-info td {
+  background-color: rgba(56, 189, 248, 0.14) !important;
+  box-shadow: none !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+}
+
+html.theme-dark .table-success th,
+html.theme-dark .table-success td,
+html.theme-dark tr.table-success > *,
+html.theme-dark thead.table-success th,
+html.theme-dark thead.table-success td {
+  background-color: rgba(74, 222, 128, 0.12) !important;
+  box-shadow: none !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: rgba(74, 222, 128, 0.28) !important;
+}
+
 /* Formularios y dropdowns (modales van al body) */
 html.theme-dark .form-control,
 html.theme-dark .form-select,
@@ -926,13 +997,111 @@ html.theme-dark * {
 }
 
 html.theme-dark .driver-popover {
-  background-color: var(--theme-elevated);
-  color: var(--theme-text);
-  border-color: var(--theme-border);
+  background-color: var(--ds-color-elevated) !important;
+  color: var(--ds-color-text) !important;
+  border: 1px solid var(--ds-color-border);
+  box-shadow: var(--ds-shadow-lg);
 }
 
-html.theme-dark .driver-popover * {
-  color: inherit;
+html.theme-dark .driver-popover-title,
+html.theme-dark .driver-popover-description,
+html.theme-dark .driver-popover-progress-text {
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+}
+
+html.theme-dark .driver-popover-title {
+  color: var(--ds-color-heading) !important;
+  -webkit-text-fill-color: var(--ds-color-heading) !important;
+}
+
+html.theme-dark .driver-popover-close-btn {
+  color: var(--ds-color-subtle) !important;
+  -webkit-text-fill-color: var(--ds-color-subtle) !important;
+  text-shadow: none !important;
+}
+
+html.theme-dark .driver-popover-close-btn:hover {
+  color: var(--ds-color-heading) !important;
+  -webkit-text-fill-color: var(--ds-color-heading) !important;
+}
+
+/* Anterior / Siguiente / Finalizar: driver.js los deja blancos; en dark hay que pintarlos. */
+html.theme-dark .driver-popover-footer button,
+html.theme-dark .driver-popover-footer button * {
+  background: var(--ds-color-surface) !important;
+  background-color: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border: 1px solid var(--ds-color-border) !important;
+  text-shadow: none !important;
+}
+
+html.theme-dark .driver-popover-footer .driver-popover-prev-btn,
+html.theme-dark .driver-popover-footer .driver-popover-prev-btn * {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border: 1px solid var(--ds-color-border) !important;
+}
+
+html.theme-dark .driver-popover-footer .driver-popover-next-btn,
+html.theme-dark .driver-popover-footer .driver-popover-next-btn * {
+  background: var(--ds-color-ribbon) !important;
+  background-color: var(--ds-color-ribbon) !important;
+  color: var(--ds-color-on-accent) !important;
+  -webkit-text-fill-color: var(--ds-color-on-accent) !important;
+  border-color: var(--ds-color-ribbon) !important;
+}
+
+html.theme-dark .driver-popover-footer button:hover:not(.driver-popover-btn-disabled),
+html.theme-dark .driver-popover-footer .driver-popover-prev-btn:hover:not(.driver-popover-btn-disabled) {
+  background: var(--ds-color-hover) !important;
+  background-color: var(--ds-color-hover) !important;
+}
+
+html.theme-dark .driver-popover-footer .driver-popover-next-btn:hover:not(.driver-popover-btn-disabled) {
+  background: var(--ds-color-ribbon-fold) !important;
+  background-color: var(--ds-color-ribbon-fold) !important;
+  border-color: var(--ds-color-ribbon-fold) !important;
+}
+
+html.theme-dark .driver-popover-footer button.driver-popover-btn-disabled,
+html.theme-dark .driver-popover-footer button.driver-popover-btn-disabled * {
+  opacity: 0.45;
+  color: var(--ds-color-subtle) !important;
+  -webkit-text-fill-color: var(--ds-color-subtle) !important;
+  background: var(--ds-color-surface) !important;
+  background-color: var(--ds-color-surface) !important;
+}
+
+html.theme-dark .driver-popover-arrow {
+  border: 5px solid var(--ds-color-elevated);
+}
+
+html.theme-dark .driver-popover-arrow-side-left {
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+}
+
+html.theme-dark .driver-popover-arrow-side-right {
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+}
+
+html.theme-dark .driver-popover-arrow-side-top {
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+
+html.theme-dark .driver-popover-arrow-side-bottom {
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-top-color: transparent;
 }
 
 /* Leaflet / canvas 3D / login / header de app / sidenav: no tocar */
@@ -1693,20 +1862,46 @@ html.theme-dark .main-content :is(
   span, a, div, section, article, header, footer, aside, nav,
   input, select, textarea, button,
   table, caption
-):not(.sidenav):not(.sidenav *):not(.app-header):not(.app-header *):not(.login-form):not(.login-form *):not(.content-container):not(.content-container *):not(.sortable-header):not(.sortable-header *):not(.filter-btn):not(.filter-btn *):not(.btn-filter):not(.btn-filter *):not(.software-filter-btn):not(.software-filter-btn *):not(.tipo-compra-filter-btn):not(.tipo-compra-filter-btn *):not(.multi-select-toggle):not(.multi-select-toggle *):not(.no-selection-message):not(.no-selection-message *):not(.os-badge):not(.os-badge *):not(.type-badge):not(.type-badge *):not(.tipo-badge):not(.tipo-badge *):not(.observaciones-cell):not(.observaciones-cell *):not(.observaciones-text):not(.moneda-badge):not(.compra-link):not(.compra-link *):not(.hardware-name):not(.usuario-link):not(.ubicacion-link):not(.website-item):not(.website-item *):not(.website-link):not(.direccion-text):not(.pagination):not(.pagination *):not(.page-link):not(.page-link *):not(.subnet-hw-name-link):not(.subnet-hw-name-link *):not(.subnet-hw-modal-header):not(.subnet-hw-modal-header *):not(.btn-agregar-nuevo):not(.btn-agregar-nuevo *):not(.transferir-btn):not(.transferir-btn *):not(.advanced-toggle-btn):not(.advanced-toggle-btn *):not(.version-badge):not(.count-badge):not(.visibility-button):not(.visibility-button *):not(.forbidden-button):not(.forbidden-button *):not(.driver-button):not(.driver-button *):not(.licenciado-button):not(.licenciado-button *):not(.delete-button):not(.delete-button *):not(.ticket-pill):not(.btn-ticket-primary):not(.btn-ticket-primary *):not(.attach-badge):not(.btn-ver-todo):not(.stock-tipo-etiqueta):not(.stock-tipo-etiqueta *):not(.btn-transferir):not(.btn-transferir *):not(.role-badge):not(.status-badge):not(.bandeja-badge):not(.bandeja-badge *):not(.filter-btn-colored):not(.filter-btn-colored *):not(.btn-excel):not(.btn-excel *):not(.leaflet-bar):not(.leaflet-bar *):not(.leaflet-control-zoom):not(.leaflet-control-zoom *):not(.subnets-map-legend):not(.subnets-map-legend *):not(.guia-tab-square):not(.guia-tab-square *):not(.ticket-hero-chip):not(.ticket-hero-chip *):not(.td-prioridad--critica):not(.td-estado--nuevo):not(.users-role-tab-icon):not(.users-role-tab-icon *):not(.guia-tab-icon):not(.guia-tab-icon *):not(.config-hub-tab-icon):not(.config-hub-tab-icon *):not(.cerbero-folder-tab-icon):not(.cerbero-folder-tab-icon *):not(.tickets-unread-badge):not(.tickets-unread-badge *):not(.read-only-badge):not(.read-only-badge *):not(.permission-info):not(.permission-info *),
+):not(.sidenav):not(.sidenav *):not(.app-header):not(.app-header *):not(.login-form):not(.login-form *):not(.content-container):not(.content-container *):not(.sortable-header):not(.sortable-header *):not(.filter-btn):not(.filter-btn *):not(.btn-filter):not(.btn-filter *):not(.software-filter-btn):not(.software-filter-btn *):not(.tipo-compra-filter-btn):not(.tipo-compra-filter-btn *):not(.multi-select-toggle):not(.multi-select-toggle *):not(.no-selection-message):not(.no-selection-message *):not(.os-badge):not(.os-badge *):not(.type-badge):not(.type-badge *):not(.tipo-badge):not(.tipo-badge *):not(.observaciones-cell):not(.observaciones-cell *):not(.observaciones-text):not(.moneda-badge):not(.compra-link):not(.compra-link *):not(.hardware-name):not(.usuario-link):not(.ubicacion-link):not(.website-item):not(.website-item *):not(.website-link):not(.direccion-text):not(.pagination):not(.pagination *):not(.page-link):not(.page-link *):not(.subnet-hw-name-link):not(.subnet-hw-name-link *):not(.subnet-hw-modal-header):not(.subnet-hw-modal-header *):not(.btn-agregar-nuevo):not(.btn-agregar-nuevo *):not(.transferir-btn):not(.transferir-btn *):not(.bulk-transfer-btn):not(.bulk-transfer-btn *):not(.bulk-reactivar-btn):not(.bulk-reactivar-btn *):not(.print-btn):not(.print-btn *):not(.registrar-pendiente-btn):not(.registrar-pendiente-btn *):not(.registrar-stock-btn):not(.registrar-stock-btn *):not(.advanced-toggle-btn):not(.advanced-toggle-btn *):not(.version-badge):not(.count-badge):not(.visibility-button):not(.visibility-button *):not(.forbidden-button):not(.forbidden-button *):not(.driver-button):not(.driver-button *):not(.licenciado-button):not(.licenciado-button *):not(.delete-button):not(.delete-button *):not(.ticket-pill):not(.btn-ticket-primary):not(.btn-ticket-primary *):not(.attach-badge):not(.btn-ver-todo):not(.stock-tipo-etiqueta):not(.stock-tipo-etiqueta *):not(.btn-transferir):not(.btn-transferir *):not(.role-badge):not(.status-badge):not(.bandeja-badge):not(.bandeja-badge *):not(.filter-btn-colored):not(.filter-btn-colored *):not(.btn-excel):not(.btn-excel *):not(.leaflet-bar):not(.leaflet-bar *):not(.leaflet-control-zoom):not(.leaflet-control-zoom *):not(.subnets-map-legend):not(.subnets-map-legend *):not(.guia-tab-square):not(.guia-tab-square *):not(.ticket-hero-chip):not(.ticket-hero-chip *):not(.td-prioridad--critica):not(.td-estado--nuevo):not(.users-role-tab-icon):not(.users-role-tab-icon *):not(.guia-tab-icon):not(.guia-tab-icon *):not(.config-hub-tab-icon):not(.config-hub-tab-icon *):not(.cerbero-folder-tab-icon):not(.cerbero-folder-tab-icon *):not(.tickets-unread-badge):not(.tickets-unread-badge *):not(.read-only-badge):not(.read-only-badge *):not(.permission-info):not(.permission-info *),
 html.theme-dark .modal-content :is(
   h1, h2, h3, h4, h5, h6,
   p, li, ul, ol, td, th, dt, dd,
   label, legend, small, strong, b, em,
   span, a, div, section, article, header, footer,
   input, select, textarea, button
-):not(.formulario-container):not(.formulario-container *):not(.activo-creation-mode-option):not(.activo-creation-mode-option *):not(.activo-creation-mode-heading):not(.search-list-picker-list):not(.search-list-picker-list *):not(.search-list-picker-count):not(.items-dropdown):not(.items-dropdown *):not(.contacto-avatar):not(.contacto-avatar *):not(.dropdown-options):not(.dropdown-options *):not(.dropdown-option):not(.activos-dropdown):not(.activos-dropdown *),
+):not(.formulario-container):not(.formulario-container *):not(.activo-creation-mode-option):not(.activo-creation-mode-option *):not(.activo-creation-mode-heading):not(.search-list-picker-list):not(.search-list-picker-list *):not(.search-list-picker-count):not(.items-dropdown):not(.items-dropdown *):not(.contacto-avatar):not(.contacto-avatar *):not(.dropdown-options):not(.dropdown-options *):not(.dropdown-option):not(.activos-dropdown):not(.activos-dropdown *):not(.btn-transferir):not(.btn-transferir *):not(.transferir-masa-remove):not(.transferir-masa-remove *):not(.transferir-masa-select-all):not(.transferir-masa-select-all *),
 html.theme-dark .offcanvas :is(
   h1, h2, h3, h4, h5, h6,
   p, li, span, a, div, label, small, strong, button, input, select
 ) {
   color: var(--ds-color-text) !important;
   -webkit-text-fill-color: var(--ds-color-text) !important;
+}
+
+/* Tours (driver.js): no heredar la tinta global; los botones se pintan en el bloque .driver-popover. */
+html.theme-dark .driver-popover,
+html.theme-dark .driver-popover :is(div, span, p, h1, h2, button, footer) {
+  -webkit-text-fill-color: unset;
+}
+
+html.theme-dark .driver-popover-footer .driver-popover-prev-btn,
+html.theme-dark .driver-popover-footer .driver-popover-prev-btn * {
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid var(--ds-color-border) !important;
+  text-shadow: none !important;
+}
+
+html.theme-dark .driver-popover-footer .driver-popover-next-btn,
+html.theme-dark .driver-popover-footer .driver-popover-next-btn * {
+  color: var(--ds-color-on-accent) !important;
+  -webkit-text-fill-color: var(--ds-color-on-accent) !important;
+  background: var(--ds-color-ribbon) !important;
+  background-color: var(--ds-color-ribbon) !important;
+  border-color: var(--ds-color-ribbon) !important;
+  text-shadow: none !important;
 }
 
 html.theme-dark .form-select option,
@@ -3703,11 +3898,63 @@ html.theme-dark .generic-container .settings-section .table tbody tr:hover > * {
   background-color: var(--ds-color-hover) !important;
 }
 
-html.theme-dark .generic-container .settings-section .table-warning > *,
-html.theme-dark .generic-container .settings-section tr.table-warning > * {
-  background-color: rgba(245, 158, 11, 0.12) !important;
+html.theme-dark .generic-container .settings-section thead.table-warning th,
+html.theme-dark .generic-container .settings-section thead.table-warning td,
+html.theme-dark .generic-container .settings-section tbody tr.table-warning > *,
+html.theme-dark .generic-container .settings-section .table-warning th,
+html.theme-dark .generic-container .settings-section .table-warning td {
+  background: rgba(245, 158, 11, 0.16) !important;
+  background-color: rgba(245, 158, 11, 0.16) !important;
+  box-shadow: none !important;
   color: var(--ds-color-text) !important;
   -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: rgba(251, 191, 36, 0.28) !important;
+}
+
+html.theme-dark .generic-container .settings-section thead.table-info th,
+html.theme-dark .generic-container .settings-section thead.table-info td,
+html.theme-dark .generic-container .settings-section tbody tr.table-info > *,
+html.theme-dark .generic-container .settings-section .table-info th,
+html.theme-dark .generic-container .settings-section .table-info td {
+  background: rgba(56, 189, 248, 0.14) !important;
+  background-color: rgba(56, 189, 248, 0.14) !important;
+  box-shadow: none !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+}
+
+html.theme-dark .generic-container .settings-section thead.table-success th,
+html.theme-dark .generic-container .settings-section thead.table-success td,
+html.theme-dark .generic-container .settings-section .table-success th,
+html.theme-dark .generic-container .settings-section .table-success td {
+  background: rgba(74, 222, 128, 0.12) !important;
+  background-color: rgba(74, 222, 128, 0.12) !important;
+  box-shadow: none !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: rgba(74, 222, 128, 0.28) !important;
+}
+
+html.theme-dark .generic-container .settings-section tbody tr.table-warning:hover > * {
+  background: rgba(245, 158, 11, 0.24) !important;
+  background-color: rgba(245, 158, 11, 0.24) !important;
+}
+
+html.theme-dark .generic-container .settings-section .badge.bg-warning {
+  background: rgba(245, 158, 11, 0.28) !important;
+  background-color: rgba(245, 158, 11, 0.28) !important;
+  color: #fcd34d !important;
+  -webkit-text-fill-color: #fcd34d !important;
+}
+
+html.theme-dark .generic-container .settings-section .badge.bg-light,
+html.theme-dark .generic-container .settings-section .badge.bg-light.text-dark {
+  background: var(--ds-color-elevated) !important;
+  background-color: var(--ds-color-elevated) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: var(--ds-color-border) !important;
 }
 
 html.theme-dark .generic-container .settings-section .alert-info {
@@ -4252,6 +4499,7 @@ html.theme-dark .modal-content .btn-transferir:not(:disabled) {
   background: #f3f4f7 !important;
   color: #1a1d24 !important;
   -webkit-text-fill-color: #1a1d24 !important;
+  border: 1px solid #f3f4f7 !important;
 }
 
 html.theme-dark .modal-content .btn-transferir:not(:disabled) i {
@@ -4259,16 +4507,398 @@ html.theme-dark .modal-content .btn-transferir:not(:disabled) i {
   -webkit-text-fill-color: #1a1d24 !important;
 }
 
+html.theme-dark .modal-content .btn-transferir:not(:disabled):hover {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
 html.theme-dark .modal-content .btn-transferir:disabled {
-  background: var(--ds-color-recessed) !important;
-  color: var(--ds-color-heading) !important;
-  -webkit-text-fill-color: var(--ds-color-heading) !important;
+  background: var(--ds-color-elevated) !important;
+  color: var(--ds-color-subtle) !important;
+  -webkit-text-fill-color: var(--ds-color-subtle) !important;
+  border: 1px solid var(--ds-color-border) !important;
   opacity: 1;
 }
 
 html.theme-dark .modal-content .btn-transferir:disabled i {
+  color: var(--ds-color-subtle) !important;
+  -webkit-text-fill-color: var(--ds-color-subtle) !important;
+}
+
+html.theme-dark ngb-modal-window.transferir-masa-modal-window .modal-content,
+html.theme-dark ngb-modal-window.transferir-masa-modal-window .modal-body,
+html.theme-dark .transferir-masa-body,
+html.theme-dark .transferir-modal-body.transferir-masa-body {
+  background: var(--ds-color-surface) !important;
+  background-color: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  border-color: var(--ds-color-border) !important;
+}
+
+html.theme-dark .transferir-masa-body .btn-close {
+  opacity: 0.9 !important;
+  filter: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23f3f4f7'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") !important;
+}
+
+html.theme-dark .transferir-masa-body .btn-close:hover {
+  opacity: 1 !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23f87171'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") !important;
+}
+
+html.theme-dark .transferir-masa-pane,
+html.theme-dark .transferir-masa-pane-header {
+  background: var(--ds-color-elevated) !important;
+  border-color: var(--ds-color-border) !important;
+  color: var(--ds-color-text) !important;
+}
+
+html.theme-dark .transferir-masa-pane-header,
+html.theme-dark .transferir-masa-pane-header strong {
   color: var(--ds-color-heading) !important;
   -webkit-text-fill-color: var(--ds-color-heading) !important;
+}
+
+html.theme-dark .transferir-masa-modal-window .transferir-masa-row,
+html.theme-dark ngb-modal-window.transferir-masa-modal-window .transferir-masa-row {
+  background: #1e222b !important;
+  border-color: var(--ds-color-border) !important;
+  color: #f3f4f7 !important;
+  -webkit-text-fill-color: #f3f4f7 !important;
+}
+
+html.theme-dark .transferir-masa-modal-window .transferir-masa-name,
+html.theme-dark ngb-modal-window.transferir-masa-modal-window .transferir-masa-name {
+  color: #f3f4f7 !important;
+  -webkit-text-fill-color: #f3f4f7 !important;
+}
+
+html.theme-dark .transferir-masa-modal-window .transferir-masa-meta,
+html.theme-dark ngb-modal-window.transferir-masa-modal-window .transferir-masa-meta {
+  color: #a8b0bc !important;
+  -webkit-text-fill-color: #a8b0bc !important;
+}
+
+html.theme-dark .transferir-masa-row.is-selected,
+html.theme-dark .transferir-masa-row.is-picked {
+  background: rgba(99, 102, 241, 0.18) !important;
+  border-color: rgba(129, 140, 248, 0.45) !important;
+}
+
+html.theme-dark .transferir-masa-modal-window .transferir-masa-row.is-missing,
+html.theme-dark ngb-modal-window.transferir-masa-modal-window .transferir-masa-row.is-missing {
+  background: rgba(220, 53, 69, 0.22) !important;
+  border-color: rgba(248, 113, 113, 0.55) !important;
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
+}
+
+html.theme-dark .transferir-masa-row.is-missing .transferir-masa-name,
+html.theme-dark .transferir-masa-row.is-missing .transferir-masa-meta,
+html.theme-dark .transferir-masa-missing-count,
+html.theme-dark .transferir-masa-missing-banner {
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
+}
+
+html.theme-dark .transferir-masa-missing-banner {
+  background: rgba(220, 53, 69, 0.18) !important;
+  border-color: rgba(248, 113, 113, 0.45) !important;
+}
+
+html.theme-dark .transferir-masa-missing-chip {
+  background: #dc3545 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+html.theme-dark .transferir-masa-name {
+  color: var(--ds-color-heading) !important;
+  -webkit-text-fill-color: var(--ds-color-heading) !important;
+}
+
+html.theme-dark .transferir-masa-meta {
+  color: var(--ds-color-subtle) !important;
+  -webkit-text-fill-color: var(--ds-color-subtle) !important;
+}
+
+html.theme-dark .transferir-masa-remove,
+html.theme-dark .transferir-masa-remove i {
+  color: #f87171 !important;
+  -webkit-text-fill-color: #f87171 !important;
+}
+
+html.theme-dark .transferir-masa-select-all:not(:disabled) {
+  background: #f3f4f7 !important;
+  border-color: #f3f4f7 !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .transferir-masa-select-all:not(:disabled):hover {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+html.theme-dark .main-content .bulk-reactivar-btn:not(:disabled):not(.action-locked),
+html.theme-dark .main-content .btn.bulk-reactivar-btn:not(:disabled):not(.action-locked) {
+  background: transparent !important;
+  border-color: #86efac !important;
+  color: #86efac !important;
+  -webkit-text-fill-color: #86efac !important;
+}
+
+html.theme-dark .main-content .bulk-reactivar-btn:not(:disabled):not(.action-locked) i,
+html.theme-dark .main-content .btn.bulk-reactivar-btn:not(:disabled):not(.action-locked) i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .main-content .bulk-reactivar-btn:not(:disabled):not(.action-locked):hover,
+html.theme-dark .main-content .btn.bulk-reactivar-btn:not(:disabled):not(.action-locked):hover {
+  background: #86efac !important;
+  border-color: #86efac !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .bulk-reactivar-btn:not(:disabled):not(.action-locked):hover i,
+html.theme-dark .main-content .btn.bulk-reactivar-btn:not(:disabled):not(.action-locked):hover i {
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .bulk-transfer-btn:not(:disabled):not(.action-locked),
+html.theme-dark .main-content .btn.bulk-transfer-btn:not(:disabled):not(.action-locked) {
+  background: transparent !important;
+  border-color: #c5ccd6 !important;
+  color: var(--ds-color-heading) !important;
+  -webkit-text-fill-color: var(--ds-color-heading) !important;
+}
+
+html.theme-dark .main-content .bulk-transfer-btn:not(:disabled):not(.action-locked) i,
+html.theme-dark .main-content .btn.bulk-transfer-btn:not(:disabled):not(.action-locked) i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .main-content .bulk-transfer-btn:not(:disabled):not(.action-locked):hover,
+html.theme-dark .main-content .btn.bulk-transfer-btn:not(:disabled):not(.action-locked):hover {
+  background: #f3f4f7 !important;
+  border-color: #f3f4f7 !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .bulk-transfer-btn:not(:disabled):not(.action-locked):hover i,
+html.theme-dark .main-content .btn.bulk-transfer-btn:not(:disabled):not(.action-locked):hover i {
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .registrar-pendiente-btn:not(:disabled):not(.action-locked),
+html.theme-dark .main-content .btn.registrar-pendiente-btn:not(:disabled):not(.action-locked) {
+  background: transparent !important;
+  border-color: #93c5fd !important;
+  color: #93c5fd !important;
+  -webkit-text-fill-color: #93c5fd !important;
+}
+
+html.theme-dark .main-content .registrar-pendiente-btn:not(:disabled):not(.action-locked) i,
+html.theme-dark .main-content .btn.registrar-pendiente-btn:not(:disabled):not(.action-locked) i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .main-content .registrar-pendiente-btn:not(:disabled):not(.action-locked):hover,
+html.theme-dark .main-content .btn.registrar-pendiente-btn:not(:disabled):not(.action-locked):hover {
+  background: #93c5fd !important;
+  border-color: #93c5fd !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .registrar-pendiente-btn:not(:disabled):not(.action-locked):hover i,
+html.theme-dark .main-content .btn.registrar-pendiente-btn:not(:disabled):not(.action-locked):hover i {
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .registrar-stock-btn:not(:disabled):not(.action-locked),
+html.theme-dark .main-content .btn.registrar-stock-btn:not(:disabled):not(.action-locked) {
+  background: transparent !important;
+  border-color: #fbbf24 !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+html.theme-dark .main-content .registrar-stock-btn:not(:disabled):not(.action-locked) i,
+html.theme-dark .main-content .btn.registrar-stock-btn:not(:disabled):not(.action-locked) i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .main-content .registrar-stock-btn:not(:disabled):not(.action-locked):hover,
+html.theme-dark .main-content .btn.registrar-stock-btn:not(:disabled):not(.action-locked):hover {
+  background: #fbbf24 !important;
+  border-color: #fbbf24 !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .registrar-stock-btn:not(:disabled):not(.action-locked):hover i,
+html.theme-dark .main-content .btn.registrar-stock-btn:not(:disabled):not(.action-locked):hover i {
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .print-btn:not(:disabled),
+html.theme-dark .main-content .btn.print-btn:not(:disabled),
+html.theme-dark .main-content button.print-btn:not(:disabled) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #f87171 !important;
+  border-color: #f87171 !important;
+  color: #f87171 !important;
+  -webkit-text-fill-color: #f87171 !important;
+}
+
+html.theme-dark .main-content .print-btn:not(:disabled) i,
+html.theme-dark .main-content .btn.print-btn:not(:disabled) i,
+html.theme-dark .main-content button.print-btn:not(:disabled) i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .main-content .print-btn:not(:disabled):hover,
+html.theme-dark .main-content .btn.print-btn:not(:disabled):hover,
+html.theme-dark .main-content button.print-btn:not(:disabled):hover {
+  background: #f87171 !important;
+  background-color: #f87171 !important;
+  border-color: #f87171 !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .print-btn:not(:disabled):hover i,
+html.theme-dark .main-content .btn.print-btn:not(:disabled):hover i,
+html.theme-dark .main-content button.print-btn:not(:disabled):hover i {
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .stock-cantidad-badge,
+html.theme-dark .stock-cantidad-input {
+  background: rgba(251, 191, 36, 0.18) !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  border-color: rgba(251, 191, 36, 0.45) !important;
+}
+
+html.theme-dark .stock-cantidad-btn {
+  background: rgba(251, 191, 36, 0.14) !important;
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  color: #fbbf24 !important;
+}
+
+html.theme-dark .stock-cantidad-btn:hover:not(:disabled):not(.action-locked) {
+  background: rgba(251, 191, 36, 0.28) !important;
+  border-color: #fbbf24 !important;
+  color: #fde68a !important;
+}
+
+html.theme-dark .pendiente-ocs-badge,
+html.theme-dark .type-badge.pendiente-ocs {
+  background: rgba(251, 146, 60, 0.18) !important;
+  color: #fdba74 !important;
+  -webkit-text-fill-color: #fdba74 !important;
+  border-color: rgba(251, 146, 60, 0.45) !important;
+}
+
+/*
+ * Alertas Bootstrap (vacío por filtros, etc.): el catch-all de tipografía
+ * deja texto claro sobre el fondo cian/blanco de .alert-info.
+ */
+html.theme-dark .main-content .alert,
+html.theme-dark .modal-content .alert,
+html.theme-dark .offcanvas .alert {
+  background: var(--ds-color-elevated) !important;
+  background-color: var(--ds-color-elevated) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+  border-color: var(--ds-color-border) !important;
+}
+
+html.theme-dark .main-content .alert-info,
+html.theme-dark .modal-content .alert-info,
+html.theme-dark .offcanvas .alert-info {
+  background: rgba(59, 130, 246, 0.16) !important;
+  background-color: rgba(59, 130, 246, 0.16) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+}
+
+html.theme-dark .main-content .alert-info i,
+html.theme-dark .modal-content .alert-info i,
+html.theme-dark .offcanvas .alert-info i {
+  color: #7dd3fc !important;
+  -webkit-text-fill-color: #7dd3fc !important;
+}
+
+html.theme-dark .main-content .alert-warning,
+html.theme-dark .modal-content .alert-warning,
+html.theme-dark .offcanvas .alert-warning {
+  background: rgba(245, 158, 11, 0.16) !important;
+  background-color: rgba(245, 158, 11, 0.16) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+}
+
+html.theme-dark .main-content .alert-success,
+html.theme-dark .modal-content .alert-success,
+html.theme-dark .offcanvas .alert-success {
+  background: rgba(74, 222, 128, 0.12) !important;
+  background-color: rgba(74, 222, 128, 0.12) !important;
+  border-color: rgba(74, 222, 128, 0.35) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+}
+
+html.theme-dark .main-content .alert-danger,
+html.theme-dark .modal-content .alert-danger,
+html.theme-dark .offcanvas .alert-danger {
+  background: rgba(248, 113, 113, 0.14) !important;
+  background-color: rgba(248, 113, 113, 0.14) !important;
+  border-color: rgba(248, 113, 113, 0.4) !important;
+  color: var(--ds-color-text) !important;
+  -webkit-text-fill-color: var(--ds-color-text) !important;
+}
+
+html.theme-dark .main-content .alert-warning i,
+html.theme-dark .modal-content .alert-warning i,
+html.theme-dark .offcanvas .alert-warning i {
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+html.theme-dark .main-content .alert-success i,
+html.theme-dark .modal-content .alert-success i,
+html.theme-dark .offcanvas .alert-success i {
+  color: #4ade80 !important;
+  -webkit-text-fill-color: #4ade80 !important;
+}
+
+html.theme-dark .main-content .alert-danger i,
+html.theme-dark .modal-content .alert-danger i,
+html.theme-dark .offcanvas .alert-danger i {
+  color: #f87171 !important;
+  -webkit-text-fill-color: #f87171 !important;
 }
 
 /*

@@ -245,7 +245,7 @@ export class UbicacionesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Filtra el stock excluyendo items en cementerio o laboratorio.
+   * Filtra el stock excluyendo items en cementerio, laboratorio u oficina laboratorio.
    * Los equipos en esos almacenes especiales no deben aparecer en la gestión de stock.
    */
   private filtrarStockExcluyendoAlmacenesEspeciales(stock: StockAlmacen[], almacenes: any[]): StockAlmacen[] {
@@ -257,7 +257,9 @@ export class UbicacionesComponent implements OnInit, OnDestroy {
         nombre.includes('subsuelo') || nombre.includes('cementerio');
       const esLaboratorio = numero === 'alm05' || numero === 'alm 05' ||
         nombre.includes('pañol 3');
-      if (esCementerio || esLaboratorio) {
+      const esOficinaLab = numero === 'ofilab' || numero === 'alm ofilab' ||
+        nombre.includes('oficina laboratorio');
+      if (esCementerio || esLaboratorio || esOficinaLab) {
         idsExcluidos.add(Number(a.id));
       }
     }
@@ -338,6 +340,10 @@ export class UbicacionesComponent implements OnInit, OnDestroy {
   }
 
   async abrirModalUbicacion(modal: any, stock?: StockAlmacen, almacenIdPreseleccionado?: number): Promise<void> {
+    const accion = stock ? 'editar stock' : 'registrar stock';
+    if (this.permissionsService.denyUnless(this.canManageUbicaciones(), accion)) {
+      return;
+    }
     this.modoEdicion = !!stock;
     this.stockSeleccionado = stock || null;
 
@@ -535,6 +541,9 @@ export class UbicacionesComponent implements OnInit, OnDestroy {
 
 
   confirmarEliminacion(stock: StockAlmacen): void {
+    if (this.permissionsService.denyUnless(this.canDeleteStock(), 'eliminar este registro de stock')) {
+      return;
+    }
     this.stockAEliminar = stock;
     this.showConfirmDialog = true;
   }
@@ -698,8 +707,11 @@ export class UbicacionesComponent implements OnInit, OnDestroy {
   }
 
   canManageUbicaciones(): boolean {
-    // En Stock de almacén, GM, Admin y Almacén pueden gestionar ubicaciones
     return this.permissionsService.canManageWarehouseAssets();
+  }
+
+  canDeleteStock(): boolean {
+    return this.permissionsService.canDeleteStock();
   }
 
 

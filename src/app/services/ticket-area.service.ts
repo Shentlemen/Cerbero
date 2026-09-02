@@ -11,6 +11,25 @@ export interface TicketAreaDTO {
   nombre: string;
   rolAsociado: string;
   activa: boolean;
+  color?: string | null;
+  sistema?: boolean;
+}
+
+export interface AreaPermisoDTO {
+  componente: string;
+  grupo: string;
+  nombre: string;
+  descripcion?: string;
+  usaEliminar?: boolean;
+  puedeVer: boolean;
+  puedeEditar: boolean;
+  puedeEliminar: boolean;
+}
+
+export interface ComponenteCatalogoDTO {
+  codigo: string;
+  grupo: string;
+  nombre: string;
 }
 
 @Injectable({
@@ -93,8 +112,8 @@ export class TicketAreaService {
     );
   }
 
-  crear(codigo: string, nombre: string): Observable<TicketAreaDTO> {
-    return this.http.post<ApiResponse<TicketAreaDTO>>(this.apiUrl, { codigo, nombre }).pipe(
+  crear(codigo: string, nombre: string, color?: string | null): Observable<TicketAreaDTO> {
+    return this.http.post<ApiResponse<TicketAreaDTO>>(this.apiUrl, { codigo, nombre, color }).pipe(
       map((r) => {
         if (r.success && r.data) return r.data;
         throw new Error(r.message || 'No se pudo crear la bandeja');
@@ -103,7 +122,7 @@ export class TicketAreaService {
     );
   }
 
-  actualizar(id: number, payload: { nombre?: string; activa?: boolean }): Observable<TicketAreaDTO> {
+  actualizar(id: number, payload: { nombre?: string; activa?: boolean; color?: string | null }): Observable<TicketAreaDTO> {
     return this.http.put<ApiResponse<TicketAreaDTO>>(`${this.apiUrl}/${id}`, payload).pipe(
       map((r) => {
         if (r.success && r.data) return r.data;
@@ -128,6 +147,26 @@ export class TicketAreaService {
         if (!r.success) throw new Error(r.message || 'No se pudo eliminar');
       }),
       catchError((err) => throwError(() => this.mapHttpError(err, 'No se pudo eliminar')))
+    );
+  }
+
+  listarPermisos(areaId: number): Observable<AreaPermisoDTO[]> {
+    return this.http.get<ApiResponse<AreaPermisoDTO[]>>(`${this.apiUrl}/${areaId}/permisos`).pipe(
+      map((r) => {
+        if (r.success) return r.data ?? [];
+        throw new Error(r.message || 'Error al cargar permisos');
+      }),
+      catchError((err) => throwError(() => this.mapHttpError(err, 'No se pudieron cargar los permisos')))
+    );
+  }
+
+  guardarPermisos(areaId: number, permisos: AreaPermisoDTO[]): Observable<AreaPermisoDTO[]> {
+    return this.http.put<ApiResponse<AreaPermisoDTO[]>>(`${this.apiUrl}/${areaId}/permisos`, permisos).pipe(
+      map((r) => {
+        if (r.success) return r.data ?? [];
+        throw new Error(r.message || 'No se pudieron guardar los permisos');
+      }),
+      catchError((err) => throwError(() => this.mapHttpError(err, 'No se pudieron guardar los permisos')))
     );
   }
 }

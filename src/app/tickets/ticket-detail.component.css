@@ -302,6 +302,7 @@
 .td-area--impresion { border-color: #2563eb; }
 .td-area--garantia { border-color: #10b981; }
 .td-area--laboratorio { border-color: #8b5cf6; }
+.td-area--dynamic { border-color: currentColor; }
 .td-area--default { border-color: #94a3b8; }
 
 .td-estado--nuevo { border-color: #0d9488; color: #0f766e; }

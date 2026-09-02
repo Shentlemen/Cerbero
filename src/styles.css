@@ -1890,6 +1890,61 @@ html:not(.theme-dark) .cerbero-list-table thead th.sortable-header.active .th-co
   }
 }
 
+.transferir-masa-modal-window .modal-dialog {
+  max-width: 980px;
+}
+
+app-reactivar-masa-modal,
+.reactivar-masa-modal-host {
+  display: block;
+  width: 100%;
+}
+
+.transferir-masa-modal-window .transferir-masa-list,
+ngb-modal-window.transferir-masa-modal-window .transferir-masa-list {
+  display: block !important;
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: none !important;
+  height: 280px !important;
+  min-height: 280px !important;
+  max-height: 280px !important;
+  overflow: auto !important;
+}
+
+.transferir-masa-modal-window .transferir-masa-row,
+ngb-modal-window.transferir-masa-modal-window .transferir-masa-row {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  align-items: center !important;
+  height: 2.5rem !important;
+  min-height: 2.5rem !important;
+  max-height: 2.5rem !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: var(--ds-color-heading, #111) !important;
+  -webkit-text-fill-color: var(--ds-color-heading, #111) !important;
+}
+
+.transferir-masa-modal-window .transferir-masa-row.is-missing,
+ngb-modal-window.transferir-masa-modal-window .transferir-masa-row.is-missing {
+  cursor: default !important;
+  background: color-mix(in srgb, #dc3545 10%, var(--ds-color-surface, #fff)) !important;
+  border-color: color-mix(in srgb, #dc3545 45%, var(--ds-color-border, #ddd)) !important;
+  color: #b42318 !important;
+  -webkit-text-fill-color: #b42318 !important;
+}
+
+.transferir-masa-modal-window .transferir-masa-name,
+.transferir-masa-modal-window .transferir-masa-meta,
+ngb-modal-window.transferir-masa-modal-window .transferir-masa-name,
+ngb-modal-window.transferir-masa-modal-window .transferir-masa-meta {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 /*
  * Confirmación tipo modal (eliminar, etc.) y variante `.estado-dialog`.
  * Una sola fuente aquí — no duplicar en componentes; extensiones muy puntuales
@@ -2239,6 +2294,25 @@ html:not(.theme-dark) .cerbero-list-table thead th.sortable-header.active .th-co
   font-size: 0.75rem;
   text-align: center;
   margin: 0;
+}
+
+/* Botones visibles sin permiso: se ven apagados pero siguen clickeables */
+.btn.action-locked,
+button.action-locked,
+.action-locked {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  filter: grayscale(0.35);
+  box-shadow: none !important;
+}
+.btn.action-locked:hover,
+button.action-locked:hover,
+.action-locked:hover,
+.btn.action-locked:focus,
+button.action-locked:focus {
+  opacity: 0.55;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Estilo para el badge de solo lectura */

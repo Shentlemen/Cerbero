@@ -78,6 +78,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
   areasTicket: string[] = [];
   areasTicketActivas: TicketAreaDTO[] = [];
   private areaNombrePorCodigo = new Map<string, string>();
+  private areaColorPorCodigo = new Map<string, string>();
   private areasActivasSub?: Subscription;
 
   private readonly prioridadOrden: Record<string, number> = {
@@ -224,9 +225,14 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   private syncAreasDesdeServicio(areas: TicketAreaDTO[]): void {
     this.areasTicketActivas = areas;
-    this.areaNombrePorCodigo.clear();
+    this.areaColorPorCodigo.clear();
     for (const a of areas) {
       if (a.codigo) {
+        this.areaNombrePorCodigo.set(a.codigo.toUpperCase(), a.nombre);
+        const color = (a.color || '').trim();
+        if (color) {
+          this.areaColorPorCodigo.set(a.codigo.toUpperCase(), color);
+        }
         this.areaNombrePorCodigo.set(a.codigo, a.nombre);
       }
     }
@@ -578,10 +584,53 @@ export class TicketsComponent implements OnInit, OnDestroy {
   getPrioridadLabel(prioridad: string): string {
     return this.formatBadgeLabel(prioridad);
   }
+  getAreaColor(area: string): string | null {
+    const key = (area || '').trim().toUpperCase();
+    return this.areaColorPorCodigo.get(key) || null;
+  }
+
+  getAreaPillStyle(area: string): Record<string, string> {
+    const color = this.getAreaColor(area);
+    if (!color) {
+      return {};
+    }
+    return { borderColor: color };
+  }
+
+  getRibbonStyle(area: string): Record<string, string> {
+    const color = this.getAreaColor(area);
+    if (!color) {
+      return {};
+    }
+    return {
+      '--ribbon': color,
+      '--ribbon-fold': this.darkenHex(color)
+    };
+  }
+
+  private darkenHex(hex: string, amount = 0.22): string {
+    const raw = hex.replace('#', '').trim();
+    if (raw.length !== 6 && raw.length !== 3) {
+      return hex;
+    }
+    const full = raw.length === 3
+      ? raw.split('').map((c) => c + c).join('')
+      : raw;
+    const to = (offset: number) => {
+      const n = parseInt(full.slice(offset, offset + 2), 16);
+      return Math.max(0, Math.round(n * (1 - amount)))
+        .toString(16)
+        .padStart(2, '0');
+    };
+    return `#${to(0)}${to(2)}${to(4)}`;
+  }
 
   /** Pastilla de color por área (lista de tickets). */
   getAreaPillClass(area: string): string {
     const key = (area || '').trim().toUpperCase();
+    if (this.getAreaColor(key)) {
+      return 'tickets-area-pill';
+    }
     const map: Record<string, string> = {
       ALMACEN: 'tickets-area-pill tickets-area--almacen',
       INVENTARIO: 'tickets-area-pill tickets-area--inventario',
@@ -776,7 +825,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
    * mientras se simula otro perfil.
    */
   canDeleteTickets(): boolean {
-    return this.permissionsService.isGMOrAdmin();
+    return this.permissionsService.canDeleteTickets();
   }
 
   /**
@@ -824,7 +873,9 @@ export class TicketsComponent implements OnInit, OnDestroy {
    */
   eliminarTicket(ticket: Ticket, event: Event): void {
     event.stopPropagation();
-    if (!this.canDeleteTickets()) return;
+    if (this.permissionsService.denyUnless(this.canDeleteTickets(), 'eliminar tickets', event)) {
+      return;
+    }
     this.ticketToDelete = ticket;
     this.showConfirmDialog = true;
   }

@@ -29,34 +29,19 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   editingUser: User | null = null;
   filtroEstado: 'todos' | 'activo' | 'inactivo' = 'todos';
   filtroRol: 'todos' | string = 'todos';
+  filtroTabs: { value: string; label: string }[] = [{ value: 'GM', label: 'Game Master' }];
   sortColumn: UserSortColumn | '' = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  // Diálogos de confirmación
   showDeleteDialog = false;
   userToDelete: User | null = null;
   showEstadoDialog = false;
   userToToggle: User | null = null;
   private tourCleanup?: () => void;
 
-  /** Validación cliente y errores API dentro del modal usuario (mismo criterio que compras/proveedores). */
   usuarioModalValidacion: { titulo: string; lineas: string[]; esError: boolean } | null = null;
 
-  roles = [
-    { value: 'USER', label: 'Usuario' },
-    { value: 'ADMIN', label: 'Administrador' },
-    { value: 'GM', label: 'Game Master' },
-    { value: 'ALMACEN', label: 'Almacén' },
-    { value: 'INVENTARIO', label: 'Inventario' },
-    { value: 'COMPRAS', label: 'Compras' },
-    { value: 'GESTION_EQUIP', label: 'Gestión de Equipos' },
-    { value: 'IMPRESION', label: 'Impresión' },
-    { value: 'GARANTIA', label: 'Garantía' }
-  ];
-
-  /** Bandejas asignables a usuarios rol USER (formulario). */
   bandejasUsuario: TicketAreaDTO[] = [];
-  /** Catálogo completo para mostrar nombres en la tabla. */
   private todasAreasTicket: TicketAreaDTO[] = [];
 
   constructor(
@@ -76,19 +61,36 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       password: ['', [Validators.required]],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-      role: ['USER', [Validators.required]],
-      ticketAreaCodigo: ['']
+      asignacion: [null as string | number | null, [Validators.required]]
     });
 
     this.userForm.valueChanges.subscribe(() => this.limpiarFeedbackUsuarioModal());
+  }
+
+  get areasParaAsignar(): TicketAreaDTO[] {
+    const currentId = this.editingUser?.areaId ?? null;
+    return this.todasAreasTicket
+      .filter((a) => a.activa || a.id === currentId)
+      .slice()
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
   }
 
   limpiarFeedbackUsuarioModal(): void {
     this.usuarioModalValidacion = null;
   }
 
-  showTicketAreaField(): boolean {
-    return this.userForm.get('role')?.value === 'USER';
+  private rebuildFiltroTabs(): void {
+    this.filtroTabs = [
+      { value: 'GM', label: 'Game Master' },
+      ...this.todasAreasTicket.map((a) => ({
+        value: (a.codigo || '').toUpperCase(),
+        label: a.nombre
+      })).filter((t) => !!t.value)
+    ];
+  }
+
+  trackByTabValue(_: number, tab: { value: string }): string {
+    return tab.value;
   }
 
   getBandejaLabel(codigo: string | null | undefined): string {
@@ -98,7 +100,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return b ? b.nombre : codigo;
   }
 
-  /** Bandeja de tickets que atiende cada usuario en la lista. */
   getBandejaEntrada(user: User): string {
     const cod = this.codigoBandejaEntrada(user);
     if (!cod) {
@@ -114,17 +115,21 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   private codigoBandejaEntrada(user: User): string | null {
-    if (user.role === 'USER') {
-      const c = user.ticketAreaCodigo?.trim();
-      return c ? c.toUpperCase() : null;
-    }
     if (user.role === 'GM') {
       return null;
+    }
+    const fromArea = user.areaCodigo?.trim();
+    if (fromArea) {
+      return fromArea.toUpperCase();
+    }
+    const c = user.ticketAreaCodigo?.trim();
+    if (c) {
+      return c.toUpperCase();
     }
     if (user.role === 'ADMIN') {
       return 'LABORATORIO';
     }
-    const tiRoles = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA'];
+    const tiRoles = ['ALMACEN', 'INVENTARIO', 'COMPRAS', 'GESTION_EQUIP', 'IMPRESION', 'GARANTIA', 'LABORATORIO'];
     if (tiRoles.includes(user.role)) {
       return user.role;
     }
@@ -193,8 +198,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     if (f.get('lastName')?.hasError('required')) {
       lineas.push('El apellido es obligatorio.');
     }
-    if (f.get('role')?.hasError('required')) {
-      lineas.push('Seleccioná un rol.');
+    if (f.get('asignacion')?.hasError('required') || f.get('asignacion')?.value == null || f.get('asignacion')?.value === '') {
+      lineas.push('Seleccioná Game Master o un área.');
     }
     return lineas;
   }
@@ -205,16 +210,19 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       next: (list) => { this.bandejasUsuario = list; }
     });
     this.ticketAreaService.listarTodasAdmin().subscribe({
-      next: (list) => { this.todasAreasTicket = list; }
+      next: (list) => {
+        this.todasAreasTicket = list;
+        this.rebuildFiltroTabs();
+      }
     });
     this.tourCleanup = this.tourRegistry.register('user-management', [{
       id: 'user-management-overview',
       title: 'Tour de usuarios Cerbero',
       icon: 'fa-route',
       steps: [
-        { selector: '#tour-users-title', title: 'Usuarios Cerbero', description: 'Alta, edición y desactivación de cuentas con roles funcionales (almacén, compras, GM, etc.).', side: 'bottom' },
-        { selector: '#tour-users-roles', title: 'Filtro por rol', description: 'Cada pestaña muestra sólo las cuentas de ese rol. «Todos» lista el directorio completo. La pestaña activa queda unida al panel.', side: 'bottom' },
-        { selector: '#tour-users-nuevo', title: 'Nuevo usuario', description: 'Abre el formulario en pantalla con usuario, correo, nombre y asignación de rol.', side: 'left' },
+        { selector: '#tour-users-title', title: 'Usuarios Cerbero', description: 'Alta, edición y desactivación de cuentas. El área define bandeja y permisos.', side: 'bottom' },
+        { selector: '#tour-users-roles', title: 'Filtro por área', description: 'Cada pestaña muestra las cuentas de ese área. «Todos» lista el directorio completo.', side: 'bottom' },
+        { selector: '#tour-users-nuevo', title: 'Nuevo usuario', description: 'Abre el formulario con usuario, correo, nombre, rol y área.', side: 'left' },
         { selector: '#tour-users-filters', title: 'Búsqueda y estado', description: 'Búsqueda libre por usuario, correo o nombre, y recorte por activo/inactivo.', side: 'bottom' },
         { selector: '#tour-users-table', title: 'Tabla', description: 'Editá datos, cambiá estado activo/inactivo o eliminá según políticas de seguridad.', side: 'top' }
       ]
@@ -248,18 +256,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.usuarioModalValidacion = null;
     this.editingUser = null;
     this.showForm = true;
-    
-    // Configurar el formulario para creación
+
     this.userForm.reset();
     this.userForm.patchValue({
-      role: 'USER',
-      ticketAreaCodigo: ''
+      asignacion: null
     });
-    
-    // Habilitar el campo username para creación
+
     this.userForm.get('username')?.enable();
-    
-    // Hacer el campo password requerido en creación
     this.userForm.get('password')?.setValidators([Validators.required]);
     this.userForm.get('password')?.updateValueAndValidity();
   }
@@ -268,22 +271,17 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.usuarioModalValidacion = null;
     this.editingUser = user;
     this.showForm = true;
-    
-    // Configurar el formulario para edición
+
     this.userForm.patchValue({
       username: user.username,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
-      ticketAreaCodigo: user.ticketAreaCodigo ?? '',
+      asignacion: this.asignacionDeUsuario(user),
       password: ''
     });
-    
-    // Hacer el campo username readonly en edición
+
     this.userForm.get('username')?.disable();
-    
-    // Hacer el campo password opcional en edición
     this.userForm.get('password')?.clearValidators();
     this.userForm.get('password')?.updateValueAndValidity();
   }
@@ -314,90 +312,91 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
-      // Habilitar temporalmente el campo username para obtener su valor
-      const usernameControl = this.userForm.get('username');
-      const wasUsernameDisabled = usernameControl?.disabled;
-      if (wasUsernameDisabled) {
-        usernameControl?.enable();
+    const raw = this.userForm.getRawValue() as {
+      username: string;
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      asignacion: string | number | null;
+    };
+
+    const { role, areaId } = this.resolverRolYArea(raw.asignacion);
+    if (!role) {
+      this.usuarioModalValidacion = {
+        titulo: 'Revisá el formulario antes de guardar',
+        lineas: ['Seleccioná Game Master o un área.'],
+        esError: false
+      };
+      this.loading = false;
+      return;
+    }
+
+    if (this.editingUser) {
+      const updateData: UpdateUserRequest = {
+        email: raw.email,
+        firstName: raw.firstName,
+        lastName: raw.lastName,
+        role,
+        enabled: this.editingUser.enabled,
+        areaId,
+        ticketAreaCodigo: null
+      };
+
+      if (raw.password && raw.password.trim() !== '') {
+        updateData.password = raw.password;
       }
-      
-      const userData: CreateUserRequest = this.userForm.value;
-      
-      // Deshabilitar nuevamente el campo username si estaba deshabilitado
-      if (wasUsernameDisabled) {
-        usernameControl?.disable();
-      }
-      
-      if (this.editingUser) {
-        // Actualizar usuario existente
-        const updateData: UpdateUserRequest = {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: userData.role,
-          enabled: this.editingUser.enabled,
-          ticketAreaCodigo: userData.role === 'USER' ? (userData.ticketAreaCodigo || null) : null
-        };
-        
-        // Incluir contraseña solo si se proporciona
-        if (userData.password && userData.password.trim() !== '') {
-          updateData.password = userData.password;
+
+      this.authService.updateUser(this.editingUser.id, updateData).subscribe({
+        next: () => {
+          this.successMessage = 'Usuario actualizado exitosamente';
+          this.notificationService.showSuccessMessage('Usuario actualizado exitosamente');
+          this.loadUsers();
+          setTimeout(() => this.cancelForm(), 1000);
+          this.loading = false;
+        },
+        error: (error) => {
+          const msg = this.mensajeErrorHttp(error);
+          this.usuarioModalValidacion = {
+            titulo: 'Error al actualizar el usuario',
+            lineas: [msg],
+            esError: true
+          };
+          this.notificationService.showError('Error al Actualizar Usuario', 'No se pudo actualizar el usuario: ' + msg);
+          this.loading = false;
         }
-        
-        this.authService.updateUser(this.editingUser.id, updateData).subscribe({
-          next: (updatedUser) => {
-            this.successMessage = 'Usuario actualizado exitosamente';
-            this.notificationService.showSuccessMessage('Usuario actualizado exitosamente');
-            this.loadUsers();
-            
-            // Cerrar el modal después de un pequeño delay para que vea el mensaje
-            setTimeout(() => {
-              this.cancelForm();
-            }, 1000);
-            
-            this.loading = false;
-          },
-          error: (error) => {
-            const msg = this.mensajeErrorHttp(error);
-            this.usuarioModalValidacion = {
-              titulo: 'Error al actualizar el usuario',
-              lineas: [msg],
-              esError: true
-            };
-            this.notificationService.showError('Error al Actualizar Usuario', 'No se pudo actualizar el usuario: ' + msg);
-            this.loading = false;
-          }
-        });
-      } else {
-        const createPayload: CreateUserRequest = {
-          ...userData,
-          ticketAreaCodigo: userData.role === 'USER' ? (userData.ticketAreaCodigo || null) : null
-        };
-        this.authService.createUser(createPayload).subscribe({
-          next: (newUser) => {
-            this.successMessage = 'Usuario creado exitosamente';
-            this.notificationService.showSuccessMessage('Usuario creado exitosamente');
-            this.loadUsers();
-            
-            // Cerrar el modal después de un pequeño delay para que vea el mensaje
-            setTimeout(() => {
-              this.cancelForm();
-            }, 1000);
-            
-            this.loading = false;
-          },
-          error: (error) => {
-            const msg = this.mensajeErrorHttp(error);
-            this.usuarioModalValidacion = {
-              titulo: 'Error al crear el usuario',
-              lineas: [msg],
-              esError: true
-            };
-            this.notificationService.showError('Error al Crear Usuario', 'No se pudo crear el usuario: ' + msg);
-            this.loading = false;
-          }
-        });
-      }
+      });
+    } else {
+      const createPayload: CreateUserRequest = {
+        username: raw.username,
+        email: raw.email,
+        password: raw.password,
+        firstName: raw.firstName,
+        lastName: raw.lastName,
+        role,
+        areaId,
+        ticketAreaCodigo: null
+      };
+      this.authService.createUser(createPayload).subscribe({
+        next: () => {
+          this.successMessage = 'Usuario creado exitosamente';
+          this.notificationService.showSuccessMessage('Usuario creado exitosamente');
+          this.loadUsers();
+          setTimeout(() => this.cancelForm(), 1000);
+          this.loading = false;
+        },
+        error: (error) => {
+          const msg = this.mensajeErrorHttp(error);
+          this.usuarioModalValidacion = {
+            titulo: 'Error al crear el usuario',
+            lineas: [msg],
+            esError: true
+          };
+          this.notificationService.showError('Error al Crear Usuario', 'No se pudo crear el usuario: ' + msg);
+          this.loading = false;
+        }
+      });
+    }
   }
 
   private procesarToggleEstado(user: User): void {
@@ -409,7 +408,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      enabled: nuevoEstado
+      enabled: nuevoEstado,
+      areaId: user.areaId ?? null,
+      ticketAreaCodigo: user.ticketAreaCodigo ?? null
     };
 
     this.authService.updateUser(user.id, updateData).subscribe({
@@ -484,9 +485,46 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  private asignacionDeUsuario(user: User): string | number | null {
+    if (user.role === 'GM') {
+      return 'GM';
+    }
+    if (user.areaId != null) {
+      return user.areaId;
+    }
+    const codigo = (user.areaCodigo || user.ticketAreaCodigo || (user.role !== 'USER' ? user.role : '') || '')
+      .trim()
+      .toUpperCase();
+    if (!codigo) {
+      return null;
+    }
+    const area = this.todasAreasTicket.find((a) => (a.codigo || '').toUpperCase() === codigo);
+    return area?.id ?? null;
+  }
+
+  private resolverRolYArea(asignacion: string | number | null): { role: string | null; areaId: number | null } {
+    if (asignacion === 'GM') {
+      return { role: 'GM', areaId: null };
+    }
+    const areaId = typeof asignacion === 'number' ? asignacion : Number(asignacion);
+    if (!Number.isFinite(areaId) || areaId <= 0) {
+      return { role: null, areaId: null };
+    }
+    return { role: 'USER', areaId };
+  }
+
   getRoleLabel(role: string): string {
-    const roleObj = this.roles.find(r => r.value === role);
-    return roleObj ? roleObj.label : role;
+    if (role === 'GM') {
+      return 'Game Master';
+    }
+    const area = this.todasAreasTicket.find((a) => a.codigo === role);
+    if (area?.nombre) {
+      return area.nombre;
+    }
+    if (role === 'USER') {
+      return 'Usuario';
+    }
+    return role;
   }
 
   get usersFiltrados(): User[] {
@@ -551,9 +589,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return (a || '').localeCompare(b || '', 'es', { sensitivity: 'base', numeric: true });
   }
 
-  /** Usuarios de la pestaña de rol actual (y búsqueda), sin filtrar por estado. */
   private usersEnPestana(): User[] {
     const search = (this.filterForm.get('search')?.value || '').toLowerCase().trim();
+    const filtro = this.filtroRol === 'todos' ? 'todos' : (this.filtroRol || '').toUpperCase();
     return this.users.filter(user => {
       const matchSearch = !search ||
         (user.username?.toLowerCase().includes(search) ||
@@ -564,7 +602,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
          `${user.lastName || ''} ${user.firstName || ''}`.toLowerCase().includes(search) ||
          this.getBandejaEntrada(user).toLowerCase().includes(search) ||
          (this.codigoBandejaEntrada(user)?.toLowerCase().includes(search) ?? false));
-      const matchRol = this.filtroRol === 'todos' || user.role === this.filtroRol;
+      const areaCod = this.codigoBandejaEntrada(user);
+      const matchRol = filtro === 'todos'
+        || (filtro === 'GM' && user.role === 'GM')
+        || (areaCod !== null && areaCod === filtro)
+        || (user.role || '').toUpperCase() === filtro;
       return matchSearch && matchRol;
     });
   }
@@ -574,7 +616,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   setFiltroRol(rol: 'todos' | string): void {
-    this.filtroRol = rol;
+    this.filtroRol = rol === 'todos' ? 'todos' : (rol || '').toUpperCase();
   }
 
   getEstadoTodosCount(): number {
@@ -590,20 +632,29 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   getRolCount(role: string): number {
-    return this.users.filter(u => u.role === role).length;
+    if (role === 'GM') {
+      return this.users.filter(u => u.role === 'GM').length;
+    }
+    return this.users.filter(u => this.codigoBandejaEntrada(u) === (role || '').toUpperCase()
+      || (u.role || '').toUpperCase() === (role || '').toUpperCase()).length;
   }
 
   getRolColor(role: string): string {
+    const area = this.todasAreasTicket.find((a) => (a.codigo || '').toUpperCase() === (role || '').toUpperCase());
+    if (area?.color) {
+      return area.color;
+    }
     const colors: Record<string, string> = {
       GM: '#721c24',
       ADMIN: '#856404',
       USER: '#2c3e50',
-      ALMACEN: '#1d4ed8',       // Azul fuerte
-      INVENTARIO: '#059669',    // Verde
-      COMPRAS: '#b45309',       // Naranja/marrón
-      GESTION_EQUIP: '#7c3aed', // Violeta
-      IMPRESION: '#0f766e',     // Verde azulado
-      GARANTIA: '#be123c'       // Rojo magenta
+      ALMACEN: '#1d4ed8',
+      INVENTARIO: '#059669',
+      COMPRAS: '#b45309',
+      GESTION_EQUIP: '#7c3aed',
+      IMPRESION: '#0f766e',
+      GARANTIA: '#be123c',
+      LABORATORIO: '#856404'
     };
     return colors[role] || '#6c757d';
   }
@@ -613,12 +664,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       GM: '#f8d7da',
       ADMIN: '#fff3cd',
       USER: '#e2e8f0',
-      ALMACEN: '#dbeafe',        // Azul muy claro
-      INVENTARIO: '#d1fae5',     // Verde muy claro
-      COMPRAS: '#ffedd5',        // Naranja claro
-      GESTION_EQUIP: '#ede9fe',  // Violeta claro
-      IMPRESION: '#ccfbf1',      // Verde agua claro
-      GARANTIA: '#ffe4e6'        // Rosado claro
+      ALMACEN: '#dbeafe',
+      INVENTARIO: '#d1fae5',
+      COMPRAS: '#ffedd5',
+      GESTION_EQUIP: '#ede9fe',
+      IMPRESION: '#ccfbf1',
+      GARANTIA: '#ffe4e6',
+      LABORATORIO: '#fff3cd'
     };
     return colors[role] || '#f8f9fa';
   }
@@ -633,7 +685,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       COMPRAS: '#fed7aa',
       GESTION_EQUIP: '#c4b5fd',
       IMPRESION: '#5eead4',
-      GARANTIA: '#fecdd3'
+      GARANTIA: '#fecdd3',
+      LABORATORIO: '#ffeaa7'
     };
     return colors[role] || '#dee2e6';
   }
@@ -648,9 +701,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       COMPRAS: 'fa-shopping-cart',
       GESTION_EQUIP: 'fa-tools',
       IMPRESION: 'fa-print',
-      GARANTIA: 'fa-shield-alt'
+      GARANTIA: 'fa-shield-alt',
+      LABORATORIO: 'fa-user-shield'
     };
-    return icons[role] || 'fa-user';
+    return icons[role] || 'fa-layer-group';
   }
 
   isCurrentUser(user: User): boolean {
@@ -658,4 +712,4 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return currentUser?.id === user.id;
   }
 
-} 
+}

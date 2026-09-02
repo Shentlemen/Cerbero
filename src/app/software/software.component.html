@@ -92,11 +92,14 @@
             </div>
           </div>
           
-          <div class="multi-select-controls" *ngIf="canManageSoftware()" id="tour-software-multiselect">
-            <button class="multi-select-toggle" 
+          <div class="multi-select-controls" id="tour-software-multiselect">
+            <button class="multi-select-toggle"
                     [class.active]="multiSelectMode"
+                    [class.action-locked]="!canManageSoftware()"
                     (click)="toggleMultiSelectMode()"
-                    [disabled]="isUpdatingMultiple">
+                    [disabled]="canManageSoftware() && isUpdatingMultiple"
+                    [attr.title]="canManageSoftware() ? 'Selección múltiple' : 'Sin permiso para editar software'"
+                    [attr.aria-disabled]="!canManageSoftware()">
               <i class="fas" [ngClass]="multiSelectMode ? 'fa-check-square' : 'fa-square'"></i>
               {{ multiSelectMode ? 'Cancelar Selección' : 'Selección Múltiple' }}
             </button>
@@ -143,9 +146,11 @@
         {{ hasAnyLicenciadoSoftware() ? 'Desmarcar Licenciado' : 'Marcar Licenciado' }}
       </button>
       <button class="action-btn delete" 
+              [class.action-locked]="!canDeleteSoftware()"
               (click)="deleteMultipleSoftware()"
-              [disabled]="isUpdatingMultiple"
-              title="Eliminar software seleccionado">
+              [disabled]="canDeleteSoftware() && isUpdatingMultiple"
+              [attr.title]="canDeleteSoftware() ? 'Eliminar software seleccionado' : 'Sin permiso para eliminar'"
+              [attr.aria-disabled]="!canDeleteSoftware()">
         <i class="fas fa-trash"></i>
         Eliminar
       </button>
@@ -260,46 +265,50 @@
               </span>
             </td>
             <td>
-              <div class="action-buttons" *ngIf="canManageSoftware()">
+              <div class="action-buttons">
                 <button type="button" class="visibility-button" 
+                        [class.action-locked]="!canManageSoftware()"
                         (click)="toggleSoftwareVisibility(software, $event)"
-                        [title]="software.hidden ? 'Mostrar software' : 'Ocultar software'"
-                        [disabled]="loading">
+                        [attr.title]="canManageSoftware() ? (software.hidden ? 'Mostrar software' : 'Ocultar software') : 'Sin permiso para editar'"
+                        [disabled]="canManageSoftware() && loading"
+                        [attr.aria-disabled]="!canManageSoftware()">
                   <i class="fas" [ngClass]="software.hidden ? 'fa-eye-slash' : 'fa-eye'"></i>
                 </button>
                 <button type="button" class="forbidden-button" 
+                        [class.action-locked]="!canManageSoftware()"
                         (click)="toggleSoftwareForbidden(software, $event)"
-                        [title]="software.forbidden ? 'Desmarcar como prohibido' : 'Marcar como prohibido'"
-                        [disabled]="loading"
-                        [class.forbidden]="software.forbidden">
+                        [attr.title]="canManageSoftware() ? (software.forbidden ? 'Desmarcar como prohibido' : 'Marcar como prohibido') : 'Sin permiso para editar'"
+                        [disabled]="canManageSoftware() && loading"
+                        [class.forbidden]="software.forbidden"
+                        [attr.aria-disabled]="!canManageSoftware()">
                   <i class="fas" [ngClass]="software.forbidden ? 'fa-ban' : 'fa-check-circle'"></i>
                 </button>
                 <button type="button" class="driver-button" 
+                        [class.action-locked]="!canManageSoftware()"
                         (click)="toggleSoftwareDriver(software, $event)"
-                        [title]="software.driver ? 'Desmarcar como driver' : 'Marcar como driver'"
-                        [disabled]="loading"
-                        [class.driver]="software.driver">
+                        [attr.title]="canManageSoftware() ? (software.driver ? 'Desmarcar como driver' : 'Marcar como driver') : 'Sin permiso para editar'"
+                        [disabled]="canManageSoftware() && loading"
+                        [class.driver]="software.driver"
+                        [attr.aria-disabled]="!canManageSoftware()">
                   <i class="fas" [ngClass]="software.driver ? 'fa-cog' : 'fa-cogs'"></i>
                 </button>
                 <button type="button" class="licenciado-button" 
+                        [class.action-locked]="!canManageSoftware()"
                         (click)="toggleSoftwareLicenciado(software, $event)"
-                        [title]="software.licenciado ? 'Desmarcar como licenciado' : 'Marcar como licenciado'"
-                        [disabled]="loading"
-                        [class.licenciado]="software.licenciado">
+                        [attr.title]="canManageSoftware() ? (software.licenciado ? 'Desmarcar como licenciado' : 'Marcar como licenciado') : 'Sin permiso para editar'"
+                        [disabled]="canManageSoftware() && loading"
+                        [class.licenciado]="software.licenciado"
+                        [attr.aria-disabled]="!canManageSoftware()">
                   <i class="fas fa-key"></i>
                 </button>
                 <button type="button" class="delete-button" 
+                        [class.action-locked]="!canDeleteSoftware()"
                         (click)="deleteSoftware(software, $event)"
-                        [title]="'Eliminar software'"
-                        [disabled]="loading">
+                        [attr.title]="canDeleteSoftware() ? 'Eliminar software' : 'Sin permiso para eliminar'"
+                        [disabled]="canDeleteSoftware() && loading"
+                        [attr.aria-disabled]="!canDeleteSoftware()">
                   <i class="fas fa-trash"></i>
                 </button>
-              </div>
-              <div class="action-buttons" *ngIf="!canManageSoftware()">
-                <span class="read-only-badge">
-                  <i class="fas fa-key"></i>
-                  Sin permisos
-                </span>
               </div>
             </td>
           </tr>

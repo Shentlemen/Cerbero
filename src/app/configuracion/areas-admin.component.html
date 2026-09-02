@@ -1,0 +1,95 @@
+<ng-container *ngIf="canManage(); else noAccess">
+  <div class="areas-admin">
+    <p class="text-muted small mb-3">
+      Cada área es una bandeja de tickets y un conjunto de permisos. Las áreas de sistema no se pueden borrar.
+    </p>
+    <div *ngIf="error" class="alert alert-danger py-2">{{ error }}</div>
+    <div class="row g-2 align-items-end mb-3">
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Código</label>
+        <input class="form-control form-control-sm" [(ngModel)]="nuevaCodigo"
+               placeholder="EJ. RRHH" maxlength="30" [disabled]="guardando">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-1">Nombre</label>
+        <input class="form-control form-control-sm" [(ngModel)]="nuevaNombre"
+               placeholder="Nombre visible" [disabled]="guardando">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Color</label>
+        <input type="color" class="form-control form-control-sm form-control-color"
+               [(ngModel)]="nuevaColor" [disabled]="guardando">
+      </div>
+      <div class="col-md-3">
+        <button type="button" class="btn btn-sm btn-primary w-100" (click)="crear()" [disabled]="guardando">
+          <i class="fas fa-plus me-1"></i> Crear área
+        </button>
+      </div>
+    </div>
+    <div *ngIf="loading" class="text-muted small py-2">Cargando áreas…</div>
+    <div *ngIf="!loading" class="table-responsive">
+      <table class="table table-sm table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Color</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="areas.length === 0">
+            <td colspan="6" class="text-muted text-center py-3">No hay áreas.</td>
+          </tr>
+          <tr *ngFor="let a of areas">
+            <td class="font-monospace">{{ a.codigo }}</td>
+            <td>
+              <input class="form-control form-control-sm" [(ngModel)]="a.nombre"
+                     (blur)="guardarNombre(a)">
+            </td>
+            <td>
+              <input type="color" class="form-control form-control-color form-control-sm"
+                     [(ngModel)]="a.color" (change)="guardarNombre(a)">
+            </td>
+            <td>{{ a.sistema ? 'Sistema' : 'Configurable' }}</td>
+            <td>
+              <span class="badge" [class.bg-success]="a.activa" [class.bg-secondary]="!a.activa">
+                {{ a.activa ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="toggleActiva(a)">
+                {{ a.activa ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button *ngIf="!a.sistema" type="button" class="btn btn-outline-danger btn-sm"
+                      (click)="abrirEliminar(a, confirmDelete)">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #noAccess>
+  <div class="alert alert-warning">Solo GM puede administrar áreas.</div>
+</ng-template>
+
+<ng-template #confirmDelete let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Eliminar área</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    Se borrará <strong>{{ areaEliminar?.nombre }}</strong> y los tickets de esa bandeja.
+    No se puede si hay usuarios asignados.
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-danger btn-sm" (click)="confirmarEliminar(modal)">Eliminar</button>
+  </div>
+</ng-template>

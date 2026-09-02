@@ -60,7 +60,7 @@
 
             <div class="ticket-hero-chips" role="group" aria-label="Resumen del ticket">
 
-              <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroAreaClass(ticket.areaActual)" title="Área actual">
+              <span class="ticket-hero-chip ticket-hero-chip--lg" [ngClass]="getHeroAreaClass(ticket.areaActual)" [ngStyle]="getAreaPillStyle(ticket.areaActual)" title="Área actual">
 
                 <i class="fas fa-sitemap" aria-hidden="true"></i>
 
@@ -340,9 +340,9 @@
                   <div class="ticket-timeline-change" *ngIf="mov.areaAnterior || mov.areaNueva">
                     <span class="ticket-timeline-change-label">Área</span>
                     <div class="ticket-timeline-change-values">
-                      <span [ngClass]="getAreaPillClass(mov.areaAnterior)">{{ getHeroAreaLabel(mov.areaAnterior) || '—' }}</span>
+                      <span [ngClass]="getAreaPillClass(mov.areaAnterior)" [ngStyle]="getAreaPillStyle(mov.areaAnterior)">{{ getHeroAreaLabel(mov.areaAnterior) || '—' }}</span>
                       <i class="fas fa-long-arrow-alt-right ticket-timeline-arrow" aria-hidden="true"></i>
-                      <span [ngClass]="getAreaPillClass(mov.areaNueva)">{{ getHeroAreaLabel(mov.areaNueva) || '—' }}</span>
+                      <span [ngClass]="getAreaPillClass(mov.areaNueva)" [ngStyle]="getAreaPillStyle(mov.areaNueva)">{{ getHeroAreaLabel(mov.areaNueva) || '—' }}</span>
                     </div>
                   </div>
                 </div>

@@ -858,7 +858,64 @@
       <i class="fas fa-exclamation-triangle me-2"></i>
       {{duplicatesError}}
     </div>
+    </div>
   </div>
+</div>
+
+<div *ngIf="showDeleteOcsDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar el duplicado
+      <strong>{{ ocsDuplicateToDelete?.name }}</strong>
+      (ID: {{ ocsDuplicateToDelete?.id }}) de la base OCS?
+      Se borrarán ese hardware y todos sus datos relacionados.
+      Debe quedar al menos un equipo con ese nombre.
+      Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button type="button" class="confirm-dialog-button cancel" (click)="cancelarEliminarDuplicadoOcs()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="confirm-dialog-button confirm"
+        (click)="confirmarEliminarDuplicadoOcs()"
+        [disabled]="isDeletingOcs">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showDeleteCerberoDialog" class="confirm-dialog-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog-title">
+      <i class="fas fa-exclamation-triangle"></i>
+      Confirmar Eliminación
+    </div>
+    <div class="confirm-dialog-message">
+      ¿Está seguro que desea eliminar el duplicado
+      <strong>{{ cerberoDuplicateToDelete?.name }}</strong>
+      (ID: {{ cerberoDuplicateToDelete?.id }}) de la base Cerbero?
+      Se borrarán todos los datos relacionados con ese hardware.
+      Esta acción no se puede deshacer.
+    </div>
+    <div class="confirm-dialog-buttons">
+      <button type="button" class="confirm-dialog-button cancel" (click)="cancelarEliminarDuplicado()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="confirm-dialog-button confirm"
+        (click)="confirmarEliminarDuplicado()"
+        [disabled]="isDeleting">
+        Eliminar
+      </button>
+    </div>
   </div>
 </div>
 

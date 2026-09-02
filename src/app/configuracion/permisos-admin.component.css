@@ -1,0 +1,139 @@
+.permisos-admin {
+  padding: 0.25rem 0 1.5rem;
+}
+
+.permisos-intro {
+  color: var(--ds-color-muted, #64748b);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-bottom: 1rem;
+}
+
+.permisos-chip {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  margin: 0 0.15rem;
+}
+
+.permisos-chip--ver {
+  background: color-mix(in srgb, #0ea5e9 18%, transparent);
+  color: #0369a1;
+}
+
+.permisos-chip--editar {
+  background: color-mix(in srgb, #d97706 18%, transparent);
+  color: #b45309;
+}
+
+.permisos-chip--eliminar {
+  background: color-mix(in srgb, #dc2626 18%, transparent);
+  color: #b91c1c;
+}
+
+.permisos-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+}
+
+.permisos-area-field {
+  min-width: 16rem;
+  flex: 1 1 16rem;
+}
+
+.permisos-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.permisos-grupo-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-color-subtle, #64748b);
+  margin: 0 0 0.65rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--ds-color-border, #e2e8f0);
+}
+
+.permisos-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.permisos-card {
+  border: 1px solid var(--ds-color-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--ds-color-surface, #fff);
+  padding: 0.9rem 1rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 100%;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.permisos-card-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  margin: 0 0 0.3rem;
+  color: var(--ds-color-text, #0f172a);
+}
+
+.permisos-card-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--ds-color-muted, #64748b);
+}
+
+.permisos-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  margin-top: auto;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--ds-color-border, #e2e8f0);
+}
+
+.permisos-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ds-color-text, #334155);
+}
+
+.permisos-toggle input {
+  width: 1.05rem;
+  height: 1.05rem;
+  cursor: pointer;
+  accent-color: var(--ds-color-accent, #2563eb);
+}
+
+html.theme-dark .permisos-chip--ver {
+  color: #7dd3fc;
+}
+
+html.theme-dark .permisos-chip--editar {
+  color: #fdba74;
+}
+
+html.theme-dark .permisos-chip--eliminar {
+  color: #fca5a5;
+}
+
+html.theme-dark .permisos-card {
+  background: var(--ds-color-elevated, #1e293b);
+}

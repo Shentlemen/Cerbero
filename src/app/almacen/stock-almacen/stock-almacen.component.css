@@ -133,12 +133,38 @@
 .toolbar-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.toolbar-actions .btn {
+.toolbar-actions .btn,
+.toolbar-actions .btn.registrar-stock-btn,
+.toolbar-actions .btn.bulk-transfer-btn,
+.toolbar-actions .btn.bulk-reactivar-btn,
+.toolbar-actions .btn.print-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  min-height: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 0.375rem;
+  box-sizing: border-box;
+  box-shadow: none !important;
+  transition: all 0.3s ease;
+}
+
+.toolbar-actions .btn i {
+  font-size: 1rem;
+  margin: 0 !important;
+  width: 1em;
+  text-align: center;
+  line-height: 1;
 }
 
 /* Registrar stock: mismo criterio que antes en esta pantalla (negro sólido) */
@@ -149,8 +175,6 @@
   border: 1px solid #000 !important;
   border-color: #000 !important;
   color: #fff !important;
-  padding: 0.5rem 1rem;
-  font-weight: 600;
 }
 
 .registrar-stock-btn:hover,
@@ -163,22 +187,55 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* Imprimir almacén: igual que almacén laboratorio / cementerio (rojo sólido) */
+.bulk-transfer-btn,
+.btn.bulk-transfer-btn {
+  background: #212529 !important;
+  border: 1px solid #212529 !important;
+  color: #fff !important;
+}
+
+.bulk-transfer-btn:hover:not(:disabled):not(.action-locked),
+.btn.bulk-transfer-btn:hover:not(:disabled):not(.action-locked) {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.bulk-reactivar-btn,
+.btn.bulk-reactivar-btn {
+  background: #1e8449 !important;
+  border: 1px solid #1e8449 !important;
+  color: #fff !important;
+}
+
+.bulk-reactivar-btn:hover:not(:disabled):not(.action-locked),
+.btn.bulk-reactivar-btn:hover:not(:disabled):not(.action-locked) {
+  background: #196f3d !important;
+  border-color: #196f3d !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(30, 132, 73, 0.3);
+}
+
+.bulk-transfer-btn:disabled,
+.bulk-reactivar-btn:disabled,
+.print-btn:disabled,
+.btn.print-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .print-btn,
 .btn.print-btn,
-.btn.btn-danger.print-btn,
-.btn.btn-sm.print-btn,
 button.print-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
   background: #dc3545 !important;
   background-color: #dc3545 !important;
   border: 1px solid #dc3545 !important;
-  border-color: #dc3545 !important;
   color: #fff !important;
-  transition: all 0.3s ease;
 }
 
 .print-btn:hover:not(:disabled),
@@ -190,15 +247,6 @@ button.print-btn:hover:not(:disabled) {
   color: #fff !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-}
-
-.print-btn:disabled,
-.btn.print-btn:disabled,
-button.print-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .print-btn i {

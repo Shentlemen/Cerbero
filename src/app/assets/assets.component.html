@@ -142,6 +142,21 @@
       </div>
       <div class="col-auto">
         <button
+          type="button"
+          class="btn btn-sm bulk-transfer-btn"
+          id="tour-assets-bulk-transfer"
+          [class.action-locked]="!canManageAssetStates()"
+          (click)="abrirTransferenciaMasiva($event)"
+          [disabled]="canManageAssetStates() && (loading || originalAssetsList.length === 0 || transfiriendoMasa)"
+          [attr.title]="canManageAssetStates() ? 'Transferir varios equipos a un almacén' : 'Sin permiso para transferir'"
+          [attr.aria-disabled]="!canManageAssetStates()"
+          data-help="📦 Pegá varios números (14506 14530), usá Seleccionar todo y elegí almacén, estantería y estante.">
+          <i class="fas" [ngClass]="transfiriendoMasa ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
+          Transferir en masa
+        </button>
+      </div>
+      <div class="col-auto">
+        <button
           class="btn btn-primary btn-sm print-btn"
           id="tour-assets-print"
           (click)="exportarPDF()"
@@ -275,7 +290,7 @@
                 <span>Nro. Compra</span>
               </div>
             </th>
-            <th *ngIf="canManageAssets() || canManageAssetStates()">
+            <th>
               <div class="th-content">
                 <span>Acciones</span>
               </div>
@@ -323,33 +338,26 @@
                 {{getNumeroCompra(asset.name)}}
               </span>
             </td>
-            <td *ngIf="canManageAssets() || canManageAssetStates()">
+            <td>
               <div class="action-buttons" id="tour-assets-actions">
-                <!-- Botones de cambio de estado solo si hay permisos -->
-                <ng-container *ngIf="canManageAssetStates()">
                   <button 
                     class="btn btn-info btn-sm estado-btn transferir-btn" 
-                    (click)="transferirEquipo(asset); $event.stopPropagation()"
-                    [disabled]="transferiendoAssetId === asset.id"
-                    title="Transferir este equipo a otro almacén"
-                    data-help="🔄 Permite transferir el equipo a cualquier almacén (cementerio, laboratorio o almacén regular)">
+                    [class.action-locked]="!canManageAssetStates()"
+                    (click)="transferirEquipo(asset, $event)"
+                    [disabled]="canManageAssetStates() && (transferiendoAssetId === asset.id || transfiriendoMasa)"
+                    [attr.title]="canManageAssetStates() ? 'Transferir este equipo a otro almacén' : 'Sin permiso para transferir'"
+                    [attr.aria-disabled]="!canManageAssetStates()"
+                    data-help="🔄 Permite transferir el equipo a cualquier almacén (cementerio, laboratorio, oficina laboratorio o almacén regular)">
                     <i class="fas" [ngClass]="transferiendoAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-exchange-alt'"></i>
                     Transferir
                   </button>
-                </ng-container>
-                
-                <!-- Mensaje informativo si no hay permisos para cambio de estado -->
-                <small *ngIf="!canManageAssetStates()" class="text-muted">
-                  Requiere permisos de GM o Administrador
-                </small>
-                
-                <!-- Botón de eliminar (solo para GM/Admin) -->
                 <button 
-                  *ngIf="canDeleteAssets()"
                   class="btn btn-danger btn-sm delete-btn" 
-                  (click)="eliminarAsset(asset); $event.stopPropagation()"
-                  [disabled]="deletingAssetId === asset.id"
-                  title="Eliminar este equipo y todos sus datos relacionados"
+                  [class.action-locked]="!canDeleteAssets()"
+                  (click)="eliminarAsset(asset, $event)"
+                  [disabled]="canDeleteAssets() && deletingAssetId === asset.id"
+                  [attr.title]="canDeleteAssets() ? 'Eliminar este equipo y todos sus datos relacionados' : 'Sin permiso para eliminar'"
+                  [attr.aria-disabled]="!canDeleteAssets()"
                   data-help="🗑️ Elimina permanentemente este equipo y todos sus datos relacionados de la base de datos">
                   <i class="fas" [ngClass]="deletingAssetId === asset.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
                   {{ deletingAssetId === asset.id ? 'Eliminando...' : 'Eliminar' }}
