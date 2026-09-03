@@ -341,6 +341,14 @@ export class PermissionsService {
     return this.can('compras', 'editar');
   }
 
+  canManageLots(): boolean {
+    return this.can('lotes', 'editar');
+  }
+
+  canManageDeliveries(): boolean {
+    return this.can('entregas', 'editar');
+  }
+
   canDeletePurchases(): boolean {
     return this.can('compras', 'eliminar');
   }

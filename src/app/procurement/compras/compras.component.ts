@@ -482,8 +482,11 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   abrirModal(modal: any, compra?: CompraConTipo): void {
-    const accion = compra ? 'editar compras' : 'crear compras';
-    if (this.permissionsService.denyUnless(this.canManagePurchases(), accion)) {
+    const puedeAbrir = compra ? this.canOpenPurchaseEditor() : this.canManagePurchases();
+    const accion = compra
+      ? (this.canManagePurchases() ? 'editar compras' : 'gestionar ítems o entregas')
+      : 'crear compras';
+    if (this.permissionsService.denyUnless(puedeAbrir, accion)) {
       return;
     }
     this.compraModalValidacion = null;
@@ -541,8 +544,10 @@ export class ComprasComponent implements OnInit, OnDestroy {
                 fechaFinGarantia: [entrega.fechaFinGarantia, Validators.required]
               }));
             });
+            this.aplicarPermisosAlModal();
             this.cdr.detectChanges();
           });
+          this.aplicarPermisosAlModal();
           this.cdr.detectChanges();
         },
         error: () => {
@@ -551,6 +556,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
           this.idEntregasOriginales = [];
           this.itemsFormArray.clear();
           this.entregasFormArray.clear();
+          this.aplicarPermisosAlModal();
         }
       });
       
@@ -576,6 +582,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
       // this.pliegoCompra = null;
       // this.descripcionPliego = '';
     }
+    this.aplicarPermisosAlModal();
     this.cdr.detectChanges();
     this.modalService.open(modal, {
       size: 'xl',
@@ -594,6 +601,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   agregarItem() {
+    if (this.permissionsService.denyUnless(this.canManageLots(), 'agregar ítems')) {
+      return;
+    }
     this.itemsFormArray.push(this.fb.group({
       nombreItem: ['', Validators.required],
       descripcion: [''],
@@ -609,11 +619,17 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   eliminarItem(index: number) {
+    if (this.permissionsService.denyUnless(this.canManageLots(), 'eliminar ítems')) {
+      return;
+    }
     this.itemsFormArray.removeAt(index);
     this.cdr.detectChanges();
   }
 
   agregarEntrega() {
+    if (this.permissionsService.denyUnless(this.canManageDeliveries(), 'agregar entregas')) {
+      return;
+    }
     const hoy = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
     
     console.log('Agregando nueva entrega con fecha:', hoy);
@@ -692,6 +708,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   eliminarEntrega(index: number) {
+    if (this.permissionsService.denyUnless(this.canManageDeliveries(), 'eliminar entregas')) {
+      return;
+    }
     this.entregasFormArray.removeAt(index);
   }
 
@@ -700,7 +719,21 @@ export class ComprasComponent implements OnInit, OnDestroy {
       this.tourDemoModalRef?.dismiss();
       return;
     }
-    if (!this.compraForm.valid) {
+    const puedeCompra = this.canManagePurchases();
+    const puedeLotes = this.canManageLots();
+    const puedeEntregas = this.canManageDeliveries();
+    if (this.permissionsService.denyUnless(
+      puedeCompra || puedeLotes || puedeEntregas,
+      'guardar cambios en la compra'
+    )) {
+      return;
+    }
+    if (!this.modoEdicion && !puedeCompra) {
+      this.permissionsService.denyUnless(false, 'crear compras');
+      return;
+    }
+
+    if (puedeCompra && !this.compraForm.valid) {
       this.compraForm.markAllAsTouched();
       const lineas = this.armarLineasValidacionCompraPrincipal();
       this.compraModalValidacion = {
@@ -712,8 +745,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const valorDolar = this.compraForm.get('valorDolar')?.value;
-    if (!valorDolar || valorDolar <= 0) {
+    const compraRaw = this.compraForm.getRawValue();
+    const valorDolar = compraRaw.valorDolar;
+    if (puedeCompra && (!valorDolar || valorDolar <= 0)) {
       this.compraModalValidacion = {
         titulo: 'Revisá el valor del dólar',
         lineas: ['El valor del dólar es requerido y debe ser mayor a 0.'],
@@ -723,8 +757,8 @@ export class ComprasComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const itemsData = this.itemsFormArray.value;
-    if (itemsData.length > 0) {
+    const itemsData = this.itemsFormArray.getRawValue();
+    if (puedeLotes && itemsData.length > 0) {
       for (const item of itemsData) {
         const nombre = (item.nombreItem || 'sin nombre').trim() || 'sin nombre';
         if (!item.precioUnitario || item.precioUnitario <= 0) {
@@ -748,11 +782,43 @@ export class ComprasComponent implements OnInit, OnDestroy {
       }
     }
 
+    const entregasData = this.entregasFormArray.getRawValue();
+    this.compraModalValidacion = null;
+    this.error = null;
+
+    const persistirItemsYEntregas = (idCompra: number) => {
+      if (puedeLotes || puedeEntregas) {
+        this.guardarItemsYEntregas(idCompra, itemsData, entregasData, {
+          guardarLotes: puedeLotes,
+          guardarEntregas: puedeEntregas
+        });
+        return;
+      }
+      this.modalService.dismissAll();
+      this.loadData().catch((error) => {
+        console.warn('No se pudieron recargar los datos, pero la compra se guardó correctamente:', error);
+      });
+    };
+
+    if (!puedeCompra) {
+      const idCompra = compraRaw.idCompra;
+      if (!idCompra) {
+        this.compraModalValidacion = {
+          titulo: 'No se pudo guardar',
+          lineas: ['Error: ID de compra no válido.'],
+          esError: true
+        };
+        return;
+      }
+      persistirItemsYEntregas(idCompra);
+      return;
+    }
+
     const montoTotalConIva = this.calcularMontoTotalConIva();
     const subtotalTotal = this.calcularSubtotalTotal();
     const ivaTotal = this.calcularIvaTotal();
 
-    const moneda = this.compraForm.get('moneda')?.value;
+    const moneda = compraRaw.moneda;
 
     let montoConvertido = montoTotalConIva;
     let subtotalConvertido = subtotalTotal;
@@ -771,10 +837,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
       totalIva: ivaConvertido
     });
 
-    const compraData = this.compraForm.value;
-    const entregasData = this.entregasFormArray.value;
-    this.compraModalValidacion = null;
-    this.error = null;
+    const compraData = this.compraForm.getRawValue();
 
     if (this.modoEdicion) {
       if (!compraData.idCompra) {
@@ -788,7 +851,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
       }
       this.comprasService.actualizarCompra(compraData.idCompra, compraData).subscribe({
         next: () => {
-          this.guardarItemsYEntregas(compraData.idCompra, itemsData, entregasData);
+          persistirItemsYEntregas(compraData.idCompra);
         },
         error: (error) => {
           this.compraModalValidacion = {
@@ -803,7 +866,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
       const { idCompra, ...nuevaCompra } = compraData;
       this.comprasService.crearCompra(nuevaCompra).subscribe({
         next: (compraCreada) => {
-          this.guardarItemsYEntregas(compraCreada.idCompra, itemsData, entregasData);
+          persistirItemsYEntregas(compraCreada.idCompra);
         },
         error: (error) => {
           this.compraModalValidacion = {
@@ -817,45 +880,59 @@ export class ComprasComponent implements OnInit, OnDestroy {
     }
   }
 
-  guardarItemsYEntregas(idCompra: number, itemsData: any[], entregasData: any[]) {
+  guardarItemsYEntregas(
+    idCompra: number,
+    itemsData: any[],
+    entregasData: any[],
+    opciones: { guardarLotes?: boolean; guardarEntregas?: boolean } = {}
+  ) {
+    const guardarLotes = opciones.guardarLotes !== false;
+    const guardarEntregas = opciones.guardarEntregas !== false;
     console.log('🔍 DEBUG - Iniciando guardado...');
     console.log('🔍 DEBUG - ID Compra:', idCompra);
     console.log('🔍 DEBUG - Items a enviar:', JSON.stringify(itemsData, null, 2));
     console.log('🔍 DEBUG - Entregas a enviar:', JSON.stringify(entregasData, null, 2));
     
     // Si estamos editando, eliminar los ítems que fueron quitados
-    if (this.modoEdicion && this.idItemsOriginales.length > 0) {
+    if (guardarLotes && this.modoEdicion && this.idItemsOriginales.length > 0) {
       const idItemsActuales = itemsData.filter(i => i.idItem).map(i => i.idItem);
       const idItemsAEliminar = this.idItemsOriginales.filter(id => !idItemsActuales.includes(id));
       const deleteObservables = idItemsAEliminar.map(id => this.lotesService.eliminarLote(id).toPromise());
       Promise.all(deleteObservables).catch(() => {}); // No detener el flujo si falla un delete
     }
     // Si estamos editando, eliminar las entregas que fueron quitadas
-    if (this.modoEdicion && this.idEntregasOriginales.length > 0) {
+    if (guardarEntregas && this.modoEdicion && this.idEntregasOriginales.length > 0) {
       const idEntregasActuales = entregasData.filter(e => e.idEntrega).map(e => e.idEntrega);
       const idEntregasAEliminar = this.idEntregasOriginales.filter(id => !idEntregasActuales.includes(id));
       const deleteEntregasObs = idEntregasAEliminar.map(id => this.entregasService.eliminarEntrega(id).toPromise());
       Promise.all(deleteEntregasObs).catch(() => {});
     }
     // Guardar ítems (lotes)
-    const lotesObservables = itemsData.map(item => {
-      const itemData = { ...item, idCompra };
-      console.log('🔍 DEBUG - Enviando lote:', JSON.stringify(itemData, null, 2));
-      
-      if (item.idItem) {
-        // Actualizar lote existente
-        console.log('🔍 DEBUG - Actualizando lote existente ID:', item.idItem);
-        return this.lotesService.actualizarLote(item.idItem, itemData);
-      } else {
-        // Crear nuevo lote
-        console.log('🔍 DEBUG - Creando nuevo lote');
-        return this.lotesService.crearLote(itemData);
-      }
-    });
+    const lotesObservables = guardarLotes
+      ? itemsData.map(item => {
+          const itemData = { ...item, idCompra };
+          console.log('🔍 DEBUG - Enviando lote:', JSON.stringify(itemData, null, 2));
+          
+          if (item.idItem) {
+            // Actualizar lote existente
+            console.log('🔍 DEBUG - Actualizando lote existente ID:', item.idItem);
+            return this.lotesService.actualizarLote(item.idItem, itemData);
+          }
+          console.log('🔍 DEBUG - Creando nuevo lote');
+          return this.lotesService.crearLote(itemData);
+        })
+      : [];
     
-    Promise.all(lotesObservables.map(obs => obs.toPromise()))
+    const lotesPromise = guardarLotes
+      ? Promise.all(lotesObservables.map(obs => obs.toPromise()))
+      : Promise.resolve(this.lotesDeLaCompra);
+
+    lotesPromise
       .then(lotesGuardados => {
         console.log('🔍 DEBUG - Lotes guardados exitosamente:', lotesGuardados);
+        if (!guardarEntregas) {
+          return Promise.resolve([]);
+        }
         
         // Guardar entregas
         const entregasObservables = entregasData.map(entrega => {
@@ -870,10 +947,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
           if (entrega.idEntrega) {
             // Actualizar entrega existente
             return this.entregasService.actualizarEntrega(entrega.idEntrega, { ...entrega, idItem });
-          } else {
-            // Crear nueva entrega
-            return this.entregasService.crearEntrega({ ...entrega, idItem });
           }
+          // Crear nueva entrega
+          return this.entregasService.crearEntrega({ ...entrega, idItem });
         }).filter(Boolean);
         return Promise.all(entregasObservables.filter(obs => !!obs).map(obs => obs!.toPromise()));
       })
@@ -1062,8 +1138,77 @@ export class ComprasComponent implements OnInit, OnDestroy {
     return this.permissionsService.canManagePurchases();
   }
 
+  canManageLots(): boolean {
+    return this.permissionsService.canManageLots();
+  }
+
+  canManageDeliveries(): boolean {
+    return this.permissionsService.canManageDeliveries();
+  }
+
+  /** Abrir el modal de una compra existente: datos, ítems o entregas. */
+  canOpenPurchaseEditor(): boolean {
+    return this.canManagePurchases() || this.canManageLots() || this.canManageDeliveries();
+  }
+
   canDeletePurchases(): boolean {
     return this.permissionsService.canDeletePurchases();
+  }
+
+  get tituloModalCompra(): string {
+    if (!this.modoEdicion) {
+      return 'Nueva Compra';
+    }
+    return this.canManagePurchases() ? 'Editar Compra' : 'Ítems y entregas';
+  }
+
+  get textoGuardarModal(): string {
+    if (!this.modoEdicion) {
+      return 'Guardar';
+    }
+    return this.canManagePurchases() ? 'Actualizar' : 'Guardar cambios';
+  }
+
+  tituloBotonEditarCompra(): string {
+    if (this.canManagePurchases()) {
+      return 'Editar compra';
+    }
+    if (this.canManageLots() || this.canManageDeliveries()) {
+      return 'Gestionar ítems y entregas';
+    }
+    return 'Sin permiso para editar';
+  }
+
+  formularioModalListo(): boolean {
+    if (this.tourDemoActivo) {
+      return false;
+    }
+    if (this.canManagePurchases() && !this.compraForm.valid) {
+      return false;
+    }
+    return this.canOpenPurchaseEditor();
+  }
+
+  private aplicarPermisosAlModal(): void {
+    if (this.canManagePurchases()) {
+      this.compraForm.enable({ emitEvent: false });
+    } else {
+      this.compraForm.disable({ emitEvent: false });
+    }
+    this.itemsFormArray.controls.forEach((control) => {
+      if (this.canManageLots()) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
+      }
+    });
+    this.entregasFormArray.controls.forEach((control) => {
+      if (this.canManageDeliveries()) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
+      }
+    });
   }
 
   getMonedaCount(moneda: string): number {
@@ -1365,6 +1510,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
   // Método onArchivoSeleccionado reemplazado por onDocumentoSeleccionado
 
   subirDocumento(): void {
+    if (this.permissionsService.denyUnless(this.canManagePurchases(), 'cargar documentos de la compra')) {
+      return;
+    }
     // Obtener idCompra del formulario si no hay compraSeleccionada
     const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
     
@@ -1723,6 +1871,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
   }
 
   eliminarDocumento(documento: any): void {
+    if (this.permissionsService.denyUnless(this.canManagePurchases(), 'eliminar documentos de la compra')) {
+      return;
+    }
     if (confirm('¿Está seguro que desea eliminar este documento?')) {
       const idCompra = this.compraSeleccionada?.idCompra || this.compraForm.get('idCompra')?.value;
       

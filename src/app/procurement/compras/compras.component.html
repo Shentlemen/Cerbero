@@ -245,10 +245,10 @@
                     <i class="fas fa-eye"></i>
                   </button>
                   <button class="btn btn-warning btn-sm me-2"
-                    [class.action-locked]="!canManagePurchases()"
+                    [class.action-locked]="!canOpenPurchaseEditor()"
                     (click)="abrirModal(compraModal, compra)"
-                    [attr.title]="canManagePurchases() ? 'Editar compra' : 'Sin permiso para editar'"
-                    [attr.aria-disabled]="!canManagePurchases()">
+                    [attr.title]="tituloBotonEditarCompra()"
+                    [attr.aria-disabled]="!canOpenPurchaseEditor()">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn btn-danger btn-sm"
@@ -302,7 +302,7 @@
       <ng-container *ngIf="tourDemoActivo; else tituloNormal">
         <i class="fas fa-graduation-cap me-2"></i>Compra DEMO — Tour de creación
       </ng-container>
-      <ng-template #tituloNormal>{{modoEdicion ? 'Editar' : 'Nueva'}} Compra</ng-template>
+      <ng-template #tituloNormal>{{ tituloModalCompra }}</ng-template>
     </h4>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
@@ -312,6 +312,10 @@
         <a ngbNavLink id="tour-compras-edit-tab-datos">Datos de la compra</a>
         <ng-template ngbNavContent>
           <div class="compra-data-card" id="tour-compras-edit-tab-datos-content">
+            <div class="alert alert-info py-2 small mb-3" *ngIf="modoEdicion && !canManagePurchases()">
+              <i class="fas fa-info-circle me-1"></i>
+              Los datos de la compra son de solo lectura. Usá las pestañas Ítems y Entregas según tus permisos.
+            </div>
             <div class="card-header-custom mb-4">
               <h5 class="mb-0 text-secondary">
                 <i class="fas fa-edit me-2"></i>Información de la Compra
@@ -450,7 +454,12 @@
         <ng-template ngbNavContent>
           <div class="d-flex justify-content-between align-items-center mb-4" id="tour-compras-edit-items-toolbar">
             <h5 class="mb-0 text-secondary">Ítems de la compra</h5>
-            <button class="btn btn-success" (click)="agregarItem()" id="tour-compras-edit-items-add">
+            <button class="btn btn-success"
+              (click)="agregarItem()"
+              id="tour-compras-edit-items-add"
+              [class.action-locked]="!canManageLots()"
+              [attr.title]="canManageLots() ? 'Agregar ítem' : 'Sin permiso para editar ítems'"
+              [attr.aria-disabled]="!canManageLots()">
               <i class="fas fa-plus me-2"></i>Agregar ítem
             </button>
           </div>
@@ -467,7 +476,11 @@
               <h6 class="mb-0 text-primary">
                 <i class="fas fa-box me-2"></i>Ítem {{i + 1}}
               </h6>
-              <button class="btn btn-outline-danger btn-sm" (click)="eliminarItem(i)" title="Eliminar ítem">
+              <button class="btn btn-outline-danger btn-sm"
+                (click)="eliminarItem(i)"
+                title="Eliminar ítem"
+                [class.action-locked]="!canManageLots()"
+                [attr.aria-disabled]="!canManageLots()">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </div>
@@ -679,7 +692,12 @@
         <ng-template ngbNavContent>
           <div class="d-flex justify-content-between align-items-center mb-4" id="tour-compras-edit-entregas-toolbar">
             <h5 class="mb-0 text-secondary">Entregas de los ítems</h5>
-            <button class="btn btn-success" (click)="agregarEntrega()" id="tour-compras-edit-entregas-add">
+            <button class="btn btn-success"
+              (click)="agregarEntrega()"
+              id="tour-compras-edit-entregas-add"
+              [class.action-locked]="!canManageDeliveries()"
+              [attr.title]="canManageDeliveries() ? 'Agregar entrega' : 'Sin permiso para editar entregas'"
+              [attr.aria-disabled]="!canManageDeliveries()">
               <i class="fas fa-plus me-2"></i>Entrega Item
             </button>
           </div>
@@ -695,7 +713,11 @@
               <h6 class="mb-0 text-primary">
                 <i class="fas fa-truck me-2"></i>Entrega
               </h6>
-              <button class="btn btn-outline-danger btn-sm" (click)="eliminarEntrega(i)" title="Eliminar entrega">
+              <button class="btn btn-outline-danger btn-sm"
+                (click)="eliminarEntrega(i)"
+                title="Eliminar entrega"
+                [class.action-locked]="!canManageDeliveries()"
+                [attr.aria-disabled]="!canManageDeliveries()">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </div>
@@ -767,7 +789,7 @@
           </div>
           
           <!-- Formulario para subir documentos -->
-          <div class="documento-upload-card" id="tour-compras-edit-doc-upload">
+          <div class="documento-upload-card" id="tour-compras-edit-doc-upload" *ngIf="canManagePurchases(); else documentosSoloLectura">
             <div class="row" id="tour-compras-edit-doc-fields">
               <div class="col-md-6">
                 <label class="form-label">
@@ -806,6 +828,12 @@
               </div>
             </div>
           </div>
+          <ng-template #documentosSoloLectura>
+            <div class="alert alert-info py-2 small mb-3">
+              <i class="fas fa-info-circle me-1"></i>
+              Podés ver los documentos. Para cargar o borrar hace falta permiso de editar compras.
+            </div>
+          </ng-template>
 
           <!-- Solo mostrar documentos, eliminar toda la sección de pliegos -->
           <div class="documentos-section" id="tour-compras-edit-doc-list">
@@ -839,6 +867,7 @@
                       <i class="fas fa-download"></i>
                     </button>
                     <button 
+                      *ngIf="canManagePurchases()"
                       class="btn btn-sm btn-outline-danger"
                       (click)="eliminarDocumento(documento)"
                       title="Eliminar">
@@ -890,16 +919,16 @@
         type="button"
         class="btn btn-sm modal-btn-primario"
         id="tour-compras-edit-save"
-        [class.modal-btn-primario--valid]="compraForm.valid && !tourDemoActivo"
-        [class.modal-btn-primario--invalid]="!compraForm.valid && !tourDemoActivo"
+        [class.modal-btn-primario--valid]="formularioModalListo()"
+        [class.modal-btn-primario--invalid]="!formularioModalListo() && !tourDemoActivo"
         [class.modal-btn-primario--demo]="tourDemoActivo"
-        [disabled]="tourDemoActivo"
+        [disabled]="tourDemoActivo || !formularioModalListo()"
         [title]="tourDemoActivo ? 'En modo DEMO no se guardan cambios' : ''"
         (click)="guardarCompra()">
         <ng-container *ngIf="tourDemoActivo; else textoGuardar">
           <i class="fas fa-lock me-1"></i>Modo DEMO
         </ng-container>
-        <ng-template #textoGuardar>{{ modoEdicion ? 'Actualizar' : 'Guardar' }}</ng-template>
+        <ng-template #textoGuardar>{{ textoGuardarModal }}</ng-template>
       </button>
     </div>
   </div>
