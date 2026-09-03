@@ -17,13 +17,13 @@ import { NotificationContainerComponent } from '../components/notification-conta
 import { TransferirEquipoModalComponent } from '../components/transferir-equipo-modal/transferir-equipo-modal.component';
 import { TransferirMasaModalComponent } from '../components/transferir-masa-modal/transferir-masa-modal.component';
 import { ReactivarMasaModalComponent } from '../components/reactivar-masa-modal/reactivar-masa-modal.component';
-import { RegistrarEquipoPendienteModalComponent } from '../components/registrar-equipo-pendiente-modal/registrar-equipo-pendiente-modal.component';
+import { RegistrarEquipoPendienteModalComponent, RegistroPendienteResult } from '../components/registrar-equipo-pendiente-modal/registrar-equipo-pendiente-modal.component';
 import { RegistrarStockLabModalComponent } from '../components/registrar-stock-lab-modal/registrar-stock-lab-modal.component';
 import { AlmacenService } from '../services/almacen.service';
 import { StockAlmacenService, StockAlmacen } from '../services/stock-almacen.service';
 import { findAlmacenLaboratorio, findAlmacenOficinaLaboratorio } from '../utils/almacen-especial';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { forkJoin, of, from } from 'rxjs';
+import { catchError, concatMap, map, toArray } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TourRegistryService } from '../services/tour-registry.service';
@@ -123,7 +123,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
         { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Pestañas para filtrar por todos, equipos, dispositivos de red o stock de insumos (RAM, placas, etc.).', side: 'bottom' },
         { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
         { selector: '#tour-almacen-lab-registrar', title: 'Registrar equipo',
-          description: 'Si una PC está en el depósito pero todavía no pasó por OCS, anotá el nombre. Queda en esta lista como <strong>Pendiente OCS</strong>.', side: 'bottom' },
+          description: 'Si una PC está en el depósito pero todavía no pasó por OCS, anotá el nombre. También podés pegar varios nombres separados por espacio y registrarlos juntos como <strong>Pendiente OCS</strong>.', side: 'bottom' },
         { selector: '#tour-almacen-lab-stock', title: 'Registrar stock',
           description: 'En la pestaña Stock anotá insumos con descripción y cantidad: RAM, placas, discos, cables. Después subí o bajá la cantidad con + y −.', side: 'bottom' },
         { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Cada fila muestra los datos del equipo o dispositivo y, según tus permisos, los botones de acción a la derecha.', side: 'top' },
@@ -1025,46 +1025,113 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       return;
     }
     const modalRef = this.modalService.open(RegistrarEquipoPendienteModalComponent, {
-      size: 'md',
+      size: 'lg',
       centered: true,
       backdrop: 'static',
       windowClass: 'transferir-masa-modal-window'
     });
-    modalRef.result.then((data: { name: string; observaciones?: string }) => {
-      if (!data?.name) {
+    modalRef.result.then((data: RegistroPendienteResult) => {
+      if (!data?.modo) {
         return;
       }
-      this.registrandoPendiente = true;
-      this.estadoEquipoService.registrarEquipoPendienteLaboratorio({
-        name: data.name,
-        observaciones: data.observaciones || '',
-        usuario: this.authService.getUsuarioParaAuditoria()
-      }).subscribe({
-        next: (response) => {
-          if (response?.success) {
-            this.loadItemsEnAlmacen();
-            this.notificationService.showSuccessMessage(
-              `Equipo "${data.name}" registrado en laboratorio.`
-            );
-          } else {
-            this.notificationService.showError(
-              'Error al registrar equipo',
-              response?.message || 'No se pudo registrar el equipo pendiente.'
-            );
-          }
-        },
-        error: (error) => {
-          this.registrandoPendiente = false;
+      if (data.modo === 'uno') {
+        this.registrarPendienteUno(data.name, data.observaciones || '');
+        return;
+      }
+      if (data.modo === 'varios' && data.names?.length) {
+        this.registrarPendienteVarios(data.names, data.observaciones || '');
+      }
+    }).catch(() => {});
+  }
+
+  private registrarPendienteUno(name: string, observaciones: string): void {
+    this.registrandoPendiente = true;
+    this.estadoEquipoService.registrarEquipoPendienteLaboratorio({
+      name,
+      observaciones,
+      usuario: this.authService.getUsuarioParaAuditoria()
+    }).subscribe({
+      next: (response) => {
+        if (response?.success) {
+          this.loadItemsEnAlmacen();
+          this.notificationService.showSuccessMessage(
+            `Equipo "${name}" registrado en laboratorio.`
+          );
+        } else {
           this.notificationService.showError(
             'Error al registrar equipo',
-            error?.error?.message || error?.message || 'No se pudo registrar el equipo pendiente.'
+            response?.message || 'No se pudo registrar el equipo pendiente.'
           );
-        },
-        complete: () => {
-          this.registrandoPendiente = false;
         }
-      });
-    }).catch(() => {});
+      },
+      error: (error) => {
+        this.registrandoPendiente = false;
+        this.notificationService.showError(
+          'Error al registrar equipo',
+          error?.error?.message || error?.message || 'No se pudo registrar el equipo pendiente.'
+        );
+      },
+      complete: () => {
+        this.registrandoPendiente = false;
+      }
+    });
+  }
+
+  private registrarPendienteVarios(names: string[], observaciones: string): void {
+    const usuario = this.authService.getUsuarioParaAuditoria();
+    this.registrandoPendiente = true;
+    from(names).pipe(
+      concatMap((name) =>
+        this.estadoEquipoService.registrarEquipoPendienteLaboratorio({
+          name,
+          observaciones,
+          usuario
+        }).pipe(
+          map((response) => ({
+            name,
+            ok: !!response?.success,
+            message: response?.message || ''
+          })),
+          catchError((error) => of({
+            name,
+            ok: false,
+            message: error?.error?.message || error?.message || 'Error al registrar'
+          }))
+        )
+      ),
+      toArray()
+    ).subscribe({
+      next: (resultados) => {
+        const ok = resultados.filter((r) => r.ok).length;
+        const fallidos = resultados.filter((r) => !r.ok);
+        this.loadItemsEnAlmacen();
+        if (fallidos.length === 0) {
+          this.notificationService.showSuccessMessage(
+            `Se registraron ${ok} equipo(s) pendiente(s) de OCS.`
+          );
+        } else if (ok === 0) {
+          this.notificationService.showError(
+            'No se pudo registrar el lote',
+            fallidos.slice(0, 5).map((f) => `${f.name}: ${f.message}`).join(' · ')
+          );
+        } else {
+          this.notificationService.showError(
+            `${ok} ok, ${fallidos.length} con error`,
+            fallidos.slice(0, 5).map((f) => `${f.name}: ${f.message}`).join(' · ')
+          );
+        }
+      },
+      error: (error) => {
+        this.registrandoPendiente = false;
+        this.notificationService.showError(
+          'Error al registrar equipos',
+          error?.message || 'No se pudo registrar el lote pendiente.'
+        );
+      },
+      complete: () => {
+        this.registrandoPendiente = false;
+      }
+    });
   }
 
   abrirRegistroStock(event?: Event): void {

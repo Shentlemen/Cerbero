@@ -125,7 +125,7 @@
               [disabled]="canRegistrarPendiente() && (loading || registrandoPendiente)"
               [attr.title]="canRegistrarPendiente() ? 'Registrar una PC que todavía no está en OCS' : 'Sin permiso para registrar'"
               [attr.aria-disabled]="!canRegistrarPendiente()"
-              data-help="🖥️ Anotá el nombre de una PC del depósito que todavía no inventarió OCS.">
+              data-help="🖥️ Anotá el nombre de una PC pendiente de OCS, o varios separados por espacio.">
               <i class="fas" [ngClass]="registrandoPendiente ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
               Registrar equipo
             </button>

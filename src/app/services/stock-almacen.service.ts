@@ -120,12 +120,14 @@ export class StockAlmacenService extends BaseRestService {
 
   // ✅ CREAR STOCK EN LOTE
   createStockBatch(stockItems: StockAlmacenCreate[]): Observable<StockAlmacen[]> {
-    const batchRequest = { stockItems: stockItems };
-    return this.http.post<StockAlmacen[]>(`${this.apiUrl}/batch`, batchRequest).pipe(
+    const batchRequest = { stockItems };
+    return this.http.post<ApiResponse<StockAlmacen[]>>(`${this.apiUrl}/batch`, batchRequest).pipe(
+      map(response => this.handleSuccessResponse(response)),
       map(result => {
         this.showSuccessMessage(`Se crearon exitosamente ${result.length} items de stock`);
         return result;
-      })
+      }),
+      catchError(error => this.handleError(error, 'Crear stock en masa'))
     );
   }
 
