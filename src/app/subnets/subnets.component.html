@@ -31,25 +31,56 @@
       <div class="subnets-toolbar" id="tour-subnets-toolbar">
         <span class="subnets-count">
           <strong>{{ collectionSize }}</strong>
-          <span class="text-muted">{{ searchTerm.trim() ? 'coinciden' : 'subredes' }}</span>
+          <span class="text-muted">{{ isSearchFilterActive() ? 'coinciden' : 'subredes' }}</span>
         </span>
-        <div class="subnets-search">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Buscar por nombre, ID o Net ID…"
-              [(ngModel)]="searchTerm"
-              (input)="onSearchChange($any($event.target).value)">
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              *ngIf="searchTerm"
-              (click)="clearSearch()"
-              title="Limpiar búsqueda">
-              <i class="fas fa-times"></i>
-            </button>
+        <div class="subnets-searches" id="tour-subnets-search">
+          <div class="subnets-search">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Buscar por nombre, ID o Net ID…"
+                title="Filtrar subredes por nombre, ID, Net ID, máscara o tag"
+                autocomplete="off"
+                [(ngModel)]="searchTerm"
+                (input)="onSearchChange($any($event.target).value)">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                *ngIf="searchTerm"
+                (click)="clearSearch()"
+                title="Limpiar búsqueda de subred">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="subnets-search" [class.subnets-search--busy]="equipmentInventoryLoading">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">
+                <i class="fas" [ngClass]="equipmentInventoryLoading ? 'fa-spinner fa-spin' : 'fa-desktop'"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control"
+                [placeholder]="equipmentInventoryLoading ? 'Cargando inventario…' : 'PC, dispositivo o IP…'"
+                [attr.title]="equipmentInventoryLoading
+                  ? 'Esperá a que termine de cargar el inventario de PCs y dispositivos'
+                  : 'Filtrar subredes que contienen una PC o dispositivo (nombre o IP)'"
+                autocomplete="off"
+                [disabled]="equipmentInventoryLoading"
+                [attr.aria-busy]="equipmentInventoryLoading"
+                [(ngModel)]="equipmentSearchTerm"
+                (input)="onEquipmentSearchChange($any($event.target).value)">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                *ngIf="equipmentSearchTerm"
+                (click)="clearEquipmentSearch()"
+                title="Limpiar búsqueda de PC o dispositivo">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
           </div>
         </div>
         <div class="actions">
@@ -248,7 +279,7 @@
         </p>
         <p *ngIf="!mapEditMode && isSearchFilterActive()" class="subnets-map-hint subnets-map-hint--search mb-0">
           <i class="fas fa-search me-1"></i>
-          Coincidencias con «{{ searchTerm }}» en <strong>amarillo</strong> (acercá el mapa para ver pins sueltos).
+          {{ searchHighlightHint }} en <strong>amarillo</strong> (acercá el mapa para ver pins sueltos).
         </p>
         <p *ngIf="mapEditMode" class="subnets-map-hint subnets-map-hint--edit mb-0">
           <i class="fas fa-hand-pointer me-1"></i>

@@ -249,6 +249,30 @@
           <span class="count">({{getFilterCount('software_forbidden')}})</span>
         </button>
       </div>
+      <div
+        class="filter-bulk-actions"
+        *ngIf="canConfirmAlerts() && currentFilter !== 'software_forbidden'">
+        <button
+          type="button"
+          class="btn btn-confirm-filter"
+          id="tour-dashboard-btn-confirm-filter"
+          (click)="confirmarAlertasDelFiltro()"
+          [class.action-locked]="!canConfirmAlerts()"
+          [disabled]="canConfirmAlerts() && (isConfirmingFilter || !canConfirmFilteredAlerts())"
+          [attr.title]="!canConfirmFilteredAlerts()
+            ? 'No hay alertas confirmables en este filtro'
+            : (currentFilter === 'all'
+              ? 'Confirmar todas las alertas visibles'
+              : 'Confirmar todas las alertas de ' + currentFilterLabel)"
+          [attr.aria-disabled]="!canConfirmAlerts()">
+          <i class="fas fa-check-double" [class.spinning]="isConfirmingFilter && canConfirmAlerts()"></i>
+          {{ isConfirmingFilter
+            ? 'Confirmando...'
+            : (currentFilter === 'all'
+              ? 'Confirmar todas (' + confirmableFilterCount + ')'
+              : 'Confirmar ' + currentFilterLabel + ' (' + confirmableFilterCount + ')') }}
+        </button>
+      </div>
     </div>
     
     <div class="alert-list">

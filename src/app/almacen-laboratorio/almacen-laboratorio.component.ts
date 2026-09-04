@@ -18,7 +18,7 @@ import { TransferirEquipoModalComponent } from '../components/transferir-equipo-
 import { TransferirMasaModalComponent } from '../components/transferir-masa-modal/transferir-masa-modal.component';
 import { ReactivarMasaModalComponent } from '../components/reactivar-masa-modal/reactivar-masa-modal.component';
 import { RegistrarEquipoPendienteModalComponent, RegistroPendienteResult } from '../components/registrar-equipo-pendiente-modal/registrar-equipo-pendiente-modal.component';
-import { RegistrarStockLabModalComponent } from '../components/registrar-stock-lab-modal/registrar-stock-lab-modal.component';
+import { RegistrarStockLabModalComponent, RegistroStockLabResult } from '../components/registrar-stock-lab-modal/registrar-stock-lab-modal.component';
 import { AlmacenService } from '../services/almacen.service';
 import { StockAlmacenService, StockAlmacen } from '../services/stock-almacen.service';
 import { findAlmacenLaboratorio, findAlmacenOficinaLaboratorio } from '../utils/almacen-especial';
@@ -123,9 +123,9 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
         { selector: '#tour-almacen-lab-filters', title: 'Tipo', description: 'Pestañas para filtrar por todos, equipos, dispositivos de red o stock de insumos (RAM, placas, etc.).', side: 'bottom' },
         { selector: '#tour-almacen-lab-search', title: 'Búsqueda', description: 'Buscá por nombre para acotar la lista.', side: 'bottom' },
         { selector: '#tour-almacen-lab-registrar', title: 'Registrar equipo',
-          description: 'Si una PC está en el depósito pero todavía no pasó por OCS, anotá el nombre. También podés pegar varios nombres separados por espacio y registrarlos juntos como <strong>Pendiente OCS</strong>.', side: 'bottom' },
+          description: 'PC que todavía no pasó por OCS: se registra de a una (cantidad 1). Si hay varias, usá la pestaña Varios con nombres separados por espacio.', side: 'bottom' },
         { selector: '#tour-almacen-lab-stock', title: 'Registrar stock',
-          description: 'En la pestaña Stock anotá insumos con descripción y cantidad: RAM, placas, discos, cables. Después subí o bajá la cantidad con + y −.', side: 'bottom' },
+          description: 'Un botón, dos pestañas: <strong>Insumos</strong> (descripción y cantidad) o <strong>PCs</strong> (pegá nombres separados por espacio; cada una queda con cantidad 1).', side: 'bottom' },
         { selector: '#tour-almacen-lab-table', title: 'Tabla', description: 'Cada fila muestra los datos del equipo o dispositivo y, según tus permisos, los botones de acción a la derecha.', side: 'top' },
         { selector: '.transferir-btn', title: 'Transferir',
           description: 'Mueve el equipo a <strong>otro almacén</strong> (cementerio, oficina laboratorio o almacén regular).', side: 'top' },
@@ -489,6 +489,10 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
 
   etiquetaStock(item: StockAlmacen | any): string {
     return (item?.descripcion || item?.numero || item?.item?.nombreItem || 'Sin descripción').toString();
+  }
+
+  esStockPc(item: StockAlmacen | any): boolean {
+    return !!(item?.numero && String(item.numero).trim());
   }
 
   stockCoincidenteConBusqueda(): StockAlmacen[] {
@@ -1015,9 +1019,6 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
 
   abrirRegistroPendiente(event?: Event): void {
     event?.stopPropagation();
-    if (this.esModoOficina) {
-      return;
-    }
     if (this.permissionsService.denyUnless(this.canRegistrarPendiente(), 'registrar equipos pendientes', event)) {
       return;
     }
@@ -1030,6 +1031,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       backdrop: 'static',
       windowClass: 'transferir-masa-modal-window'
     });
+    modalRef.componentInstance.almacenLabel = this.tituloPagina;
     modalRef.result.then((data: RegistroPendienteResult) => {
       if (!data?.modo) {
         return;
@@ -1049,13 +1051,14 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
     this.estadoEquipoService.registrarEquipoPendienteLaboratorio({
       name,
       observaciones,
-      usuario: this.authService.getUsuarioParaAuditoria()
+      usuario: this.authService.getUsuarioParaAuditoria(),
+      oficinaLaboratorio: this.esModoOficina
     }).subscribe({
       next: (response) => {
         if (response?.success) {
           this.loadItemsEnAlmacen();
           this.notificationService.showSuccessMessage(
-            `Equipo "${name}" registrado en laboratorio.`
+            `Equipo "${name}" registrado en ${this.tituloPagina.toLowerCase()}.`
           );
         } else {
           this.notificationService.showError(
@@ -1085,7 +1088,8 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
         this.estadoEquipoService.registrarEquipoPendienteLaboratorio({
           name,
           observaciones,
-          usuario
+          usuario,
+          oficinaLaboratorio: this.esModoOficina
         }).pipe(
           map((response) => ({
             name,
@@ -1143,7 +1147,7 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       if (this.almacenDestinoId == null) {
         this.notificationService.showError(
           'Almacén no encontrado',
-          'No se pudo determinar el almacén laboratorio.'
+          'No se pudo determinar el almacén destino.'
         );
       }
       return;
@@ -1154,8 +1158,12 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
       backdrop: 'static',
       windowClass: 'transferir-masa-modal-window'
     });
-    modalRef.result.then((data: { descripcion: string; cantidad: number }) => {
-      if (!data?.descripcion || this.almacenDestinoId == null) {
+    modalRef.result.then((data: RegistroStockLabResult) => {
+      if (!data?.tipo || this.almacenDestinoId == null) {
+        return;
+      }
+      if (data.tipo === 'pcs') {
+        this.registrarStockPcs(data.nombres);
         return;
       }
       this.registrandoStock = true;
@@ -1177,6 +1185,32 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
         }
       });
     }).catch(() => {});
+  }
+
+  private registrarStockPcs(nombres: string[]): void {
+    if (!nombres?.length || this.almacenDestinoId == null) {
+      return;
+    }
+    this.registrandoStock = true;
+    const stockItems = nombres.map((nombre) => ({
+      almacenId: this.almacenDestinoId as number,
+      cantidad: 1,
+      numero: nombre.slice(0, 50),
+      descripcion: nombre,
+      estanteria: '-',
+      estante: '-'
+    }));
+    this.stockAlmacenService.createStockBatch(stockItems).subscribe({
+      next: () => {
+        this.loadItemsEnAlmacen();
+      },
+      error: () => {
+        this.registrandoStock = false;
+      },
+      complete: () => {
+        this.registrandoStock = false;
+      }
+    });
   }
 
   pedirEliminarStock(item: StockAlmacen, event?: Event): void {
@@ -1213,6 +1247,9 @@ export class AlmacenLaboratorioComponent implements OnInit, OnDestroy {
   }
 
   private persistirCantidadStock(item: StockAlmacen, nueva: number, event?: Event): void {
+    if (this.esStockPc(item)) {
+      return;
+    }
     if (this.permissionsService.denyUnless(this.canRegistrarStock(), 'ajustar cantidad de stock', event)) {
       return;
     }

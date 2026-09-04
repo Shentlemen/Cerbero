@@ -7,7 +7,7 @@ import {
   SubnetDTO,
   SubnetCoordinatesDTO,
   ipv4MatchesSubnet,
-  findSubnetForIpv4
+  ipv4ToUint32
 } from '../services/subnet.service';
 import { HardwareService } from '../services/hardware.service';
 import { NetworkInfoService } from '../services/network-info.service';
@@ -16,7 +16,7 @@ import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import * as XLSX from 'xlsx';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
 import { TourRegistryService } from '../services/tour-registry.service';
@@ -56,6 +56,14 @@ interface MarkerPlacement {
   lat: number;
   lng: number;
   peers: ExtendedSubnet[];
+}
+
+/** Subred con net/máscara ya parseados para indexar inventario sin bloquear la UI. */
+interface PreparedSubnet {
+  subnet: ExtendedSubnet;
+  net: number;
+  mask: number;
+  order: number;
 }
 
 /** Cluster de Leaflet MarkerCluster (métodos usados en el mapa). */
@@ -114,6 +122,8 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Búsqueda en la tabla por nombre, id o netId. */
   public searchTerm: string = '';
+  /** Búsqueda por nombre o IP de PC / dispositivo de red. */
+  public equipmentSearchTerm: string = '';
 
   /** Esquinas aproximadas de Uruguay (sur-oeste y norte-este). */
   private readonly uruguaySouthWest: L.LatLngTuple = [-35.19, -58.45];
@@ -137,7 +147,15 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   public exportingExcel = false;
   /** Conteos precalculados por netId (evita filtrar todo el inventario en cada marcador). */
   private equipmentCountByNetId = new Map<string, number>();
+  /** Índice nombre/IP → netId para buscar PCs y dispositivos sin recorrer el inventario en cada tecla. */
+  private equipmentSearchIndex: { netId: string; haystack: string }[] = [];
+  /** netIds cuya PC o dispositivo coincide con equipmentSearchTerm. */
+  private equipmentMatchNetIds = new Set<string>();
   private hardwareCountsLoading = false;
+  private inventoryRequest$: Observable<{ hardware: any[]; devices: NetworkInfoDTO[] }> | null = null;
+  private inventoryIndexTimer: ReturnType<typeof setTimeout> | undefined;
+  private inventoryIndexJobId = 0;
+  private componentDestroyed = false;
   private mapInitialFitDone = false;
   private resizeDebounceId: ReturnType<typeof setTimeout> | undefined;
   private markersRefreshId: ReturnType<typeof setTimeout> | undefined;
@@ -163,7 +181,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       icon: 'fa-route',
       steps: [
         { selector: '#tour-subnets-header', title: 'Subredes', description: 'Definición de VLANs y datos para ubicar equipos en el plano (IP, máscara, coordenadas).', side: 'bottom' },
-        { selector: '#tour-subnets-toolbar', title: 'Resumen', description: 'Contador de registros cargados y estado de la operación.', side: 'bottom' },
+        { selector: '#tour-subnets-toolbar', title: 'Resumen y búsqueda', description: 'Contador de registros. Buscá por nombre de subred o por PC/dispositivo (nombre o IP): la lista y el mapa se actualizan juntos.', side: 'bottom' },
         { selector: '#tour-subnets-table', title: 'Tabla editable', description: 'In-line: nombre, IP, máscara y datos del mapa; guardá cambios desde cada fila si tenés permiso.', side: 'top' },
         { selector: '#tour-subnets-map', title: 'Mapa', description: 'Marcadores por ubicación; el número indica equipos en la subred. Clic en un marcador abre el mismo listado que el botón Equipos.', side: 'top' }
       ]
@@ -249,7 +267,7 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Subredes filtradas por el buscador (nombre, id, netId, máscara, tag).
+   * Subredes filtradas por el buscador de subred y/o de PC/dispositivo.
    * La búsqueda es case-insensitive e ignora acentos/diéresis para que
    * "limon" matchee con "Limón" y "ANIO" con "año".
    */
@@ -260,19 +278,59 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.subnets.filter((s) => this.subnetMatchesSearch(s));
   }
 
-  /** Hay texto de búsqueda activo (tras normalizar). */
+  /** Hay texto de búsqueda activo (subred o equipo, tras normalizar). */
   isSearchFilterActive(): boolean {
+    return this.isSubnetSearchActive() || this.isEquipmentSearchActive();
+  }
+
+  isSubnetSearchActive(): boolean {
     return this.normalizeForSearch(this.searchTerm).length > 0;
   }
 
-  /** Misma regla que la tabla: ¿la subred coincide con el buscador? */
+  isEquipmentSearchActive(): boolean {
+    return this.normalizeForSearch(this.equipmentSearchTerm).length > 0;
+  }
+
+  /** Inventario de PCs/dispositivos todavía no disponible para el segundo buscador. */
+  get equipmentInventoryLoading(): boolean {
+    return this.hardwareCountsLoading || this.hardwareCache === null;
+  }
+
+  /** Texto del hint del mapa según qué buscadores están activos. */
+  get searchHighlightHint(): string {
+    const subnetQ = this.searchTerm.trim();
+    const equipmentQ = this.equipmentSearchTerm.trim();
+    if (subnetQ && equipmentQ) {
+      return `Coincidencias de subred «${subnetQ}» y equipo/IP «${equipmentQ}»`;
+    }
+    if (equipmentQ) {
+      return `Subredes con PC o dispositivo «${equipmentQ}»`;
+    }
+    return `Coincidencias con «${subnetQ}»`;
+  }
+
+  /** Misma regla que la tabla: ¿la subred coincide con los buscadores activos? */
   subnetMatchesSearch(subnet: ExtendedSubnet): boolean {
+    return this.subnetMatchesNameSearch(subnet) && this.subnetMatchesEquipmentSearch(subnet);
+  }
+
+  private subnetMatchesNameSearch(subnet: ExtendedSubnet): boolean {
     const q = this.normalizeForSearch(this.searchTerm);
     if (!q) {
       return true;
     }
     const fields = [subnet.name, subnet.id, subnet.netId, subnet.mask, subnet.tag];
     return fields.some((v) => this.normalizeForSearch(v).includes(q));
+  }
+
+  private subnetMatchesEquipmentSearch(subnet: ExtendedSubnet): boolean {
+    if (!this.isEquipmentSearchActive()) {
+      return true;
+    }
+    if (this.hardwareCache === null) {
+      return true;
+    }
+    return this.equipmentMatchNetIds.has(subnet.netId);
   }
 
   /**
@@ -302,6 +360,18 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (term !== undefined) {
       this.searchTerm = term;
     }
+    this.applySearchFilters();
+  }
+
+  onEquipmentSearchChange(term?: string): void {
+    if (term !== undefined) {
+      this.equipmentSearchTerm = term;
+    }
+    this.rebuildEquipmentMatchNetIds();
+    this.applySearchFilters();
+  }
+
+  private applySearchFilters(): void {
     this.page = 1;
     this.collectionSize = this.filteredSubnets.length;
     this.scheduleMapSearchHighlight();
@@ -340,65 +410,234 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.hardwareCountsLoading = true;
     this.loadInventory().subscribe({
       next: ({ hardware, devices }) => {
-        this.hardwareCache = hardware;
-        this.devicesCache = devices;
-        this.ngZone.runOutsideAngular(() => {
-          this.equipmentCountByNetId = this.buildEquipmentCountMap(hardware, devices);
-          this.ngZone.run(() => {
-            this.hardwareCountsLoading = false;
-            this.refreshMapMarkerLabels();
-          });
-        });
+        if (this.componentDestroyed) {
+          return;
+        }
+        if (this.hardwareCache && this.devicesCache) {
+          this.hardwareCountsLoading = false;
+          this.refreshMapMarkerLabels();
+          return;
+        }
+        this.scheduleInventoryIndex(hardware, devices);
       },
       error: () => {
-        this.hardwareCountsLoading = false;
+        this.finishInventoryLoadError();
       }
     });
   }
 
   /** Carga PCs (hardware) y dispositivos de red (misma fuente que Dispositivos). */
   private loadInventory(): Observable<{ hardware: any[]; devices: NetworkInfoDTO[] }> {
-    return forkJoin({
-      hardware: this.hardwareService.getHardware().pipe(catchError((err) => {
-        console.warn('No se pudo cargar hardware:', err);
-        return of([]);
-      })),
-      devices: this.networkInfoService.getNetworkInfo().pipe(
-        map((response) => (response?.success && Array.isArray(response.data) ? response.data : [])),
-        catchError((err) => {
-          console.warn('No se pudo cargar dispositivos de red:', err);
+    if (this.hardwareCache && this.devicesCache) {
+      return of({ hardware: this.hardwareCache, devices: this.devicesCache });
+    }
+    if (!this.inventoryRequest$) {
+      this.inventoryRequest$ = forkJoin({
+        hardware: this.hardwareService.getHardware().pipe(catchError((err) => {
+          console.warn('No se pudo cargar hardware:', err);
           return of([]);
-        })
-      )
-    }).pipe(
-      map(({ hardware, devices }) => ({
-        hardware: Array.isArray(hardware) ? hardware : [],
-        devices: Array.isArray(devices) ? devices : []
-      }))
-    );
+        })),
+        devices: this.networkInfoService.getNetworkInfo().pipe(
+          map((response) => (response?.success && Array.isArray(response.data) ? response.data : [])),
+          catchError((err) => {
+            console.warn('No se pudo cargar dispositivos de red:', err);
+            return of([]);
+          })
+        )
+      }).pipe(
+        map(({ hardware, devices }) => ({
+          hardware: Array.isArray(hardware) ? hardware : [],
+          devices: Array.isArray(devices) ? devices : []
+        })),
+        shareReplay(1)
+      );
+    }
+    return this.inventoryRequest$;
   }
 
-  /** Una pasada sobre PCs + dispositivos → mapa netId → cantidad en subred. */
-  private buildEquipmentCountMap(hardware: any[], devices: NetworkInfoDTO[]): Map<string, number> {
-    const counts = new Map<string, number>();
-    const subnetsWithMask = this.subnets.filter((s) => s.mask?.trim());
-    for (const s of subnetsWithMask) {
-      counts.set(s.netId, 0);
+  private finishInventoryLoadError(): void {
+    this.hardwareCountsLoading = false;
+    if (this.hardwareCache === null) {
+      this.hardwareCache = [];
+      this.devicesCache = [];
     }
-    const bump = (ip: string | undefined | null) => {
-      if (!ip?.trim()) return;
-      const match = findSubnetForIpv4(ip, subnetsWithMask);
-      if (match) {
-        counts.set(match.netId, (counts.get(match.netId) ?? 0) + 1);
+  }
+
+  /**
+   * Indexa inventario en tandas para no congelar clics, mapa ni la otra búsqueda.
+   * El buscador de PC/dispositivo sigue deshabilitado hasta terminar.
+   */
+  private scheduleInventoryIndex(hardware: any[], devices: NetworkInfoDTO[]): void {
+    if (this.inventoryIndexTimer) {
+      clearTimeout(this.inventoryIndexTimer);
+      this.inventoryIndexTimer = undefined;
+    }
+    const jobId = ++this.inventoryIndexJobId;
+    const prepared = this.prepareSubnetsForLookup();
+    const counts = new Map<string, number>();
+    for (const s of prepared) {
+      if (!counts.has(s.subnet.netId)) {
+        counts.set(s.subnet.netId, 0);
       }
-    };
+    }
+    const index: { netId: string; haystack: string }[] = [];
+    const items: { ip: string; name: string }[] = [];
     for (const h of hardware) {
-      bump(h?.ipAddr);
+      if (h?.ipAddr) {
+        items.push({ ip: String(h.ipAddr), name: h.name ?? '' });
+      }
     }
     for (const d of devices) {
-      bump(d?.ip);
+      if (d?.ip) {
+        items.push({ ip: String(d.ip), name: d.name ?? '' });
+      }
     }
-    return counts;
+
+    let cursor = 0;
+    const chunkSize = 250;
+    const step = () => {
+      if (this.componentDestroyed || jobId !== this.inventoryIndexJobId) {
+        return;
+      }
+      const end = Math.min(cursor + chunkSize, items.length);
+      for (; cursor < end; cursor++) {
+        this.indexEquipmentItem(items[cursor], prepared, counts, index);
+      }
+      if (cursor < items.length) {
+        this.inventoryIndexTimer = setTimeout(step, 0);
+        return;
+      }
+      this.inventoryIndexTimer = undefined;
+      this.ngZone.run(() => {
+        if (this.componentDestroyed || jobId !== this.inventoryIndexJobId) {
+          return;
+        }
+        this.hardwareCache = hardware;
+        this.devicesCache = devices;
+        this.equipmentCountByNetId = counts;
+        this.equipmentSearchIndex = index;
+        this.rebuildEquipmentMatchNetIds();
+        this.hardwareCountsLoading = false;
+        if (this.isEquipmentSearchActive()) {
+          this.page = 1;
+          this.collectionSize = this.filteredSubnets.length;
+        }
+        this.refreshMapMarkerLabels();
+      });
+    };
+    this.ngZone.runOutsideAngular(() => {
+      this.inventoryIndexTimer = setTimeout(step, 0);
+    });
+  }
+
+  private indexEquipmentItem(
+    item: { ip: string; name: string },
+    prepared: PreparedSubnet[],
+    counts: Map<string, number>,
+    index: { netId: string; haystack: string }[]
+  ): void {
+    const match = this.findPreparedSubnet(item.ip, prepared);
+    if (!match) {
+      return;
+    }
+    counts.set(match.subnet.netId, (counts.get(match.subnet.netId) ?? 0) + 1);
+    const haystack = `${this.normalizeForSearch(item.name)} ${this.normalizeForSearch(item.ip)}`.trim();
+    if (haystack) {
+      index.push({ netId: match.subnet.netId, haystack });
+    }
+  }
+
+  private prepareSubnetsForLookup(): PreparedSubnet[] {
+    const prepared: PreparedSubnet[] = [];
+    for (const subnet of this.subnets) {
+      const maskRaw = subnet.mask?.trim();
+      if (!maskRaw) {
+        continue;
+      }
+      const net = ipv4ToUint32(subnet.netId);
+      const mask = ipv4ToUint32(maskRaw);
+      if (net === null || mask === null) {
+        continue;
+      }
+      let order = 0;
+      let n = mask >>> 0;
+      while (n) {
+        order++;
+        n &= n - 1;
+      }
+      prepared.push({ subnet, net, mask, order });
+    }
+    prepared.sort((a, b) => b.order - a.order);
+    return prepared;
+  }
+
+  private findPreparedSubnet(ip: string, prepared: PreparedSubnet[]): PreparedSubnet | null {
+    const host = ipv4ToUint32(ip);
+    if (host === null) {
+      return null;
+    }
+    for (const entry of prepared) {
+      if ((host & entry.mask) === (entry.net & entry.mask)) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  /** Guarda inventario, conteos e índice de búsqueda por PC/dispositivo. */
+  private rememberInventory(hardware: any[], devices: NetworkInfoDTO[]): void {
+    this.inventoryIndexJobId++;
+    if (this.inventoryIndexTimer) {
+      clearTimeout(this.inventoryIndexTimer);
+      this.inventoryIndexTimer = undefined;
+    }
+    this.hardwareCache = hardware;
+    this.devicesCache = devices;
+    const prepared = this.prepareSubnetsForLookup();
+    const counts = new Map<string, number>();
+    for (const s of prepared) {
+      if (!counts.has(s.subnet.netId)) {
+        counts.set(s.subnet.netId, 0);
+      }
+    }
+    const index: { netId: string; haystack: string }[] = [];
+    for (const h of hardware) {
+      if (h?.ipAddr) {
+        this.indexEquipmentItem(
+          { ip: String(h.ipAddr), name: h.name ?? '' },
+          prepared,
+          counts,
+          index
+        );
+      }
+    }
+    for (const d of devices) {
+      if (d?.ip) {
+        this.indexEquipmentItem(
+          { ip: String(d.ip), name: d.name ?? '' },
+          prepared,
+          counts,
+          index
+        );
+      }
+    }
+    this.equipmentCountByNetId = counts;
+    this.equipmentSearchIndex = index;
+    this.rebuildEquipmentMatchNetIds();
+    this.hardwareCountsLoading = false;
+  }
+
+  private rebuildEquipmentMatchNetIds(): void {
+    const q = this.normalizeForSearch(this.equipmentSearchTerm);
+    const ids = new Set<string>();
+    if (q) {
+      for (const entry of this.equipmentSearchIndex) {
+        if (entry.haystack.includes(q)) {
+          ids.add(entry.netId);
+        }
+      }
+    }
+    this.equipmentMatchNetIds = ids;
   }
 
   private getSubnetEquipmentCount(subnet: ExtendedSubnet): number | null {
@@ -462,6 +701,11 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   clearSearch(): void {
     this.searchTerm = '';
     this.onSearchChange();
+  }
+
+  clearEquipmentSearch(): void {
+    this.equipmentSearchTerm = '';
+    this.onEquipmentSearchChange();
   }
 
   isValidCoordinates(subnet: ExtendedSubnet): boolean {
@@ -1345,12 +1589,11 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
       })
     ).subscribe({
       next: ({ hardware, devices }) => {
-        this.hardwareCache = hardware;
-        this.devicesCache = devices;
-        if (!this.equipmentCountByNetId.size) {
-          this.equipmentCountByNetId = this.buildEquipmentCountMap(hardware, devices);
-          this.refreshMapMarkerLabels();
+        this.rememberInventory(hardware, devices);
+        if (this.isEquipmentSearchActive()) {
+          this.collectionSize = this.filteredSubnets.length;
         }
+        this.refreshMapMarkerLabels();
         this.applyHardwareFilter();
         this.hardwareModalLoading = false;
       }
@@ -1386,6 +1629,12 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.hardwareCache = null;
     this.devicesCache = null;
+    this.inventoryRequest$ = null;
+    this.inventoryIndexJobId++;
+    if (this.inventoryIndexTimer) {
+      clearTimeout(this.inventoryIndexTimer);
+      this.inventoryIndexTimer = undefined;
+    }
     this.openHardwareModal(this.hardwareModalSubnet);
   }
 
@@ -1399,9 +1648,10 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadInventory().subscribe({
       next: ({ hardware, devices }) => {
-        this.hardwareCache = hardware;
-        this.devicesCache = devices;
-        this.equipmentCountByNetId = this.buildEquipmentCountMap(hardware, devices);
+        this.rememberInventory(hardware, devices);
+        if (this.isEquipmentSearchActive()) {
+          this.collectionSize = this.filteredSubnets.length;
+        }
         this.refreshMapMarkerLabels();
         try {
           const sheetRows = this.buildExcelExportRows(hardware, devices);
@@ -1626,11 +1876,13 @@ export class SubnetsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.componentDestroyed = true;
     this.tourCleanup?.();
     this.tourCleanup = undefined;
     this.cancelHardwareModalRepaint();
     if (this.resizeDebounceId) clearTimeout(this.resizeDebounceId);
     if (this.markersRefreshId) clearTimeout(this.markersRefreshId);
+    if (this.inventoryIndexTimer) clearTimeout(this.inventoryIndexTimer);
     if (this.hardwareModalOpen) {
       this.hardwareModalOpen = false;
     }

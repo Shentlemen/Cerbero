@@ -1222,6 +1222,46 @@
   background: linear-gradient(145deg, #f8f9fa, #e9ecef);
   border-radius: 10px;
   border: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-bulk-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-confirm-filter {
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0f766e;
+  box-shadow:
+    0 4px 15px rgba(15, 118, 110, 0.3),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-confirm-filter:hover:not(:disabled):not(.action-locked) {
+  background: #0d9488;
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(15, 118, 110, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.btn-confirm-filter:disabled,
+.btn-confirm-filter.action-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .filter-buttons {
@@ -1314,6 +1354,15 @@
   
   .btn-filter .count {
     display: none;
+  }
+
+  .filter-bulk-actions {
+    justify-content: stretch;
+  }
+
+  .btn-confirm-filter {
+    width: 100%;
+    justify-content: center;
   }
 }
 

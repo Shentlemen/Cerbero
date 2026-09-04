@@ -116,16 +116,16 @@
           </p>
           <div class="list-toolbar-actions">
             <button
-              *ngIf="!esModoOficina && !mostrandoStock"
+              *ngIf="!mostrandoStock"
               type="button"
               class="btn registrar-pendiente-btn"
               id="tour-almacen-lab-registrar"
               [class.action-locked]="!canRegistrarPendiente()"
               (click)="abrirRegistroPendiente($event)"
               [disabled]="canRegistrarPendiente() && (loading || registrandoPendiente)"
-              [attr.title]="canRegistrarPendiente() ? 'Registrar una PC que todavía no está en OCS' : 'Sin permiso para registrar'"
+              [attr.title]="canRegistrarPendiente() ? 'Registrar una PC que todavía no está en OCS (cantidad 1)' : 'Sin permiso para registrar'"
               [attr.aria-disabled]="!canRegistrarPendiente()"
-              data-help="🖥️ Anotá el nombre de una PC pendiente de OCS, o varios separados por espacio.">
+              data-help="🖥️ Anotá el nombre de una PC pendiente de OCS. La cantidad es siempre 1.">
               <i class="fas" [ngClass]="registrandoPendiente ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
               Registrar equipo
             </button>
@@ -137,9 +137,9 @@
               [class.action-locked]="!canRegistrarStock()"
               (click)="abrirRegistroStock($event)"
               [disabled]="canRegistrarStock() && (loading || registrandoStock || almacenDestinoId == null)"
-              [attr.title]="canRegistrarStock() ? 'Registrar insumos (RAM, placas, etc.)' : 'Sin permiso para registrar stock'"
+              [attr.title]="canRegistrarStock() ? 'Registrar insumos o PCs' : 'Sin permiso para registrar stock'"
               [attr.aria-disabled]="!canRegistrarStock()"
-              data-help="📦 Anotá descripción y cantidad de insumos del depósito.">
+              data-help="📦 Insumos con cantidad, o PCs pegando varios nombres separados por espacio.">
               <i class="fas" [ngClass]="registrandoStock ? 'fa-spinner fa-spin' : 'fa-boxes'"></i>
               Registrar stock
             </button>
@@ -448,7 +448,7 @@
                   </div>
                 </td>
                 <td>
-                  <div class="stock-cantidad-stepper">
+                  <div class="stock-cantidad-stepper" *ngIf="!esStockPc(item)">
                     <button
                       type="button"
                       class="stock-cantidad-btn"
@@ -485,6 +485,12 @@
                       <i class="fas" [ngClass]="actualizandoCantidadId === item.id ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
                     </button>
                   </div>
+                  <span
+                    *ngIf="esStockPc(item)"
+                    class="stock-cantidad-badge"
+                    title="Las PCs se registran de a una">
+                    {{ item.cantidad || 1 }}
+                  </span>
                 </td>
                 <td>
                   <div class="fecha-almacen">
@@ -531,9 +537,9 @@
             ? 'No hay stock registrado'
             : (esModoOficina ? 'No hay equipos en preparación' : '¡No hay equipos en el almacén!') }}</h3>
           <p>{{ mostrandoStock
-            ? 'Registrá insumos con descripción y cantidad (RAM, placas, discos, cables).'
+            ? 'Registrá insumos con descripción y cantidad, o PCs pegando varios nombres separados por espacio.'
             : (esModoOficina
-              ? 'Mandá equipos desde Terminales, Dispositivos u otros almacenes con Transferir (destino Oficina laboratorio).'
+              ? 'Mandá equipos desde Terminales, Dispositivos u otros almacenes con Transferir, o registrá una PC pendiente de OCS.'
               : 'Mandá equipos desde Terminales o registrá una PC pendiente con su nombre.') }}</p>
         </div>
 

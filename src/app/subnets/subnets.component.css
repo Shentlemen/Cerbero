@@ -93,8 +93,17 @@
   margin-right: 0.25rem;
 }
 
+.subnets-searches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
 .subnets-search {
-  flex: 0 1 22rem;
+  flex: 1 1 16rem;
   min-width: 14rem;
   max-width: 22rem;
 }
@@ -114,7 +123,14 @@
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
 }
 
+.subnets-search--busy .form-control:disabled {
+  background: #f3f4f6;
+  cursor: wait;
+  opacity: 1;
+}
+
 @media (max-width: 600px) {
+  .subnets-searches,
   .subnets-search {
     flex: 1 1 100%;
     max-width: none;

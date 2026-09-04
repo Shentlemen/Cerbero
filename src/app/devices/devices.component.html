@@ -175,22 +175,11 @@
             </td>
             <td>
               <div class="action-buttons">
-                <button
-                    class="btn btn-sm estado-btn preparacion-btn"
-                    [class.action-locked]="!canManageDeviceStates()"
-                    (click)="enviarAPreparacion(device, $event)"
-                    [disabled]="canManageDeviceStates() && (enviandoPreparacionMac === device.mac || transferiendoDeviceMac === device.mac)"
-                    [attr.title]="canManageDeviceStates() ? 'Enviar a Oficina Laboratorio para configuración' : 'Sin permiso para enviar a preparación'"
-                    [attr.aria-disabled]="!canManageDeviceStates()"
-                    data-help="⚡ Manda el dispositivo a Oficina Laboratorio sin confirmación. Desaparece de gráficas e inventario activo.">
-                    <i class="fas" [ngClass]="enviandoPreparacionMac === device.mac ? 'fa-spinner fa-spin' : 'fa-tools'"></i>
-                    Preparación
-                  </button>
                   <button 
                     class="btn btn-info btn-sm estado-btn transferir-btn"
                     [class.action-locked]="!canManageDeviceStates()"
                     (click)="transferirDispositivo(device, $event)"
-                    [disabled]="canManageDeviceStates() && (transferiendoDeviceMac === device.mac || enviandoPreparacionMac === device.mac)"
+                    [disabled]="canManageDeviceStates() && transferiendoDeviceMac === device.mac"
                     [attr.title]="canManageDeviceStates() ? 'Transferir este dispositivo a otro almacén' : 'Sin permiso para transferir'"
                     [attr.aria-disabled]="!canManageDeviceStates()"
                     data-help="🚚 Mueve este dispositivo a otro almacén (cementerio, laboratorio o regular)">

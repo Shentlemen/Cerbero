@@ -61,6 +61,29 @@ export class AlertService {
     );
   }
 
+  confirmarAlertasLote(ids: number[]): Observable<{
+    success: boolean;
+    confirmed: number;
+    skipped: number;
+    failed: number;
+    message?: string;
+    errors?: { id: number; error: string }[];
+  }> {
+    return this.http.put<{
+      success: boolean;
+      confirmed: number;
+      skipped: number;
+      failed: number;
+      message?: string;
+      errors?: { id: number; error: string }[];
+    }>(`${this.apiUrl}/confirmar-lote`, { ids }).pipe(
+      catchError(error => {
+        console.error('Error al confirmar alertas en lote:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   checkHardwareChanges(): Observable<any> {
     return this.http.get(`${this.changeDetectionUrl}/run-scheduled-task`).pipe(
       catchError(error => {

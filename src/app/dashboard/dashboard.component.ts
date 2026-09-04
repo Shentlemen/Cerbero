@@ -87,6 +87,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   isChecking: boolean = false;
   isCleaning: boolean = false;
   isUpdatingDevices: boolean = false;
+  isConfirmingFilter: boolean = false;
   page: number = 1;
   pageSize: number = 14;
   collectionSize: number = 0;
@@ -264,8 +265,93 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     }
-    
+
     this.collectionSize = this.filteredAlerts.length;
+  }
+
+  getConfirmableFilteredAlerts(): Alerta[] {
+    return this.filteredAlerts.filter(
+      (alert) => !alert.softwareForbidden && !alert.confirmada
+    );
+  }
+
+  get currentFilterLabel(): string {
+    switch (this.currentFilter) {
+      case 'new_hardware':
+        return 'equipos nuevos';
+      case 'memory':
+        return 'memoria';
+      case 'disk':
+        return 'disco';
+      case 'ip':
+        return 'IP';
+      case 'video':
+        return 'video';
+      case 'monitor':
+        return 'monitores';
+      case 'storage_hw':
+        return 'almacenamiento';
+      default:
+        return 'el filtro actual';
+    }
+  }
+
+  canConfirmFilteredAlerts(): boolean {
+    return this.currentFilter !== 'software_forbidden'
+      && this.getConfirmableFilteredAlerts().length > 0;
+  }
+
+  get confirmableFilterCount(): number {
+    return this.getConfirmableFilteredAlerts().length;
+  }
+
+  confirmarAlertasDelFiltro(): void {
+    if (this.denyUnless(this.canConfirmAlerts(), 'confirmar alertas')) {
+      return;
+    }
+    if (this.isConfirmingFilter || !this.canConfirmFilteredAlerts()) {
+      return;
+    }
+
+    const alertas = this.getConfirmableFilteredAlerts();
+    const scope = this.currentFilter === 'all'
+      ? 'todas las alertas visibles'
+      : `las alertas de ${this.currentFilterLabel}`;
+    if (!confirm(`¿Confirmás ${scope} (${alertas.length})? Se aplicarán los cambios en Cerbero.`)) {
+      return;
+    }
+
+    const currentPage = this.page;
+    this.isConfirmingFilter = true;
+    this.alertService.confirmarAlertasLote(alertas.map((a) => a.id)).subscribe({
+      next: (response) => {
+        this.isConfirmingFilter = false;
+        const confirmed = response?.confirmed ?? 0;
+        const failed = response?.failed ?? 0;
+        if (failed > 0) {
+          this.notificationService.showError(
+            'Confirmación parcial',
+            `Se confirmaron ${confirmed} alerta(s). ${failed} no se pudieron confirmar.`
+          );
+        } else {
+          this.notificationService.showSuccessMessage(
+            confirmed === 1
+              ? 'Se confirmó 1 alerta.'
+              : `Se confirmaron ${confirmed} alertas.`
+          );
+        }
+        this.reloadAlertasManteniendoPagina(currentPage);
+      },
+      error: (error) => {
+        this.isConfirmingFilter = false;
+        console.error('Error al confirmar alertas del filtro:', error);
+        this.notificationService.showError(
+          'Error al confirmar alertas',
+          error.error?.error || error.message || 'No se pudieron confirmar las alertas del filtro.'
+        );
+        this.reloadAlertasManteniendoPagina(currentPage);
+      }
+    });
   }
 
   confirmarAlerta(alerta: Alerta): void {
@@ -1105,6 +1191,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         title: 'Limpiar alertas',
         description:
           'Elimina alertas obsoletas o inconsistentes para dejar la bandeja limpia y vigente.',
+        side: 'left'
+      },
+      {
+        selector: '#tour-dashboard-btn-confirm-filter',
+        title: 'Confirmar filtro',
+        description:
+          'Aceptá de una vez todas las alertas del tipo que tengas filtrado (por ejemplo, todas las de monitores).',
         side: 'left'
       }
     ];

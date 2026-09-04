@@ -53,12 +53,12 @@ export type RegistroPendienteResult = RegistroPendienteUnoResult | RegistroPendi
       </div>
 
       <p class="text-muted small mb-3" *ngIf="modo === 'uno'">
-        Anotá el nombre de una PC que todavía no pasó por OCS. Queda en el almacén laboratorio
-        y, cuando OCS la detecte con el mismo nombre, se completan los datos.
+        Anotá el nombre de una PC que todavía no pasó por OCS. Se registra con cantidad 1
+        en {{ almacenLabel }}. Cuando OCS la detecte con el mismo nombre, se completan los datos.
       </p>
       <p class="text-muted small mb-3" *ngIf="modo === 'varios'">
-        Pegá varios nombres de equipos separados por espacio, coma o salto de línea.
-        Cada uno se registra como pendiente de OCS.
+        Pegá varios nombres separados por espacio, coma o salto de línea.
+        Cada uno se registra como pendiente de OCS (cantidad 1).
       </p>
 
       <form *ngIf="modo === 'uno'" [formGroup]="form" (ngSubmit)="confirmarUno()">
@@ -192,6 +192,7 @@ export type RegistroPendienteResult = RegistroPendienteUnoResult | RegistroPendi
 })
 export class RegistrarEquipoPendienteModalComponent {
   modo: ModoRegistroPendiente = 'uno';
+  almacenLabel = 'el almacén';
   form: FormGroup;
   pegado = '';
   selectedKeys: string[] = [];

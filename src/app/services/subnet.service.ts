@@ -22,7 +22,7 @@ export interface SubnetCoordinatesDTO {
 }
 
 /** Convierte una IPv4 a entero sin signo (32 bits). Devuelve null si no es válida. */
-function ipv4ToUint32(ip: string): number | null {
+export function ipv4ToUint32(ip: string): number | null {
   const trimmed = ip?.trim();
   if (!trimmed) return null;
   const parts = trimmed.split('.');

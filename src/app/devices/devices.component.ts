@@ -115,7 +115,6 @@ export class DevicesComponent implements OnInit, OnDestroy {
   // Agregar propiedades
   deletingDeviceMac: string | null = null;
   transferiendoDeviceMac: string | null = null;
-  enviandoPreparacionMac: string | null = null;
   showConfirmDialog: boolean = false;
   deviceToDelete: any = null;
 
@@ -577,41 +576,6 @@ export class DevicesComponent implements OnInit, OnDestroy {
       this.showConfirmDialog = false;
       this.deviceToDelete = null;
     }
-  }
-
-  enviarAPreparacion(device: any, event?: Event): void {
-    event?.stopPropagation();
-    if (this.permissionsService.denyUnless(this.canManageDeviceStates(), 'enviar a Oficina Laboratorio', event)) {
-      return;
-    }
-    if (!device?.mac) {
-      return;
-    }
-    this.enviandoPreparacionMac = device.mac;
-    this.estadoDispositivoService.enviarAOficinaLaboratorio(
-      device.mac,
-      this.authService.getUsuarioParaAuditoria()
-    ).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.cargarDispositivos();
-          this.notificationService.showSuccessMessage(
-            `"${device.name || device.mac}" enviado a Oficina Laboratorio.`
-          );
-        } else {
-          throw new Error(response.message || 'Error al enviar a preparación');
-        }
-      },
-      error: (error) => {
-        this.notificationService.showError(
-          'Error al enviar a preparación',
-          `No se pudo enviar el dispositivo: ${error.message || 'Error desconocido'}`
-        );
-      },
-      complete: () => {
-        this.enviandoPreparacionMac = null;
-      }
-    });
   }
 
   transferirDispositivo(device: any, event?: Event): void {

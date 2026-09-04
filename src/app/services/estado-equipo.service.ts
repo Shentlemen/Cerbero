@@ -162,6 +162,7 @@ export class EstadoEquipoService {
     name: string;
     observaciones?: string;
     usuario: string;
+    oficinaLaboratorio?: boolean;
   }): Observable<any> {
     return this.http.post(`${this.apiUrl}/pendiente-laboratorio`, request);
   }
