@@ -83,18 +83,80 @@ function isDarkTheme(): boolean {
   return typeof document !== 'undefined' && document.documentElement.classList.contains('theme-dark');
 }
 
-/** Tinta de ejes y etiquetas desde tokens --ds-* (claro y oscuro). */
-function chartInk() {
+function parseHexColor(hex: string): [number, number, number] | null {
+  const raw = hex.replace('#', '').trim();
+  if (raw.length === 3) {
+    return [
+      parseInt(raw[0] + raw[0], 16),
+      parseInt(raw[1] + raw[1], 16),
+      parseInt(raw[2] + raw[2], 16)
+    ];
+  }
+  if (raw.length !== 6 || Number.isNaN(parseInt(raw, 16))) {
+    return null;
+  }
+  return [
+    parseInt(raw.slice(0, 2), 16),
+    parseInt(raw.slice(2, 4), 16),
+    parseInt(raw.slice(4, 6), 16)
+  ];
+}
+
+/** Texto oscuro o blanco según la luminancia del fondo (barras / porciones). */
+function contrastInkForBackground(hex: string): '#0f172a' | '#ffffff' {
+  const rgb = parseHexColor(hex);
+  if (!rgb) {
+    return '#ffffff';
+  }
+  const [r, g, b] = rgb.map((channel) => {
+    const s = channel / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.38 ? '#0f172a' : '#ffffff';
+}
+
+function doughnutLabelBackground(sliceColor: string): string {
+  return contrastInkForBackground(sliceColor) === '#ffffff'
+    ? 'rgba(15, 23, 42, 0.78)'
+    : 'rgba(255, 255, 255, 0.9)';
+}
+
+/** Tinta de ejes y etiquetas: en pantalla sigue el tema; en PDF siempre oscuro sobre blanco. */
+function chartInk(printSafe = false) {
+  if (printSafe) {
+    return {
+      tick: '#334155',
+      muted: '#475569',
+      label: '#0f172a',
+      grid: 'rgba(100, 116, 139, 0.32)',
+      datalabel: '#0f172a',
+      datalabelBg: '#ffffff'
+    };
+  }
   const dark = isDarkTheme();
   return {
-    tick: readCssVar('--ds-color-subtle', dark ? '#d5dae2' : '#475569'),
-    muted: readCssVar('--ds-color-faint', dark ? '#c2c8d2' : '#64748b'),
-    label: readCssVar('--ds-color-text', dark ? '#f3f4f7' : '#334155'),
+    tick: readCssVar('--ds-color-subtle', dark ? '#d5dae2' : '#334155'),
+    muted: readCssVar('--ds-color-subtle', dark ? '#d5dae2' : '#475569'),
+    label: readCssVar('--ds-color-text', dark ? '#f3f4f7' : '#0f172a'),
     grid: dark ? 'rgba(210, 216, 226, 0.16)' : 'rgba(148, 163, 184, 0.25)',
     datalabel: readCssVar('--ds-color-heading', dark ? '#ffffff' : '#0f172a'),
-    datalabelBg: dark ? 'rgba(37, 40, 48, 0.92)' : 'rgba(255, 255, 255, 0.88)'
+    datalabelBg: dark ? 'rgba(37, 40, 48, 0.92)' : 'rgba(255, 255, 255, 0.92)'
   };
 }
+
+/** Fondo blanco del canvas al exportar (el Chart.js queda transparente y el PDF lo pinta blanco). */
+export const printCanvasBackgroundPlugin: Plugin = {
+  id: 'cerberoPrintCanvasBackground',
+  beforeDraw(chart) {
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, chart.width, chart.height);
+    ctx.restore();
+  }
+};
 
 function doughnutDisplayValues(items: ChartDatum[], minValue: number): number[] {
   return items.map((item) => (item.y < minValue ? minValue : item.y));
@@ -119,7 +181,8 @@ export function buildDoughnutChart(
   items: ChartDatum[],
   colors: string[],
   compact: boolean,
-  emptyLabel?: string
+  emptyLabel?: string,
+  printSafe = false
 ): { data: ChartData<'doughnut'>; options: ChartConfiguration<'doughnut'>['options'] } {
   const isEmpty = items.length === 0;
   const source = isEmpty
@@ -134,7 +197,7 @@ export function buildDoughnutChart(
       {
         data: display,
         backgroundColor: palette,
-        borderColor: '#ffffff',
+        borderColor: printSafe ? '#e2e8f0' : '#ffffff',
         borderWidth: compact ? 3 : 4,
         hoverOffset: isEmpty ? 0 : compact ? 8 : 12,
         hoverBorderWidth: 4,
@@ -176,8 +239,14 @@ export function buildDoughnutChart(
           if (isEmpty) return true;
           return (shares[ctx.dataIndex] ?? 0) >= minShare;
         },
-        color: isEmpty ? '#475569' : '#ffffff',
-        backgroundColor: isEmpty ? 'transparent' : 'rgba(15, 23, 42, 0.5)',
+        color: (ctx) => {
+          if (isEmpty) return printSafe ? '#334155' : '#475569';
+          return contrastInkForBackground(String(palette[ctx.dataIndex] || '#334155'));
+        },
+        backgroundColor: (ctx) => {
+          if (isEmpty) return 'transparent';
+          return doughnutLabelBackground(String(palette[ctx.dataIndex] || '#334155'));
+        },
         borderRadius: 4,
         padding: isEmpty ? 0 : { top: 3, bottom: 3, left: 6, right: 6 },
         font: {
@@ -216,9 +285,10 @@ export function doughnutLegendItems(
 
 export function buildColumnChart(
   items: ChartDatum[],
-  compact: boolean
+  compact: boolean,
+  printSafe = false
 ): { data: ChartData<'bar'>; options: ChartConfiguration<'bar'>['options'] } {
-  const ink = chartInk();
+  const ink = chartInk(printSafe);
   const data: ChartData<'bar'> = {
     labels: items.map((d) => d.label),
     datasets: [
@@ -239,7 +309,7 @@ export function buildColumnChart(
     maintainAspectRatio: false,
     resizeDelay: 80,
     animation,
-    layout: { padding: { top: 18, right: 8, left: 4, bottom: 4 } },
+    layout: { padding: { top: printSafe ? 28 : 18, right: 8, left: 4, bottom: 4 } },
     scales: {
       x: {
         grid: { display: false },
@@ -287,6 +357,8 @@ export function buildColumnChart(
         offset: -2,
         color: ink.datalabel,
         backgroundColor: ink.datalabelBg,
+        borderColor: printSafe ? '#cbd5e1' : 'transparent',
+        borderWidth: printSafe ? 1 : 0,
         borderRadius: 4,
         padding: { top: 2, bottom: 2, left: 5, right: 5 },
         font: { size: fontSize(compact, 10, 13), weight: 700 },
@@ -301,9 +373,10 @@ export function buildColumnChart(
 export function buildHorizontalBarChart(
   items: ChartDatum[],
   compact: boolean,
-  useFullLabels: boolean
+  useFullLabels: boolean,
+  printSafe = false
 ): { data: ChartData<'bar'>; options: ChartConfiguration<'bar'>['options'] } {
-  const ink = chartInk();
+  const ink = chartInk(printSafe);
   const labels = items.map((d) =>
     useFullLabels ? d.originalLabel || d.label : d.label
   );
@@ -329,7 +402,7 @@ export function buildHorizontalBarChart(
     maintainAspectRatio: false,
     resizeDelay: 80,
     animation,
-    layout: { padding: { top: 8, right: 28, left: 4, bottom: 4 } },
+    layout: { padding: { top: 8, right: printSafe ? 40 : 28, left: 4, bottom: 4 } },
     scales: {
       x: {
         beginAtZero: true,
@@ -371,6 +444,8 @@ export function buildHorizontalBarChart(
         align: 'right',
         color: ink.datalabel,
         backgroundColor: ink.datalabelBg,
+        borderColor: printSafe ? '#cbd5e1' : 'transparent',
+        borderWidth: printSafe ? 1 : 0,
         borderRadius: 4,
         padding: { top: 1, bottom: 1, left: 5, right: 5 },
         font: { size: fontSize(compact, 10, 13), weight: 700 },

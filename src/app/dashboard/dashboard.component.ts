@@ -3,7 +3,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
 import { BiosService } from '../services/bios.service';
 import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { Chart, ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { NgbPaginationModule, NgbModalModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
@@ -23,6 +23,7 @@ import { MaintenanceService } from '../services/maintenance.service';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
 import { ThemeService } from '../services/theme.service';
+import { jsPDF } from 'jspdf';
 import type { DriveStep } from 'driver.js';
 import {
   ChartDatum,
@@ -34,7 +35,8 @@ import {
   buildHorizontalBarChart,
   chartClickIndex,
   dashboardChartPlugins,
-  doughnutLegendItems
+  doughnutLegendItems,
+  printCanvasBackgroundPlugin
 } from './dashboard-charts';
 
 declare var bootstrap: any;
@@ -95,6 +97,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   filteredAlerts: Alerta[] = [];
   expandedChartTitle: string = '';
   expandedLegendItems: ChartLegendItem[] = [];
+  private expandedChartKind: 'terminales' | 'fabricante' | 'sistema-operativo' | 'red' | null = null;
   private activeModalRef: any = null;
   private tourCleanup?: () => void;
   private readonly theme = inject(ThemeService);
@@ -966,6 +969,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
     }
 
+    this.expandedChartKind = chartType as 'terminales' | 'fabricante' | 'sistema-operativo' | 'red';
     this.expandedChartTitle = title;
     this.expandedChartType = type;
     this.expandedChartData = data;
@@ -999,21 +1003,149 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   printExpandedChart(): void {
     const image = this.getExpandedChartImage();
     if (!image) return;
-    const popup = window.open('', '_blank');
-    if (!popup) return;
-    popup.document.write(
-      `<html><head><title>${this.expandedChartTitle}</title></head><body style="margin:0;text-align:center"><img src="${image}" style="max-width:100%"/></body></html>`
-    );
-    popup.document.close();
-    popup.focus();
-    popup.print();
+
+    try {
+      const title = this.expandedChartTitle || 'Gráfica';
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 12;
+      const titleH = 10;
+
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageW, pageH, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(15, 23, 42);
+      doc.text(title, pageW / 2, margin + 5, { align: 'center' });
+
+      const maxW = pageW - margin * 2;
+      const maxH = pageH - margin * 2 - titleH;
+      const props = doc.getImageProperties(image);
+      const ratio = props.width / Math.max(props.height, 1);
+      let width = maxW;
+      let height = width / ratio;
+      if (height > maxH) {
+        height = maxH;
+        width = height * ratio;
+      }
+      const x = (pageW - width) / 2;
+      const y = margin + titleH + (maxH - height) / 2;
+      doc.addImage(image, 'PNG', x, y, width, height);
+
+      const safeName = title.replace(/[<>:"/\\|?*]+/g, '_').trim() || 'grafica';
+      doc.save(`${safeName}.pdf`);
+      this.notificationService.showSuccessMessage(`PDF generado: ${safeName}.pdf`);
+    } catch {
+      this.notificationService.showError('PDF', 'No se pudo generar el PDF de la gráfica.');
+    }
   }
 
   private getExpandedChartImage(): string | null {
+    const printImage = this.renderPrintSafeChartImage();
+    if (printImage) return printImage;
     const fromDirective = this.expandedChart?.toBase64Image();
-    if (fromDirective) return fromDirective;
+    if (fromDirective) {
+      return this.compositeOntoWhite(fromDirective);
+    }
     const canvas = document.querySelector('.expanded-chart-container canvas') as HTMLCanvasElement | null;
-    return canvas ? canvas.toDataURL('image/png', 1) : null;
+    return canvas ? this.canvasToWhitePng(canvas) : null;
+  }
+
+  private renderPrintSafeChartImage(): string | null {
+    const built = this.buildPrintSafeExpandedChart();
+    if (!built) return null;
+
+    const source = this.expandedChart?.chart;
+    const sourceCanvas = document.querySelector('.expanded-chart-container canvas') as HTMLCanvasElement | null;
+    const width = Math.max(source?.width || 0, sourceCanvas?.clientWidth || 0, 1100);
+    const height = Math.max(source?.height || 0, sourceCanvas?.clientHeight || 0, 620);
+
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = `position:fixed;left:-99999px;top:0;width:${width}px;height:${height}px;pointer-events:none;opacity:0;`;
+    document.body.appendChild(canvas);
+
+    let chart: Chart | null = null;
+    try {
+      chart = new Chart(canvas, {
+        type: built.type,
+        data: built.data,
+        options: {
+          ...built.options,
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          devicePixelRatio: 2
+        },
+        plugins: [...dashboardChartPlugins, printCanvasBackgroundPlugin]
+      } as ChartConfiguration);
+      return this.canvasToWhitePng(canvas);
+    } catch {
+      return null;
+    } finally {
+      chart?.destroy();
+      canvas.remove();
+    }
+  }
+
+  private buildPrintSafeExpandedChart(): {
+    type: ChartType;
+    data: ChartData;
+    options: ChartConfiguration['options'];
+  } | null {
+    switch (this.expandedChartKind) {
+      case 'terminales': {
+        const chart = buildDoughnutChart(this.terminalesItems, TERMINAL_COLORS, false, undefined, true);
+        return { type: 'doughnut', data: chart.data, options: chart.options };
+      }
+      case 'fabricante': {
+        const chart = buildColumnChart(this.fabricanteItems, false, true);
+        return { type: 'bar', data: chart.data, options: chart.options };
+      }
+      case 'sistema-operativo': {
+        const chart = buildHorizontalBarChart(this.osItems, false, true, true);
+        return { type: 'bar', data: chart.data, options: chart.options };
+      }
+      case 'red': {
+        const chart = this.redChartEmpty
+          ? buildDoughnutChart([], NETWORK_COLORS, false, 'Sin dispositivos de red', true)
+          : buildDoughnutChart(this.redItems, NETWORK_COLORS, false, undefined, true);
+        return { type: 'doughnut', data: chart.data, options: chart.options };
+      }
+      default:
+        return null;
+    }
+  }
+
+  private canvasToWhitePng(canvas: HTMLCanvasElement): string {
+    const out = document.createElement('canvas');
+    out.width = canvas.width;
+    out.height = canvas.height;
+    const ctx = out.getContext('2d');
+    if (!ctx) {
+      return canvas.toDataURL('image/png', 1);
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(canvas, 0, 0);
+    return out.toDataURL('image/png', 1);
+  }
+
+  private compositeOntoWhite(dataUrl: string): string {
+    const image = new Image();
+    image.src = dataUrl;
+    if (!image.width || !image.height) {
+      return dataUrl;
+    }
+    const out = document.createElement('canvas');
+    out.width = image.width;
+    out.height = image.height;
+    const ctx = out.getContext('2d');
+    if (!ctx) return dataUrl;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(image, 0, 0);
+    return out.toDataURL('image/png', 1);
   }
 
   onExpandedChartClick(event: { active?: object[] }): void {
