@@ -40,9 +40,9 @@
 }
 
 .btn-flujo-tool:hover:not(:disabled) {
-  background: #f8f9fa;
-  color: #000;
-  border-color: #000;
+  background: #198754;
+  color: #fff;
+  border-color: #198754;
 }
 
 .btn-flujo-tool:disabled {

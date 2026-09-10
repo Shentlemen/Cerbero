@@ -539,9 +539,9 @@ button * {
 }
 
 .clear-search-btn:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: white;
+  background-color: #000;
+  border-color: #000;
+  color: #fff;
   transform: translateY(-1px);
 }
 

@@ -260,14 +260,14 @@
 
 .subnets-actions .btn-outline-secondary {
   background: transparent !important;
-  border-color: #6b7280 !important;
+  border-color: #000000 !important;
   color: #111827 !important;
 }
 
 .subnets-actions .btn-outline-secondary:hover,
 .subnets-actions .btn-outline-secondary:focus-visible {
-  background: #6b7280 !important;
-  border-color: #6b7280 !important;
+  background: #000000 !important;
+  border-color: #000000 !important;
   color: #ffffff !important;
 }
 

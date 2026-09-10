@@ -18,7 +18,9 @@ import { TransferirEquipoModalComponent } from '../components/transferir-equipo-
 import { TransferirMasaModalComponent } from '../components/transferir-masa-modal/transferir-masa-modal.component';
 import { ReactivarMasaModalComponent } from '../components/reactivar-masa-modal/reactivar-masa-modal.component';
 import { FormularioBajaModalComponent, DatosBaja } from '../components/formulario-baja-modal/formulario-baja-modal.component';
-import { forkJoin } from 'rxjs';
+import { RegistrarEquipoPendienteModalComponent, RegistroPendienteResult } from '../components/registrar-equipo-pendiente-modal/registrar-equipo-pendiente-modal.component';
+import { forkJoin, of, from } from 'rxjs';
+import { catchError, concatMap, map, toArray } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TourRegistryService } from '../services/tour-registry.service';
@@ -63,6 +65,7 @@ export class CementerioComponent implements OnInit, OnDestroy {
   transferiendoItemId: string | number | null = null;
   transfiriendoMasa = false;
   reactivandoMasa = false;
+  registrandoManual = false;
 
   // Edición de observaciones
   editingObservacionesId: string | number | null = null;
@@ -94,6 +97,8 @@ export class CementerioComponent implements OnInit, OnDestroy {
         { selector: '#tour-cementerio-title', title: 'Cementerio', description: 'Equipos y dispositivos dados de baja operativamente; no aparecen en inventario activo.', side: 'bottom' },
         { selector: '#tour-cementerio-filters', title: 'Tipo', description: 'Pestañas para alternar entre todos, solo terminales o solo dispositivos de red en baja.', side: 'bottom' },
         { selector: '#tour-cementerio-search', title: 'Búsqueda', description: 'Filtrá por nombre para ubicar un registro.', side: 'bottom' },
+        { selector: '#tour-cementerio-registrar', title: 'Registrar equipo',
+          description: 'Alta de un equipo <strong>sin OCS</strong> (nunca va a tener agente). Queda dado de baja acá, sin esperar detección.', side: 'bottom' },
         { selector: '#tour-cementerio-bulk-transfer', title: 'Transferir en masa',
           description: 'Mové <strong>varios equipos</strong> fuera del cementerio. Pegá números separados por espacio y usá <strong>Seleccionar todo</strong>.', side: 'bottom' },
         { selector: '#tour-cementerio-bulk-reactivar', title: 'Reactivar en masa',
@@ -378,6 +383,133 @@ export class CementerioComponent implements OnInit, OnDestroy {
   /** Transferir y reactivar: no rol ALMACEN en esta pantalla. */
   canTransferOrReactivate(): boolean {
     return this.permissionsService.canTransferOrReactivateInCemeteryOrLabWarehouse();
+  }
+
+  canRegistrarManual(): boolean {
+    return this.canTransferOrReactivate() || this.canManageAssets();
+  }
+
+  abrirRegistroManual(event?: Event): void {
+    event?.stopPropagation();
+    if (this.permissionsService.denyUnless(this.canRegistrarManual(), 'registrar equipos en el cementerio', event)) {
+      return;
+    }
+    if (this.registrandoManual) {
+      return;
+    }
+    const modalRef = this.modalService.open(RegistrarEquipoPendienteModalComponent, {
+      size: 'lg',
+      centered: true,
+      backdrop: 'static',
+      windowClass: 'transferir-masa-modal-window'
+    });
+    modalRef.componentInstance.titulo = 'Registrar equipo en cementerio';
+    modalRef.componentInstance.ayudaUno =
+      'Anotá el nombre de un equipo que nunca va a tener OCS. Queda dado de baja en el cementerio; no se espera detección del agente.';
+    modalRef.componentInstance.ayudaVarios =
+      'Pegá varios nombres separados por espacio, coma o salto de línea. Cada uno se registra en el cementerio, sin OCS.';
+    modalRef.result.then((data: RegistroPendienteResult) => {
+      if (!data?.modo) {
+        return;
+      }
+      if (data.modo === 'uno') {
+        this.registrarManualUno(data.name, data.observaciones || '');
+        return;
+      }
+      if (data.modo === 'varios' && data.names?.length) {
+        this.registrarManualVarios(data.names, data.observaciones || '');
+      }
+    }).catch(() => {});
+  }
+
+  private registrarManualUno(name: string, observaciones: string): void {
+    this.registrandoManual = true;
+    this.estadoEquipoService.registrarEquipoManualCementerio({
+      name,
+      observaciones,
+      usuario: this.authService.getUsuarioParaAuditoria()
+    }).subscribe({
+      next: (response) => {
+        if (response?.success) {
+          this.loadItemsEnBaja();
+          this.notificationService.showSuccessMessage(
+            `Equipo "${name}" registrado en el cementerio.`
+          );
+        } else {
+          this.notificationService.showError(
+            'Error al registrar equipo',
+            response?.message || 'No se pudo registrar el equipo en el cementerio.'
+          );
+        }
+      },
+      error: (error) => {
+        this.registrandoManual = false;
+        this.notificationService.showError(
+          'Error al registrar equipo',
+          error?.error?.message || error?.message || 'No se pudo registrar el equipo en el cementerio.'
+        );
+      },
+      complete: () => {
+        this.registrandoManual = false;
+      }
+    });
+  }
+
+  private registrarManualVarios(names: string[], observaciones: string): void {
+    const usuario = this.authService.getUsuarioParaAuditoria();
+    this.registrandoManual = true;
+    from(names).pipe(
+      concatMap((name) =>
+        this.estadoEquipoService.registrarEquipoManualCementerio({
+          name,
+          observaciones,
+          usuario
+        }).pipe(
+          map((response) => ({
+            name,
+            ok: !!response?.success,
+            message: response?.message || ''
+          })),
+          catchError((error) => of({
+            name,
+            ok: false,
+            message: error?.error?.message || error?.message || 'Error al registrar'
+          }))
+        )
+      ),
+      toArray()
+    ).subscribe({
+      next: (resultados) => {
+        const ok = resultados.filter((r) => r.ok).length;
+        const fallidos = resultados.filter((r) => !r.ok);
+        this.loadItemsEnBaja();
+        if (fallidos.length === 0) {
+          this.notificationService.showSuccessMessage(
+            `Se registraron ${ok} equipo(s) en el cementerio.`
+          );
+        } else if (ok === 0) {
+          this.notificationService.showError(
+            'No se pudo registrar el lote',
+            fallidos.slice(0, 5).map((f) => `${f.name}: ${f.message}`).join(' · ')
+          );
+        } else {
+          this.notificationService.showError(
+            `${ok} ok, ${fallidos.length} con error`,
+            fallidos.slice(0, 5).map((f) => `${f.name}: ${f.message}`).join(' · ')
+          );
+        }
+      },
+      error: (error) => {
+        this.registrandoManual = false;
+        this.notificationService.showError(
+          'Error al registrar equipos',
+          error?.message || 'No se pudo registrar el lote en el cementerio.'
+        );
+      },
+      complete: () => {
+        this.registrandoManual = false;
+      }
+    });
   }
 
   formatFecha(fecha: string): string {

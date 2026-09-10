@@ -241,6 +241,11 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
     if (fromArea?.label) {
       return fromArea.label.replace(/ \(inactiva\)$/, '');
     }
+    const areaNombre = (this.currentUser?.areaNombre || '').trim();
+    const areaCodigo = (this.currentUser?.areaCodigo || '').trim().toUpperCase();
+    if (areaNombre && !this.previewRole && (key === 'USER' || key === areaCodigo)) {
+      return areaNombre;
+    }
     switch (key) {
       case 'GM':
       case '':

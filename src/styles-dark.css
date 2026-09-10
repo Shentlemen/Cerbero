@@ -977,7 +977,18 @@ html.theme-dark .main-content .advanced-toggle-btn.active:hover .advanced-badge 
 html.theme-dark .btn-outline-secondary,
 html.theme-dark .btn-outline-primary,
 html.theme-dark .btn-outline-dark {
-  border-color: var(--theme-border);
+  background: transparent;
+  color: var(--ds-color-heading);
+  -webkit-text-fill-color: var(--ds-color-heading);
+  border-color: var(--ds-color-heading);
+}
+
+html.theme-dark .btn-outline-secondary:hover:not(:disabled),
+html.theme-dark .btn.btn-outline-secondary:hover:not(:disabled) {
+  background: var(--ds-color-heading);
+  color: var(--ds-color-surface);
+  -webkit-text-fill-color: var(--ds-color-surface);
+  border-color: var(--ds-color-heading);
 }
 
 html.theme-dark .btn-light,
@@ -1211,10 +1222,10 @@ html.theme-dark .btn-agregar-bandeja i {
 html.theme-dark .btn-agregar-tipo:hover:not(:disabled),
 html.theme-dark .btn-flujo-tool:hover:not(:disabled),
 html.theme-dark .btn-agregar-bandeja:hover:not(:disabled) {
-  background: #f3f4f7 !important;
-  color: #1a1d24 !important;
-  -webkit-text-fill-color: #1a1d24 !important;
-  border-color: #f3f4f7 !important;
+  background: #198754 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border-color: #198754 !important;
 }
 
 html.theme-dark .btn-flujo-guardar:hover:not(:disabled) {
@@ -1256,10 +1267,10 @@ html.theme-dark .flujos-tipo-estado--off {
 }
 
 html.theme-dark .flujos-tipo-estado--off:hover {
-  background: #6c757d !important;
+  background: #d97706 !important;
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
-  border-color: #6c757d !important;
+  border-color: #d97706 !important;
 }
 
 html.theme-dark .flujo-canvas-slot,
@@ -1359,12 +1370,22 @@ html.theme-dark .cerbero-folder-tab-label {
   color: var(--ds-color-faint);
 }
 
+html.theme-dark .users-role-tab-label {
+  color: color-mix(in srgb, var(--tab-accent, var(--ds-color-faint)) 55%, var(--ds-color-faint)) !important;
+  -webkit-text-fill-color: color-mix(in srgb, var(--tab-accent, var(--ds-color-faint)) 55%, var(--ds-color-faint)) !important;
+}
+
 html.theme-dark .tickets-ig-tab--active .tickets-ig-tab-label,
 html.theme-dark .guia-tab--active .guia-tab-label,
 html.theme-dark .users-role-tab--active .users-role-tab-label,
 html.theme-dark .config-hub-tab--active .config-hub-tab-label,
 html.theme-dark .cerbero-folder-tab--active .cerbero-folder-tab-label {
   color: var(--ds-color-heading);
+}
+
+html.theme-dark .users-role-tab--active .users-role-tab-label {
+  color: var(--tab-accent, var(--ds-color-heading)) !important;
+  -webkit-text-fill-color: var(--tab-accent, var(--ds-color-heading)) !important;
 }
 
 html.theme-dark .users-role-tab-icon,
@@ -1974,10 +1995,27 @@ html.theme-dark .tickets-ig-tab-square *,
 html.theme-dark .guia-tab-square,
 html.theme-dark .guia-tab-square *,
 html.theme-dark .tickets-ig-card-avatar,
+html.theme-dark .users-row-avatar,
+html.theme-dark .users-row-avatar span,
 html.theme-dark .main-content .btn-ticket-primary,
 html.theme-dark .main-content .btn-ticket-primary * {
   color: var(--ds-color-on-accent) !important;
   -webkit-text-fill-color: var(--ds-color-on-accent) !important;
+}
+
+html.theme-dark .users-row-avatar--photo {
+  background: var(--ds-color-elevated) !important;
+  border-color: var(--ds-color-border) !important;
+}
+
+html.theme-dark .main-content .btn-primary:not(:disabled),
+html.theme-dark .modal-content .btn-primary:not(:disabled) {
+  background-color: var(--ds-color-accent, #3498db) !important;
+}
+
+html.theme-dark .main-content .btn-primary:hover:not(:disabled),
+html.theme-dark .modal-content .btn-primary:hover:not(:disabled) {
+  background-color: var(--ds-color-accent-strong, #2980b9) !important;
 }
 
 /*
@@ -2140,9 +2178,22 @@ html.theme-dark .text-success * {
 
 html.theme-dark .text-primary,
 html.theme-dark .text-primary *,
-html.theme-dark .btn-outline-primary:not(.tipo-compra-filter-btn) {
+html.theme-dark .btn-outline-primary:not(.tipo-compra-filter-btn):not(:hover) {
   color: var(--ds-color-accent) !important;
   -webkit-text-fill-color: var(--ds-color-accent) !important;
+}
+
+html.theme-dark .main-content #tour-settings-health-btn:hover:not(:disabled) {
+  background-color: var(--ds-color-accent, #3498db) !important;
+  border-color: var(--ds-color-accent, #3498db) !important;
+  color: var(--ds-color-on-accent, #ffffff) !important;
+  -webkit-text-fill-color: var(--ds-color-on-accent, #ffffff) !important;
+}
+
+html.theme-dark .main-content #tour-settings-health-btn:hover:not(:disabled) i {
+  color: var(--ds-color-on-accent, #ffffff) !important;
+  -webkit-text-fill-color: var(--ds-color-on-accent, #ffffff) !important;
+  background: transparent !important;
 }
 
 html.theme-dark .text-warning {
@@ -2284,6 +2335,10 @@ html.theme-dark .main-content .login-form button {
   background-color: #1a1a1a !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
+}
+
+html.theme-dark .main-content .login-form button:hover:not(:disabled) {
+  background-color: #000000 !important;
 }
 
 html.theme-dark .main-content .login-register-link {
@@ -2527,8 +2582,8 @@ html.theme-dark .main-content .multi-select-toggle:hover {
 
 html.theme-dark .main-content .multi-select-toggle.active,
 html.theme-dark .main-content .multi-select-toggle.active:hover {
-  background: #6c757d !important;
-  border-color: #5a6268 !important;
+  background: var(--ds-color-accent, #3498db) !important;
+  border-color: var(--ds-color-accent-strong, #2980b9) !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
@@ -2856,6 +2911,14 @@ html.theme-dark .role-badge.role-user {
   background: color-mix(in srgb, #64748b 22%, var(--ds-color-elevated)) !important;
   color: #cbd5e1 !important;
   -webkit-text-fill-color: #cbd5e1 !important;
+}
+
+html.theme-dark .role-badge.role-area,
+html.theme-dark .bandeja-badge.bandeja-area {
+  background: color-mix(in srgb, var(--area-color, #3498db) 24%, var(--ds-color-elevated)) !important;
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  border-color: color-mix(in srgb, var(--area-color, #3498db) 42%, var(--ds-color-border)) !important;
 }
 
 html.theme-dark .role-badge.role-almacen {
@@ -3531,6 +3594,19 @@ html.theme-dark .guia-persona-rol--garantia {
   color: #fb7185 !important;
   -webkit-text-fill-color: #fb7185 !important;
   background: color-mix(in srgb, #be123c 22%, var(--ds-color-elevated)) !important;
+}
+
+html.theme-dark .guia-persona-rol--laboratorio {
+  color: #fde68a !important;
+  -webkit-text-fill-color: #fde68a !important;
+  background: color-mix(in srgb, #b45309 26%, var(--ds-color-elevated)) !important;
+}
+
+html.theme-dark .guia-persona-rol--area {
+  color: var(--area-color, #7dd3fc) !important;
+  -webkit-text-fill-color: var(--area-color, #7dd3fc) !important;
+  background: color-mix(in srgb, var(--area-color, #3498db) 28%, var(--ds-color-elevated)) !important;
+  border: 1px solid color-mix(in srgb, var(--area-color, #3498db) 45%, var(--ds-color-elevated)) !important;
 }
 
 html.theme-dark .guia-subtitle {
@@ -4724,6 +4800,34 @@ html.theme-dark .main-content .btn.registrar-pendiente-btn:not(:disabled):not(.a
 
 html.theme-dark .main-content .registrar-pendiente-btn:not(:disabled):not(.action-locked):hover i,
 html.theme-dark .main-content .btn.registrar-pendiente-btn:not(:disabled):not(.action-locked):hover i {
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .registrar-cementerio-btn:not(:disabled):not(.action-locked),
+html.theme-dark .main-content .btn.registrar-cementerio-btn:not(:disabled):not(.action-locked) {
+  background: transparent !important;
+  border-color: #93c5fd !important;
+  color: #93c5fd !important;
+  -webkit-text-fill-color: #93c5fd !important;
+}
+
+html.theme-dark .main-content .registrar-cementerio-btn:not(:disabled):not(.action-locked) i,
+html.theme-dark .main-content .btn.registrar-cementerio-btn:not(:disabled):not(.action-locked) i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .main-content .registrar-cementerio-btn:not(:disabled):not(.action-locked):hover,
+html.theme-dark .main-content .btn.registrar-cementerio-btn:not(:disabled):not(.action-locked):hover {
+  background: #93c5fd !important;
+  border-color: #93c5fd !important;
+  color: #1a1d24 !important;
+  -webkit-text-fill-color: #1a1d24 !important;
+}
+
+html.theme-dark .main-content .registrar-cementerio-btn:not(:disabled):not(.action-locked):hover i,
+html.theme-dark .main-content .btn.registrar-cementerio-btn:not(:disabled):not(.action-locked):hover i {
   color: #1a1d24 !important;
   -webkit-text-fill-color: #1a1d24 !important;
 }

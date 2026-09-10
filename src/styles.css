@@ -252,22 +252,22 @@ body ngb-pagination.custom-pagination ul.pagination .page-item.disabled .page-li
   line-height: 1;
 }
 
-/* Estilos para botón primario */
+/* Estilos para botón primario (crear, guardar, acción principal) */
 .btn-primary,
 .action-buttons .btn-primary,
 .btn.btn-primary {
-  background-color: #6c757d;
+  background-color: var(--ds-color-accent, #3498db);
   border: none;
-  color: white;
-  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+  color: var(--ds-color-on-accent, #ffffff);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.25);
 }
 
-.btn-primary:hover,
-.action-buttons .btn-primary:hover,
-.btn.btn-primary:hover {
-  background-color: #5a6268;
+.btn-primary:hover:not(:disabled),
+.action-buttons .btn-primary:hover:not(:disabled),
+.btn.btn-primary:hover:not(:disabled) {
+  background-color: var(--ds-color-accent-strong, #2980b9);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.35) !important;
 }
 
 .btn-primary:disabled {
@@ -340,18 +340,18 @@ a.config-hub-tab .config-hub-tab-icon i::before {
   box-shadow: none !important;
 }
 
-/* Mantener la sombra gris del tema en primario al enfocar (sin halo azul). */
+/* Sombra del acento en primario al enfocar (sin halo azul de Bootstrap). */
 .btn-primary:focus,
 .btn-primary:focus-visible,
 .btn.btn-primary:focus,
 .btn.btn-primary:focus-visible,
 .action-buttons .btn-primary:focus-visible {
-  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2) !important;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.25) !important;
 }
 
 .btn-primary:hover:focus-visible,
 .btn.btn-primary:hover:focus-visible {
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3) !important;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.35) !important;
 }
 
 /* Botones nativos sin .btn (p. ej. Salir en app-header): mismo criterio, sin anillo del navegador. */
@@ -1105,13 +1105,13 @@ button.btn.btn-danger:active {
 }
 
 .btn-primary {
-  background-color: #3498db;
+  background-color: var(--ds-color-accent, #3498db);
   border: none;
-  color: white;
+  color: var(--ds-color-on-accent, #ffffff);
 }
 
-.btn-primary:hover {
-  background-color: #2980b9;
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--ds-color-accent-strong, #2980b9);
   border: none;
 }
 
@@ -1690,13 +1690,13 @@ html:not(.theme-dark) .cerbero-list-table thead th.sortable-header.active .th-co
 }
 
 .btn-primary {
-  background-color: #3498db;
+  background-color: var(--ds-color-accent, #3498db);
   border: none;
-  color: white;
+  color: var(--ds-color-on-accent, #ffffff);
 }
 
-.btn-primary:hover {
-  background-color: #2980b9;
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--ds-color-accent-strong, #2980b9);
   border: none;
 }
 
@@ -2445,6 +2445,26 @@ button.action-locked:focus {
   .filter-btn {
     justify-content: center;
   }
+}
+
+/* Outline secondary: mismo criterio que Cancelar (borde negro), no el gris de Bootstrap. */
+.btn-outline-secondary,
+.btn.btn-outline-secondary,
+button.btn-outline-secondary {
+  background: transparent;
+  color: #000000;
+  border: 1px solid #000000;
+  box-shadow: none;
+}
+
+.btn-outline-secondary:hover:not(:disabled),
+.btn.btn-outline-secondary:hover:not(:disabled),
+button.btn-outline-secondary:hover:not(:disabled) {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Eliminar outline de botones de filtro */

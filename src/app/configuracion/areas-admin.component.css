@@ -6,3 +6,55 @@
   min-width: 3rem;
   padding: 0.15rem;
 }
+
+.btn-area-activar,
+.btn-area-desactivar {
+  background: transparent;
+  font-weight: 600;
+}
+
+.btn-area-activar {
+  color: #198754;
+  border: 1px solid #198754;
+}
+
+.btn-area-activar:hover:not(:disabled) {
+  background: #198754;
+  color: #fff;
+  border-color: #198754;
+}
+
+.btn-area-desactivar {
+  color: #d97706;
+  border: 1px solid #d97706;
+}
+
+.btn-area-desactivar:hover:not(:disabled) {
+  background: #d97706;
+  color: #fff;
+  border-color: #d97706;
+}
+
+:host-context(html.theme-dark) .btn-area-activar {
+  color: #4ade80;
+  border-color: #4ade80;
+  background: transparent;
+}
+
+:host-context(html.theme-dark) .btn-area-activar:hover:not(:disabled) {
+  background: #198754;
+  color: #fff;
+  border-color: #198754;
+}
+
+:host-context(html.theme-dark) .btn-area-desactivar {
+  color: #fdba74;
+  border-color: #fdba74;
+  background: transparent;
+}
+
+:host-context(html.theme-dark) .btn-area-desactivar:hover:not(:disabled) {
+  background: #d97706;
+  color: #fff;
+  border-color: #d97706;
+}

@@ -102,14 +102,14 @@
   font-weight: var(--ds-weight-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ds-color-faint);
+  color: color-mix(in srgb, var(--tab-accent, var(--ds-color-subtle)) 70%, var(--ds-color-faint));
   text-align: center;
   max-width: 6.5rem;
   line-height: 1.2;
 }
 
 .user-management-page .users-role-tab--active .users-role-tab-label {
-  color: var(--ds-color-subtle);
+  color: var(--tab-accent, var(--ds-color-subtle));
 }
 
 .user-management-page .users-panel.content-section {
@@ -361,6 +361,13 @@
   color: #be123c;
 }
 
+.role-area {
+  background: color-mix(in srgb, var(--area-color, #3498db) 18%, #fff);
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  border: 1px solid color-mix(in srgb, var(--area-color, #3498db) 42%, #cbd5e1);
+}
+
 /* Badges de estado */
 .status-badge {
   padding: 0.35rem 0.65rem;
@@ -462,6 +469,13 @@
   border-color: #ffeaa7;
 }
 
+.bandeja-area {
+  background: color-mix(in srgb, var(--area-color, #3498db) 18%, #fff);
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  border-color: color-mix(in srgb, var(--area-color, #3498db) 42%, #cbd5e1);
+}
+
 /*
  * Botones de acción: mismo criterio que locations / usuarios (borde con color en reposo).
  * Supera styles.css global que fuerza borde negro en .action-buttons .btn-*.
@@ -493,19 +507,34 @@
   box-shadow: 0 4px 8px rgba(245, 158, 11, 0.35) !important;
 }
 
-.user-management-page .action-buttons .btn-outline-secondary:not(:disabled) {
+.user-management-page .action-buttons .btn-user-habilitar:not(:disabled) {
   background: transparent !important;
-  border: 1px solid #64748b !important;
-  color: #111827 !important;
+  border: 1px solid #198754 !important;
+  color: #157347 !important;
   box-shadow: none !important;
 }
 
-.user-management-page .action-buttons .btn-outline-secondary:hover:not(:disabled),
-.user-management-page .action-buttons .btn-outline-secondary:focus-visible:not(:disabled) {
-  background: #475569 !important;
-  border: 1px solid #475569 !important;
+.user-management-page .action-buttons .btn-user-habilitar:hover:not(:disabled),
+.user-management-page .action-buttons .btn-user-habilitar:focus-visible:not(:disabled) {
+  background: #198754 !important;
+  border: 1px solid #198754 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 8px rgba(71, 85, 105, 0.35) !important;
+  box-shadow: 0 4px 8px rgba(25, 135, 84, 0.35) !important;
+}
+
+.user-management-page .action-buttons .btn-user-deshabilitar:not(:disabled) {
+  background: transparent !important;
+  border: 1px solid #d97706 !important;
+  color: #b45309 !important;
+  box-shadow: none !important;
+}
+
+.user-management-page .action-buttons .btn-user-deshabilitar:hover:not(:disabled),
+.user-management-page .action-buttons .btn-user-deshabilitar:focus-visible:not(:disabled) {
+  background: #d97706 !important;
+  border: 1px solid #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(217, 119, 6, 0.35) !important;
 }
 
 .user-management-page .action-buttons .btn-danger {
@@ -524,7 +553,8 @@
 }
 
 .user-management-page .action-buttons .btn-danger:disabled,
-.user-management-page .action-buttons .btn-outline-secondary:disabled {
+.user-management-page .action-buttons .btn-user-habilitar:disabled,
+.user-management-page .action-buttons .btn-user-deshabilitar:disabled {
   opacity: 0.45;
 }
 
@@ -559,6 +589,44 @@
 
 .users-table th.sortable-header.active .th-content i {
   opacity: 1;
+}
+
+.users-table .users-avatar-col {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  padding-left: 1rem;
+  padding-right: 0.35rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.users-row-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(145deg, #5dade2, #3498db);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.users-row-avatar--photo {
+  background: #e2e8f0;
+  border: 1px solid #e2e8f0;
+}
+
+.users-row-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* Responsive filtros */

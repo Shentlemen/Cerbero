@@ -14,6 +14,7 @@ export interface User {
   areaId?: number | null;
   areaCodigo?: string | null;
   areaNombre?: string | null;
+  areaColor?: string | null;
   permisos?: Array<{
     componente: string;
     puedeVer: boolean;

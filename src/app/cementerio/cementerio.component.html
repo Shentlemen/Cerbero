@@ -104,6 +104,19 @@
           <div class="list-toolbar-actions">
             <button
               type="button"
+              class="btn registrar-cementerio-btn"
+              id="tour-cementerio-registrar"
+              [class.action-locked]="!canRegistrarManual()"
+              (click)="abrirRegistroManual($event)"
+              [disabled]="canRegistrarManual() && (loading || registrandoManual)"
+              [attr.title]="canRegistrarManual() ? 'Registrar un equipo que nunca va a tener OCS' : 'Sin permiso para registrar'"
+              [attr.aria-disabled]="!canRegistrarManual()"
+              data-help="🖥️ Alta de un equipo sin agente OCS. Queda dado de baja en el cementerio.">
+              <i class="fas" [ngClass]="registrandoManual ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+              Registrar equipo
+            </button>
+            <button
+              type="button"
               class="btn bulk-transfer-btn"
               id="tour-cementerio-bulk-transfer"
               [class.action-locked]="!canTransferOrReactivate()"

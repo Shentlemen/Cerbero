@@ -667,15 +667,15 @@
 }
 
 .multi-select-toggle.active {
-  background: #6c757d;
-  border-color: #6c757d;
+  background: var(--ds-color-accent, #3498db);
+  border-color: var(--ds-color-accent, #3498db);
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
 }
 
 .multi-select-toggle.active:hover {
-  background: #5a6268;
-  border-color: #5a6268;
+  background: var(--ds-color-accent-strong, #2980b9);
+  border-color: var(--ds-color-accent-strong, #2980b9);
 }
 
 .multi-select-toggle:disabled {
@@ -735,11 +735,11 @@
 }
 
 .action-btn.visibility {
-  background: #6c757d;
+  background: var(--ds-color-accent, #3498db);
 }
 
 .action-btn.visibility:hover:not(:disabled) {
-  background: #5a6268;
+  background: var(--ds-color-accent-strong, #2980b9);
   transform: translateY(-1px);
 }
 

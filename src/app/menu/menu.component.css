@@ -148,7 +148,7 @@
 }
 
 .sidenav .user-section .btn-logout-small {
-  background: #6c757d !important;
+  background: #dc3545 !important;
   color: white !important;
   border: none !important;
   padding: 4px 6px !important;
@@ -165,7 +165,7 @@
 }
 
 .sidenav .user-section .btn-logout-small:hover {
-  background: #5a6268 !important;
+  background: #c82333 !important;
   transform: none !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
@@ -260,6 +260,8 @@
 
 .sidenav a.nav-tile--violet i,
 .menu-header.nav-tile--violet i { color: #c4b5fd; }
+.sidenav a.nav-tile--grafana i,
+.menu-header.nav-tile--grafana i { color: #f59e0b; }
 .sidenav a.nav-tile--cyan i,
 .menu-header.nav-tile--cyan i { color: #22d3ee; }
 .sidenav a.nav-tile--green i,
@@ -337,6 +339,15 @@
   z-index: 1; /* Mantenemos un z-index bajo para el contenido principal */
   display: flex;
   flex-direction: column;
+}
+
+/* Grafana embebido: el scroll tiene que ser solo el del iframe, no el de Cerbero.
+   Si Cerbero scrollea, el footer "Powered by Grafana" (fixed al iframe) se sube con la página. */
+.main-content:has(app-grafana-embed) {
+  overflow: hidden;
+  height: calc(100dvh - var(--layout-top, 3.75rem));
+  min-height: 0;
+  padding: 0;
 }
 
 /* Rutas hijas: ancho completo y reparto de alto (flex en columnas dentro de cada vista) */

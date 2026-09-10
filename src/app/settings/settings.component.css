@@ -167,6 +167,19 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+#tour-settings-health-btn:hover:not(:disabled) {
+  background-color: var(--ds-color-accent, #3498db);
+  border-color: var(--ds-color-accent, #3498db);
+  color: var(--ds-color-on-accent, #ffffff);
+  -webkit-text-fill-color: var(--ds-color-on-accent, #ffffff);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
+}
+
+#tour-settings-health-btn:hover:not(:disabled) i {
+  color: var(--ds-color-on-accent, #ffffff);
+  -webkit-text-fill-color: var(--ds-color-on-accent, #ffffff);
+}
+
 .sync-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;

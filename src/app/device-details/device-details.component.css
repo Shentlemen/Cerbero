@@ -109,9 +109,9 @@
 }
 
 .btn-secondary {
-  background: #6c757d;
-  border: none;
-  color: white;
+  background: transparent;
+  border: 1px solid #000;
+  color: #000;
 }
 
 .btn:hover {

@@ -57,6 +57,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'grafana', loadComponent: () => import('./grafana-embed/grafana-embed.component').then(m => m.GrafanaEmbedComponent) },
       { path: 'user-profile', loadComponent: () => import('./user-profile/user-profile.component').then(m => m.UserProfileComponent) },
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },
       { path: 'cementerio', loadComponent: () => import('./cementerio/cementerio.component').then(m => m.CementerioComponent) },

@@ -151,8 +151,9 @@ h4.text-secondary {
 }
 
 .btn-secondary {
-  background: #6c757d;
-  border: none;
+  background: transparent;
+  border: 1px solid #000;
+  color: #000;
 }
 
 .btn-export {

@@ -167,6 +167,14 @@ export class EstadoEquipoService {
     return this.http.post(`${this.apiUrl}/pendiente-laboratorio`, request);
   }
 
+  registrarEquipoManualCementerio(request: {
+    name: string;
+    observaciones?: string;
+    usuario: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/manual-cementerio`, request);
+  }
+
   eliminarEquipoPendiente(hardwareId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${hardwareId}/pendiente`);
   }

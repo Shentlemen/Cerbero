@@ -167,9 +167,9 @@
 }
 
 .btn-agregar-tipo:hover:not(:disabled) {
-  background: #f8f9fa;
-  color: #000;
-  border-color: #000;
+  background: #198754;
+  color: #fff;
+  border-color: #198754;
 }
 
 .btn-agregar-tipo:disabled {
@@ -248,14 +248,14 @@
 
 .flujos-tipo-estado--off {
   background: #fff;
-  color: #6c757d;
-  border: 1px solid #adb5bd;
+  color: #d97706;
+  border: 1px solid #d97706;
 }
 
 .flujos-tipo-estado--off:hover {
-  background: #6c757d;
+  background: #d97706;
   color: #fff;
-  border-color: #6c757d;
+  border-color: #d97706;
 }
 
 .flujos-comun-hint {

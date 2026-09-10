@@ -420,6 +420,17 @@
   color: #be123c;
 }
 
+.guia-persona-rol--laboratorio {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.guia-persona-rol--area {
+  background: color-mix(in srgb, var(--area-color, #3498db) 22%, #fff);
+  color: var(--area-color, #1e4b73);
+  border: 1px solid color-mix(in srgb, var(--area-color, #3498db) 45%, #fff);
+}
+
 .internos-ose-page .search-input-wrapper {
   position: relative;
   flex: 1 1 280px;

@@ -53,11 +53,11 @@
 }
 
 .actions-section .btn-outline-secondary:hover {
-  background: #f8f9fa;
-  color: #495057;
-  border-color: #adb5bd;
+  background: #000;
+  color: #fff;
+  border-color: #000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .actions-section .btn-outline-secondary:active {

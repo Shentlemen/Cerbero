@@ -3,34 +3,28 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { NgbPaginationModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { InternosOseService, InternoOseDTO, InternoOsePayload } from '../services/internos-ose.service';
 import { PermissionsService } from '../services/permissions.service';
 import { AuthService } from '../services/auth.service';
-import { ContactoUsuario } from '../interfaces/auth.interface';
+import { ContactoUsuario, User } from '../interfaces/auth.interface';
 import { TourRegistryService } from '../services/tour-registry.service';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
+import { TicketAreaDTO, TicketAreaService } from '../services/ticket-area.service';
 
 type InternoSortColumn = 'box' | 'area' | 'persona' | 'interno' | 'app';
 type GuiaPestana = 'equipo' | 'internos';
 
 interface GrupoContactos {
-  role: string;
+  key: string;
   label: string;
   usuarios: ContactoUsuario[];
 }
 
-const ROL_ORDEN = [
-  'GM',
-  'ADMIN',
-  'GESTION_EQUIP',
-  'INVENTARIO',
-  'ALMACEN',
-  'COMPRAS',
-  'IMPRESION',
-  'GARANTIA',
-  'USER'
-];
+const GRUPO_GM = 'GM';
+const GRUPO_SIN_AREA = '__SIN_AREA__';
 
 @Component({
   selector: 'app-internos-ose',
@@ -61,6 +55,7 @@ export class InternosOseComponent implements OnInit, OnDestroy {
   internoSeleccionado: InternoOseDTO | null = null;
   showConfirmDialog = false;
   internoToDelete: InternoOseDTO | null = null;
+  areasGuia: TicketAreaDTO[] = [];
   private tourCleanup?: () => void;
 
   constructor(
@@ -70,7 +65,8 @@ export class InternosOseComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private modalService: NgbModal,
     private tourRegistry: TourRegistryService,
-    private guidedTourHost: GuidedTourHostService
+    private guidedTourHost: GuidedTourHostService,
+    private ticketAreaService: TicketAreaService
   ) {
     this.internoForm = this.fb.group({
       box: [''],
@@ -86,6 +82,11 @@ export class InternosOseComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadUsuarios();
     this.loadInternos();
+    this.ticketAreaService.refreshAreasActivas().subscribe({
+      next: (list) => {
+        this.areasGuia = list ?? [];
+      }
+    });
     this.tourCleanup = this.tourRegistry.register('internos-ose', [
       {
         id: 'guia-equipo-overview',
@@ -112,9 +113,9 @@ export class InternosOseComponent implements OnInit, OnDestroy {
     window.setTimeout(() => {
       const steps = this.guidedTourHost.buildSteps([
         { selector: '#tour-guia-title', title: 'Guía de contactos', description: 'Directorio interno: el equipo de Cerbero y los internos telefónicos de la organización.', side: 'bottom' },
-        { selector: '#tour-guia-tabs', title: 'Dos secciones', description: '«Equipo Cerbero» muestra las personas del sistema agrupadas por rol. «Internos» es el directorio telefónico (box, área, interno).', side: 'bottom' },
-        { selector: '#tour-guia-equipo-search', title: 'Búsqueda', description: 'Filtrá por nombre, usuario, correo o rol. Los grupos se actualizan al instante.', side: 'bottom' },
-        { selector: '#tour-guia-equipo-grid', title: 'Tarjetas de contacto', description: 'Cada tarjeta muestra foto o iniciales, usuario, correo y rol. La tuya aparece marcada como «Vos».', side: 'top' }
+        { selector: '#tour-guia-tabs', title: 'Dos secciones', description: '«Equipo Cerbero» muestra las personas del sistema agrupadas por área. «Internos» es el directorio telefónico (box, área, interno).', side: 'bottom' },
+        { selector: '#tour-guia-equipo-search', title: 'Búsqueda', description: 'Filtrá por nombre, usuario, correo o área. Los grupos se actualizan al instante.', side: 'bottom' },
+        { selector: '#tour-guia-equipo-grid', title: 'Tarjetas de contacto', description: 'Cada tarjeta muestra foto o iniciales, usuario, correo y área. La tuya aparece marcada como «Vos».', side: 'top' }
       ]);
       this.guidedTourHost.startTour(steps);
     }, 80);
@@ -140,7 +141,14 @@ export class InternosOseComponent implements OnInit, OnDestroy {
   loadUsuarios(): void {
     this.loadingUsuarios = true;
     this.errorUsuarios = null;
-    this.authService.getDirectorioUsuarios().subscribe({
+    const fuente$: Observable<ContactoUsuario[]> = this.permissionsService.canManageUsers()
+      ? this.authService.getAllUsers().pipe(
+          map((users) => users.filter((u) => u.enabled).map((u) => this.toContacto(u)))
+        )
+      : this.authService.getDirectorioUsuarios().pipe(
+          map((users) => users.map((u) => this.toContacto(u)))
+        );
+    fuente$.subscribe({
       next: (usuarios) => {
         this.usuariosList = usuarios;
         this.loadingUsuarios = false;
@@ -150,6 +158,23 @@ export class InternosOseComponent implements OnInit, OnDestroy {
         this.loadingUsuarios = false;
       }
     });
+  }
+
+  private toContacto(u: ContactoUsuario | User): ContactoUsuario {
+    const user = u as User;
+    return {
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      role: u.role,
+      hasAvatar: !!u.hasAvatar,
+      areaId: user.areaId ?? null,
+      areaCodigo: user.areaCodigo ?? user.ticketAreaCodigo ?? null,
+      areaNombre: user.areaNombre ?? null,
+      areaColor: user.areaColor ?? null
+    };
   }
 
   get usuariosFiltrados(): ContactoUsuario[] {
@@ -162,28 +187,20 @@ export class InternosOseComponent implements OnInit, OnDestroy {
 
   get gruposUsuarios(): GrupoContactos[] {
     const filtered = this.usuariosFiltrados;
-    const porRol = new Map<string, ContactoUsuario[]>();
+    const porGrupo = new Map<string, GrupoContactos>();
     for (const u of filtered) {
-      const key = (u.role || 'USER').toUpperCase();
-      const lista = porRol.get(key) ?? [];
-      lista.push(u);
-      porRol.set(key, lista);
+      const { key, label } = this.grupoDeUsuario(u);
+      const grupo = porGrupo.get(key) ?? { key, label, usuarios: [] };
+      grupo.usuarios.push(u);
+      porGrupo.set(key, grupo);
     }
-    const keys = [...porRol.keys()].sort((a, b) => {
-      const ia = ROL_ORDEN.indexOf(a);
-      const ib = ROL_ORDEN.indexOf(b);
-      if (ia === -1 && ib === -1) {
-        return this.getRoleLabel(a).localeCompare(this.getRoleLabel(b), 'es');
-      }
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ia - ib;
+    return [...porGrupo.values()].sort((a, b) => {
+      if (a.key === GRUPO_GM) return -1;
+      if (b.key === GRUPO_GM) return 1;
+      if (a.key === GRUPO_SIN_AREA) return 1;
+      if (b.key === GRUPO_SIN_AREA) return -1;
+      return a.label.localeCompare(b.label, 'es');
     });
-    return keys.map((role) => ({
-      role,
-      label: this.getRoleLabel(role),
-      usuarios: (porRol.get(role) ?? []).slice()
-    }));
   }
 
   onSearchUsuariosChange(): void {
@@ -221,6 +238,88 @@ export class InternosOseComponent implements OnInit, OnDestroy {
     return this.authService.getCurrentUser()?.id === u.id;
   }
 
+  etiquetaPersona(u: ContactoUsuario): string {
+    if ((u.role || '').toUpperCase() === 'GM') {
+      return 'Game Master';
+    }
+    const area = this.resolverAreaPersona(u);
+    if (area?.nombre) {
+      return area.nombre;
+    }
+    return 'Sin área';
+  }
+
+  claseRolPersona(u: ContactoUsuario): string {
+    if ((u.role || '').toUpperCase() === 'GM') {
+      return 'guia-persona-rol--gm';
+    }
+    const area = this.resolverAreaPersona(u);
+    const codigo = (area?.codigo || u.areaCodigo || '').toLowerCase();
+    const known = [
+      'admin', 'almacen', 'inventario', 'compras', 'gestion_equip', 'impresion', 'garantia', 'laboratorio'
+    ];
+    if (known.includes(codigo) && !this.colorPersona(u)) {
+      return `guia-persona-rol--${codigo}`;
+    }
+    return area || this.colorPersona(u) ? 'guia-persona-rol--area' : 'guia-persona-rol--user';
+  }
+
+  colorPersona(u: ContactoUsuario): string | null {
+    const propio = (u.areaColor || '').trim();
+    if (propio) {
+      return propio;
+    }
+    return (this.resolverAreaPersona(u)?.color || '').trim() || null;
+  }
+
+  private resolverAreaPersona(u: ContactoUsuario): { codigo: string; nombre: string; color?: string | null } | null {
+    const codigo = (u.areaCodigo || '').trim().toUpperCase()
+      || this.codigoAreaDesdeRol(u.role);
+    if (u.areaNombre?.trim()) {
+      return {
+        codigo: codigo || (u.areaNombre || '').trim().toUpperCase(),
+        nombre: u.areaNombre.trim(),
+        color: u.areaColor
+      };
+    }
+    if (!codigo) {
+      return null;
+    }
+    const found = this.areasGuia.find((a) => (a.codigo || '').toUpperCase() === codigo)
+      ?? this.ticketAreaService.getAreasActivasSnapshot()
+        .find((a) => (a.codigo || '').toUpperCase() === codigo);
+    if (found) {
+      return { codigo: found.codigo, nombre: found.nombre, color: found.color };
+    }
+    const label = this.getRoleLabel(codigo);
+    if (label && label.toUpperCase() !== 'USUARIO' && label.toUpperCase() !== 'USER') {
+      return { codigo, nombre: label, color: u.areaColor };
+    }
+    return { codigo, nombre: codigo, color: u.areaColor };
+  }
+
+  private codigoAreaDesdeRol(role?: string | null): string {
+    const r = (role || '').toUpperCase();
+    if (!r || r === 'USER' || r === 'GM') {
+      return '';
+    }
+    if (r === 'ADMIN') {
+      return 'LABORATORIO';
+    }
+    return r;
+  }
+
+  private grupoDeUsuario(u: ContactoUsuario): { key: string; label: string } {
+    if ((u.role || '').toUpperCase() === 'GM') {
+      return { key: GRUPO_GM, label: 'Game Master' };
+    }
+    const area = this.resolverAreaPersona(u);
+    if (area) {
+      return { key: (area.codigo || area.nombre).toUpperCase(), label: area.nombre };
+    }
+    return { key: GRUPO_SIN_AREA, label: 'Sin área' };
+  }
+
   getRoleLabel(role: string): string {
     switch ((role || '').toUpperCase()) {
       case 'GM': return 'Game Master';
@@ -232,21 +331,24 @@ export class InternosOseComponent implements OnInit, OnDestroy {
       case 'GESTION_EQUIP': return 'Gestión de equipos';
       case 'IMPRESION': return 'Impresión';
       case 'GARANTIA': return 'Garantía';
+      case 'LABORATORIO': return 'Laboratorio';
       default: return role || '—';
     }
   }
 
-  iconoRol(role: string): string {
-    switch ((role || '').toUpperCase()) {
+  iconoGrupo(key: string): string {
+    switch ((key || '').toUpperCase()) {
       case 'GM': return 'fas fa-crown';
-      case 'ADMIN': return 'fas fa-user-shield';
+      case 'ADMIN':
+      case 'LABORATORIO': return 'fas fa-user-shield';
       case 'ALMACEN': return 'fas fa-warehouse';
       case 'INVENTARIO': return 'fas fa-boxes-stacked';
       case 'COMPRAS': return 'fas fa-cart-shopping';
       case 'GESTION_EQUIP': return 'fas fa-laptop-code';
       case 'IMPRESION': return 'fas fa-print';
       case 'GARANTIA': return 'fas fa-screwdriver-wrench';
-      default: return 'fas fa-user';
+      case GRUPO_SIN_AREA: return 'fas fa-user';
+      default: return 'fas fa-layer-group';
     }
   }
 
@@ -258,7 +360,9 @@ export class InternosOseComponent implements OnInit, OnDestroy {
       u.username,
       u.email,
       u.role,
-      this.getRoleLabel(u.role)
+      u.areaNombre,
+      u.areaCodigo,
+      this.etiquetaPersona(u)
     ]
       .map((v) => this.normalizeForSearch(v))
       .join(' ');

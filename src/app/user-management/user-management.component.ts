@@ -151,7 +151,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     if (tiSlugs.includes(slug)) {
       return `bandeja-${slug}`;
     }
-    return 'bandeja-ose';
+    return this.colorDeUsuario(user) ? 'bandeja-area' : 'bandeja-ose';
   }
 
   private mensajeErrorHttp(error: unknown): string {
@@ -656,7 +656,43 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       GARANTIA: '#be123c',
       LABORATORIO: '#856404'
     };
-    return colors[role] || '#6c757d';
+    return colors[role] || area?.color || '#3498db';
+  }
+
+  colorDeUsuario(user: User): string | null {
+    if (user.role === 'GM') {
+      return null;
+    }
+    const fromUser = (user.areaColor || '').trim();
+    if (fromUser) {
+      return fromUser;
+    }
+    return this.colorDeCodigo(user.areaCodigo || this.codigoBandejaEntrada(user));
+  }
+
+  claseBadgeRol(user: User): string {
+    if (user.role === 'GM') {
+      return 'role-gm';
+    }
+    const codigo = (user.areaCodigo || user.role || 'user').toLowerCase();
+    const known = [
+      'admin', 'almacen', 'inventario', 'compras', 'gestion_equip', 'impresion', 'garantia', 'laboratorio'
+    ];
+    if (known.includes(codigo)) {
+      return `role-${codigo}`;
+    }
+    if (this.colorDeUsuario(user)) {
+      return 'role-area';
+    }
+    return 'role-user';
+  }
+
+  private colorDeCodigo(codigo: string | null | undefined): string | null {
+    if (!codigo) {
+      return null;
+    }
+    const area = this.todasAreasTicket.find((a) => (a.codigo || '').toUpperCase() === codigo.toUpperCase());
+    return (area?.color || '').trim() || null;
   }
 
   getRolBgColor(role: string): string {
@@ -710,6 +746,24 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   isCurrentUser(user: User): boolean {
     const currentUser = this.authService.getCurrentUser();
     return currentUser?.id === user.id;
+  }
+
+  inicialesUsuario(user: User): string {
+    const first = (user.firstName || '').trim();
+    const last = (user.lastName || '').trim();
+    if (first && last) {
+      return (first[0] + last[0]).toUpperCase();
+    }
+    const label = (first || last || user.username || '?').trim();
+    return label.slice(0, 2).toUpperCase();
+  }
+
+  avatarUrl(user: User): string {
+    return this.authService.getAvatarUrl(user.id);
+  }
+
+  onAvatarError(user: User): void {
+    user.hasAvatar = false;
   }
 
 }

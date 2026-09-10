@@ -27,6 +27,7 @@ export interface User {
   areaId?: number | null;
   areaCodigo?: string | null;
   areaNombre?: string | null;
+  areaColor?: string | null;
   permisos?: AreaPermiso[];
 }
 
@@ -77,4 +78,8 @@ export interface ContactoUsuario {
   lastName: string;
   role: string;
   hasAvatar: boolean;
+  areaId?: number | null;
+  areaCodigo?: string | null;
+  areaNombre?: string | null;
+  areaColor?: string | null;
 } 

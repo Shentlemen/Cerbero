@@ -59,7 +59,7 @@
               class="form-control search-input"
               [(ngModel)]="searchUsuarios"
               (ngModelChange)="onSearchUsuariosChange()"
-              placeholder="Buscar por nombre, usuario, correo o rol..."
+              placeholder="Buscar por nombre, usuario, correo o área..."
               autocomplete="off">
             <button
               *ngIf="searchUsuarios"
@@ -92,7 +92,7 @@
         <div id="tour-guia-equipo-grid">
         <section *ngFor="let grupo of gruposUsuarios" class="guia-equipo-grupo">
           <h2 class="guia-equipo-grupo-title">
-            <i [class]="iconoRol(grupo.role)" aria-hidden="true"></i>
+            <i [class]="iconoGrupo(grupo.key)" aria-hidden="true"></i>
             {{ grupo.label }}
             <span class="guia-equipo-grupo-count">{{ grupo.usuarios.length }}</span>
           </h2>
@@ -119,8 +119,11 @@
               <a *ngIf="u.email" class="guia-persona-email" [href]="'mailto:' + u.email">
                 {{ u.email }}
               </a>
-              <span class="guia-persona-rol" [ngClass]="'guia-persona-rol--' + (u.role || '').toLowerCase()">
-                {{ getRoleLabel(u.role) }}
+              <span
+                class="guia-persona-rol"
+                [ngClass]="claseRolPersona(u)"
+                [style.--area-color]="colorPersona(u)">
+                {{ etiquetaPersona(u) }}
               </span>
             </article>
           </div>

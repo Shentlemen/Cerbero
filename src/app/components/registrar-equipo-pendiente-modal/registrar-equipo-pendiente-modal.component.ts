@@ -28,7 +28,7 @@ export type RegistroPendienteResult = RegistroPendienteUnoResult | RegistroPendi
       <div class="transferir-box-header">
         <h4 class="modal-title d-flex align-items-center gap-2 mb-0">
           <i class="fas fa-desktop text-dark"></i>
-          Registrar equipo pendiente
+          {{ titulo }}
         </h4>
         <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
       </div>
@@ -53,12 +53,10 @@ export type RegistroPendienteResult = RegistroPendienteUnoResult | RegistroPendi
       </div>
 
       <p class="text-muted small mb-3" *ngIf="modo === 'uno'">
-        Anotá el nombre de una PC que todavía no pasó por OCS. Se registra con cantidad 1
-        en {{ almacenLabel }}. Cuando OCS la detecte con el mismo nombre, se completan los datos.
+        {{ textoAyudaUno }}
       </p>
       <p class="text-muted small mb-3" *ngIf="modo === 'varios'">
-        Pegá varios nombres separados por espacio, coma o salto de línea.
-        Cada uno se registra como pendiente de OCS (cantidad 1).
+        {{ textoAyudaVarios }}
       </p>
 
       <form *ngIf="modo === 'uno'" [formGroup]="form" (ngSubmit)="confirmarUno()">
@@ -193,6 +191,9 @@ export type RegistroPendienteResult = RegistroPendienteUnoResult | RegistroPendi
 export class RegistrarEquipoPendienteModalComponent {
   modo: ModoRegistroPendiente = 'uno';
   almacenLabel = 'el almacén';
+  titulo = 'Registrar equipo pendiente';
+  ayudaUno = '';
+  ayudaVarios = '';
   form: FormGroup;
   pegado = '';
   selectedKeys: string[] = [];
@@ -206,6 +207,20 @@ export class RegistrarEquipoPendienteModalComponent {
       name: ['', [Validators.required, Validators.maxLength(255)]],
       observaciones: ['', Validators.maxLength(500)]
     });
+  }
+
+  get textoAyudaUno(): string {
+    if (this.ayudaUno) {
+      return this.ayudaUno;
+    }
+    return `Anotá el nombre de una PC que todavía no pasó por OCS. Se registra con cantidad 1 en ${this.almacenLabel}. Cuando OCS la detecte con el mismo nombre, se completan los datos.`;
+  }
+
+  get textoAyudaVarios(): string {
+    if (this.ayudaVarios) {
+      return this.ayudaVarios;
+    }
+    return 'Pegá varios nombres separados por espacio, coma o salto de línea. Cada uno se registra como pendiente de OCS (cantidad 1).';
   }
 
   setModo(modo: ModoRegistroPendiente): void {

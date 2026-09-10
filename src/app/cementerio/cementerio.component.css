@@ -105,6 +105,7 @@
 }
 
 .list-toolbar-actions .btn,
+.list-toolbar-actions .btn.registrar-cementerio-btn,
 .list-toolbar-actions .btn.bulk-transfer-btn,
 .list-toolbar-actions .btn.bulk-reactivar-btn,
 .list-toolbar-actions .btn.print-btn {
@@ -165,6 +166,22 @@
   box-shadow: 0 4px 8px rgba(30, 132, 73, 0.3);
 }
 
+.registrar-cementerio-btn,
+.btn.registrar-cementerio-btn {
+  background: #1d4ed8 !important;
+  border: 1px solid #1d4ed8 !important;
+  color: #fff !important;
+}
+
+.registrar-cementerio-btn:hover:not(:disabled):not(.action-locked),
+.btn.registrar-cementerio-btn:hover:not(:disabled):not(.action-locked) {
+  background: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(29, 78, 216, 0.3);
+}
+
 .print-btn,
 .btn.print-btn,
 button.print-btn {
@@ -187,6 +204,7 @@ button.print-btn:hover:not(:disabled) {
 
 .bulk-transfer-btn:disabled,
 .bulk-reactivar-btn:disabled,
+.registrar-cementerio-btn:disabled,
 .print-btn:disabled,
 .btn.print-btn:disabled {
   opacity: 0.6;

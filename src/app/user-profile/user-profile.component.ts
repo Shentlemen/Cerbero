@@ -225,8 +225,10 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   }
 
   getRoleLabel(role: string): string {
+    if (role === 'GM') return 'Game Master';
+    const areaNombre = (this.currentUser?.areaNombre || '').trim();
+    if (areaNombre) return areaNombre;
     switch (role) {
-      case 'GM': return 'Game Master';
       case 'ADMIN': return 'Administrador';
       case 'USER': return 'Usuario';
       default: return role;

@@ -258,6 +258,7 @@
       <table class="generic-table users-table">
         <thead>
           <tr>
+            <th class="users-avatar-col" aria-label="Foto de perfil"></th>
             <th class="sortable-header" [class.active]="sortColumn === 'username'" (click)="sortData('username')">
               <div class="th-content">
                 <span>Usuario</span>
@@ -300,6 +301,19 @@
         </thead>
         <tbody>
           <tr *ngFor="let user of usersFiltrados" class="generic-row">
+            <td class="users-avatar-col">
+              <span
+                class="users-row-avatar"
+                [class.users-row-avatar--photo]="!!user.hasAvatar"
+                [attr.title]="user.firstName || user.username">
+                <img
+                  *ngIf="user.hasAvatar"
+                  [src]="avatarUrl(user)"
+                  alt=""
+                  (error)="onAvatarError(user)">
+                <span *ngIf="!user.hasAvatar">{{ inicialesUsuario(user) }}</span>
+              </span>
+            </td>
             <td>
               <strong>{{ user.username }}</strong>
               <span *ngIf="isCurrentUser(user)" class="badge bg-secondary ms-1">(Tú)</span>
@@ -307,12 +321,18 @@
             <td>{{ user.email }}</td>
             <td>{{ user.firstName }} {{ user.lastName }}</td>
             <td>
-              <span class="role-badge" [ngClass]="'role-' + (user.role || 'user').toLowerCase()">
+              <span
+                class="role-badge"
+                [ngClass]="claseBadgeRol(user)"
+                [style.--area-color]="colorDeUsuario(user)">
                 {{ user.role === 'GM' ? 'Game Master' : (user.areaNombre || getBandejaEntrada(user) || 'Usuario') }}
               </span>
             </td>
             <td class="bandeja-cell">
-              <span class="bandeja-badge" [ngClass]="getBandejaBadgeClass(user)">
+              <span
+                class="bandeja-badge"
+                [ngClass]="getBandejaBadgeClass(user)"
+                [style.--area-color]="colorDeUsuario(user)">
                 <i class="fas fa-inbox bandeja-badge-icon" aria-hidden="true"></i>
                 {{ getBandejaEntrada(user) }}
               </span>
@@ -332,7 +352,9 @@
                   <i class="fas fa-edit"></i>
                 </button>
                 <button 
-                  class="btn btn-outline-secondary btn-sm"
+                  class="btn btn-sm"
+                  [class.btn-user-deshabilitar]="user.enabled"
+                  [class.btn-user-habilitar]="!user.enabled"
                   (click)="toggleEstado(user)"
                   [disabled]="isCurrentUser(user)"
                   [title]="user.enabled ? 'Deshabilitar' : 'Habilitar'">

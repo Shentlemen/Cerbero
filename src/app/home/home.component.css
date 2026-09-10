@@ -101,22 +101,22 @@
 .login-form button {
   margin-top: 1.25rem;
   padding: 0.75rem 1.5rem;
-  background-color: #1a1a1a; /* Color oscuro para el botón */
-  color: white;
+  background-color: #1a1a1a;
+  color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
   transition: all 0.3s ease;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.login-form button:hover {
-  background-color: #333333; /* Un tono ligeramente más claro para el efecto hover */
+.login-form button:hover:not(:disabled) {
+  background-color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45);
 }
 
 .login-form button:active {

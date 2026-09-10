@@ -60,7 +60,12 @@
               </span>
             </td>
             <td class="text-end">
-              <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="toggleActiva(a)">
+              <button
+                type="button"
+                class="btn btn-sm me-1"
+                [class.btn-area-desactivar]="a.activa"
+                [class.btn-area-activar]="!a.activa"
+                (click)="toggleActiva(a)">
                 {{ a.activa ? 'Desactivar' : 'Activar' }}
               </button>
               <button *ngIf="!a.sistema" type="button" class="btn btn-outline-danger btn-sm"

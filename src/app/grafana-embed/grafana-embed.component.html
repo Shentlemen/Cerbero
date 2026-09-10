@@ -1,0 +1,16 @@
+<div class="grafana-embed-page" *ngIf="configuredUrl; else missingUrl">
+  <iframe
+    class="grafana-embed-frame"
+    [src]="grafanaUrl"
+    title="Dashboard Grafana"
+    referrerpolicy="no-referrer-when-downgrade"
+    allowfullscreen>
+  </iframe>
+</div>
+
+<ng-template #missingUrl>
+  <div class="grafana-embed-missing">
+    <p>No hay URL de Grafana configurada.</p>
+    <p>Definí <code>grafanaEmbedUrl</code> en <code>environment.ts</code>.</p>
+  </div>
+</ng-template>
