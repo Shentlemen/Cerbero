@@ -77,6 +77,11 @@
         <i class="fas fa-times"></i>
         Limpiar
       </button>
+      <p class="list-summary mb-0" *ngIf="!loading && devices.length > 0">
+        <span *ngIf="collectionSize === devices.length">{{ devices.length }} dispositivos</span>
+        <span *ngIf="collectionSize !== devices.length">{{ collectionSize }} de {{ devices.length }} dispositivos</span>
+        <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+      </p>
       <button
         type="button"
         class="btn btn-primary btn-sm print-btn ms-auto"

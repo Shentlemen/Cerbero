@@ -117,16 +117,21 @@
   <div class="assets-content content-section cerbero-folder-panel">
     <!-- Filtro de búsqueda arriba de la tabla -->
     <div class="row mb-3 align-items-start g-2">
-      <div class="col-auto flex-grow-1">
+      <div class="col-auto flex-grow-1 d-flex align-items-center flex-wrap gap-3">
         <input
           type="text"
           class="form-control"
           id="tour-assets-search"
-          placeholder="Buscar por equipo, IP o usuario"
-          title="Filtra por nombre de equipo, dirección IP o último usuario conectado"
+          placeholder="Buscar por equipo, IP, usuario o nro. de serie"
+          title="Filtra por nombre de equipo, dirección IP, último usuario conectado o número de serie"
           [formControl]="nombreEquipoControl"
-          style="max-width: 320px;"
+          style="max-width: 380px;"
           autocomplete="off">
+        <p class="list-summary mb-0" *ngIf="!loading && totalAssets > 0">
+          <span *ngIf="collectionSize === totalAssets">{{ totalAssets }} equipos</span>
+          <span *ngIf="collectionSize !== totalAssets">{{ collectionSize }} de {{ totalAssets }} equipos</span>
+          <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+        </p>
       </div>
       <div class="col-auto">
         <button

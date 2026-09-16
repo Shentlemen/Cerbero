@@ -492,7 +492,18 @@ button * {
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1rem;
+}
+
+.devices-page .list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+:host-context(html.theme-dark) .list-summary {
+  color: #94a3b8;
 }
 
 .search-input-group {

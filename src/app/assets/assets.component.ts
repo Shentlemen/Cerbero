@@ -185,7 +185,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Método para aplicar búsqueda rápida (nombre de equipo, IP y último usuario conectado)
+  // Método para aplicar búsqueda rápida (nombre, IP, usuario y número de serie)
   private aplicarFiltroNombre(termino: string): void {
     const t = (termino || '').trim().toLowerCase();
     if (!t) {
@@ -198,10 +198,20 @@ export class AssetsComponent implements OnInit, OnDestroy {
         // `userid` en la tabla hardware (OCS) guarda el último usuario logueado al equipo.
         // Suele venir como "DOMINIO\usuario", así que comparamos sobre todo el string.
         const usuario = (asset.userid || '').toLowerCase();
-        return name.includes(t) || ip.includes(t) || usuario.includes(t);
+        const ssn = (asset.ssn || '').toLowerCase();
+        return name.includes(t) || ip.includes(t) || usuario.includes(t) || ssn.includes(t);
       });
       this.actualizarPaginacion();
     }
+  }
+
+  private mapHardwareWithBios(hardware: any, bios: any): any {
+    return {
+      ...hardware,
+      biosType: (bios?.type || 'DESCONOCIDO').trim().toUpperCase(),
+      smanufacturer: bios?.smanufacturer || 'DESCONOCIDO',
+      ssn: bios?.ssn || ''
+    };
   }
 
   // Método para obtener assets según el filtro de tipo actual
@@ -292,14 +302,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
         const list = Array.isArray(hardwareList) ? hardwareList : [];
         this.assetsList = list
           .filter(h => allowedIds.has(h.id))
-          .map(h => {
-            const bios = this.biosMapCache.get(h.id);
-            return {
-              ...h,
-              biosType: (bios?.type || 'DESCONOCIDO').trim().toUpperCase(),
-              smanufacturer: bios?.smanufacturer || 'DESCONOCIDO'
-            };
-          });
+          .map(h => this.mapHardwareWithBios(h, this.biosMapCache.get(h.id)));
         this.originalAssetsList = this.assetsList;
         this.advancedFiltersApplied = true;
         this.updateSummary();
@@ -411,11 +414,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
           this.biosMapCache = biosMap;
           
-          this.assetsList = hardwareList.map(h => ({
-            ...h,
-            biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase(),
-            smanufacturer: biosMap.get(h.id)?.smanufacturer || 'DESCONOCIDO'
-          }));
+          this.assetsList = hardwareList.map(h => this.mapHardwareWithBios(h, biosMap.get(h.id)));
           
           this.allAssetsCache = [...this.assetsList];
           this.advancedFiltersApplied = false;
@@ -475,11 +474,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
             // Filtrar la lista de hardware por los IDs obtenidos
             this.assetsList = hardwareList
               .filter(h => hardwareIds.includes(h.id))
-              .map(h => ({
-                ...h,
-                biosType: (biosMap.get(h.id)?.type || 'DESCONOCIDO').trim().toUpperCase(),
-                smanufacturer: biosMap.get(h.id)?.smanufacturer || 'DESCONOCIDO'
-              }));
+              .map(h => this.mapHardwareWithBios(h, biosMap.get(h.id)));
             
             this.allAssetsCache = [...this.assetsList];
             this.advancedFiltersApplied = false;
@@ -517,14 +512,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
         const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
         
         // Combinar datos de hardware con BIOS
-        let filteredAssets = hardware.map(h => {
-          const biosData = biosMap.get(h.id);
-          return {
-            ...h,
-            biosType: biosData?.type || 'DESCONOCIDO',
-            smanufacturer: biosData?.smanufacturer || 'DESCONOCIDO'
-          };
-        });
+        let filteredAssets = hardware.map(h => this.mapHardwareWithBios(h, biosMap.get(h.id)));
 
         // Aplicar filtros
         filteredAssets = filteredAssets.filter(asset => {
@@ -643,6 +631,15 @@ export class AssetsComponent implements OnInit, OnDestroy {
     const startItem = (this.page - 1) * this.pageSize;
     const endItem = this.page * this.pageSize;
     return this.assetsFiltrados.slice(startItem, endItem);
+  }
+
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
   }
 
   verDetallesAsset(asset: any): void {
@@ -996,7 +993,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       filtroTexto = `Filtro: ${this.currentFilter}`;
     }
     if (this.nombreEquipoControl.value) {
-      filtroTexto += ' | Búsqueda activa (nombre/IP/usuario)';
+      filtroTexto += ' | Búsqueda activa (nombre/IP/usuario/serie)';
     }
     doc.text(filtroTexto, 14, 28);
 
@@ -1063,7 +1060,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       ...this.guidedTourHost.buildSteps([
         { selector: '#tour-assets-title', title: 'Inventario de terminales', description: 'Listado de equipos detectados por inventario (OCS). Desde acá accedés al detalle de cada terminal.', side: 'bottom' },
         { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Pestañas para acotar la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
-        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP o último usuario conectado (campo USERID de OCS).', side: 'bottom' },
+        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP, último usuario conectado o número de serie (BIOS).', side: 'bottom' },
         { selector: '#tour-assets-advanced', title: 'Filtros avanzados', description: 'Abrí el panel para buscar por tipo de disco (HDD/SSD), SO, procesador, uso de disco ≥ %, RAM, fabricante o equipos sin reportar. Se combina con los chips y la búsqueda rápida.', side: 'bottom' },
         { selector: '#tour-assets-bulk-transfer', title: 'Transferir en masa', description: 'Elegí almacén, estantería y estante. Pegá varios números (14506 14530) para filtrarlos y usá Seleccionar todo. Oficina Laboratorio también aparece como destino.', side: 'bottom' },
         { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual, incluyendo los filtros avanzados activos.', side: 'left' }

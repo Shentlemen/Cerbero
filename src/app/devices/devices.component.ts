@@ -443,6 +443,15 @@ export class DevicesComponent implements OnInit, OnDestroy {
     this.pagedDeviceTypes = this.pagedDevices.map(d => this.getDeviceTypeConfig(d.type));
   }
 
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
+  }
+
   /**
    * Recalcula el conteo de dispositivos por tipo. Sólo se llama cuando
    * cambia la lista cruda (`this.devices`). Antes el template ejecutaba 15
