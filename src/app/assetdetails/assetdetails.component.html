@@ -101,6 +101,14 @@
           <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-cube"></i></span>
           <span class="cerbero-folder-tab-label">Software</span>
         </button>
+        <button type="button" role="tab" class="cerbero-folder-tab" id="tour-assetdetails-tab-historial"
+          [class.cerbero-folder-tab--active]="activeTab === 'historial'"
+          [attr.aria-selected]="activeTab === 'historial'"
+          [style.--tab-accent]="'#5d4037'"
+          (click)="changeTab('historial')">
+          <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-history"></i></span>
+          <span class="cerbero-folder-tab-label">Historial</span>
+        </button>
       </div>
       <div class="tab-content content-section cerbero-folder-panel" id="tour-assetdetails-tab-panel" [ngSwitch]="activeTab">
         <div *ngSwitchCase="'general'">
@@ -394,6 +402,65 @@
         <div *ngSwitchCase="'software'">
           <app-software-details *ngIf="componentData.software" [softwareData]="componentData.software"></app-software-details>
           <p *ngIf="!componentData.software">No hay datos de software disponibles.</p>
+        </div>
+        <div *ngSwitchCase="'historial'">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <button type="button" class="btn btn-sm"
+              [class.btn-primary]="filtroHistorialCategoria === ''"
+              [class.btn-outline-secondary]="filtroHistorialCategoria !== ''"
+              (click)="filtroHistorialCategoria = ''">Todo</button>
+            <button type="button" class="btn btn-sm"
+              [class.btn-primary]="filtroHistorialCategoria === 'HARDWARE'"
+              [class.btn-outline-secondary]="filtroHistorialCategoria !== 'HARDWARE'"
+              (click)="filtroHistorialCategoria = 'HARDWARE'">Hardware</button>
+            <button type="button" class="btn btn-sm"
+              [class.btn-primary]="filtroHistorialCategoria === 'ALMACEN'"
+              [class.btn-outline-secondary]="filtroHistorialCategoria !== 'ALMACEN'"
+              (click)="filtroHistorialCategoria = 'ALMACEN'">Almacén</button>
+          </div>
+
+          <div *ngIf="loadingHistorialEquipo" class="text-center p-3">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+              <span class="visually-hidden">Cargando historial...</span>
+            </div>
+            <p class="mt-2 mb-0">Cargando historial del equipo...</p>
+          </div>
+
+          <div *ngIf="!loadingHistorialEquipo && errorHistorialEquipo" class="alert alert-warning">
+            {{ errorHistorialEquipo }}
+          </div>
+
+          <div *ngIf="!loadingHistorialEquipo && !errorHistorialEquipo">
+            <div *ngIf="historialEquipoFiltrado.length === 0" class="alert alert-light border">
+              No hay eventos registrados para este equipo.
+            </div>
+            <div *ngIf="historialEquipoFiltrado.length > 0" class="table-responsive">
+              <table class="table table-sm table-striped align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>De</th>
+                    <th>A</th>
+                    <th>Usuario Windows</th>
+                    <th>Usuario Cerbero</th>
+                    <th>Observación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of historialEquipoFiltrado">
+                    <td>{{ formatHistorialFecha(item.fecha) }}</td>
+                    <td>{{ etiquetaTipoHistorial(item.tipo) }}</td>
+                    <td>{{ item.valorAnterior || '—' }}</td>
+                    <td>{{ item.valorNuevo || '—' }}</td>
+                    <td>{{ item.ultimoUsuarioWin || '—' }}</td>
+                    <td>{{ item.usuarioCerberoNombre || '—' }}</td>
+                    <td>{{ item.observacion || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
       </div>

@@ -54,8 +54,16 @@ export class HelperService {
       type: 'info',
       priority: 'medium',
       context: ['details', 'hardware', 'user'],
-      relatedSections: ['assets', 'locations', 'procurement/activos'],
+      relatedSections: ['assets', 'locations', 'procurement/activos', 'historial'],
       userLevel: 'intermediate'
+    },
+    historial: {
+      message: "Historial de cambios detectados en las terminales: hardware, software prohibido y movimientos entre almacenes. Hacé clic en un equipo para ver su línea de tiempo completa.",
+      type: 'info',
+      priority: 'medium',
+      context: ['inventory', 'history', 'hardware'],
+      relatedSections: ['assets', 'asset-details'],
+      userLevel: 'beginner'
     },
 
     // === GESTIÓN DE DISPOSITIVOS ===

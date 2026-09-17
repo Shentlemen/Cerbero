@@ -18,6 +18,8 @@ import { forkJoin } from 'rxjs';
 import { SoftwareByHardwareService } from '../services/software-by-hardware.service';
 import { UbicacionesService } from '../services/ubicaciones.service';
 import { UbicacionDTO, UbicacionHistorialDTO } from '../interfaces/ubicacion.interface';
+import { EquipoHistorialService } from '../services/equipo-historial.service';
+import { EquipoHistorialDTO } from '../interfaces/equipo-historial.interface';
 import { LocationSelectorModalComponent } from '../components/location-selector-modal/location-selector-modal.component';
 import { AssetLocationPickerModalComponent } from '../components/asset-location-picker-modal/asset-location-picker-modal.component';
 import { BiosDetailsComponent } from '../bios-details/bios-details.component';
@@ -91,7 +93,8 @@ interface Asset {
     StorageService,
     VideoService,
     SoftwareByHardwareService,
-    UbicacionesService
+    UbicacionesService,
+    EquipoHistorialService
   ],
   templateUrl: './assetdetails.component.html',
   styleUrls: ['./assetdetails.component.css']
@@ -113,6 +116,10 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
   deletingHistorialId: number | null = null;
   showDeleteHistorialDialog = false;
   historialPendienteEliminar: UbicacionHistorialDTO | null = null;
+  historialEquipo: EquipoHistorialDTO[] = [];
+  loadingHistorialEquipo = false;
+  errorHistorialEquipo: string | null = null;
+  filtroHistorialCategoria = '';
   private pageTour?: Driver;
   private tourCleanup?: () => void;
   private returnToAssetsAfterTour = false;
@@ -129,7 +136,8 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
     storage: '#tour-assetdetails-tab-storage',
     video: '#tour-assetdetails-tab-video',
     ubicacion: '#tour-assetdetails-tab-ubicacion',
-    software: '#tour-assetdetails-tab-software'
+    software: '#tour-assetdetails-tab-software',
+    historial: '#tour-assetdetails-tab-historial'
   };
 
   constructor(
@@ -147,6 +155,7 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
     private modalService: NgbModal,
     private softwareByHardwareService: SoftwareByHardwareService,
     private ubicacionesService: UbicacionesService,
+    private equipoHistorialService: EquipoHistorialService,
     private subnetService: SubnetService,
     public permissionsService: PermissionsService,
     private guidedTourHost: GuidedTourHostService,
@@ -203,6 +212,11 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
               if (this.asset?.id) {
                 this.cargarUbicacion();
                 this.cargarHistorialUbicaciones();
+                this.cargarHistorialEquipo();
+                const requestedTab = this.route.snapshot.queryParamMap.get('tab');
+                if (requestedTab === 'historial') {
+                  this.activeTab = 'historial';
+                }
                 const startDetailsTour = sessionStorage.getItem('cerbero:start-asset-details-tour') === '1';
                 this.returnToAssetsAfterTour = sessionStorage.getItem('cerbero:return-to-assets-after-details-tour') === '1';
                 if (startDetailsTour) {
@@ -749,6 +763,56 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
         this.historialUbicaciones = [];
         this.errorHistorialUbicaciones = 'No se pudo cargar el historial de ubicaciones.';
         this.loadingHistorialUbicaciones = false;
+      }
+    });
+  }
+
+  get historialEquipoFiltrado(): EquipoHistorialDTO[] {
+    if (!this.filtroHistorialCategoria) {
+      return this.historialEquipo;
+    }
+    return this.historialEquipo.filter(item => item.categoria === this.filtroHistorialCategoria);
+  }
+
+  etiquetaTipoHistorial(tipo: string | null | undefined): string {
+    switch (tipo) {
+      case 'ip': return 'IP';
+      case 'memory': return 'Memoria';
+      case 'video': return 'Video';
+      case 'monitor': return 'Monitor';
+      case 'storage_hw': return 'Disco físico';
+      case 'new_hardware': return 'Equipo nuevo';
+      case 'cementerio': return 'Cementerio';
+      case 'laboratorio': return 'Laboratorio';
+      case 'oficina_laboratorio': return 'Oficina laboratorio';
+      case 'regular': return 'Almacén';
+      case 'reactivar': return 'Reactivación';
+      case 'baja': return 'Baja';
+      case 'alta_pendiente': return 'Alta pendiente OCS';
+      case 'alta_cementerio': return 'Alta en cementerio';
+      default: return tipo || '—';
+    }
+  }
+
+  cargarHistorialEquipo(): void {
+    if (!this.asset?.id) {
+      this.historialEquipo = [];
+      this.errorHistorialEquipo = null;
+      return;
+    }
+
+    this.loadingHistorialEquipo = true;
+    this.errorHistorialEquipo = null;
+    this.equipoHistorialService.porEquipo(this.asset.id).subscribe({
+      next: (historial) => {
+        this.historialEquipo = historial ?? [];
+        this.loadingHistorialEquipo = false;
+      },
+      error: (error: unknown) => {
+        console.error('Error al cargar historial del equipo:', error);
+        this.historialEquipo = [];
+        this.errorHistorialEquipo = 'No se pudo cargar el historial del equipo.';
+        this.loadingHistorialEquipo = false;
       }
     });
   }

@@ -60,6 +60,7 @@ export const routes: Routes = [
       { path: 'grafana', loadComponent: () => import('./grafana-embed/grafana-embed.component').then(m => m.GrafanaEmbedComponent) },
       { path: 'user-profile', loadComponent: () => import('./user-profile/user-profile.component').then(m => m.UserProfileComponent) },
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },
+      { path: 'historial', loadComponent: () => import('./historial-equipos/historial-equipos.component').then(m => m.HistorialEquiposComponent) },
       { path: 'cementerio', loadComponent: () => import('./cementerio/cementerio.component').then(m => m.CementerioComponent) },
       { path: 'almacen-laboratorio', loadComponent: () => import('./almacen-laboratorio/almacen-laboratorio.component').then(m => m.AlmacenLaboratorioComponent) },
       { path: 'oficina-laboratorio', loadComponent: () => import('./almacen-laboratorio/almacen-laboratorio.component').then(m => m.AlmacenLaboratorioComponent), data: { modoAlmacen: 'oficina' } },

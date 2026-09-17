@@ -1,0 +1,199 @@
+<div class="historial-container">
+  <div class="header-section">
+    <div class="title-wrapper">
+      <h1>
+        <i class="fas fa-history"></i>
+        Historial de equipos
+      </h1>
+    </div>
+  </div>
+
+  <div class="cerbero-folder-stage historial-stage">
+    <div class="cerbero-folder-tabs" role="tablist" aria-label="Filtrar por categoría">
+      <button type="button" role="tab" class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="categoria === ''"
+        [attr.aria-selected]="categoria === ''"
+        [style.--tab-accent]="'var(--ds-color-accent)'"
+        (click)="filtrarCategoria('')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-th-large"></i></span>
+        <span class="cerbero-folder-tab-label">Todo</span>
+      </button>
+      <button type="button" role="tab" class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="categoria === 'HARDWARE'"
+        [attr.aria-selected]="categoria === 'HARDWARE'"
+        [style.--tab-accent]="'#1976d2'"
+        (click)="filtrarCategoria('HARDWARE')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-microchip"></i></span>
+        <span class="cerbero-folder-tab-label">Hardware</span>
+      </button>
+      <button type="button" role="tab" class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="categoria === 'ALMACEN'"
+        [attr.aria-selected]="categoria === 'ALMACEN'"
+        [style.--tab-accent]="'#f57c00'"
+        (click)="filtrarCategoria('ALMACEN')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-warehouse"></i></span>
+        <span class="cerbero-folder-tab-label">Almacén</span>
+      </button>
+    </div>
+
+    <div class="historial-content content-section cerbero-folder-panel">
+      <div class="historial-filters">
+        <div class="search-input-wrapper">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="pcName"
+            (keyup.enter)="aplicarFiltros()"
+            placeholder="Buscar por equipo..."
+            autocomplete="off">
+        </div>
+        <select class="form-select" [(ngModel)]="tipo" (change)="aplicarFiltros()" aria-label="Tipo de evento">
+          <option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</option>
+        </select>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="usuarioWin"
+          (keyup.enter)="aplicarFiltros()"
+          placeholder="Usuario Windows..."
+          autocomplete="off">
+        <input type="date" class="form-control" [(ngModel)]="desde" (change)="aplicarFiltros()" aria-label="Desde">
+        <input type="date" class="form-control" [(ngModel)]="hasta" (change)="aplicarFiltros()" aria-label="Hasta">
+        <button type="button" class="btn btn-primary btn-sm" (click)="aplicarFiltros()">
+          <i class="fas fa-filter me-1"></i>Filtrar
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="limpiarFiltros()">
+          Limpiar
+        </button>
+      </div>
+
+      <div class="historial-split">
+        <div class="historial-list-pane">
+          <p class="list-summary" *ngIf="!loading && !error">
+            {{ collectionSize }} evento{{ collectionSize === 1 ? '' : 's' }}
+          </p>
+
+          <div *ngIf="loading" class="text-center my-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando historial...</p>
+          </div>
+
+          <div *ngIf="!loading && error" class="alert alert-warning">{{ error }}</div>
+
+          <div class="table-container" *ngIf="!loading && !error">
+            <div *ngIf="items.length === 0" class="alert alert-light border">
+              No hay eventos registrados con estos filtros.
+            </div>
+            <table *ngIf="items.length > 0" class="assets-table cerbero-list-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Equipo</th>
+                  <th>Tipo</th>
+                  <th>De</th>
+                  <th>A</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let item of items"
+                  class="historial-row--clickable"
+                  [class.historial-row--selected]="esMismoEquipo(item, seleccionado)"
+                  (click)="seleccionar(item)">
+                  <td>{{ formatFecha(item.fecha) }}</td>
+                  <td><strong>{{ item.pcName }}</strong></td>
+                  <td>{{ etiquetaTipo(item.tipo) }}</td>
+                  <td class="historial-value" [title]="item.valorAnterior || ''">{{ item.valorAnterior || '—' }}</td>
+                  <td class="historial-value" [title]="item.valorNuevo || '—'">{{ item.valorNuevo || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-container" *ngIf="!loading && collectionSize > pageSize">
+            <ngb-pagination
+              [page]="page"
+              [pageSize]="pageSize"
+              [collectionSize]="collectionSize"
+              [boundaryLinks]="true"
+              [maxSize]="5"
+              [rotate]="true"
+              [ellipses]="false"
+              (pageChange)="onPageChange($event)"
+              class="custom-pagination">
+            </ngb-pagination>
+          </div>
+        </div>
+
+        <aside class="historial-detail-pane" [class.historial-detail-pane--empty]="!seleccionado">
+          <div *ngIf="!seleccionado" class="historial-detail-empty">
+            <i class="fas fa-laptop"></i>
+            <p>Seleccioná un equipo en la lista para ver todo su historial.</p>
+          </div>
+
+          <ng-container *ngIf="seleccionado">
+            <div class="historial-detail-head">
+              <div>
+                <h2>{{ seleccionado.pcName }}</h2>
+                <p class="historial-detail-meta">
+                  {{ seleccionado.ultimoUsuarioWin ? 'Último usuario: ' + seleccionado.ultimoUsuarioWin : 'Sin usuario Windows' }}
+                  <span *ngIf="seleccionado.ipEnEvento"> · IP {{ seleccionado.ipEnEvento }}</span>
+                  <span *ngIf="!loadingDetalle && detalle.length"> · {{ detalle.length }} evento{{ detalle.length === 1 ? '' : 's' }}</span>
+                </p>
+              </div>
+              <div class="historial-detail-actions">
+                <button
+                  *ngIf="seleccionado.hardwareId != null"
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="irAFicha()">
+                  Ver ficha
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cerrarDetalle()" aria-label="Cerrar">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="loadingDetalle" class="text-center p-3">
+              <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+
+            <div *ngIf="!loadingDetalle && errorDetalle" class="alert alert-warning">{{ errorDetalle }}</div>
+
+            <div *ngIf="!loadingDetalle && !errorDetalle && detalle.length === 0" class="alert alert-light border">
+              No hay más eventos para este equipo.
+            </div>
+
+            <ol *ngIf="!loadingDetalle && detalle.length > 0" class="historial-timeline">
+              <li *ngFor="let ev of detalle">
+                <div class="historial-timeline-dot" [attr.data-cat]="ev.categoria"></div>
+                <div class="historial-timeline-card">
+                  <div class="historial-timeline-top">
+                    <strong>{{ etiquetaTipo(ev.tipo) }}</strong>
+                    <span>{{ formatFecha(ev.fecha) }}</span>
+                  </div>
+                  <p class="historial-timeline-change">
+                    <span [title]="ev.valorAnterior || ''">{{ ev.valorAnterior || '—' }}</span>
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    <span [title]="ev.valorNuevo || ''">{{ ev.valorNuevo || '—' }}</span>
+                  </p>
+                  <p class="historial-timeline-foot" *ngIf="ev.ultimoUsuarioWin || ev.usuarioCerberoNombre || ev.observacion">
+                    <span *ngIf="ev.ultimoUsuarioWin">Windows: {{ ev.ultimoUsuarioWin }}</span>
+                    <span *ngIf="ev.usuarioCerberoNombre">Cerbero: {{ ev.usuarioCerberoNombre }}</span>
+                    <span *ngIf="ev.observacion">{{ ev.observacion }}</span>
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </ng-container>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
