@@ -48,7 +48,7 @@
           </div>
 
           <div *ngIf="tiposError" class="alert alert-danger py-2 small">{{ tiposError }}</div>
-          <div *ngIf="tiposLoading" class="text-muted small">Cargando…</div>
+          <app-page-skeleton *ngIf="tiposLoading" variant="list" [rows]="6"></app-page-skeleton>
 
           <ul class="flujos-tipo-list" *ngIf="!tiposLoading">
             <li

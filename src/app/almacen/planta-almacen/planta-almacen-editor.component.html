@@ -47,10 +47,7 @@
     y el círculo de arriba para rotar 90°. También sirve el botón Girar o la tecla R.
   </p>
 
-  <div *ngIf="loading" class="text-center py-5">
-    <i class="fas fa-spinner fa-spin fa-2x me-2"></i>
-    Cargando planta…
-  </div>
+  <app-page-skeleton *ngIf="loading" variant="canvas"></app-page-skeleton>
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
   <div class="planta-editor-layout" *ngIf="!loading && !error">

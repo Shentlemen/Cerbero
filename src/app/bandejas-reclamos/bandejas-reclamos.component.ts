@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
@@ -10,7 +11,7 @@ import { TicketAreaService, TicketAreaDTO } from '../services/ticket-area.servic
 @Component({
   selector: 'app-bandejas-reclamos',
   standalone: true,
-  imports: [CommonModule, NgbModule, NotificationContainerComponent, FormsModule],
+  imports: [CommonModule, PageSkeletonComponent, NgbModule, NotificationContainerComponent, FormsModule],
   templateUrl: './bandejas-reclamos.component.html',
   styleUrl: './bandejas-reclamos.component.css'
 })

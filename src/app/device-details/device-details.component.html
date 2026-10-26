@@ -18,12 +18,7 @@
               <h4>Información del Dispositivo</h4>
             </div>
             <div class="card-body">
-              <div *ngIf="loading" class="text-center p-4">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Cargando...</span>
-                </div>
-                <p class="mt-2">Cargando información del dispositivo...</p>
-              </div>
+              <app-page-skeleton *ngIf="loading" variant="detail"></app-page-skeleton>
 
               <div *ngIf="error" class="alert alert-danger">
                 {{ error }}
@@ -61,12 +56,7 @@
               </button>
             </div>
             <div class="card-body">
-              <div *ngIf="loading" class="text-center p-4">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Cargando...</span>
-                </div>
-                <p class="mt-2">Cargando información de ubicación...</p>
-              </div>
+              <app-page-skeleton *ngIf="loading" variant="detail"></app-page-skeleton>
 
               <div *ngIf="error" class="alert alert-danger">
                 {{ error }}

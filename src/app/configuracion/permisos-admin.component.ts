@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { PermissionsService } from '../services/permissions.service';
 import { AreaPermisoDTO, TicketAreaDTO, TicketAreaService } from '../services/ticket-area.service';
@@ -8,7 +9,7 @@ import { NotificationService } from '../services/notification.service';
 @Component({
   selector: 'app-permisos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule],
   templateUrl: './permisos-admin.component.html',
   styleUrl: './permisos-admin.component.css'
 })

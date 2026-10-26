@@ -246,12 +246,7 @@
     </div>
 
     <!-- Indicador de carga -->
-    <div *ngIf="loading && !showForm" class="text-center p-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-3">Cargando usuarios...</p>
-    </div>
+    <app-page-skeleton *ngIf="loading && !showForm" variant="table" [rows]="8" [columns]="6"></app-page-skeleton>
 
     <!-- Tabla de usuarios -->
     <div *ngIf="!loading && users.length > 0 && usersFiltrados.length > 0" class="table-container" id="tour-users-table">

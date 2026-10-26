@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
@@ -9,7 +10,7 @@ import { NotificationService } from '../services/notification.service';
 @Component({
   selector: 'app-areas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgbModalModule],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, NgbModalModule],
   templateUrl: './areas-admin.component.html',
   styleUrl: './areas-admin.component.css'
 })

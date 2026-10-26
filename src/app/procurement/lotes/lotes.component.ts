@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -13,7 +14,7 @@ import { TourRegistryService } from '../../services/tour-registry.service';
 @Component({
   selector: 'app-lotes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, PageSkeletonComponent, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './lotes.component.html',
   styleUrls: ['./lotes.component.css'],
   encapsulation: ViewEncapsulation.None

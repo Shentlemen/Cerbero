@@ -596,6 +596,27 @@
   align-items: center;
   gap: 1rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-and-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.list-summary {
+  font-size: 0.875rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+:host-context(html.theme-dark) .list-summary {
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
 }
 
 .search-box {

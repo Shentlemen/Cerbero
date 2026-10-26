@@ -6,21 +6,28 @@
     <i class="fas fa-chart-line" aria-hidden="true"></i>
     <span>Panel de Control</span>
   </p>
-  <div class="charts-container" *ngIf="loadingCharts" aria-busy="true" aria-label="Cargando gráficas">
-    <div
-      class="chart-card chart-card--skeleton"
-      *ngFor="let title of chartSkeletonTitles; let i = index"
-      [class.main-chart]="i === 1">
-      <div class="chart-header">
-        <h3>{{ title }}</h3>
+  <span class="visually-hidden" *ngIf="loadingCharts || loadingAlerts">Cargando panel de control</span>
+  <div
+    class="charts-container"
+    id="tour-dashboard-charts"
+    [attr.aria-busy]="loadingCharts">
+    <ng-container *ngIf="loadingCharts">
+      <div
+        class="chart-card sk-chart-card"
+        *ngFor="let slot of skeletonChartSlots; let i = index"
+        [class.main-chart]="i === 1">
+        <div class="chart-header">
+          <span class="sk sk-pill sk-chart-title"></span>
+        </div>
+        <div class="chart-body sk-chart-body">
+          <div class="sk sk-circle sk-donut" *ngIf="i === 0 || i === 3"></div>
+          <div class="sk-bars" *ngIf="i === 1 || i === 2">
+            <span class="sk sk-bar" *ngFor="let bar of skeletonBarHeights" [style.height.%]="bar"></span>
+          </div>
+        </div>
       </div>
-      <div class="chart-body">
-        <div class="dashboard-skeleton dashboard-skeleton--chart"></div>
-      </div>
-    </div>
-  </div>
-  <div class="charts-container" *ngIf="!loadingCharts" id="tour-dashboard-charts">
-    <div class="chart-card" *ngIf="pieChartData">
+    </ng-container>
+    <div class="chart-card" *ngIf="!loadingCharts && pieChartData">
       <div class="chart-header">
         <h3>Terminales</h3>
         <button type="button" class="expand-chart-btn" (click)="expandChart('terminales')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
@@ -42,7 +49,7 @@
         </div>
       </div>
     </div>
-    <div class="chart-card main-chart" *ngIf="barChartData">
+    <div class="chart-card main-chart" *ngIf="!loadingCharts && barChartData">
       <div class="chart-header">
         <h3>Fabricante</h3>
         <button type="button" class="expand-chart-btn" (click)="expandChart('fabricante')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
@@ -64,7 +71,7 @@
         </div>
       </div>
     </div>
-    <div class="chart-card" *ngIf="osChartData">
+    <div class="chart-card" *ngIf="!loadingCharts && osChartData">
       <div class="chart-header">
         <h3>Sistema Operativo</h3>
         <button type="button" class="expand-chart-btn" (click)="expandChart('sistema-operativo')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
@@ -86,7 +93,7 @@
         </div>
       </div>
     </div>
-    <div class="chart-card" *ngIf="networkChartData">
+    <div class="chart-card" *ngIf="!loadingCharts && networkChartData">
       <div class="chart-header">
         <h3>Dispositivos de Red</h3>
         <button type="button" class="expand-chart-btn" (click)="expandChart('red')" title="Ampliar gráfica" aria-label="Ampliar gráfica">
@@ -110,7 +117,7 @@
     </div>
   </div>
 
-  <div class="alerts-container" id="tour-dashboard-alerts">
+  <div class="alerts-container" id="tour-dashboard-alerts" [attr.aria-busy]="loadingAlerts">
     <div class="alerts-header">
       <h2 class="alerts-title">
         <i class="fa-solid fa-bell"></i>
@@ -154,7 +161,12 @@
     </div>
     
     <!-- Filtros por tipo de alerta -->
-    <div class="alert-filters">
+    <div class="alert-filters" *ngIf="loadingAlerts" aria-hidden="true">
+      <div class="filter-buttons">
+        <span class="sk sk-pill sk-filter" *ngFor="let w of skeletonFilterWidths" [style.width.px]="w"></span>
+      </div>
+    </div>
+    <div class="alert-filters" *ngIf="!loadingAlerts">
       <div class="filter-buttons">
         <button 
           class="btn-filter filter-btn" 
@@ -288,18 +300,25 @@
       </div>
     </div>
     
-    <div class="alert-list">
-      <ng-container *ngIf="loadingAlerts">
-        <div class="alert-item dashboard-skeleton-alert" *ngFor="let item of alertSkeletonItems" aria-hidden="true">
-          <div class="alert-content">
-            <div class="dashboard-skeleton dashboard-skeleton--line dashboard-skeleton--title"></div>
-            <div class="dashboard-skeleton dashboard-skeleton--line"></div>
+    <div class="alert-list" *ngIf="loadingAlerts" aria-hidden="true">
+      <div class="alert-item sk-alert-item" *ngFor="let slot of skeletonAlertSlots">
+        <div class="alert-content">
+          <div class="alert-header">
+            <div class="alert-main-info sk-alert-main">
+              <span class="sk sk-line sk-alert-name"></span>
+              <span class="sk sk-pill sk-alert-tag"></span>
+            </div>
+            <span class="sk sk-line sk-alert-date"></span>
           </div>
-          <div class="dashboard-skeleton dashboard-skeleton--btn"></div>
         </div>
-      </ng-container>
-
-      <div *ngIf="!loadingAlerts && alerts.length === 0" class="no-alerts">
+        <div class="alert-actions sk-alert-actions">
+          <span class="sk sk-pill sk-alert-btn"></span>
+          <span class="sk sk-pill sk-alert-btn sk-alert-btn-sm"></span>
+        </div>
+      </div>
+    </div>
+    <div class="alert-list" *ngIf="!loadingAlerts">
+      <div *ngIf="alerts.length === 0" class="no-alerts">
         <i class="fas fa-check-circle"></i>
         <h3>¡Todo en orden!</h3>
         <p>No hay alertas pendientes en este momento</p>

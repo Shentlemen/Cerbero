@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, AfterViewInit, HostListener, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -94,7 +95,7 @@ declare module 'leaflet' {
 @Component({
   selector: 'app-subnets',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgbPaginationModule],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, NgbPaginationModule],
   templateUrl: './subnets.component.html',
   styleUrls: ['./subnets.component.css']
 })

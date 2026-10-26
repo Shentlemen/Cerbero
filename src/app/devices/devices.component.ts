@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
@@ -37,7 +38,7 @@ interface DeviceType {
 @Component({
   selector: 'app-devices',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, ReactiveFormsModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './devices.component.html',
   styleUrls: ['./devices.component.css']
 })

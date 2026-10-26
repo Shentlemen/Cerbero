@@ -9,6 +9,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of, Subscription } from 'rxjs';
@@ -40,7 +41,7 @@ import { AuthService } from '../services/auth.service';
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, RouterModule, NotificationContainerComponent],
   templateUrl: './ticket-detail.component.html',
   styleUrls: ['./ticket-detail.component.css'],
   inputs: ['embedded', 'ticketIdInput', 'areasActivasInput', 'scrollFragment']

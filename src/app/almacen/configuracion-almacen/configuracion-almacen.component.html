@@ -35,10 +35,7 @@
     </div>
   </div>
 
-  <div *ngIf="loadingConfigs" class="text-center py-5">
-    <i class="fas fa-spinner fa-spin fa-2x me-2"></i>
-    <p>Cargando configuraciones...</p>
-  </div>
+  <app-page-skeleton *ngIf="loadingConfigs" variant="cards" [cards]="4"></app-page-skeleton>
 
   <div *ngIf="!loadingConfigs && almacenes.length > 0" class="configs-list" id="tour-configuracion-almacen-cards">
     <div *ngFor="let almacen of almacenes" class="config-card mb-3">

@@ -43,12 +43,7 @@
     <div class="table-container">
       <div *ngIf="errorUsuarios" class="alert alert-danger">{{ errorUsuarios }}</div>
 
-      <div *ngIf="loadingUsuarios" class="text-center p-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-2">Cargando equipo...</p>
-      </div>
+      <app-page-skeleton *ngIf="loadingUsuarios" variant="table" [rows]="8" [columns]="5"></app-page-skeleton>
 
       <ng-container *ngIf="!loadingUsuarios">
         <div class="list-toolbar" id="tour-guia-equipo-search">
@@ -152,12 +147,7 @@
         {{ error }}
       </div>
 
-      <div *ngIf="loading" class="text-center p-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-2">Cargando directorio telefónico...</p>
-      </div>
+      <app-page-skeleton *ngIf="loading" variant="table" [rows]="8" [columns]="5"></app-page-skeleton>
 
       <ng-container *ngIf="!loading">
         <div class="list-toolbar" id="tour-guia-internos-search">

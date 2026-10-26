@@ -76,20 +76,27 @@
 
   <div class="content-section cerbero-folder-panel">
         <div class="search-and-multi-select">
-          <div class="search-box">
-            <div class="input-group">
-              <span class="input-group-text">
-                <i class="fas fa-search"></i>
-              </span>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="tour-software-search"
-                placeholder="Buscar software..." 
-                [ngModel]="searchTerm"
-                (input)="filterSoftware($event)"
-              >
+          <div class="search-and-summary">
+            <div class="search-box">
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-search"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="tour-software-search"
+                  placeholder="Buscar software..." 
+                  [ngModel]="searchTerm"
+                  (input)="filterSoftware($event)"
+                >
+              </div>
             </div>
+            <p class="list-summary mb-0" *ngIf="!loading">
+              <span *ngIf="collectionSize === tabTotal">{{ tabTotal }} programas</span>
+              <span *ngIf="collectionSize !== tabTotal">{{ collectionSize }} de {{ tabTotal }} programas</span>
+              <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+            </p>
           </div>
           
           <div class="multi-select-controls" id="tour-software-multiselect">
@@ -165,12 +172,7 @@
 
 
   <!-- Indicador de carga -->
-  <div *ngIf="loading" class="text-center my-4">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
-    <p class="mt-2">Cargando datos...</p>
-  </div>
+  <app-page-skeleton *ngIf="loading" variant="table" [rows]="10" [columns]="5"></app-page-skeleton>
 
   <!-- Indicador de carga para operaciones en lote -->
   <div *ngIf="isUpdatingMultiple" class="text-center my-4">

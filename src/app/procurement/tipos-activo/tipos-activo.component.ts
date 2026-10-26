@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -13,7 +14,7 @@ type TipoActivoSortColumn = 'idActivo' | 'descripcion' | 'usuario';
 @Component({
   selector: 'app-tipos-activo',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './tipos-activo.component.html',
   styleUrls: ['./tipos-activo.component.css']
 })

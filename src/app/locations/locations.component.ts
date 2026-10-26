@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UbicacionesService } from '../services/ubicaciones.service';
@@ -24,6 +25,7 @@ type UbicacionSortColumn =
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     FormsModule,
     ReactiveFormsModule,
     NgbModule,

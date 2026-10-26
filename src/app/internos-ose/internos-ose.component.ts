@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -29,7 +30,7 @@ const GRUPO_SIN_AREA = '__SIN_AREA__';
 @Component({
   selector: 'app-internos-ose',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule],
   templateUrl: './internos-ose.component.html',
   styleUrls: ['./internos-ose.component.css']
 })

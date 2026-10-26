@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { Almacen3DComponent, CajaInfo, StockItem, EstanteriaLayout } from '../components/almacen-3d/almacen-3d.component';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -25,7 +26,7 @@ import { TourRegistryService } from '../services/tour-registry.service';
 @Component({
   selector: 'app-almacen-3d-demo',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgbModule, Almacen3DComponent, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, NgbModule, Almacen3DComponent, NotificationContainerComponent],
   templateUrl: './almacen-3d-demo.component.html',
   styleUrls: ['./almacen-3d-demo.component.css']
 })

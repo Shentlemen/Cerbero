@@ -32,7 +32,7 @@
             </button>
           </div>
         </div>
-        <div *ngIf="bandejasLoading" class="text-muted small py-2">Cargando bandejas…</div>
+        <app-page-skeleton *ngIf="bandejasLoading" variant="table" [rows]="5" [columns]="5"></app-page-skeleton>
         <div *ngIf="!bandejasLoading" class="table-responsive">
           <table class="table table-sm table-hover align-middle">
             <thead>

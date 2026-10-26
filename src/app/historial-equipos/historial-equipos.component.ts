@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
@@ -10,7 +11,7 @@ import { EquipoHistorialDTO } from '../interfaces/equipo-historial.interface';
 @Component({
   selector: 'app-historial-equipos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, NgbPaginationModule],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, RouterModule, NgbPaginationModule],
   templateUrl: './historial-equipos.component.html',
   styleUrls: ['./historial-equipos.component.css']
 })

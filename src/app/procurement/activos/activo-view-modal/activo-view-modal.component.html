@@ -12,11 +12,8 @@
     {{ error }}
   </div>
 
-  <div *ngIf="loading" class="text-center p-4">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
-    <p class="mt-2 mb-0">Cargando detalles del activo...</p>
+  <div *ngIf="loading" class="p-2">
+    <app-page-skeleton variant="detail"></app-page-skeleton>
   </div>
 
   <div *ngIf="!loading && !error && activo" class="details-grid">
@@ -152,12 +149,7 @@
 
     <div class="detail-card detail-card--wide">
       <h3>Activos Relacionados</h3>
-      <div *ngIf="loadingRelacionados" class="text-center p-2">
-        <div class="spinner-border spinner-border-sm text-primary" role="status">
-          <span class="visually-hidden">Cargando activos relacionados...</span>
-        </div>
-        <p class="mt-1 small mb-0">Cargando activos relacionados...</p>
-      </div>
+      <app-page-skeleton *ngIf="loadingRelacionados" variant="list" [rows]="3"></app-page-skeleton>
 
       <div *ngIf="errorRelacionados" class="alert alert-danger p-2 mt-2 mb-0">
         {{ errorRelacionados }}

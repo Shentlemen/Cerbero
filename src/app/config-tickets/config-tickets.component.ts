@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalModule, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { PermissionsService } from '../services/permissions.service';
@@ -17,6 +18,7 @@ type ConfigTab = 'bandejas' | 'flujos';
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     FormsModule,
     NgbModalModule,
     AreasAdminComponent,

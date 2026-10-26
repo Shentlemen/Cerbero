@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { StockAlmacenService, StockAlmacen, StockAlmacenCreate } from '../../services/stock-almacen.service';
@@ -21,6 +22,7 @@ import { TourRegistryService } from '../../services/tour-registry.service';
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     FormsModule,
     ReactiveFormsModule,
     NgbModule,

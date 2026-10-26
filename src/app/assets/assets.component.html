@@ -239,12 +239,7 @@
     </div>
 
     <!-- Indicador de carga -->
-    <div *ngIf="loading" class="text-center my-4">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-2">Cargando datos...</p>
-    </div>
+    <app-page-skeleton *ngIf="loading" variant="table" [rows]="10" [columns]="6"></app-page-skeleton>
 
     <div class="table-container" *ngIf="!loading" id="tour-assets-table">
       <table class="assets-table cerbero-list-table">

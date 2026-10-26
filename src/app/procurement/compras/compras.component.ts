@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, FormControl, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -39,7 +40,7 @@ interface DemoStepDef extends GuidedTourStepDef {
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, NgbPaginationModule, NgbNavModule, CurrencyMaskDirective],
+  imports: [CommonModule, PageSkeletonComponent, ReactiveFormsModule, FormsModule, RouterModule, NgbPaginationModule, NgbNavModule, CurrencyMaskDirective],
   templateUrl: './compras.component.html',
   styleUrls: ['./compras.component.css'],
   encapsulation: ViewEncapsulation.None

@@ -155,10 +155,7 @@
 
       <!-- Browse: cards / lista -->
       <div class="tickets-ig-browse" id="tour-tickets-cards" *ngIf="selectedTicketId === null">
-        <div *ngIf="cargandoVistaActiva" class="tickets-panel-state tickets-active-loading py-4">
-          <div class="spinner-border text-primary" role="status" aria-label="Cargando"></div>
-          <span class="text-muted ms-2">Cargando tickets…</span>
-        </div>
+        <app-page-skeleton *ngIf="cargandoVistaActiva" variant="cards" [cards]="6"></app-page-skeleton>
 
         <ng-container *ngIf="!cargandoVistaActiva">
           <div

@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService } from '../services/auth.service';
@@ -14,7 +15,7 @@ type UserSortColumn = 'username' | 'email' | 'nombreCompleto' | 'role' | 'enable
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, ReactiveFormsModule, NgbModule, NotificationContainerComponent],
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.css']
 })

@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HardwareService } from '../services/hardware.service';
@@ -29,7 +30,7 @@ import type { DriveStep } from 'driver.js';
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, ReactiveFormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.css'],
   encapsulation: ViewEncapsulation.None

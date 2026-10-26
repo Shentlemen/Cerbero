@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { UbicacionesService } from '../../services/ubicaciones.service';
 import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
+import { PageSkeletonComponent } from '../page-skeleton/page-skeleton.component';
 
 @Component({
   selector: 'app-location-picker-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageSkeletonComponent],
   template: `
     <div class="modal-header bg-light">
       <h4 class="modal-title d-flex align-items-center gap-2">
@@ -18,12 +19,7 @@ import { UbicacionDTO } from '../../interfaces/ubicacion.interface';
       <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
     </div>
     <div class="modal-body">
-      <div *ngIf="loading" class="text-center p-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-2">Cargando ubicaciones...</p>
-      </div>
+      <app-page-skeleton *ngIf="loading" variant="list" [rows]="4"></app-page-skeleton>
 
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}

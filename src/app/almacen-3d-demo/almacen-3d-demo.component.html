@@ -8,10 +8,7 @@
   </div>
   <!-- Indicador de carga -->
   <div *ngIf="loading" class="loading-overlay">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Cargando stock...</span>
-    </div>
-    <p class="mt-2">Cargando datos del almacén...</p>
+    <app-page-skeleton variant="canvas"></app-page-skeleton>
   </div>
 
   <div class="selector-almacen" *ngIf="almacenes.length > 0" id="tour-almacen-3d-selector">

@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { Router } from '@angular/router';
 import { SoftwareService, SoftwareDTO, PaginatedSoftwareResponse, SoftwarePaginationParams, SoftwareCounters } from '../services/software.service';
 import { HttpClientModule } from '@angular/common/http';
@@ -17,6 +18,7 @@ import { TourRegistryService } from '../services/tour-registry.service';
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     HttpClientModule,
     FormsModule,
     NgbPaginationModule,
@@ -193,7 +195,34 @@ export class SoftwareComponent implements OnInit, OnDestroy {
   }
 
   get totalSoftware(): number {
-    return this.collectionSize; // Usar el total del backend
+    return this.tabTotal;
+  }
+
+  get tabTotal(): number {
+    switch (this.activeTab) {
+      case 'hidden':
+        return this.softwareCounters.hidden;
+      case 'forbidden':
+        return this.softwareCounters.forbidden;
+      case 'driver':
+        return this.softwareCounters.driver;
+      case 'licenciado':
+        return this.softwareCounters.licenciado;
+      case 'total':
+      default:
+        return this.softwareCounters.total;
+    }
+  }
+
+  get rangoDesde(): number {
+    if (this.collectionSize === 0) {
+      return 0;
+    }
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get rangoHasta(): number {
+    return Math.min(this.page * this.pageSize, this.collectionSize);
   }
 
   // Getters para los contadores de cada tipo - ahora usando datos reales
@@ -286,6 +315,8 @@ export class SoftwareComponent implements OnInit, OnDestroy {
     this.searchTerm = input.value;
     this.page = 1; // Resetear a la primera página al buscar
     this.closeMultiSelectMode(); // Cerrar selección múltiple al buscar
+    this.collectionSize = this.pagedSoftwareList.length;
+    this.totalPages = Math.ceil(this.collectionSize / this.pageSize);
     
     // Mostrar loading solo si hay texto para filtrar
     if (this.searchTerm && this.searchTerm.trim()) {
