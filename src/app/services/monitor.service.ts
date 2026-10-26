@@ -3,6 +3,19 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConfigService } from './config.service';
 
+export interface MonitorInventario {
+  id: number;
+  hardwareId: number;
+  pcName?: string;
+  ipAddr?: string;
+  userid?: string;
+  manufacturer?: string;
+  caption?: string;
+  description?: string;
+  type?: string;
+  serial?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -20,24 +33,11 @@ export class MonitorService {
     return this.http.get(`${this.apiUrl}/by-hardware`, { params: { hardwareId: hardwareId.toString() } });
   }
 
-  // Puedes agregar más métodos aquí si los necesitas, por ejemplo:
-  // getAllMonitors(): Observable<any[]> {
-  //   return this.http.get<any[]>(this.apiUrl);
-  // }
+  getAll(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl);
+  }
 
-  // getMonitorById(id: number): Observable<any> {
-  //   return this.http.get<any>(`${this.apiUrl}/${id}`);
-  // }
-
-  // createMonitor(monitor: any): Observable<any> {
-  //   return this.http.post<any>(this.apiUrl, monitor);
-  // }
-
-  // updateMonitor(id: number, monitor: any): Observable<any> {
-  //   return this.http.put<any>(`${this.apiUrl}/${id}`, monitor);
-  // }
-
-  // deleteMonitor(id: number): Observable<void> {
-  //   return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  // }
+  getInventario(): Observable<MonitorInventario[]> {
+    return this.http.get<MonitorInventario[]>(`${this.apiUrl}/inventario`);
+  }
 }

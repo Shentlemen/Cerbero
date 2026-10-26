@@ -185,9 +185,14 @@
             class="btn btn-ticket-primary w-100 mb-2"
             *ngFor="let accion of flujoAcciones"
             [disabled]="aplicandoFlujo"
+            [title]="accion.accionSistema === 'ACTIVAR_USUARIO' ? 'También activa la cuenta del usuario' : ''"
             (click)="aplicarAccionFlujo(accion)">
             <i class="fas fa-play me-1" aria-hidden="true"></i>
             {{ accion.label }}
+            <i
+              *ngIf="accion.accionSistema === 'ACTIVAR_USUARIO'"
+              class="fas fa-user-check ms-1"
+              aria-hidden="true"></i>
           </button>
         </div>
       </div>

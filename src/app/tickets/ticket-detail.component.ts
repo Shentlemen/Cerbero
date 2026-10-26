@@ -473,7 +473,11 @@ export class TicketDetailComponent implements OnInit, OnDestroy, OnChanges {
         next: (response) => {
           this.aplicandoFlujo = false;
           if (response.success) {
-            this.notificationService.showSuccessMessage(`Acción aplicada: ${accion.label}`);
+            const extra =
+              accion.accionSistema === 'ACTIVAR_USUARIO'
+                ? '. Se activó la cuenta del usuario.'
+                : '';
+            this.notificationService.showSuccessMessage(`Acción aplicada: ${accion.label}${extra}`);
             this.notaFlujoExtra = '';
             this.cargarTodo();
             this.ticketChanged.emit();

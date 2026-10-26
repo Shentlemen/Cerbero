@@ -249,6 +249,12 @@
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
+.flujo-edge-accion {
+  margin-left: 0.3rem;
+  color: #198754;
+  font-size: 0.65rem;
+}
+
 .flujo-edge-input {
   border: none;
   outline: none;

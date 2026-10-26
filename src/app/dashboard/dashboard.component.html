@@ -6,7 +6,20 @@
     <i class="fas fa-chart-line" aria-hidden="true"></i>
     <span>Panel de Control</span>
   </p>
-  <div class="charts-container" id="tour-dashboard-charts">
+  <div class="charts-container" *ngIf="loadingCharts" aria-busy="true" aria-label="Cargando gráficas">
+    <div
+      class="chart-card chart-card--skeleton"
+      *ngFor="let title of chartSkeletonTitles; let i = index"
+      [class.main-chart]="i === 1">
+      <div class="chart-header">
+        <h3>{{ title }}</h3>
+      </div>
+      <div class="chart-body">
+        <div class="dashboard-skeleton dashboard-skeleton--chart"></div>
+      </div>
+    </div>
+  </div>
+  <div class="charts-container" *ngIf="!loadingCharts" id="tour-dashboard-charts">
     <div class="chart-card" *ngIf="pieChartData">
       <div class="chart-header">
         <h3>Terminales</h3>
@@ -150,7 +163,7 @@
           title="Mostrar todas las alertas">
           <i class="fas fa-list"></i>
           <span>Todas</span>
-          <span class="count">({{alerts.length}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : alerts.length }})</span>
         </button>
         <button 
           class="btn-filter filter-btn" 
@@ -162,7 +175,7 @@
           title="Mostrar solo alertas de equipos nuevos">
           <i class="fas fa-plus-circle" style="color: #2e7d32;"></i>
           <span>Nuevos</span>
-          <span class="count">({{getFilterCount('new_hardware')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('new_hardware') }})</span>
         </button>
         <button 
           class="btn-filter filter-btn" 
@@ -174,7 +187,7 @@
           title="Mostrar solo alertas de cambios en memoria">
           <i class="fas fa-memory" style="color: #1976d2;"></i>
           <span>Memoria</span>
-          <span class="count">({{getFilterCount('memory')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('memory') }})</span>
         </button>
         <button 
           class="btn-filter filter-btn" 
@@ -186,7 +199,7 @@
           title="Mostrar solo alertas de uso de disco">
           <i class="fas fa-hdd" style="color: #f57c00;"></i>
           <span>Disco</span>
-          <span class="count">({{getFilterCount('disk')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('disk') }})</span>
         </button>
         <button 
           class="btn-filter filter-btn" 
@@ -198,7 +211,7 @@
           title="Mostrar solo alertas de cambios de IP">
           <i class="fas fa-network-wired" style="color: #388e3c;"></i>
           <span>IP</span>
-          <span class="count">({{getFilterCount('ip')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('ip') }})</span>
         </button>
         <button 
           class="btn-filter filter-btn" 
@@ -210,7 +223,7 @@
           title="Mostrar solo alertas de cambios en video">
           <i class="fas fa-video" style="color: #7b1fa2;"></i>
           <span>Video</span>
-          <span class="count">({{getFilterCount('video')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('video') }})</span>
         </button>
         <button 
           class="btn-filter filter-btn" 
@@ -222,7 +235,7 @@
           title="Mostrar solo alertas de cambios en monitores">
           <i class="fas fa-desktop" style="color: #00838f;"></i>
           <span>Monitores</span>
-          <span class="count">({{getFilterCount('monitor')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('monitor') }})</span>
         </button>
         <button 
           class="btn-filter" 
@@ -234,7 +247,7 @@
           title="Mostrar solo alertas de cambios en discos físicos (almacenamiento)">
           <i class="fas fa-database" style="color: #5e35b1;"></i>
           <span>Almacenamiento</span>
-          <span class="count">({{getFilterCount('storage_hw')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('storage_hw') }})</span>
         </button>
         <button 
           class="btn-filter" 
@@ -246,7 +259,7 @@
           title="Mostrar solo alertas de software prohibido">
           <i class="fas fa-ban" style="color: #e74c3c;"></i>
           <span>Software</span>
-          <span class="count">({{getFilterCount('software_forbidden')}})</span>
+          <span class="count">({{ loadingAlerts ? '…' : getFilterCount('software_forbidden') }})</span>
         </button>
       </div>
       <div
@@ -276,12 +289,23 @@
     </div>
     
     <div class="alert-list">
-      <div *ngIf="alerts.length === 0" class="no-alerts">
+      <ng-container *ngIf="loadingAlerts">
+        <div class="alert-item dashboard-skeleton-alert" *ngFor="let item of alertSkeletonItems" aria-hidden="true">
+          <div class="alert-content">
+            <div class="dashboard-skeleton dashboard-skeleton--line dashboard-skeleton--title"></div>
+            <div class="dashboard-skeleton dashboard-skeleton--line"></div>
+          </div>
+          <div class="dashboard-skeleton dashboard-skeleton--btn"></div>
+        </div>
+      </ng-container>
+
+      <div *ngIf="!loadingAlerts && alerts.length === 0" class="no-alerts">
         <i class="fas fa-check-circle"></i>
         <h3>¡Todo en orden!</h3>
         <p>No hay alertas pendientes en este momento</p>
       </div>
       
+      <ng-container *ngIf="!loadingAlerts">
       <div *ngFor="let alert of pagedAlerts" class="alert-item">
         <div class="alert-content">
           <div class="alert-header">
@@ -388,8 +412,9 @@
           </button>
         </div>
       </div>
+      </ng-container>
     </div>
-    <div class="pagination-container">
+    <div class="pagination-container" *ngIf="!loadingAlerts">
       <ngb-pagination
         [(page)]="page"
         [pageSize]="pageSize"

@@ -404,18 +404,15 @@
           <p *ngIf="!componentData.software">No hay datos de software disponibles.</p>
         </div>
         <div *ngSwitchCase="'historial'">
-          <div class="d-flex flex-wrap gap-2 mb-3">
-            <button type="button" class="btn btn-sm"
-              [class.btn-primary]="filtroHistorialCategoria === ''"
-              [class.btn-outline-secondary]="filtroHistorialCategoria !== ''"
+          <div class="historial-filter-bar" role="group" aria-label="Filtrar historial">
+            <button type="button" class="historial-filter-btn"
+              [class.historial-filter-btn--active]="filtroHistorialCategoria === ''"
               (click)="filtroHistorialCategoria = ''">Todo</button>
-            <button type="button" class="btn btn-sm"
-              [class.btn-primary]="filtroHistorialCategoria === 'HARDWARE'"
-              [class.btn-outline-secondary]="filtroHistorialCategoria !== 'HARDWARE'"
+            <button type="button" class="historial-filter-btn"
+              [class.historial-filter-btn--active]="filtroHistorialCategoria === 'HARDWARE'"
               (click)="filtroHistorialCategoria = 'HARDWARE'">Hardware</button>
-            <button type="button" class="btn btn-sm"
-              [class.btn-primary]="filtroHistorialCategoria === 'ALMACEN'"
-              [class.btn-outline-secondary]="filtroHistorialCategoria !== 'ALMACEN'"
+            <button type="button" class="historial-filter-btn"
+              [class.historial-filter-btn--active]="filtroHistorialCategoria === 'ALMACEN'"
               (click)="filtroHistorialCategoria = 'ALMACEN'">Almacén</button>
           </div>
 

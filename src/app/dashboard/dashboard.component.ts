@@ -1,25 +1,22 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ViewChild, TemplateRef, inject, effect } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { HardwareService } from '../services/hardware.service';
-import { BiosService } from '../services/bios.service';
 import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { Chart, ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { NgbPaginationModule, NgbModalModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { AlertService } from '../services/alert.service';
 import { Alerta } from '../models/alerta.model';
 import { finalize, catchError } from 'rxjs/operators';
-import { NetworkInfoService } from '../services/network-info.service';
-import { NetworkInfoDTO } from '../interfaces/network-info.interface';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 import { ConfigService } from '../services/config.service';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
-import { EstadoDispositivoService } from '../services/estado-dispositivo.service';
 import { MaintenanceService } from '../services/maintenance.service';
+import { DashboardStatsService } from '../services/dashboard-stats.service';
+import { DashboardStatsDTO } from '../interfaces/dashboard-stats.interface';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
 import { ThemeService } from '../services/theme.service';
@@ -85,6 +82,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private osItems: ChartDatum[] = [];
   private redItems: ChartDatum[] = [];
   private redChartEmpty = false;
+  loadingCharts = true;
+  loadingAlerts = true;
+  readonly chartSkeletonTitles = ['Terminales', 'Fabricante', 'Sistema Operativo', 'Dispositivos de Red'];
+  readonly alertSkeletonItems = [1, 2, 3, 4, 5];
   alerts: Alerta[] = [];
   isChecking: boolean = false;
   isCleaning: boolean = false;
@@ -110,11 +111,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   constructor(
-    private hardwareService: HardwareService,
-    private biosService: BiosService,
     private router: Router,
     private alertService: AlertService,
-    private networkInfoService: NetworkInfoService,
+    private dashboardStatsService: DashboardStatsService,
     private permissionsService: PermissionsService,
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
@@ -122,7 +121,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private configService: ConfigService,
     private http: HttpClient,
     private authService: AuthService,
-    private estadoDispositivoService: EstadoDispositivoService,
     private maintenanceService: MaintenanceService,
     private guidedTourHost: GuidedTourHostService,
     private tourRegistry: TourRegistryService
@@ -138,59 +136,58 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.registerDashboardTour();
+    this.loadChartStats();
     this.loadAlertas();
-    forkJoin({
-      hardware: this.hardwareService.getActiveHardware(),
-      bios: this.biosService.getAllBios(),
-      network: this.networkInfoService.getNetworkInfo(),
-      macsInactivas: this.estadoDispositivoService.getMacsInactivas().pipe(
-        catchError(error => {
-          console.warn('⚠️ Error al obtener MACs inactivas, usando array vacío:', error);
-          return of({ success: false, data: [] });
-        })
-      )
-    }).subscribe(
-      ({ hardware, bios, network, macsInactivas }) => {
-        const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
-        
-        // Filtrar BIOS para incluir solo los de hardware activo
-        const hardwareIdsSet = new Set(hardware.map(h => h.id));
-        const biosActivos = bios.filter(b => hardwareIdsSet.has(b.hardwareId));
-        
-        const typeData = this.prepareHardwareTypeData(hardware, biosMap);
-        const brandData = this.prepareBrandData(biosActivos);
-        const osData = this.prepareChartData(hardware, 'osName');
+  }
 
-        // Procesar datos de red - filtrar dispositivos inactivos (en almacenes o cementerio)
-        let networkData: NetworkInfoDTO[] = [];
-        if (network && 'success' in network && network.success) {
-          networkData = network.data || [];
-          
-          // Obtener MACs inactivas para filtrar
-          const macsInactivasList = (macsInactivas?.success && Array.isArray(macsInactivas.data)) 
-            ? macsInactivas.data 
-            : [];
-          const macsInactivasSet = new Set(macsInactivasList);
-          
-          // Filtrar dispositivos que NO están en almacenes o cementerio
-          networkData = networkData.filter(device => !macsInactivasSet.has(device.mac));
-          
-        }
+  private loadChartStats(): void {
+    this.loadingCharts = true;
+    this.dashboardStatsService.getStats().pipe(
+      catchError(error => {
+        console.error('Error al cargar estadísticas del dashboard', error);
+        const empty: DashboardStatsDTO = {
+          terminales: [],
+          fabricantes: [],
+          sistemasOperativos: [],
+          dispositivosRed: []
+        };
+        return of(empty);
+      }),
+      finalize(() => {
+        this.loadingCharts = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe((stats) => this.applyChartStats(stats));
+  }
 
-        this.terminalesItems = typeData;
-        this.fabricanteItems = brandData;
-        this.osItems = osData.map((d) => ({
-          label: this.abbreviateOSName(d.label),
-          originalLabel: d.label,
-          y: d.y
-        }));
-        this.buildCompactCharts();
-        this.prepareNetworkChart(networkData);
-      },
-      (error) => {
-        console.error('Error al cargar los datos', error);
-      }
-    );
+  private applyChartStats(stats: DashboardStatsDTO): void {
+    this.terminalesItems = stats.terminales ?? [];
+    this.fabricanteItems = (stats.fabricantes ?? [])
+      .map((d) => ({
+        label: this.abbreviateManufacturerName(d.label),
+        y: d.y,
+        originalLabel: d.label
+      }))
+      .sort((a, b) => b.y - a.y);
+    this.osItems = (stats.sistemasOperativos ?? []).map((d) => ({
+      label: this.abbreviateOSName(d.label),
+      originalLabel: d.label,
+      y: d.y
+    }));
+    this.buildCompactCharts();
+
+    const networkItems = stats.dispositivosRed ?? [];
+    this.redItems = networkItems;
+    this.redChartEmpty = networkItems.length === 0;
+    if (this.redChartEmpty) {
+      const empty = buildDoughnutChart([], NETWORK_COLORS, true, 'Sin dispositivos de red');
+      this.networkChartData = empty.data;
+      this.networkChartOptions = empty.options;
+      return;
+    }
+    const chart = buildDoughnutChart(this.redItems, NETWORK_COLORS, true);
+    this.networkChartData = chart.data;
+    this.networkChartOptions = chart.options;
   }
 
   ngAfterViewInit() {
@@ -200,10 +197,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadAlertas(): void {
-    this.alertService.getAlertas().subscribe(
+    this.loadingAlerts = true;
+    this.alertService.getAlertas().pipe(
+      finalize(() => {
+        this.loadingAlerts = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe(
       (alertas: Alerta[]) => {
         this.alerts = alertas;
-        this.applyCurrentFilter(); // Usar el método auxiliar
+        this.applyCurrentFilter();
         this.page = 1;
       },
       error => {
@@ -440,56 +443,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private prepareHardwareTypeData(hardware: any[], biosMap: Map<number, any>): any[] {
-    // Verificar si hay tipos que contengan las palabras clave que buscamos
-    const allTypes = new Set<string>();
-    for (const [key, value] of biosMap.entries()) {
-      if (value?.type) {
-        allTypes.add(value.type.toUpperCase());
-      }
-    }
-    
-    const counts = hardware.reduce((acc: Record<string, number>, curr) => {
-      const biosData = biosMap.get(curr.id);
-      const originalType = biosData?.type || '';
-      
-      // Usar el tipo original sin normalización ya que llega correctamente del backend
-      const type = originalType || 'DESCONOCIDO';
-      
-
-      
-      if (!acc[type]) {
-        acc[type] = 0;
-      }
-      acc[type]++;
-      
-      return acc;
-    }, {});
-
-    const result = Object.entries(counts).map(([label, y]) => ({ label, y }));
-    return result;
-  }
-
-  private prepareChartData(array: any[], prop: string): any[] {
-    const counts = this.countByProperty(array, prop);
-    return Object.entries(counts).map(([label, y]) => ({ label, y }));
-  }
-
-  private prepareBrandData(biosData: any[]): any[] {
-    const counts = this.countByProperty(biosData, 'smanufacturer');
-    const allBrands = Object.entries(counts).map(([label, y]) => ({ 
-      label: this.abbreviateManufacturerName(label), 
-      y,
-      originalLabel: label // Guardar el nombre original para tooltips
-    }));
-    
-    // Ordenar por cantidad (descendente)
-    allBrands.sort((a, b) => b.y - a.y);
-    
-    // Mostrar todos los fabricantes, pero configurar las etiquetas para mostrar solo algunos
-    return allBrands;
-  }
-
   private abbreviateManufacturerName(name: string): string {
     if (!name || name === 'Desconocido') return name;
     
@@ -616,17 +569,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Fallback genérico: recortar para evitar que la barra quede ilegible.
     return name.length > 14 ? `${name.substring(0, 14)}...` : name;
-  }
-
-  private countByProperty(array: any[], prop: string): { [key: string]: number } {
-    return array.reduce((acc, curr) => {
-      const key = curr[prop] || 'Desconocido';
-      if (!acc[key]) {
-        acc[key] = 0;
-      }
-      acc[key]++;
-      return acc;
-    }, {});
   }
 
   onTerminalesClick(event: { active?: object[] }): void {
@@ -837,37 +779,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       .catch(err => {
         console.error('Error en la navegación:', err);
       });
-  }
-
-  private prepareNetworkChart(networkData: NetworkInfoDTO[]): void {
-    const networkArray = Array.isArray(networkData) ? networkData : [];
-
-    if (networkArray.length === 0) {
-      this.redItems = [];
-      this.redChartEmpty = true;
-      const empty = buildDoughnutChart([], NETWORK_COLORS, true, 'Sin dispositivos de red');
-      this.networkChartData = empty.data;
-      this.networkChartOptions = empty.options;
-      return;
-    }
-
-    const devicesByType = networkArray.reduce((acc: Record<string, any[]>, device: NetworkInfoDTO) => {
-      const type = device.type || 'Desconocido';
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(device);
-      return acc;
-    }, {});
-
-    this.redItems = Object.entries(devicesByType).map(([type, devices]) => ({
-      label: type,
-      y: devices.length
-    }));
-    this.redChartEmpty = false;
-    const chart = buildDoughnutChart(this.redItems, NETWORK_COLORS, true);
-    this.networkChartData = chart.data;
-    this.networkChartOptions = chart.options;
   }
 
   private buildCompactCharts(): void {

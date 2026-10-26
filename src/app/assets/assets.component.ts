@@ -7,6 +7,7 @@ import { HardwareService } from '../services/hardware.service';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbPaginationModule, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BiosService } from '../services/bios.service';
+import { MonitorService } from '../services/monitor.service';
 import { forkJoin } from 'rxjs';
 import { SoftwareService } from '../services/software.service';
 import { ActivosService } from '../services/activos.service';
@@ -22,6 +23,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
+import { ListSearchStateService } from '../services/list-search-state.service';
 import type { DriveStep } from 'driver.js';
 
 @Component({
@@ -70,6 +72,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   /** Lista completa activa (sin filtros avanzados) para poder restaurar */
   private allAssetsCache: any[] = [];
   private biosMapCache = new Map<number, any>();
+  private monitorSerialsByHardware = new Map<number, string[]>();
   showAdvancedFilters = false;
   advancedFiltersApplied = false;
   applyingAdvancedFilters = false;
@@ -78,6 +81,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   constructor(
     private hardwareService: HardwareService,
     private biosService: BiosService,
+    private monitorService: MonitorService,
     private softwareService: SoftwareService,
     private activosService: ActivosService,
     private fb: FormBuilder,
@@ -89,7 +93,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private modalService: NgbModal,
     private guidedTourHost: GuidedTourHostService,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private listSearchState: ListSearchStateService
   ) {
     this.filterForm = this.fb.group({
       name: [''],
@@ -112,11 +117,13 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
     // Suscribirse a cambios en el filtro de nombre
     this.nombreEquipoControl.valueChanges.subscribe(value => {
+      this.listSearchState.set('assets', value || '');
       this.aplicarFiltroNombre(value || '');
     });
   }
 
   ngOnInit(): void {
+    this.restorePersistedSearch();
     this.route.queryParams.subscribe(params => {
       const softwareId = params['softwareId'];
       const softwareName = params['softwareName'];
@@ -185,7 +192,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Método para aplicar búsqueda rápida (nombre, IP, usuario y número de serie)
+  // Método para aplicar búsqueda rápida (nombre, IP, usuario, serie BIOS y serie de monitor)
   private aplicarFiltroNombre(termino: string): void {
     const t = (termino || '').trim().toLowerCase();
     if (!t) {
@@ -199,7 +206,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
         // Suele venir como "DOMINIO\usuario", así que comparamos sobre todo el string.
         const usuario = (asset.userid || '').toLowerCase();
         const ssn = (asset.ssn || '').toLowerCase();
-        return name.includes(t) || ip.includes(t) || usuario.includes(t) || ssn.includes(t);
+        const monitorSerials = (asset.monitorSerials || []).join(' ').toLowerCase();
+        return name.includes(t) || ip.includes(t) || usuario.includes(t) || ssn.includes(t) || monitorSerials.includes(t);
       });
       this.actualizarPaginacion();
     }
@@ -210,8 +218,24 @@ export class AssetsComponent implements OnInit, OnDestroy {
       ...hardware,
       biosType: (bios?.type || 'DESCONOCIDO').trim().toUpperCase(),
       smanufacturer: bios?.smanufacturer || 'DESCONOCIDO',
-      ssn: bios?.ssn || ''
+      ssn: bios?.ssn || '',
+      monitorSerials: this.monitorSerialsByHardware.get(hardware.id) || []
     };
+  }
+
+  private updateMonitorSerialsMap(monitors: any[]): void {
+    const map = new Map<number, string[]>();
+    for (const monitor of monitors || []) {
+      const hardwareId = monitor?.hardwareId;
+      const serial = (monitor?.serial || '').trim();
+      if (!hardwareId || !serial) {
+        continue;
+      }
+      const list = map.get(hardwareId) || [];
+      list.push(serial);
+      map.set(hardwareId, list);
+    }
+    this.monitorSerialsByHardware = map;
   }
 
   // Método para obtener assets según el filtro de tipo actual
@@ -397,9 +421,15 @@ export class AssetsComponent implements OnInit, OnDestroy {
             console.warn('⚠️ Error al obtener BIOS, usando array vacío:', error);
             return of([]); // Devolver array vacío si falla
           })
+        ),
+        this.monitorService.getAll().pipe(
+          catchError(error => {
+            console.warn('⚠️ Error al obtener monitores, usando array vacío:', error);
+            return of([]);
+          })
         )
       ]).subscribe({
-        next: ([hardwareList, biosList]) => {
+        next: ([hardwareList, biosList, monitorsList]) => {
           // Manejar el caso donde alguno de los servicios devuelve array vacío
           if (!Array.isArray(hardwareList)) {
             console.warn('⚠️ Hardware no es un array, convirtiendo...');
@@ -413,6 +443,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           
           const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
           this.biosMapCache = biosMap;
+          this.updateMonitorSerialsMap(monitorsList);
           
           this.assetsList = hardwareList.map(h => this.mapHardwareWithBios(h, biosMap.get(h.id)));
           
@@ -424,6 +455,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           this.updateSummary();
           this.cargarActivosInfo();
           this.loading = false; // Desactivar loading
+          this.aplicarFiltroNombre(this.nombreEquipoControl.value || '');
           resolve();
         },
         error: (error) => {
@@ -465,11 +497,13 @@ export class AssetsComponent implements OnInit, OnDestroy {
       next: (hardwareIds) => {
         forkJoin([
           this.hardwareService.getActiveHardware(),
-          this.biosService.getAllBios()
+          this.biosService.getAllBios(),
+          this.monitorService.getAll().pipe(catchError(() => of([])))
         ]).subscribe({
-          next: ([hardwareList, biosList]) => {
+          next: ([hardwareList, biosList, monitorsList]) => {
             const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
             this.biosMapCache = biosMap;
+            this.updateMonitorSerialsMap(monitorsList);
             
             // Filtrar la lista de hardware por los IDs obtenidos
             this.assetsList = hardwareList
@@ -484,6 +518,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
             this.updateSummary();
             this.cargarActivosInfo();
             this.loading = false; // Desactivar loading
+            this.aplicarFiltroNombre(this.nombreEquipoControl.value || '');
           },
           error: (error) => {
             console.error('Error al cargar los assets:', error);
@@ -505,11 +540,13 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
     forkJoin({
       hardware: this.hardwareService.getActiveHardware(),
-      bios: this.biosService.getAllBios()
+      bios: this.biosService.getAllBios(),
+      monitors: this.monitorService.getAll().pipe(catchError(() => of([])))
     }).subscribe(
-      ({ hardware, bios }) => {
+      ({ hardware, bios, monitors }) => {
         // Crear un mapa de BIOS por hardwareId
         const biosMap = new Map(bios.map(b => [b.hardwareId, b]));
+        this.updateMonitorSerialsMap(monitors);
         
         // Combinar datos de hardware con BIOS
         let filteredAssets = hardware.map(h => this.mapHardwareWithBios(h, biosMap.get(h.id)));
@@ -707,9 +744,14 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   filterByType(type: string): void {
     this.currentFilter = type;
-    // Limpiar el filtro de nombre cuando se cambia el tipo
-    this.nombreEquipoControl.setValue('');
-    this.aplicarFiltroTipoActual();
+    this.aplicarFiltroNombre(this.nombreEquipoControl.value || '');
+  }
+
+  private restorePersistedSearch(): void {
+    const saved = this.listSearchState.get('assets');
+    if (saved) {
+      this.nombreEquipoControl.setValue(saved, { emitEvent: false });
+    }
   }
 
 
@@ -993,7 +1035,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       filtroTexto = `Filtro: ${this.currentFilter}`;
     }
     if (this.nombreEquipoControl.value) {
-      filtroTexto += ' | Búsqueda activa (nombre/IP/usuario/serie)';
+      filtroTexto += ' | Búsqueda activa (nombre/IP/usuario/serie BIOS o monitor)';
     }
     doc.text(filtroTexto, 14, 28);
 
@@ -1060,7 +1102,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       ...this.guidedTourHost.buildSteps([
         { selector: '#tour-assets-title', title: 'Inventario de terminales', description: 'Listado de equipos detectados por inventario (OCS). Desde acá accedés al detalle de cada terminal.', side: 'bottom' },
         { selector: '#tour-assets-filters', title: 'Filtros por tipo', description: 'Pestañas para acotar la lista por forma factor: desktop, laptop, mini PC, etc.', side: 'bottom' },
-        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP, último usuario conectado o número de serie (BIOS).', side: 'bottom' },
+        { selector: '#tour-assets-search', title: 'Búsqueda', description: 'Filtrá por nombre de equipo, dirección IP, último usuario conectado, número de serie del BIOS o serial del monitor conectado.', side: 'bottom' },
         { selector: '#tour-assets-advanced', title: 'Filtros avanzados', description: 'Abrí el panel para buscar por tipo de disco (HDD/SSD), SO, procesador, uso de disco ≥ %, RAM, fabricante o equipos sin reportar. Se combina con los chips y la búsqueda rápida.', side: 'bottom' },
         { selector: '#tour-assets-bulk-transfer', title: 'Transferir en masa', description: 'Elegí almacén, estantería y estante. Pegá varios números (14506 14530) para filtrarlos y usá Seleccionar todo. Oficina Laboratorio también aparece como destino.', side: 'bottom' },
         { selector: '#tour-assets-print', title: 'Exportar PDF', description: 'Generá un PDF con el listado filtrado actual, incluyendo los filtros avanzados activos.', side: 'left' }

@@ -73,6 +73,10 @@
                   #edgeLabelInput />
                 <span *ngIf="!(selection?.kind === 'edge' && selection?.id === edge.id)">
                   {{ edge.label || 'Continuar' }}
+                  <i
+                    *ngIf="edge.accionSistema === 'ACTIVAR_USUARIO'"
+                    class="fas fa-user-check flujo-edge-accion"
+                    title="Al confirmar: activa el usuario"></i>
                 </span>
               </div>
             </f-connection>
@@ -190,6 +194,14 @@
         maxlength="80"
         placeholder="Ej. Enviar a laboratorio" />
 
+      <label class="form-label small mb-1">Acción al confirmar</label>
+      <select class="form-select form-select-sm mb-2" [(ngModel)]="edge.accionSistema">
+        <option *ngFor="let a of accionesSistema" [ngValue]="a.value">{{ a.label }}</option>
+      </select>
+      <p class="small text-muted mb-2" *ngIf="edge.accionSistema === 'ACTIVAR_USUARIO'">
+        Al pulsar este botón se habilita la cuenta del usuario que abrió el ticket (alta pendiente).
+      </p>
+
       <label class="form-label small mb-1">Destino</label>
       <select
         class="form-select form-select-sm mb-2"
@@ -213,6 +225,7 @@
       <p class="small text-muted mb-0">
         Seleccioná un box y usá <strong>Conectar hacia</strong>, o arrastrá desde el punto azul derecho al izquierdo del siguiente.
         Para cambiar una flecha existente, arrastrá su extremo o elegí otro destino en el panel.
+        En la flecha podés asignar <strong>Acción al confirmar</strong> (por ejemplo Activar usuario).
       </p>
     </aside>
   </div>

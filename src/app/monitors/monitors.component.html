@@ -1,0 +1,200 @@
+<div class="generic-container monitors-page">
+  <div class="header-section">
+    <div class="title-wrapper">
+      <div class="title-row">
+        <h1 id="tour-monitors-title"><i class="fas fa-desktop"></i> Inventario de monitores</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="cerbero-folder-stage">
+    <div
+      class="cerbero-folder-tabs"
+      id="tour-monitors-filters"
+      role="tablist"
+      aria-label="Filtrar por número de serie">
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="serialFilter === ''"
+        [attr.aria-selected]="serialFilter === ''"
+        (click)="setSerialFilter('')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-th-large"></i></span>
+        <span class="cerbero-folder-tab-label">Todos</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="serialFilter === 'con-serie'"
+        [attr.aria-selected]="serialFilter === 'con-serie'"
+        (click)="setSerialFilter('con-serie')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-barcode"></i></span>
+        <span class="cerbero-folder-tab-label">Con serie</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cerbero-folder-tab"
+        [class.cerbero-folder-tab--active]="serialFilter === 'sin-serie'"
+        [attr.aria-selected]="serialFilter === 'sin-serie'"
+        (click)="setSerialFilter('sin-serie')">
+        <span class="cerbero-folder-tab-icon" aria-hidden="true"><i class="fas fa-question"></i></span>
+        <span class="cerbero-folder-tab-label">Sin serie</span>
+      </button>
+    </div>
+
+    <div class="content-section cerbero-folder-panel">
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando monitores...</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-danger m-3">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ errorMessage }}
+      </div>
+
+      <div class="search-container" id="tour-monitors-search" *ngIf="!loading && !errorMessage">
+        <div class="search-input-group">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Buscar por nro. de serie, modelo, fabricante, PC, IP o usuario"
+            title="Filtra por número de serie del monitor, modelo, fabricante, equipo, IP o último usuario"
+            autocomplete="off"
+            [formControl]="searchControl">
+        </div>
+        <button
+          *ngIf="searchControl.value"
+          type="button"
+          class="btn btn-outline-secondary btn-sm clear-search-btn"
+          (click)="limpiarBusqueda()"
+          title="Limpiar búsqueda">
+          <i class="fas fa-times"></i>
+          Limpiar
+        </button>
+        <p class="list-summary mb-0" *ngIf="monitors.length > 0">
+          <span *ngIf="collectionSize === monitors.length">{{ monitors.length }} monitores</span>
+          <span *ngIf="collectionSize !== monitors.length">{{ collectionSize }} de {{ monitors.length }} monitores</span>
+          <span *ngIf="collectionSize > 0"> · mostrando {{ rangoDesde }}–{{ rangoHasta }}</span>
+        </p>
+      </div>
+
+      <div *ngIf="!loading && !errorMessage" class="table-container">
+        <table class="generic-table cerbero-list-table">
+          <thead id="tour-monitors-table">
+            <tr>
+              <th (click)="sortData('serial')" [class.active]="sortColumn === 'serial'" class="sortable-header">
+                <div class="th-content">
+                  <span>Nro. de serie</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'serial' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'serial' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'serial'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('caption')" [class.active]="sortColumn === 'caption'" class="sortable-header">
+                <div class="th-content">
+                  <span>Modelo</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'caption' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'caption' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'caption'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('manufacturer')" [class.active]="sortColumn === 'manufacturer'" class="sortable-header">
+                <div class="th-content">
+                  <span>Fabricante</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'manufacturer' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'manufacturer' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'manufacturer'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('pcName')" [class.active]="sortColumn === 'pcName'" class="sortable-header">
+                <div class="th-content">
+                  <span>Equipo</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'pcName' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'pcName' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'pcName'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('ipAddr')" [class.active]="sortColumn === 'ipAddr'" class="sortable-header">
+                <div class="th-content">
+                  <span>IP</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'ipAddr' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'ipAddr' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'ipAddr'
+                  }"></i>
+                </div>
+              </th>
+              <th (click)="sortData('userid')" [class.active]="sortColumn === 'userid'" class="sortable-header">
+                <div class="th-content">
+                  <span>Usuario</span>
+                  <i class="fas" [ngClass]="{
+                    'fa-sort-up': sortColumn === 'userid' && sortDirection === 'asc',
+                    'fa-sort-down': sortColumn === 'userid' && sortDirection === 'desc',
+                    'fa-sort': sortColumn !== 'userid'
+                  }"></i>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let monitor of paged; trackBy: trackByMonitorId"
+              class="monitor-row"
+              (click)="verDetalle(monitor)">
+              <td>
+                <span class="serial-value" *ngIf="monitor.serial; else sinSerie">{{ monitor.serial }}</span>
+                <ng-template #sinSerie><span class="text-muted">Sin serie</span></ng-template>
+              </td>
+              <td>{{ monitor.caption || '—' }}</td>
+              <td>{{ monitor.manufacturer || '—' }}</td>
+              <td>
+                <span class="pc-name">{{ monitor.pcName || 'Sin equipo' }}</span>
+              </td>
+              <td>
+                <span class="ip-address">{{ monitor.ipAddr || 'No asignada' }}</span>
+              </td>
+              <td>{{ monitor.userid || '—' }}</td>
+            </tr>
+            <tr *ngIf="paged.length === 0">
+              <td colspan="6" class="text-center p-4">
+                <div class="alert alert-info m-0">
+                  <i class="fas fa-info-circle me-2"></i>
+                  No hay monitores que coincidan con la búsqueda
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !errorMessage && collectionSize > pageSize" class="pagination-container">
+        <ngb-pagination
+          [page]="page"
+          (pageChange)="onPageChange($event)"
+          [pageSize]="pageSize"
+          [collectionSize]="collectionSize"
+          [boundaryLinks]="true"
+          [maxSize]="5"
+          [rotate]="true"
+          [ellipses]="false"
+          class="custom-pagination">
+        </ngb-pagination>
+      </div>
+    </div>
+  </div>
+</div>

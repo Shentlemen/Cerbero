@@ -214,8 +214,8 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
                 this.cargarHistorialUbicaciones();
                 this.cargarHistorialEquipo();
                 const requestedTab = this.route.snapshot.queryParamMap.get('tab');
-                if (requestedTab === 'historial') {
-                  this.activeTab = 'historial';
+                if (requestedTab === 'historial' || requestedTab === 'monitor') {
+                  this.activeTab = requestedTab;
                 }
                 const startDetailsTour = sessionStorage.getItem('cerbero:start-asset-details-tour') === '1';
                 this.returnToAssetsAfterTour = sessionStorage.getItem('cerbero:return-to-assets-after-details-tour') === '1';
@@ -782,13 +782,15 @@ export class AssetdetailsComponent implements OnInit, OnDestroy {
       case 'monitor': return 'Monitor';
       case 'storage_hw': return 'Disco físico';
       case 'new_hardware': return 'Equipo nuevo';
+      case 'movimiento':
+      case 'regular':
+      case 'laboratorio':
+      case 'oficina_laboratorio':
+      case 'alta_pendiente':
+        return 'Movimiento';
       case 'cementerio': return 'Cementerio';
-      case 'laboratorio': return 'Laboratorio';
-      case 'oficina_laboratorio': return 'Oficina laboratorio';
-      case 'regular': return 'Almacén';
       case 'reactivar': return 'Reactivación';
       case 'baja': return 'Baja';
-      case 'alta_pendiente': return 'Alta pendiente OCS';
       case 'alta_cementerio': return 'Alta en cementerio';
       default: return tipo || '—';
     }

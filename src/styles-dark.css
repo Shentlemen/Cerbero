@@ -991,6 +991,27 @@ html.theme-dark .btn.btn-outline-secondary:hover:not(:disabled) {
   border-color: var(--ds-color-heading);
 }
 
+html.theme-dark .historial-filter-btn {
+  background: transparent !important;
+  color: var(--ds-color-heading) !important;
+  -webkit-text-fill-color: var(--ds-color-heading) !important;
+  border-color: var(--ds-color-heading) !important;
+}
+
+html.theme-dark .historial-filter-btn i {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.theme-dark .historial-filter-btn:hover,
+html.theme-dark .historial-filter-btn:focus-visible,
+html.theme-dark .historial-filter-btn--active {
+  background: var(--ds-color-heading) !important;
+  color: var(--ds-color-canvas, #1a1d24) !important;
+  -webkit-text-fill-color: var(--ds-color-canvas, #1a1d24) !important;
+  border-color: var(--ds-color-heading) !important;
+}
+
 html.theme-dark .btn-light,
 html.theme-dark .btn-outline-light {
   background-color: var(--theme-elevated);
@@ -1883,7 +1904,7 @@ html.theme-dark .main-content :is(
   span, a, div, section, article, header, footer, aside, nav,
   input, select, textarea, button,
   table, caption
-):not(.sidenav):not(.sidenav *):not(.app-header):not(.app-header *):not(.login-form):not(.login-form *):not(.content-container):not(.content-container *):not(.sortable-header):not(.sortable-header *):not(.filter-btn):not(.filter-btn *):not(.btn-filter):not(.btn-filter *):not(.software-filter-btn):not(.software-filter-btn *):not(.tipo-compra-filter-btn):not(.tipo-compra-filter-btn *):not(.multi-select-toggle):not(.multi-select-toggle *):not(.no-selection-message):not(.no-selection-message *):not(.os-badge):not(.os-badge *):not(.type-badge):not(.type-badge *):not(.tipo-badge):not(.tipo-badge *):not(.observaciones-cell):not(.observaciones-cell *):not(.observaciones-text):not(.moneda-badge):not(.compra-link):not(.compra-link *):not(.hardware-name):not(.usuario-link):not(.ubicacion-link):not(.website-item):not(.website-item *):not(.website-link):not(.direccion-text):not(.pagination):not(.pagination *):not(.page-link):not(.page-link *):not(.subnet-hw-name-link):not(.subnet-hw-name-link *):not(.subnet-hw-modal-header):not(.subnet-hw-modal-header *):not(.btn-agregar-nuevo):not(.btn-agregar-nuevo *):not(.transferir-btn):not(.transferir-btn *):not(.bulk-transfer-btn):not(.bulk-transfer-btn *):not(.bulk-reactivar-btn):not(.bulk-reactivar-btn *):not(.print-btn):not(.print-btn *):not(.registrar-pendiente-btn):not(.registrar-pendiente-btn *):not(.registrar-stock-btn):not(.registrar-stock-btn *):not(.advanced-toggle-btn):not(.advanced-toggle-btn *):not(.version-badge):not(.count-badge):not(.visibility-button):not(.visibility-button *):not(.forbidden-button):not(.forbidden-button *):not(.driver-button):not(.driver-button *):not(.licenciado-button):not(.licenciado-button *):not(.delete-button):not(.delete-button *):not(.ticket-pill):not(.btn-ticket-primary):not(.btn-ticket-primary *):not(.attach-badge):not(.btn-ver-todo):not(.stock-tipo-etiqueta):not(.stock-tipo-etiqueta *):not(.btn-transferir):not(.btn-transferir *):not(.role-badge):not(.status-badge):not(.bandeja-badge):not(.bandeja-badge *):not(.filter-btn-colored):not(.filter-btn-colored *):not(.btn-excel):not(.btn-excel *):not(.leaflet-bar):not(.leaflet-bar *):not(.leaflet-control-zoom):not(.leaflet-control-zoom *):not(.subnets-map-legend):not(.subnets-map-legend *):not(.guia-tab-square):not(.guia-tab-square *):not(.ticket-hero-chip):not(.ticket-hero-chip *):not(.td-prioridad--critica):not(.td-estado--nuevo):not(.users-role-tab-icon):not(.users-role-tab-icon *):not(.guia-tab-icon):not(.guia-tab-icon *):not(.config-hub-tab-icon):not(.config-hub-tab-icon *):not(.cerbero-folder-tab-icon):not(.cerbero-folder-tab-icon *):not(.tickets-unread-badge):not(.tickets-unread-badge *):not(.read-only-badge):not(.read-only-badge *):not(.permission-info):not(.permission-info *),
+):not(.sidenav):not(.sidenav *):not(.app-header):not(.app-header *):not(.login-form):not(.login-form *):not(.content-container):not(.content-container *):not(.sortable-header):not(.sortable-header *):not(.filter-btn):not(.filter-btn *):not(.btn-filter):not(.btn-filter *):not(.software-filter-btn):not(.software-filter-btn *):not(.historial-filter-btn):not(.historial-filter-btn *):not(.tipo-compra-filter-btn):not(.tipo-compra-filter-btn *):not(.multi-select-toggle):not(.multi-select-toggle *):not(.no-selection-message):not(.no-selection-message *):not(.os-badge):not(.os-badge *):not(.type-badge):not(.type-badge *):not(.tipo-badge):not(.tipo-badge *):not(.observaciones-cell):not(.observaciones-cell *):not(.observaciones-text):not(.moneda-badge):not(.compra-link):not(.compra-link *):not(.hardware-name):not(.usuario-link):not(.ubicacion-link):not(.website-item):not(.website-item *):not(.website-link):not(.direccion-text):not(.pagination):not(.pagination *):not(.page-link):not(.page-link *):not(.subnet-hw-name-link):not(.subnet-hw-name-link *):not(.subnet-hw-modal-header):not(.subnet-hw-modal-header *):not(.btn-agregar-nuevo):not(.btn-agregar-nuevo *):not(.transferir-btn):not(.transferir-btn *):not(.bulk-transfer-btn):not(.bulk-transfer-btn *):not(.bulk-reactivar-btn):not(.bulk-reactivar-btn *):not(.print-btn):not(.print-btn *):not(.registrar-pendiente-btn):not(.registrar-pendiente-btn *):not(.registrar-stock-btn):not(.registrar-stock-btn *):not(.advanced-toggle-btn):not(.advanced-toggle-btn *):not(.version-badge):not(.count-badge):not(.visibility-button):not(.visibility-button *):not(.forbidden-button):not(.forbidden-button *):not(.driver-button):not(.driver-button *):not(.licenciado-button):not(.licenciado-button *):not(.delete-button):not(.delete-button *):not(.ticket-pill):not(.btn-ticket-primary):not(.btn-ticket-primary *):not(.attach-badge):not(.btn-ver-todo):not(.stock-tipo-etiqueta):not(.stock-tipo-etiqueta *):not(.btn-transferir):not(.btn-transferir *):not(.role-badge):not(.status-badge):not(.bandeja-badge):not(.bandeja-badge *):not(.filter-btn-colored):not(.filter-btn-colored *):not(.btn-excel):not(.btn-excel *):not(.leaflet-bar):not(.leaflet-bar *):not(.leaflet-control-zoom):not(.leaflet-control-zoom *):not(.subnets-map-legend):not(.subnets-map-legend *):not(.guia-tab-square):not(.guia-tab-square *):not(.ticket-hero-chip):not(.ticket-hero-chip *):not(.td-prioridad--critica):not(.td-estado--nuevo):not(.users-role-tab-icon):not(.users-role-tab-icon *):not(.guia-tab-icon):not(.guia-tab-icon *):not(.config-hub-tab-icon):not(.config-hub-tab-icon *):not(.cerbero-folder-tab-icon):not(.cerbero-folder-tab-icon *):not(.tickets-unread-badge):not(.tickets-unread-badge *):not(.read-only-badge):not(.read-only-badge *):not(.permission-info):not(.permission-info *),
 html.theme-dark .modal-content :is(
   h1, h2, h3, h4, h5, h6,
   p, li, ul, ol, td, th, dt, dd,

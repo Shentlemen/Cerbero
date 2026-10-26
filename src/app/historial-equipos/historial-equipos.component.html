@@ -60,10 +60,10 @@
           autocomplete="off">
         <input type="date" class="form-control" [(ngModel)]="desde" (change)="aplicarFiltros()" aria-label="Desde">
         <input type="date" class="form-control" [(ngModel)]="hasta" (change)="aplicarFiltros()" aria-label="Hasta">
-        <button type="button" class="btn btn-primary btn-sm" (click)="aplicarFiltros()">
+        <button type="button" class="historial-filter-btn" (click)="aplicarFiltros()">
           <i class="fas fa-filter me-1"></i>Filtrar
         </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="limpiarFiltros()">
+        <button type="button" class="historial-filter-btn" (click)="limpiarFiltros()">
           Limpiar
         </button>
       </div>

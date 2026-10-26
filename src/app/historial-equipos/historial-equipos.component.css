@@ -63,6 +63,55 @@
   margin-bottom: 1rem;
 }
 
+.historial-filter-btn {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--ds-color-heading, #111);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ds-color-heading, #111);
+  -webkit-text-fill-color: var(--ds-color-heading, #111);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.historial-filter-btn i {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+}
+
+.historial-filter-btn:hover,
+.historial-filter-btn:focus-visible,
+.historial-filter-btn--active {
+  background: var(--ds-color-heading, #111);
+  color: var(--ds-color-surface, #fff);
+  -webkit-text-fill-color: var(--ds-color-surface, #fff);
+  border-color: var(--ds-color-heading, #111);
+  outline: none;
+}
+
+:host-context(html.theme-dark) .historial-filter-btn,
+:host-context(.theme-dark) .historial-filter-btn {
+  color: var(--ds-color-heading);
+  -webkit-text-fill-color: var(--ds-color-heading);
+  border-color: var(--ds-color-heading);
+}
+
+:host-context(html.theme-dark) .historial-filter-btn:hover,
+:host-context(html.theme-dark) .historial-filter-btn:focus-visible,
+:host-context(html.theme-dark) .historial-filter-btn--active,
+:host-context(.theme-dark) .historial-filter-btn:hover,
+:host-context(.theme-dark) .historial-filter-btn:focus-visible,
+:host-context(.theme-dark) .historial-filter-btn--active {
+  background: var(--ds-color-heading);
+  color: var(--ds-color-canvas, #1a1d24);
+  -webkit-text-fill-color: var(--ds-color-canvas, #1a1d24);
+  border-color: var(--ds-color-heading);
+}
+
 .historial-filters .form-control,
 .historial-filters .form-select {
   min-width: 10rem;

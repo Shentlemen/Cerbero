@@ -268,3 +268,54 @@ app-video-details {
   color: #9ec5ae;
   opacity: 1;
 }
+
+.historial-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.historial-filter-btn {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--ds-color-heading, #111);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ds-color-heading, #111);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.historial-filter-btn:hover,
+.historial-filter-btn:focus-visible {
+  background: var(--ds-color-heading, #111);
+  color: var(--ds-color-surface, #fff);
+  border-color: var(--ds-color-heading, #111);
+  outline: none;
+}
+
+.historial-filter-btn--active {
+  background: var(--ds-color-heading, #111);
+  color: var(--ds-color-surface, #fff);
+  border-color: var(--ds-color-heading, #111);
+}
+
+:host-context(html.theme-dark) .historial-filter-btn,
+:host-context(.theme-dark) .historial-filter-btn {
+  color: var(--ds-color-heading);
+  border-color: var(--ds-color-heading);
+}
+
+:host-context(html.theme-dark) .historial-filter-btn:hover,
+:host-context(html.theme-dark) .historial-filter-btn:focus-visible,
+:host-context(html.theme-dark) .historial-filter-btn--active,
+:host-context(.theme-dark) .historial-filter-btn:hover,
+:host-context(.theme-dark) .historial-filter-btn:focus-visible,
+:host-context(.theme-dark) .historial-filter-btn--active {
+  background: var(--ds-color-heading);
+  color: var(--ds-color-canvas, #1a1d24);
+  border-color: var(--ds-color-heading);
+}

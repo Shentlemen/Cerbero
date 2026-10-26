@@ -65,6 +65,14 @@ export class HelperService {
       relatedSections: ['assets', 'asset-details'],
       userLevel: 'beginner'
     },
+    monitors: {
+      message: "Inventario de monitores físicos. Cada fila es una pantalla (serial, modelo, fabricante) y el PC al que está conectada. Buscá por serial o hacé clic para abrir el detalle del equipo. En Terminales también podés pegar el serial y encontrar esa PC.",
+      type: 'info',
+      priority: 'medium',
+      context: ['inventory', 'monitors', 'hardware'],
+      relatedSections: ['assets', 'asset-details'],
+      userLevel: 'beginner'
+    },
 
     // === GESTIÓN DE DISPOSITIVOS ===
     devices: {
@@ -168,7 +176,7 @@ export class HelperService {
       userLevel: 'intermediate'
     },
     'config-tickets': {
-      message: "Configuración de tickets: tipos, flujos de estados y bandejas de área. Desde acá definís cómo se mueven los reclamos y quién los atiende.",
+      message: "Configuración de tickets: tipos, flujos de estados y bandejas de área. En cada flecha del flujo podés elegir una acción al confirmar (por ejemplo Activar usuario en el tipo Alta de usuario).",
       type: 'info',
       priority: 'medium',
       context: ['tickets', 'configuration', 'workflows'],
@@ -1340,6 +1348,7 @@ export class HelperService {
     const sectionHelp: { [key: string]: string } = {
       'dashboard': '📊 Panel principal - Aquí puedes ver un resumen de todo el sistema',
       'assets': '💻 Gestión de activos - Administra todas las computadoras y equipos',
+      'monitors': '🖥️ Monitores - Buscá pantallas por serial y ves a qué PC están conectadas',
       'devices': '🖨️ Dispositivos - Gestiona impresoras, escáneres y periféricos',
       'software': '🔍 Software - Consulta qué programas están instalados',
       'procurement': '🛒 Adquisiciones - Gestiona compras, proveedores y activos',

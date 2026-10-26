@@ -102,6 +102,7 @@ export interface TicketFlujoAccion {
   notaPlantilla?: string | null;
   nodoDestinoId: string;
   nodoDestinoKind: string;
+  accionSistema?: string | null;
 }
 
 export interface TicketFlujoAccionesResponse {

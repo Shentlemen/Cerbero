@@ -75,6 +75,10 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
     'REABIERTO'
   ];
   readonly estadosFin: TicketEstado[] = ['RESUELTO', 'CERRADO'];
+  readonly accionesSistema: { value: string; label: string }[] = [
+    { value: '', label: 'Ninguna' },
+    { value: 'ACTIVAR_USUARIO', label: 'Activar usuario' }
+  ];
   readonly connectableSide = EFConnectableSide;
   /** Destino elegido en el panel para crear una flecha sin arrastrar. */
   conectarHaciaId = '';
@@ -138,7 +142,7 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
 
   private aplicarDefinicion(def: FlujoDefinicionDTO): void {
     this.nodes = (def.nodes || []).map((n) => ({ ...n }));
-    this.edges = (def.edges || []).map((e) => ({ ...e }));
+    this.edges = (def.edges || []).map((e) => ({ ...e, accionSistema: e.accionSistema || '' }));
   }
 
   private toDefinicion(): FlujoDefinicionDTO {
@@ -276,7 +280,8 @@ export class FlujoEditorComponent implements OnInit, OnChanges, AfterViewChecked
       source,
       target,
       label: 'Continuar',
-      notaPlantilla: ''
+      notaPlantilla: '',
+      accionSistema: ''
     };
     this.edges = [...this.edges, edge];
     this.selection = { kind: 'edge', id: edge.id };

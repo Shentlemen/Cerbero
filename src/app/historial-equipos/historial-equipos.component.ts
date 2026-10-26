@@ -41,13 +41,10 @@ export class HistorialEquiposComponent implements OnInit {
     { value: 'monitor', label: 'Monitor' },
     { value: 'storage_hw', label: 'Disco físico' },
     { value: 'new_hardware', label: 'Equipo nuevo' },
+    { value: 'movimiento', label: 'Movimiento' },
     { value: 'cementerio', label: 'Cementerio' },
-    { value: 'laboratorio', label: 'Laboratorio' },
-    { value: 'oficina_laboratorio', label: 'Oficina laboratorio' },
-    { value: 'regular', label: 'Almacén' },
     { value: 'reactivar', label: 'Reactivación' },
     { value: 'baja', label: 'Baja' },
-    { value: 'alta_pendiente', label: 'Alta pendiente OCS' },
     { value: 'alta_cementerio', label: 'Alta en cementerio' }
   ];
 
@@ -176,6 +173,10 @@ export class HistorialEquiposComponent implements OnInit {
   }
 
   etiquetaTipo(tipo: string | null | undefined): string {
+    if (tipo === 'movimiento' || tipo === 'regular' || tipo === 'laboratorio'
+      || tipo === 'oficina_laboratorio' || tipo === 'alta_pendiente') {
+      return 'Movimiento';
+    }
     return this.tipos.find(t => t.value === tipo)?.label || tipo || '—';
   }
 }

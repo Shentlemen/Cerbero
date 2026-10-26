@@ -34,6 +34,8 @@ export interface FlujoAristaDTO {
   label: string;
   estado?: TicketEstado | null;
   notaPlantilla?: string | null;
+  /** Efecto de sistema al pulsar el botón. Vacío = ninguno. ACTIVAR_USUARIO habilita al creador. */
+  accionSistema?: string | null;
 }
 
 export interface FlujoDefinicionDTO {

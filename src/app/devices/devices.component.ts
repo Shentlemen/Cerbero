@@ -18,6 +18,7 @@ import { FormControl } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TourRegistryService } from '../services/tour-registry.service';
+import { ListSearchStateService } from '../services/list-search-state.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -134,14 +135,17 @@ export class DevicesComponent implements OnInit, OnDestroy {
     private estadoDispositivoService: EstadoDispositivoService,
     private authService: AuthService,
     private modalService: NgbModal,
-    private tourRegistry: TourRegistryService
+    private tourRegistry: TourRegistryService,
+    private listSearchState: ListSearchStateService
   ) {
     this.macSearchControl.valueChanges.subscribe(value => {
+      this.listSearchState.set('devices', value || '');
       this.aplicarFiltroBusqueda(value || '');
     });
   }
 
   ngOnInit(): void {
+    this.restorePersistedSearch();
     // Invalidar caché de permisos cuando el GM cambia «Ver como»
     this.viewAsSub = this.permissionsService.viewAs$.subscribe(() => {
       this._canManageDevicesCache = undefined;
@@ -772,6 +776,13 @@ export class DevicesComponent implements OnInit, OnDestroy {
   limpiarFiltros(): void {
     this.macSearchControl.setValue('');
     this.applyFilter();
+  }
+
+  private restorePersistedSearch(): void {
+    const saved = this.listSearchState.get('devices');
+    if (saved) {
+      this.macSearchControl.setValue(saved, { emitEvent: false });
+    }
   }
 
   /** Aplicado al cambiar tipo de dispositivo: respeta texto de MAC/IP en el campo de búsqueda */
