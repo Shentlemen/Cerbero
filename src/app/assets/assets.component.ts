@@ -440,6 +440,10 @@ export class AssetsComponent implements OnInit, OnDestroy {
             console.warn('⚠️ BIOS no es un array, convirtiendo...');
             biosList = [];
           }
+
+          if (!Array.isArray(monitorsList)) {
+            monitorsList = [];
+          }
           
           const biosMap = new Map(biosList.map(b => [b.hardwareId, b]));
           this.biosMapCache = biosMap;

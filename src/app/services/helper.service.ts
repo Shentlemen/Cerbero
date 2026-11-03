@@ -46,7 +46,7 @@ export class HelperService {
       type: 'info',
       priority: 'high',
       context: ['inventory', 'computers', 'hardware'],
-      relatedSections: ['asset-details', 'locations', 'procurement/activos'],
+      relatedSections: ['asset-details', 'monitors', 'locations', 'procurement/activos'],
       userLevel: 'beginner'
     },
     'asset-details': {
