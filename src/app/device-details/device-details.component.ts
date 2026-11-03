@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { ActivatedRoute } from '@angular/router';
 import { NetworkInfoService } from '../services/network-info.service';
 import { NetworkInfoDTO } from '../interfaces/network-info.interface';
@@ -14,7 +15,7 @@ import { TourRegistryService } from '../services/tour-registry.service';
 @Component({
   selector: 'app-device-details',
   standalone: true,
-  imports: [CommonModule, NgbNavModule],
+  imports: [CommonModule, PageSkeletonComponent, NgbNavModule],
   templateUrl: './device-details.component.html',
   styleUrls: ['./device-details.component.css']
 })

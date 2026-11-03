@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -26,7 +27,7 @@ import { AlmacenPlantaCanvasComponent } from './almacen-planta-canvas.component'
 @Component({
   selector: 'app-planta-almacen-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationContainerComponent, AlmacenPlantaCanvasComponent],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, NotificationContainerComponent, AlmacenPlantaCanvasComponent],
   templateUrl: './planta-almacen-editor.component.html',
   styleUrls: ['./planta-almacen-editor.component.css'],
 })

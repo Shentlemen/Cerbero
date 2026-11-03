@@ -132,6 +132,11 @@
   justify-content: center;
   z-index: 1000;
   color: #fff;
+  padding: 2rem;
+}
+
+.loading-overlay app-page-skeleton {
+  width: min(920px, 100%);
 }
 
 .loading-overlay p {

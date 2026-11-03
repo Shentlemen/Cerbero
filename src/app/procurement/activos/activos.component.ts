@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewEncapsulation, ViewChild, ChangeDetectorRef, Inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivosService, ActivoDTO } from '../../services/activos.service';
 import {
@@ -97,6 +98,7 @@ interface PdfExportSection {
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     FormsModule,
     ReactiveFormsModule,
     NgbModule,

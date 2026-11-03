@@ -34,12 +34,7 @@
         {{ error }}
       </div>
 
-      <div *ngIf="loading" class="text-center p-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-2">Cargando servicios de garantía...</p>
-      </div>
+      <app-page-skeleton *ngIf="loading" variant="table" [rows]="6" [columns]="4"></app-page-skeleton>
 
       <div class="table-responsive" *ngIf="!loading && !error">
         <table class="table">

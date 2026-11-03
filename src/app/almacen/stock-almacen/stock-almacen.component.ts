@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, HostListener, ElementRef, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -47,6 +48,7 @@ import {
   imports: [
     RouterModule,
     CommonModule,
+    PageSkeletonComponent,
     FormsModule,
     EditarRegistroStockModalComponent,
     AlmacenPlantaCanvasComponent,

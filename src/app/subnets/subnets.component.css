@@ -609,6 +609,40 @@
   font-style: normal;
 }
 
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip {
+  background: #2c303a;
+  background-color: #2c303a;
+  color: #e6e8ec;
+  border: 1px solid #4b5563;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip strong,
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip em,
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip span {
+  color: #e6e8ec;
+}
+
+:host-context(html.theme-dark) ::ng-deep .subnet-map-tooltip-hint {
+  color: #a8b0bc;
+}
+
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip-top:before {
+  border-top-color: #2c303a;
+}
+
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip-bottom:before {
+  border-bottom-color: #2c303a;
+}
+
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip-left:before {
+  border-left-color: #2c303a;
+}
+
+:host-context(html.theme-dark) ::ng-deep .leaflet-tooltip-right:before {
+  border-right-color: #2c303a;
+}
+
 .subnets-map-legend {
   position: absolute;
   bottom: 12px;

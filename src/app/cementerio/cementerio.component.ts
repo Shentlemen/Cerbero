@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -30,7 +31,7 @@ type CementerioSortColumn = 'tipo' | 'nombre' | 'fecha' | 'usuario';
 @Component({
   selector: 'app-cementerio',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './cementerio.component.html',
   styleUrls: ['./cementerio.component.css'],
   encapsulation: ViewEncapsulation.None

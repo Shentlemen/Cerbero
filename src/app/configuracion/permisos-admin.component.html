@@ -18,7 +18,7 @@
       </button>
     </div>
     <div *ngIf="error" class="alert alert-danger py-2">{{ error }}</div>
-    <div *ngIf="loading" class="text-muted small">Cargando permisos…</div>
+    <app-page-skeleton *ngIf="loading" variant="cards" [cards]="6"></app-page-skeleton>
     <div *ngIf="!loading && permisos.length" class="permisos-groups">
       <section *ngFor="let g of grupos()" class="permisos-grupo">
         <h2 class="permisos-grupo-title">{{ g }}</h2>

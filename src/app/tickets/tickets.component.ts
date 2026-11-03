@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
@@ -24,6 +25,7 @@ type TicketsVistaBandeja = 'area' | 'mios' | 'cerrados';
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     RouterModule,
     FormsModule,
     NgbModalModule,

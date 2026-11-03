@@ -1,3 +1,4 @@
+<app-page-skeleton *ngIf="!asset" variant="detail"></app-page-skeleton>
 <div class="container-fluid" *ngIf="asset">
   <div class="card shadow-lg">
     <!-- Región acotada del tour “Ficha” (cabecera + pestañas; sin todo el alto del panel). -->
@@ -304,12 +305,7 @@
               </button>
             </div>
             <div class="card-body">
-              <div *ngIf="loading" class="text-center p-4">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Cargando...</span>
-                </div>
-                <p class="mt-2">Cargando información de ubicación...</p>
-              </div>
+              <app-page-skeleton *ngIf="loading" variant="detail"></app-page-skeleton>
 
               <div *ngIf="error" class="alert alert-danger">
                 {{ error }}
@@ -341,12 +337,7 @@
                 <hr class="my-4" />
                 <h5 class="mb-3" id="tour-assetdetails-history">Historial de ubicaciones</h5>
 
-                <div *ngIf="loadingHistorialUbicaciones" class="text-center p-3">
-                  <div class="spinner-border spinner-border-sm text-primary" role="status">
-                    <span class="visually-hidden">Cargando historial...</span>
-                  </div>
-                  <p class="mt-2 mb-0">Cargando historial de ubicaciones...</p>
-                </div>
+                <app-page-skeleton *ngIf="loadingHistorialUbicaciones" variant="compact" [rows]="4"></app-page-skeleton>
 
                 <div *ngIf="!loadingHistorialUbicaciones && errorHistorialUbicaciones" class="alert alert-warning">
                   {{ errorHistorialUbicaciones }}
@@ -416,12 +407,7 @@
               (click)="filtroHistorialCategoria = 'ALMACEN'">Almacén</button>
           </div>
 
-          <div *ngIf="loadingHistorialEquipo" class="text-center p-3">
-            <div class="spinner-border spinner-border-sm text-primary" role="status">
-              <span class="visually-hidden">Cargando historial...</span>
-            </div>
-            <p class="mt-2 mb-0">Cargando historial del equipo...</p>
-          </div>
+          <app-page-skeleton *ngIf="loadingHistorialEquipo" variant="compact" [rows]="5"></app-page-skeleton>
 
           <div *ngIf="!loadingHistorialEquipo && errorHistorialEquipo" class="alert alert-warning">
             {{ errorHistorialEquipo }}

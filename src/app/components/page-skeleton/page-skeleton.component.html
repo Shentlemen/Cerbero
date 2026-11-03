@@ -1,0 +1,59 @@
+<div class="page-sk" [attr.data-variant]="variant" role="status" aria-live="polite" aria-busy="true">
+  <span class="visually-hidden">Cargando contenido</span>
+
+  <ng-container *ngIf="variant === 'table'">
+    <div class="page-sk-table-head">
+      <span class="sk sk-line" *ngFor="let col of colSlots"></span>
+    </div>
+    <div class="page-sk-table-row" *ngFor="let row of rowSlots">
+      <span class="sk sk-line" *ngFor="let col of colSlots" [style.width.%]="col === 0 ? 72 : 56"></span>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="variant === 'cards'">
+    <div class="page-sk-cards">
+      <div class="page-sk-card" *ngFor="let card of cardSlots">
+        <span class="sk sk-line page-sk-card-title"></span>
+        <span class="sk sk-line page-sk-card-line"></span>
+        <span class="sk sk-line page-sk-card-line short"></span>
+        <span class="sk sk-pill page-sk-card-btn"></span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="variant === 'detail'">
+    <div class="page-sk-detail">
+      <div class="page-sk-detail-block" *ngFor="let block of [0, 1]">
+        <span class="sk sk-line page-sk-detail-heading"></span>
+        <div class="page-sk-detail-row" *ngFor="let row of [0, 1, 2, 3]">
+          <span class="sk sk-line page-sk-detail-label"></span>
+          <span class="sk sk-line page-sk-detail-value"></span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="variant === 'list'">
+    <div class="page-sk-list-row" *ngFor="let row of rowSlots">
+      <span class="sk sk-circle page-sk-list-dot"></span>
+      <span class="sk sk-line page-sk-list-main"></span>
+      <span class="sk sk-pill page-sk-list-meta"></span>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="variant === 'compact'">
+    <div class="page-sk-compact-row" *ngFor="let row of rowSlots">
+      <span class="sk sk-circle page-sk-compact-dot"></span>
+      <div class="page-sk-compact-body">
+        <span class="sk sk-line"></span>
+        <span class="sk sk-line short"></span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="variant === 'canvas'">
+    <div class="page-sk-canvas">
+      <span class="sk page-sk-canvas-surface"></span>
+    </div>
+  </ng-container>
+</div>

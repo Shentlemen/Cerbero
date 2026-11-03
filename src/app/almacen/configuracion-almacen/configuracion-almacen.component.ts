@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -18,7 +19,7 @@ import { driver } from 'driver.js';
 @Component({
   selector: 'app-configuracion-almacen',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, ReactiveFormsModule, NgbModule, NotificationContainerComponent],
   templateUrl: './configuracion-almacen.component.html',
   styleUrls: ['./configuracion-almacen.component.css']
 })

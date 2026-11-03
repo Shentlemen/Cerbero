@@ -13,12 +13,7 @@
         {{ error }}
       </div>
 
-      <div *ngIf="loading" class="text-center p-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-2">Cargando proveedores...</p>
-      </div>
+      <app-page-skeleton *ngIf="loading" variant="table" [rows]="8" [columns]="4"></app-page-skeleton>
 
       <ng-container *ngIf="!loading && !error">
         <div class="list-toolbar" id="tour-proveedores-search">
@@ -431,11 +426,7 @@
               </div>
             </div>
           </div>
-          <div *ngIf="!contactosCargados" class="text-center p-3">
-            <div class="spinner-border text-dark" role="status">
-              <span class="visually-hidden">Cargando contactos...</span>
-            </div>
-          </div>
+          <app-page-skeleton *ngIf="!contactosCargados" variant="list" [rows]="3"></app-page-skeleton>
         </div>
       </div>
     </div>

@@ -23,6 +23,19 @@
   border: 0;
   display: block;
   background: #111217;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.grafana-embed-frame--ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.grafana-sk {
+  position: absolute;
+  inset: 1rem;
+  z-index: 1;
 }
 
 .grafana-embed-missing {

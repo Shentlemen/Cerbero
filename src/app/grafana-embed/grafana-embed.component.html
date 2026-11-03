@@ -1,10 +1,13 @@
 <div class="grafana-embed-page" *ngIf="configuredUrl; else missingUrl">
+  <app-page-skeleton *ngIf="!iframeReady" variant="canvas" class="grafana-sk"></app-page-skeleton>
   <iframe
     class="grafana-embed-frame"
+    [class.grafana-embed-frame--ready]="iframeReady"
     [src]="grafanaUrl"
     title="Dashboard Grafana"
     referrerpolicy="no-referrer-when-downgrade"
-    allowfullscreen>
+    allowfullscreen
+    (load)="iframeReady = true">
   </iframe>
 </div>
 

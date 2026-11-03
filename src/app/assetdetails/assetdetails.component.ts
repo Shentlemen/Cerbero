@@ -11,6 +11,7 @@ import { MonitorService } from '../services/monitor.service';
 import { StorageService } from '../services/storage.service';
 import { VideoService } from '../services/video.service';
 import { Location, CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { Router } from '@angular/router';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AssetEditModalComponent } from '../asset-edit-modal/asset-edit-modal.component';
@@ -72,7 +73,8 @@ interface Asset {
   selector: 'app-assetdetails',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
+    PageSkeletonComponent, 
     NgbModalModule,
     BiosDetailsComponent,
     CpuDetailsComponent,

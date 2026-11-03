@@ -26,7 +26,7 @@
         </button>
       </div>
     </div>
-    <div *ngIf="loading" class="text-muted small py-2">Cargando áreas…</div>
+    <app-page-skeleton *ngIf="loading" variant="table" [rows]="6" [columns]="6"></app-page-skeleton>
     <div *ngIf="!loading" class="table-responsive">
       <table class="table table-sm table-hover align-middle">
         <thead>

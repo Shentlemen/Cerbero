@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -33,7 +34,7 @@ type AlmacenLabSortColumn = 'tipo' | 'nombre' | 'fecha' | 'usuario' | 'ubicacion
 @Component({
   selector: 'app-almacen-laboratorio',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, ReactiveFormsModule, FormsModule, RouterModule, HttpClientModule, NgbPaginationModule, NgbModule, NotificationContainerComponent],
   templateUrl: './almacen-laboratorio.component.html',
   styleUrls: ['./almacen-laboratorio.component.css'],
   encapsulation: ViewEncapsulation.None

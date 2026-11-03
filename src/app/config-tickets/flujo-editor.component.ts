@@ -1,5 +1,6 @@
 import { AfterViewChecked, AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../components/page-skeleton/page-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import {
   EFConnectableSide,
@@ -29,7 +30,7 @@ type Selection =
 @Component({
   selector: 'app-flujo-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, FFlowModule, FConnectionMarkerArrow],
+  imports: [CommonModule, PageSkeletonComponent, FormsModule, FFlowModule, FConnectionMarkerArrow],
   templateUrl: './flujo-editor.component.html',
   styleUrl: './flujo-editor.component.css'
 })

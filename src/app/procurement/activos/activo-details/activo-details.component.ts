@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../../components/page-skeleton/page-skeleton.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { ActivosService, ActivoDTO } from '../../../services/activos.service';
@@ -20,7 +21,7 @@ import { NotificationContainerComponent } from '../../../components/notification
 @Component({
   selector: 'app-activo-details',
   standalone: true,
-  imports: [CommonModule, NgbModule, NotificationContainerComponent],
+  imports: [CommonModule, PageSkeletonComponent, NgbModule, NotificationContainerComponent],
   templateUrl: './activo-details.component.html',
   styleUrls: ['./activo-details.component.css']
 })

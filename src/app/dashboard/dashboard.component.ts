@@ -4,10 +4,10 @@ import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2
 import { Chart, ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { NgbPaginationModule, NgbModalModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
-import { of } from 'rxjs';
+import { of, Observable } from 'rxjs';
 import { AlertService } from '../services/alert.service';
 import { Alerta } from '../models/alerta.model';
-import { finalize, catchError } from 'rxjs/operators';
+import { finalize, catchError, delay } from 'rxjs/operators';
 import { PermissionsService } from '../services/permissions.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
@@ -20,6 +20,7 @@ import { DashboardStatsDTO } from '../interfaces/dashboard-stats.interface';
 import { GuidedTourHostService } from '../services/guided-tour-host.service';
 import { TourRegistryService } from '../services/tour-registry.service';
 import { ThemeService } from '../services/theme.service';
+import { environment } from '../../environments/environment';
 import { jsPDF } from 'jspdf';
 import type { DriveStep } from 'driver.js';
 import {
@@ -82,11 +83,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private osItems: ChartDatum[] = [];
   private redItems: ChartDatum[] = [];
   private redChartEmpty = false;
+  alerts: Alerta[] = [];
   loadingCharts = true;
   loadingAlerts = true;
-  readonly chartSkeletonTitles = ['Terminales', 'Fabricante', 'Sistema Operativo', 'Dispositivos de Red'];
-  readonly alertSkeletonItems = [1, 2, 3, 4, 5];
-  alerts: Alerta[] = [];
+  readonly skeletonChartSlots = [0, 1, 2, 3];
+  readonly skeletonAlertSlots = [0, 1, 2, 3, 4, 5];
+  readonly skeletonBarHeights = [72, 48, 88, 36, 64, 52];
+  readonly skeletonFilterWidths = [92, 108, 118, 98, 72, 96, 128, 148, 110];
   isChecking: boolean = false;
   isCleaning: boolean = false;
   isUpdatingDevices: boolean = false;
@@ -136,6 +139,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.registerDashboardTour();
+    if (this.shouldHoldSkeletonPreview()) {
+      return;
+    }
     this.loadChartStats();
     this.loadAlertas();
   }
@@ -143,6 +149,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private loadChartStats(): void {
     this.loadingCharts = true;
     this.dashboardStatsService.getStats().pipe(
+      this.devLoadDelay(),
       catchError(error => {
         console.error('Error al cargar estadísticas del dashboard', error);
         const empty: DashboardStatsDTO = {
@@ -196,9 +203,30 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     Array.from(tooltipTriggerList).forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
   }
 
+  /**
+   * Ayuda para probar el skeleton en local (no corre en producción):
+   * `#/menu/dashboard?previewSkeleton=1` lo deja visible.
+   * `#/menu/dashboard?slowLoad=1` espera 3s y después muestra los datos.
+   */
+  private getHashQueryParam(name: string): string | null {
+    const query = window.location.hash.split('?')[1] || '';
+    return new URLSearchParams(query).get(name);
+  }
+
+  private shouldHoldSkeletonPreview(): boolean {
+    return !environment.production && this.getHashQueryParam('previewSkeleton') === '1';
+  }
+
+  private devLoadDelay<T>() {
+    const slow = this.getHashQueryParam('slowLoad');
+    const ms = !environment.production && slow === '1' ? 3000 : 0;
+    return (source: Observable<T>) => (ms > 0 ? source.pipe(delay(ms)) : source);
+  }
+
   loadAlertas(): void {
     this.loadingAlerts = true;
     this.alertService.getAlertas().pipe(
+      this.devLoadDelay(),
       finalize(() => {
         this.loadingAlerts = false;
         this.cdr.markForCheck();

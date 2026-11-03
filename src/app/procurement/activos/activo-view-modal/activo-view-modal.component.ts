@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../../components/page-skeleton/page-skeleton.component';
 import { Router } from '@angular/router';
 import { NgbActiveModal, NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { forkJoin } from 'rxjs';
@@ -19,7 +20,7 @@ import { NotificationService } from '../../../services/notification.service';
 @Component({
   selector: 'app-activo-view-modal',
   standalone: true,
-  imports: [CommonModule, NgbModule],
+  imports: [CommonModule, PageSkeletonComponent, NgbModule],
   templateUrl: './activo-view-modal.component.html',
   styleUrls: ['./activo-view-modal.component.css']
 })

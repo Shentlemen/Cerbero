@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PageSkeletonComponent } from '../../components/page-skeleton/page-skeleton.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { AlmacenService, Almacen } from '../../services/almacen.service';
 import { PermissionsService } from '../../services/permissions.service';
@@ -17,6 +18,7 @@ import { RegistrarStockModalComponent } from '../../components/registrar-stock-m
   standalone: true,
   imports: [
     CommonModule,
+    PageSkeletonComponent,
     RouterLink,
     NotificationContainerComponent,
     StockAlmacenComponent

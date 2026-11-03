@@ -74,12 +74,7 @@
             {{ collectionSize }} evento{{ collectionSize === 1 ? '' : 's' }}
           </p>
 
-          <div *ngIf="loading" class="text-center my-4">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando historial...</p>
-          </div>
+          <app-page-skeleton *ngIf="loading" variant="table" [rows]="8" [columns]="4"></app-page-skeleton>
 
           <div *ngIf="!loading && error" class="alert alert-warning">{{ error }}</div>
 
@@ -158,11 +153,7 @@
               </div>
             </div>
 
-            <div *ngIf="loadingDetalle" class="text-center p-3">
-              <div class="spinner-border spinner-border-sm text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-              </div>
-            </div>
+            <app-page-skeleton *ngIf="loadingDetalle" variant="compact" [rows]="5"></app-page-skeleton>
 
             <div *ngIf="!loadingDetalle && errorDetalle" class="alert alert-warning">{{ errorDetalle }}</div>
 
