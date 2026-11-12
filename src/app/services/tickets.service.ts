@@ -23,11 +23,17 @@ export interface Ticket {
   estado: TicketEstado;
   prioridad: TicketPrioridad;
   areaActual: string;
-  creadoPorUserId: number;
+  creadoPorUserId: number | null;
   /** Nombre del creador (rellenado por el backend al listar/obtener). */
   creadoPorNombre?: string | null;
   /** True si el creador tiene foto de perfil. */
   creadoPorHasAvatar?: boolean;
+  /** Usuario del último cierre (solo viene en el listado de cerrados). */
+  cerradoPorUserId?: number | null;
+  /** Nombre de quien cerró el ticket. */
+  cerradoPorNombre?: string | null;
+  /** True si quien cerró tiene foto de perfil. */
+  cerradoPorHasAvatar?: boolean;
   asignadoAUserId?: number | null;
   ticketTipoId?: number | null;
   flujoVersionId?: number | null;

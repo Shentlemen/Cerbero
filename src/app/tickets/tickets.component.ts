@@ -20,6 +20,15 @@ import { TicketDetailComponent } from './ticket-detail.component';
 type TicketsOrdenColumna = 'titulo' | 'areaActual' | 'estado' | 'prioridad' | 'fechaActualizacion';
 type TicketsVistaBandeja = 'area' | 'mios' | 'cerrados';
 
+interface GrupoFechaCerrados {
+  id: string;
+  etiqueta: string;
+  /** Inicio del bloque, para ordenar Hoy → Ayer → semana → meses. */
+  ordenMs: number;
+  colapsadoPorDefecto: boolean;
+  tickets: Ticket[];
+}
+
 @Component({
   selector: 'app-tickets',
   standalone: true,
@@ -47,7 +56,17 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   /** Filtro de área aplicado a todas las bandejas (sobre datos ya cargados). */
   filtroArea = '';
-  /** Filtro en vivo por código o título sobre las tres bandejas (datos ya cargados). */
+  /** En Cerrados: usuario que hizo el cierre. Null = todos. */
+  filtroCerradoPor: number | null = null;
+
+  /** Apertura manual de un bloque de fecha. Si no está, vale el default del grupo. */
+  private gruposCerradosAbiertos = new Map<string, boolean>();
+
+  private readonly mesesEs = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  /** Filtro en vivo por código, título o solicitante sobre las tres bandejas (datos ya cargados). */
   busquedaCodigoTitulo = '';
 
   /** Pestaña activa: una bandeja por vista. */
@@ -389,7 +408,97 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   /** Cerrados filtrados y ordenados (solo vista). */
   get ticketsCerradosVista(): Ticket[] {
-    return this.ordenarLista(this.filtrarLista(this.ticketsCerrados), true);
+    return this.ordenarLista(this.filtrarPorCerrador(this.filtrarLista(this.ticketsCerrados)), true);
+  }
+
+  /**
+   * Cerrados partidos en Hoy, Ayer, Esta semana, Semana pasada y después cada mes.
+   * Los meses arrancan plegados. El orden sigue la fecha de cierre.
+   */
+  get gruposCerrados(): GrupoFechaCerrados[] {
+    const tickets = this.ticketsCerradosVista;
+    const hoy = this.inicioDia(new Date());
+    const ayer = new Date(hoy);
+    ayer.setDate(ayer.getDate() - 1);
+    const inicioSemana = this.inicioSemanaLunes(hoy);
+    const inicioSemanaPasada = new Date(inicioSemana);
+    inicioSemanaPasada.setDate(inicioSemanaPasada.getDate() - 7);
+
+    const map = new Map<string, GrupoFechaCerrados>();
+    const asegurar = (
+      id: string,
+      etiqueta: string,
+      ordenMs: number,
+      colapsadoPorDefecto: boolean
+    ): GrupoFechaCerrados => {
+      let grupo = map.get(id);
+      if (!grupo) {
+        grupo = { id, etiqueta, ordenMs, colapsadoPorDefecto, tickets: [] };
+        map.set(id, grupo);
+      }
+      return grupo;
+    };
+
+    for (const ticket of tickets) {
+      const fecha = this.fechaCierreDate(ticket);
+      if (!fecha) {
+        asegurar('sin-fecha', 'Sin fecha', 0, true).tickets.push(ticket);
+        continue;
+      }
+      const dia = this.inicioDia(fecha);
+      const ms = dia.getTime();
+      if (ms >= hoy.getTime()) {
+        asegurar('hoy', 'Hoy', hoy.getTime(), false).tickets.push(ticket);
+      } else if (ms === ayer.getTime()) {
+        asegurar('ayer', 'Ayer', ayer.getTime(), false).tickets.push(ticket);
+      } else if (ms >= inicioSemana.getTime()) {
+        asegurar('esta-semana', 'Esta semana', inicioSemana.getTime(), false).tickets.push(ticket);
+      } else if (ms >= inicioSemanaPasada.getTime()) {
+        asegurar('semana-pasada', 'Semana pasada', inicioSemanaPasada.getTime(), false).tickets.push(ticket);
+      } else {
+        const id = `mes-${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}`;
+        const etiqueta = `${this.mesesEs[dia.getMonth()]} ${dia.getFullYear()}`;
+        const ordenMs = new Date(dia.getFullYear(), dia.getMonth(), 1).getTime();
+        asegurar(id, etiqueta, ordenMs, true).tickets.push(ticket);
+      }
+    }
+
+    const grupos = [...map.values()];
+    const conFecha = grupos.filter((g) => g.id !== 'sin-fecha');
+    const candidatos = conFecha.length > 0 ? conFecha : grupos;
+    if (candidatos.length > 0) {
+      const ultimo = candidatos.reduce((a, b) => (a.ordenMs >= b.ordenMs ? a : b));
+      ultimo.colapsadoPorDefecto = false;
+    }
+
+    const asc = this.ordenColumna === 'fechaActualizacion' && this.ordenAsc;
+    return grupos.sort((a, b) => {
+      if (a.id === 'sin-fecha') return 1;
+      if (b.id === 'sin-fecha') return -1;
+      return asc ? a.ordenMs - b.ordenMs : b.ordenMs - a.ordenMs;
+    });
+  }
+
+  /**
+   * Quienes cerraron tickets del área elegida (o de todas, si no hay área).
+   * No depende del filtro de usuario, para que el dropdown no se reduzca al elegir uno.
+   */
+  get usuariosQueCerraron(): { id: number; nombre: string }[] {
+    const base = this.filtroArea
+      ? this.ticketsCerrados.filter((t) => t.areaActual === this.filtroArea)
+      : this.ticketsCerrados;
+    const porId = new Map<number, string>();
+    for (const ticket of base) {
+      const id = ticket.cerradoPorUserId;
+      if (id == null || porId.has(id)) {
+        continue;
+      }
+      const nombre = (ticket.cerradoPorNombre || '').trim() || `Usuario ${id}`;
+      porId.set(id, nombre);
+    }
+    return [...porId.entries()]
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
   /** Tickets visibles según pestaña activa (filtros globales ya aplicados). */
@@ -420,7 +529,15 @@ export class TicketsComponent implements OnInit, OnDestroy {
   }
 
   /** Filtros locales (área / búsqueda): la vista reactiva se actualiza sola. */
-  onFiltroVistaLocalChange(): void {}
+  onFiltroVistaLocalChange(): void {
+    if (this.filtroCerradoPor == null) {
+      return;
+    }
+    const sigueVisible = this.usuariosQueCerraron.some((u) => u.id === this.filtroCerradoPor);
+    if (!sigueVisible) {
+      this.filtroCerradoPor = null;
+    }
+  }
 
   contadorVista(vista: TicketsVistaBandeja): number {
     switch (vista) {
@@ -452,7 +569,26 @@ export class TicketsComponent implements OnInit, OnDestroy {
   nombreCreadorTicket(ticket: Ticket): string {
     const n = (ticket.creadoPorNombre || '').trim();
     if (n) return n;
-    return ticket.creadoPorUserId != null ? `Usuario ${ticket.creadoPorUserId}` : 'Usuario';
+    return ticket.creadoPorUserId != null ? `Usuario ${ticket.creadoPorUserId}` : 'Sistema';
+  }
+
+  nombreCerradorTicket(ticket: Ticket): string {
+    const n = (ticket.cerradoPorNombre || '').trim();
+    if (n) return n;
+    return ticket.cerradoPorUserId != null ? `Usuario ${ticket.cerradoPorUserId}` : 'Sin registro';
+  }
+
+  grupoCerradoAbierto(grupo: GrupoFechaCerrados): boolean {
+    const guardado = this.gruposCerradosAbiertos.get(grupo.id);
+    return guardado !== undefined ? guardado : !grupo.colapsadoPorDefecto;
+  }
+
+  toggleGrupoCerrado(grupo: GrupoFechaCerrados): void {
+    this.gruposCerradosAbiertos.set(grupo.id, !this.grupoCerradoAbierto(grupo));
+  }
+
+  trackGrupoCerrado(_index: number, grupo: GrupoFechaCerrados): string {
+    return grupo.id;
   }
 
   avatarUrl(userId: number | null | undefined): string {
@@ -464,6 +600,39 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
   onCreadorAvatarError(ticket: Ticket): void {
     ticket.creadoPorHasAvatar = false;
+  }
+
+  onCerradorAvatarError(ticket: Ticket): void {
+    ticket.cerradoPorHasAvatar = false;
+  }
+
+  private filtrarPorCerrador(list: Ticket[]): Ticket[] {
+    if (this.filtroCerradoPor == null) {
+      return list;
+    }
+    return list.filter((t) => t.cerradoPorUserId === this.filtroCerradoPor);
+  }
+
+  private fechaCierreDate(ticket: Ticket): Date | null {
+    const iso = ticket.fechaCierre || ticket.fechaActualizacion;
+    if (!iso) {
+      return null;
+    }
+    const fecha = new Date(iso);
+    return Number.isNaN(fecha.getTime()) ? null : fecha;
+  }
+
+  private inicioDia(fecha: Date): Date {
+    return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+  }
+
+  /** Lunes de la semana de `dia` (semana local). */
+  private inicioSemanaLunes(dia: Date): Date {
+    const inicio = this.inicioDia(dia);
+    const dow = inicio.getDay();
+    const delta = dow === 0 ? 6 : dow - 1;
+    inicio.setDate(inicio.getDate() - delta);
+    return inicio;
   }
 
   contadorNoLeidos(vista: TicketsVistaBandeja): number {
@@ -511,7 +680,9 @@ export class TicketsComponent implements OnInit, OnDestroy {
       const u = q.toUpperCase();
       out = out.filter(
         (t) =>
-          (t.codigo || '').toUpperCase().includes(u) || (t.titulo || '').toUpperCase().includes(u)
+          (t.codigo || '').toUpperCase().includes(u) ||
+          (t.titulo || '').toUpperCase().includes(u) ||
+          this.nombreCreadorTicket(t).toUpperCase().includes(u)
       );
     }
     if (this.filtroArea) {
@@ -962,7 +1133,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
         selector: '#tour-tickets-filters',
         title: 'Búsqueda y filtros',
         description:
-          'Buscá por código o título, recortá por área y ordená por última actualización.',
+          'Buscá por código, título o solicitante, recortá por área y ordená por última actualización.',
         side: 'bottom'
       },
       {

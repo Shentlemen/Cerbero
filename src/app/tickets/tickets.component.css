@@ -1357,6 +1357,10 @@
   max-width: 10.5rem;
 }
 
+.tickets-ig-select--closer {
+  max-width: 14rem;
+}
+
 .tickets-ig-toolbar-actions {
   display: inline-flex;
   align-items: center;
@@ -1414,6 +1418,58 @@
   gap: var(--ds-gap);
   /* Hueco para el saliente y el pliegue de la cinta. */
   padding-left: 1rem;
+}
+
+.tickets-ig-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.tickets-ig-group-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.15rem 0.45rem;
+  border: none;
+  border-bottom: 1px solid var(--ds-color-border-subtle);
+  background: var(--ds-color-surface);
+  color: var(--ds-color-heading);
+  font-size: 0.92rem;
+  font-weight: var(--ds-weight-bold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tickets-ig-group-head[aria-expanded='true'] {
+  margin-bottom: 0.7rem;
+}
+
+.tickets-ig-group-head i {
+  width: 0.8rem;
+  font-size: 0.72rem;
+  color: var(--ds-color-text-muted);
+}
+
+.tickets-ig-group-count {
+  min-width: 1.4rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ds-color-hover);
+  color: var(--ds-color-subtle);
+  font-size: 0.72rem;
+  font-weight: var(--ds-weight-semibold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tickets-ig-group .tickets-ig-list {
+  margin: 0;
 }
 
 .tickets-ig-card {
@@ -1807,11 +1863,50 @@
   border: 1px solid var(--ds-color-border);
 }
 
+.tickets-ig-card-avatar--sm {
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 0.55rem;
+}
+
 .tickets-ig-card-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.tickets-ig-card-closer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin-top: 0.15rem;
+}
+
+.tickets-ig-card-closer-text {
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--ds-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tickets-ig-card-closer-text strong {
+  color: var(--ds-color-heading);
+  font-weight: var(--ds-weight-semibold);
+}
+
+.tickets-split-item-closer {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--ds-color-text-muted);
 }
 
 .tickets-ig-card-user-text {

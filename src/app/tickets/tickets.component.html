@@ -71,9 +71,9 @@
             type="search"
             [(ngModel)]="busquedaCodigoTitulo"
             (ngModelChange)="onFiltroVistaLocalChange()"
-            placeholder="Buscar por código o título…"
+            placeholder="Buscar por código, título o solicitante…"
             autocomplete="off"
-            aria-label="Buscar tickets" />
+            aria-label="Buscar por código, título o solicitante" />
         </div>
 
         <div class="tickets-ig-toolbar-filters">
@@ -92,6 +92,15 @@
             aria-label="Filtrar por área">
             <option value="">Área: todas</option>
             <option *ngFor="let area of areasTicket" [value]="area">{{ getAreaLabel(area) }}</option>
+          </select>
+          <select
+            *ngIf="esVistaCerrados"
+            class="tickets-ig-select tickets-ig-select--closer"
+            [(ngModel)]="filtroCerradoPor"
+            (ngModelChange)="onFiltroVistaLocalChange()"
+            aria-label="Filtrar por quien cerró el ticket">
+            <option [ngValue]="null">Cerró: todos</option>
+            <option *ngFor="let usuario of usuariosQueCerraron" [ngValue]="usuario.id">{{ usuario.nombre }}</option>
           </select>
         </div>
 
@@ -194,13 +203,11 @@
           <div
             *ngIf="vistaBandeja === 'cerrados' && ticketsCerrados.length > 0 && ticketsCerradosVista.length === 0"
             class="tickets-panel-state text-muted tickets-split-empty">
-            Ningún ticket coincide con el área o el texto de búsqueda.
+            Ningún ticket coincide con el área, quien lo cerró o el texto de búsqueda.
           </div>
 
-          <!-- Grilla de cards grandes -->
-          <div *ngIf="vistaModo === 'cards' && ticketsVistaActiva.length > 0" class="tickets-ig-grid">
+          <ng-template #ticketCard let-ticket>
             <article
-              *ngFor="let ticket of ticketsVistaActiva"
               class="tickets-ig-card"
               [class.tickets-ig-card--unread]="!esVistaCerrados && esNoLeido(ticket.id)"
               role="button"
@@ -273,6 +280,23 @@
                 </time>
               </div>
 
+              <div *ngIf="esVistaCerrados" class="tickets-ig-card-closer">
+                <span
+                  class="tickets-ig-card-avatar tickets-ig-card-avatar--sm"
+                  [class.tickets-ig-card-avatar--photo]="ticket.cerradoPorHasAvatar"
+                  aria-hidden="true">
+                  <img
+                    *ngIf="ticket.cerradoPorHasAvatar && ticket.cerradoPorUserId"
+                    [src]="avatarUrl(ticket.cerradoPorUserId)"
+                    alt=""
+                    (error)="onCerradorAvatarError(ticket)">
+                  <ng-container *ngIf="!ticket.cerradoPorHasAvatar">{{ inicialesNombre(nombreCerradorTicket(ticket)) }}</ng-container>
+                </span>
+                <span class="tickets-ig-card-closer-text">
+                  Cerró <strong [attr.title]="nombreCerradorTicket(ticket)">{{ nombreCerradorTicket(ticket) }}</strong>
+                </span>
+              </div>
+
               <footer class="tickets-ig-card-foot">
                 <div class="tickets-ig-card-user">
                   <span
@@ -294,12 +318,37 @@
                 <span class="tickets-ig-card-id">#{{ ticket.codigo }}</span>
               </footer>
             </article>
-          </div>
+          </ng-template>
 
-          <!-- Lista compacta (toggle) -->
-          <ul *ngIf="vistaModo === 'list' && ticketsVistaActiva.length > 0" class="tickets-split-items tickets-ig-list" role="list">
+          <ng-container *ngIf="vistaModo === 'cards' && ticketsVistaActiva.length > 0">
+            <div *ngIf="!esVistaCerrados" class="tickets-ig-grid">
+              <ng-container *ngFor="let ticket of ticketsVistaActiva">
+                <ng-container *ngTemplateOutlet="ticketCard; context: { $implicit: ticket }"></ng-container>
+              </ng-container>
+            </div>
+            <div *ngIf="esVistaCerrados" class="tickets-ig-groups">
+              <section *ngFor="let grupo of gruposCerrados; trackBy: trackGrupoCerrado" class="tickets-ig-group">
+                <button
+                  type="button"
+                  class="tickets-ig-group-head"
+                  (click)="toggleGrupoCerrado(grupo)"
+                  [attr.aria-expanded]="grupoCerradoAbierto(grupo)"
+                  [attr.aria-label]="(grupoCerradoAbierto(grupo) ? 'Ocultar ' : 'Mostrar ') + grupo.etiqueta">
+                  <i class="fas" [ngClass]="grupoCerradoAbierto(grupo) ? 'fa-chevron-down' : 'fa-chevron-right'" aria-hidden="true"></i>
+                  <span class="tickets-ig-group-label">{{ grupo.etiqueta }}</span>
+                  <span class="tickets-ig-group-count">{{ grupo.tickets.length }}</span>
+                </button>
+                <div *ngIf="grupoCerradoAbierto(grupo)" class="tickets-ig-grid">
+                  <ng-container *ngFor="let ticket of grupo.tickets">
+                    <ng-container *ngTemplateOutlet="ticketCard; context: { $implicit: ticket }"></ng-container>
+                  </ng-container>
+                </div>
+              </section>
+            </div>
+          </ng-container>
+
+          <ng-template #ticketRow let-ticket>
             <li
-              *ngFor="let ticket of ticketsVistaActiva"
               class="tickets-split-item"
               [class.tickets-split-item--no-leido]="!esVistaCerrados && esNoLeido(ticket.id)"
               role="button"
@@ -326,6 +375,9 @@
                   <span [class]="getEstadoClass(ticket.estado)">{{ getEstadoLabel(ticket.estado) }}</span>
                   <span [class]="getAreaPillClass(ticket.areaActual)" [ngStyle]="getAreaPillStyle(ticket.areaActual)">{{ getAreaLabel(ticket.areaActual) }}</span>
                 </div>
+                <span *ngIf="esVistaCerrados" class="tickets-split-item-closer" [attr.title]="'Cerró ' + nombreCerradorTicket(ticket)">
+                  Cerró {{ nombreCerradorTicket(ticket) }}
+                </span>
                 <span class="tickets-split-item-date text-muted">
                   {{
                     (esVistaCerrados ? (ticket.fechaCierre || ticket.fechaActualizacion) : ticket.fechaActualizacion)
@@ -356,7 +408,34 @@
                 </div>
               </div>
             </li>
-          </ul>
+          </ng-template>
+
+          <ng-container *ngIf="vistaModo === 'list' && ticketsVistaActiva.length > 0">
+            <ul *ngIf="!esVistaCerrados" class="tickets-split-items tickets-ig-list" role="list">
+              <ng-container *ngFor="let ticket of ticketsVistaActiva">
+                <ng-container *ngTemplateOutlet="ticketRow; context: { $implicit: ticket }"></ng-container>
+              </ng-container>
+            </ul>
+            <div *ngIf="esVistaCerrados" class="tickets-ig-groups">
+              <section *ngFor="let grupo of gruposCerrados; trackBy: trackGrupoCerrado" class="tickets-ig-group">
+                <button
+                  type="button"
+                  class="tickets-ig-group-head"
+                  (click)="toggleGrupoCerrado(grupo)"
+                  [attr.aria-expanded]="grupoCerradoAbierto(grupo)"
+                  [attr.aria-label]="(grupoCerradoAbierto(grupo) ? 'Ocultar ' : 'Mostrar ') + grupo.etiqueta">
+                  <i class="fas" [ngClass]="grupoCerradoAbierto(grupo) ? 'fa-chevron-down' : 'fa-chevron-right'" aria-hidden="true"></i>
+                  <span class="tickets-ig-group-label">{{ grupo.etiqueta }}</span>
+                  <span class="tickets-ig-group-count">{{ grupo.tickets.length }}</span>
+                </button>
+                <ul *ngIf="grupoCerradoAbierto(grupo)" class="tickets-split-items tickets-ig-list" role="list">
+                  <ng-container *ngFor="let ticket of grupo.tickets">
+                    <ng-container *ngTemplateOutlet="ticketRow; context: { $implicit: ticket }"></ng-container>
+                  </ng-container>
+                </ul>
+              </section>
+            </div>
+          </ng-container>
         </ng-container>
       </div>
     </section>
