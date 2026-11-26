@@ -262,6 +262,8 @@
 .menu-header.nav-tile--violet i { color: #c4b5fd; }
 .sidenav a.nav-tile--grafana i,
 .menu-header.nav-tile--grafana i { color: #f59e0b; }
+.sidenav a.nav-tile--asistente i,
+.menu-header.nav-tile--asistente i { color: #a78bfa; }
 .sidenav a.nav-tile--cyan i,
 .menu-header.nav-tile--cyan i { color: #22d3ee; }
 .sidenav a.nav-tile--green i,
@@ -348,6 +350,12 @@
   height: calc(100dvh - var(--layout-top, 3.75rem));
   min-height: 0;
   padding: 0;
+}
+
+.main-content:has(app-asistente) {
+  overflow: hidden;
+  height: calc(100dvh - var(--layout-top, 3.75rem));
+  min-height: 0;
 }
 
 /* Rutas hijas: ancho completo y reparto de alto (flex en columnas dentro de cada vista) */

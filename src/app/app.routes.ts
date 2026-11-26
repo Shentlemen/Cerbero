@@ -58,6 +58,12 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'grafana', loadComponent: () => import('./grafana-embed/grafana-embed.component').then(m => m.GrafanaEmbedComponent) },
+      {
+        path: 'asistente',
+        loadComponent: () => import('./asistente/asistente.component').then(m => m.AsistenteComponent),
+        canActivate: [RoleGuard],
+        data: { roles: ['GM', 'ADMIN'] }
+      },
       { path: 'user-profile', loadComponent: () => import('./user-profile/user-profile.component').then(m => m.UserProfileComponent) },
       { path: 'assets', loadComponent: () => import('./assets/assets.component').then(m => m.AssetsComponent) },
       { path: 'monitors', loadComponent: () => import('./monitors/monitors.component').then(m => m.MonitorsComponent) },

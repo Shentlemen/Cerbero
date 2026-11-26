@@ -229,6 +229,10 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.permissionsService.canAccessInternosOse();
   }
 
+  canAccessAsistente(): boolean {
+    return this.permissionsService.isGMOrAdmin();
+  }
+
   // Métodos para el user-header integrado
   getRoleLabel(role: string): string {
     if (role === 'GM') return 'Game Master';

@@ -1,0 +1,61 @@
+<section class="asistente">
+  <header class="asistente-top">
+    <div>
+      <h1>Asistente</h1>
+      <p>Preguntá en español por el inventario. Solo lee la base: no modifica equipos, tickets ni usuarios.</p>
+    </div>
+    <div class="asistente-estado" [class.asistente-estado--ok]="disponible" [class.asistente-estado--off]="!disponible">
+      <span>{{ estadoTexto }}</span>
+      <button type="button" class="asistente-reintentar" (click)="revisarEstado()">Revisar de nuevo</button>
+    </div>
+  </header>
+
+  <div class="asistente-hilo" #hilo>
+    <div class="asistente-vacio" *ngIf="mensajes.length === 0 && !enviando">
+      <p>Por ejemplo:</p>
+      <button type="button" *ngFor="let ejemplo of ejemplos" (click)="usarEjemplo(ejemplo)">{{ ejemplo }}</button>
+    </div>
+
+    <article
+      *ngFor="let mensaje of mensajes"
+      class="burbuja"
+      [class.burbuja--vos]="mensaje.rol === 'vos'"
+      [class.burbuja--asistente]="mensaje.rol === 'asistente'"
+      [class.burbuja--error]="mensaje.error">
+      <p>{{ mensaje.texto }}</p>
+      <div class="asistente-tabla-wrap" *ngIf="mensaje.filas?.length">
+        <table>
+          <thead>
+            <tr>
+              <th *ngFor="let col of mensaje.columnas">{{ col }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fila of mensaje.filas">
+              <td *ngFor="let col of mensaje.columnas">{{ fila[col] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <details *ngIf="mensaje.sql">
+        <summary>Consulta usada</summary>
+        <code>{{ mensaje.sql }}</code>
+      </details>
+    </article>
+
+    <p class="asistente-espera" *ngIf="enviando">Consultando… la primera vez puede tardar un par de minutos mientras carga el modelo.</p>
+  </div>
+
+  <form class="asistente-form" (ngSubmit)="enviar()">
+    <textarea
+      name="pregunta"
+      rows="2"
+      maxlength="500"
+      [(ngModel)]="pregunta"
+      [disabled]="enviando"
+      placeholder="¿Cuántos equipos tenemos con Windows 7?"
+      (keydown.enter)="onEnter($event)">
+    </textarea>
+    <button type="submit" [disabled]="enviando || !pregunta.trim()">Enviar</button>
+  </form>
+</section>

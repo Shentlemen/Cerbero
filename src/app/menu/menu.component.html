@@ -137,6 +137,11 @@
     <span>GRAFANA</span>
   </a>
 
+  <a *ngIf="canAccessAsistente()" routerLink="/menu/asistente" routerLinkActive="active" class="nav-tile nav-tile--asistente">
+    <i class="fas fa-comments"></i>
+    <span>ASISTENTE</span>
+  </a>
+
   <a *ngIf="canAccessInternosOse()" routerLink="/menu/internos-ose" routerLinkActive="active" class="nav-tile nav-tile--teal">
     <i class="fas fa-address-book"></i>
     <span>GUÍA DE CONTACTOS</span>
