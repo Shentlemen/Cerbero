@@ -16,11 +16,12 @@ import {
   COMIC_BUBBLE_KIND_PRIORITY
 } from './helper-dog-comic-bubble';
 import { filter, Subscription } from 'rxjs';
+import { AsistenteComponent } from '../../asistente/asistente.component';
 
 @Component({
   selector: 'app-helper-dog',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AsistenteComponent],
   templateUrl: './helper-dog.component.html',
   styleUrls: ['./helper-dog.component.css']
 })
@@ -53,6 +54,9 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   ticketsNoLeidos = 0;
   /** Grupos de nombres duplicados en OCS (solo GM real). Badge naranja del perro. */
   ocsDuplicadosGrupos = 0;
+  /** El chat se crea una vez y se oculta: cerrarlo no borra la conversación. */
+  chatMontado = false;
+  chatAbierto = false;
   private routerSubscription: Subscription;
   private userLevelSubscription: Subscription;
   private suggestionsSubscription: Subscription;
@@ -177,10 +181,8 @@ export class HelperDogComponent implements OnInit, OnDestroy {
       this.recordUserBehavior('element_click', this.currentSection, [target.tagName.toLowerCase()]);
     }
 
-    // Cerrar el menú radial si el click cayó fuera del helper.
-    if (this.showRadialMenu && target && !this.hostRef.nativeElement.contains(target)) {
-      this.showRadialMenu = false;
-      this.dismissComicBubble(false);
+    if (this.chatAbierto && target && !this.hostRef.nativeElement.contains(target)) {
+      this.chatAbierto = false;
     }
   }
 
@@ -361,41 +363,17 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   }
 
   onDogClick(event?: MouseEvent): void {
-    // Evita que el `document:click` cierre lo que acabamos de abrir.
     event?.stopPropagation();
-
     this.triggerBounce();
-
-    if (this.availableTours.length === 0) {
-      this.showRadialMenu = false;
-      if (this.showComicBubble) {
-        this.dismissComicBubble(false);
-        return;
-      }
-      if (this.showWoofMessage) {
-        this.showWoofMessage = false;
-        if (this.woofTimeoutId !== null) {
-          window.clearTimeout(this.woofTimeoutId);
-          this.woofTimeoutId = null;
-        }
-        return;
-      }
-      this.showWoof();
+    if (!this.puedeHablar()) {
       return;
     }
+    this.chatMontado = true;
+    this.chatAbierto = !this.chatAbierto;
+  }
 
-    this.showWoofMessage = false;
-    if (this.woofTimeoutId !== null) {
-      window.clearTimeout(this.woofTimeoutId);
-      this.woofTimeoutId = null;
-    }
-
-    const openingMenu = !this.showRadialMenu;
-    this.showRadialMenu = !this.showRadialMenu;
-
-    if (!openingMenu) {
-      this.dismissComicBubble(false);
-    }
+  puedeHablar(): boolean {
+    return this.permissionsService.isGMOrAdmin();
   }
 
   /** Ejecuta el tour elegido y cierra el menú radial. */
@@ -486,12 +464,7 @@ export class HelperDogComponent implements OnInit, OnDestroy {
   /** Cierra el menú radial al presionar Escape. */
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.showRadialMenu) {
-      this.showRadialMenu = false;
-      this.dismissComicBubble(false);
-    } else if (this.showComicBubble) {
-      this.dismissComicBubble(false);
-    }
+    this.chatAbierto = false;
   }
 
   private triggerBounce(): void {

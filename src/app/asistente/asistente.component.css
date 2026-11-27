@@ -15,6 +15,25 @@
   color: var(--theme-text, #1f2933);
 }
 
+.asistente--compacto {
+  height: 100%;
+  gap: 0.4rem;
+}
+
+.asistente--compacto .asistente-top h1 {
+  font-size: 1rem;
+}
+
+.asistente--compacto .asistente-top p {
+  display: none;
+}
+
+.asistente--compacto .asistente-estado {
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+}
+
 .asistente-top h1 {
   margin: 0 0 0.25rem;
   font-size: 1.35rem;

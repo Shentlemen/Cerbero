@@ -49,8 +49,8 @@ interface Registration {
  *    guarda el cleanup devuelto para llamarlo en `ngOnDestroy`.
  * 2. Cuando la ruta cambia, el servicio recalcula `currentTours$` matcheando
  *    el segmento (o los dos últimos) de la URL contra las secciones registradas.
- * 3. El `HelperDogComponent` consume `getCurrentTours()` para mostrar el menú
- *    radial y dispara `runTour(id)` cuando el usuario elige uno.
+ * 3. El botón de ayuda (círculo con ?) consume `getCurrentTours()` y dispara
+ *    `runTour(id)` cuando el usuario elige uno.
  */
 @Injectable({ providedIn: 'root' })
 export class TourRegistryService implements OnDestroy {

@@ -5266,8 +5266,9 @@ html.theme-dark .generic-table thead th.sortable-header.active {
 }
 
 html.theme-dark .helper-dog-image {
-  background-color: #1a1a1a !important;
+  background-color: transparent !important;
   background-image: none !important;
+  mix-blend-mode: lighten;
 }
 
 html.theme-dark .woof-message {

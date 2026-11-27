@@ -225,6 +225,23 @@
   position: relative;
 }
 
+.nav-tile-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.sidenav-nav > a.nav-tile .nav-note,
+.sidenav a.submenu-item .nav-note {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #fb7185;
+  text-transform: none;
+}
+
 .sidenav-nav > a.nav-tile span,
 .sidenav-nav > .menu-item > .menu-header.nav-tile span {
   flex: none;

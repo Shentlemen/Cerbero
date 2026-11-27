@@ -1,0 +1,22 @@
+<div class="tour-help" *ngIf="tours.length > 0">
+  <div class="tour-help-menu" *ngIf="abierto" role="menu">
+    <button
+      type="button"
+      class="tour-help-item"
+      role="menuitem"
+      *ngFor="let tour of tours"
+      (click)="elegir(tour, $event)">
+      <i class="fas" [ngClass]="tour.icon || 'fa-route'" aria-hidden="true"></i>
+      <span>{{ tour.title }}</span>
+    </button>
+  </div>
+
+  <button
+    type="button"
+    class="tour-help-btn"
+    [attr.aria-expanded]="abierto"
+    aria-label="Tours de esta pantalla"
+    (click)="toggle($event)">
+    ?
+  </button>
+</div>

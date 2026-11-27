@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AsistenteRespuesta, AsistenteService } from './asistente.service';
@@ -21,18 +21,14 @@ interface MensajeChat {
 })
 export class AsistenteComponent implements OnInit {
   @ViewChild('hilo') hilo?: ElementRef<HTMLElement>;
+  /** En el popup del perro se achica el encabezado. La conversación es la misma instancia. */
+  @Input() compacto = false;
 
   pregunta = '';
   enviando = false;
   estadoTexto = 'Revisando si el asistente está instalado…';
   disponible = false;
   mensajes: MensajeChat[] = [];
-
-  readonly ejemplos = [
-    '¿Cuántos equipos tenemos con Windows 7?',
-    '¿Cuántos equipos hay en total, sin contar los dados de baja?',
-    'Listame equipos que no reportan hace más de 30 días'
-  ];
 
   constructor(private asistente: AsistenteService) {}
 
@@ -56,22 +52,23 @@ export class AsistenteComponent implements OnInit {
     });
   }
 
-  usarEjemplo(texto: string): void {
-    this.pregunta = texto;
-    this.enviar();
-  }
-
   enviar(): void {
     const texto = this.pregunta.trim();
     if (!texto || this.enviando) {
       return;
     }
+    const sqlPrevio = this.ultimoSql();
+    const historial = this.mensajes.slice(-6).map((mensaje) => ({
+      rol: mensaje.rol,
+      texto: mensaje.texto,
+      sql: mensaje.sql || ''
+    }));
     this.mensajes.push({ rol: 'vos', texto });
     this.pregunta = '';
     this.enviando = true;
     this.bajar();
 
-    this.asistente.preguntar(texto).subscribe({
+    this.asistente.preguntar(texto, sqlPrevio, historial).subscribe({
       next: (respuesta) => {
         this.mensajes.push(this.armarRespuesta(respuesta));
         this.enviando = false;
@@ -98,6 +95,16 @@ export class AsistenteComponent implements OnInit {
     this.enviar();
   }
 
+  private ultimoSql(): string {
+    for (let i = this.mensajes.length - 1; i >= 0; i--) {
+      const sql = this.mensajes[i].sql;
+      if (this.mensajes[i].rol === 'asistente' && sql) {
+        return sql;
+      }
+    }
+    return '';
+  }
+
   private armarRespuesta(respuesta: AsistenteRespuesta | null): MensajeChat {
     const texto = respuesta?.respuesta
       || respuesta?.mensaje
@@ -105,11 +112,23 @@ export class AsistenteComponent implements OnInit {
     return {
       rol: 'asistente',
       error: respuesta?.success === false,
-      texto,
+      texto: this.textoVisible(texto, respuesta?.filas?.length || 0),
       sql: respuesta?.sql || '',
       columnas: respuesta?.columnas || [],
       filas: respuesta?.filas || []
     };
+  }
+
+  /** El globo nunca muestra el SELECT. Si se coló, queda el resultado o un mensaje claro. */
+  private textoVisible(texto: string, filas: number): string {
+    if (/\bselect\b/i.test(texto) && /\bfrom\b/i.test(texto)) {
+      if (filas > 0) {
+        const sufijo = filas === 1 ? '' : 's';
+        return `Encontré ${filas} fila${sufijo}. Te las dejo en la tabla.`;
+      }
+      return 'Pediste un dato del inventario, pero no pude mostrar el resultado. Probá de nuevo con una frase corta.';
+    }
+    return texto;
   }
 
   private bajar(): void {

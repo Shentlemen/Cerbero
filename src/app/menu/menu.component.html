@@ -50,7 +50,10 @@
 
   <a *ngIf="canAccessTickets()" routerLink="/menu/tickets" routerLinkActive="active" class="nav-tile nav-tile--rose">
     <i class="fas fa-ticket-alt"></i>
-    <span>TICKETS</span>
+    <span class="nav-tile-text">
+      <span>TICKETS</span>
+      <span class="nav-note" *ngIf="ticketsSinLeer > 0">{{ ticketsSinLeer }} sin leer</span>
+    </span>
   </a>
 
   <!-- Menú expandible de Adquisiciones -->
@@ -123,7 +126,10 @@
     <div class="submenu" [class.show]="isAdminExpanded">
       <a *ngIf="isGM()" routerLink="/menu/settings" routerLinkActive="active" class="submenu-item submenu-item--orange">
         <i class="fas fa-database"></i>
-        <span>BASE DE DATOS</span>
+        <span class="nav-tile-text">
+          <span>BASE DE DATOS</span>
+          <span class="nav-note" *ngIf="ocsDuplicadosGrupos > 0">{{ ocsDuplicadosGrupos }} duplicados en OCS</span>
+        </span>
       </a>
       <a *ngIf="canManageUsers()" routerLink="/menu/user-management" routerLinkActive="active" class="submenu-item submenu-item--purple">
         <i class="fas fa-user-cog"></i>
@@ -135,11 +141,6 @@
   <a routerLink="/menu/grafana" routerLinkActive="active" class="nav-tile nav-tile--grafana">
     <i class="fas fa-chart-pie"></i>
     <span>GRAFANA</span>
-  </a>
-
-  <a *ngIf="canAccessAsistente()" routerLink="/menu/asistente" routerLinkActive="active" class="nav-tile nav-tile--asistente">
-    <i class="fas fa-comments"></i>
-    <span>ASISTENTE</span>
   </a>
 
   <a *ngIf="canAccessInternosOse()" routerLink="/menu/internos-ose" routerLinkActive="active" class="nav-tile nav-tile--teal">
@@ -171,4 +172,5 @@
   [style.margin-top.px]="layoutTopPx"
   [style.--layout-top.px]="layoutTopPx">
   <router-outlet></router-outlet>
+  <app-tour-help-button></app-tour-help-button>
 </div>

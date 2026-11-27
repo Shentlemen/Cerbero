@@ -29,7 +29,15 @@ export class AsistenteService {
     return this.http.get<AsistenteEstado>(`${this.apiUrl}/estado`);
   }
 
-  preguntar(pregunta: string): Observable<AsistenteRespuesta> {
-    return this.http.post<AsistenteRespuesta>(`${this.apiUrl}/preguntar`, { pregunta });
+  preguntar(
+    pregunta: string,
+    sqlPrevio?: string,
+    historial?: { rol: string; texto: string; sql?: string }[]
+  ): Observable<AsistenteRespuesta> {
+    return this.http.post<AsistenteRespuesta>(`${this.apiUrl}/preguntar`, {
+      pregunta,
+      sqlPrevio: sqlPrevio || '',
+      historial: historial || []
+    });
   }
 }

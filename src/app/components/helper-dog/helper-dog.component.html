@@ -1,88 +1,18 @@
-<div class="helper-dog" [class.menu-open]="showRadialMenu">
-  <!-- Mascota / acceso a tutoriales por contexto (driver.js vía TourRegistryService). -->
+<div class="helper-dog" [class.chat-open]="chatAbierto">
   <div class="helper-dog-container">
-    <div class="speech-bubble woof-message" *ngIf="showWoofMessage">
-      <div class="woof-content">
-        <span class="woof-text">WOOF!</span>
-      </div>
+    <div
+      class="dog-chat"
+      *ngIf="chatMontado"
+      [hidden]="!chatAbierto"
+      (click)="$event.stopPropagation()">
+      <app-asistente [compacto]="true"></app-asistente>
     </div>
-
-    <!-- Un solo globo cómic a la vez (cola si hay tickets + OCS al login). -->
-    <button
-      type="button"
-      class="speech-bubble comic-bubble"
-      [class.comic-bubble--tickets]="comicBubbleKind === 'tickets'"
-      [class.comic-bubble--ocs]="comicBubbleKind === 'ocs'"
-      [class.comic-bubble--by-badge]="comicBubbleByBadge"
-      *ngIf="showComicBubble"
-      (click)="onComicBubbleClick($event)"
-      (mouseenter)="onComicBubbleMouseEnter()"
-      (mouseleave)="onComicBubbleMouseLeave()"
-      [attr.aria-label]="comicBubbleText">
-      <span class="comic-bubble-title">{{ comicBubbleTitle }}</span>
-      <p class="comic-bubble-text">{{ comicBubbleText }}</p>
-      <span class="comic-bubble-queue" *ngIf="comicBubbleQueueLabel">{{ comicBubbleQueueLabel }}</span>
-    </button>
-
-    <!-- Menú radial: un botón por cada tour disponible en la sección actual. -->
-    <div class="radial-menu" *ngIf="showRadialMenu" role="menu" aria-label="Tours guiados disponibles">
-      <div
-        *ngFor="let tour of availableTours; let i = index; trackBy: trackByTour"
-        class="radial-slot"
-        [style.transform]="getRadialTransform(i, availableTours.length)"
-        [style.transition-delay.ms]="i * 40">
-        <button
-          type="button"
-          class="radial-item"
-          role="menuitem"
-          (click)="onTourClick(tour, $event)"
-          [attr.aria-label]="tour.title"
-          [title]="tour.title">
-          <i class="fas" [ngClass]="tour.icon || 'fa-route'"></i>
-          <span class="radial-label">{{ tour.title }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Badge contador: indica al usuario que el perro tiene tours para esta pantalla. -->
-    <span
-      *ngIf="availableTours.length > 0 && !showRadialMenu"
-      class="tour-badge"
-      [attr.aria-label]="availableTours.length + ' tours disponibles'">
-      {{ availableTours.length }}
-    </span>
-
-    <!-- Duplicados en OCS (solo GM o ADMIN reales): naranja, abre Configuración → duplicados OCS. -->
-    <button
-      *ngIf="ocsDuplicadosGrupos > 0 && canSeeOcsDuplicateAlerts()"
-      type="button"
-      class="ocs-dup-badge"
-      [class.ocs-dup-badge--expanded]="showRadialMenu"
-      [attr.aria-label]="ocsDuplicadosGrupos + ' grupos de equipos duplicados en OCS. Click para ver mensaje e ir a Configuración.'"
-      [title]="ocsDuplicadosGrupos + ' duplicados en OCS — clic para detalle y Configuración'"
-      (click)="onOcsDupBadgeClick($event)">
-      <i class="fas fa-clone" aria-hidden="true"></i>
-      <span class="ocs-dup-badge-count">{{ ocsDuplicadosGrupos > 9 ? '9+' : ocsDuplicadosGrupos }}</span>
-    </button>
-
-    <!-- Badge de tickets no leídos: rojo, pulsa para llamar la atención. Click navega a /menu/tickets. -->
-    <button
-      *ngIf="ticketsNoLeidos > 0"
-      type="button"
-      class="tickets-badge"
-      [class.tickets-badge--expanded]="showRadialMenu"
-      [attr.aria-label]="ticketsNoLeidos + ' tickets nuevos en tu bandeja. Click para ver.'"
-      [title]="ticketsNoLeidos + ' tickets nuevos en tu bandeja'"
-      (click)="onTicketsBadgeClick($event)">
-      {{ ticketsNoLeidos > 9 ? '9+' : ticketsNoLeidos }}
-    </button>
 
     <img
       src="assets/awoo-awoo-shoppe.gif"
       alt="Asistente"
       class="helper-dog-image"
       [class.bounce]="isBouncing"
-      [class.has-tours]="availableTours.length > 0 && !showRadialMenu"
       (click)="onDogClick($event)">
   </div>
 </div>

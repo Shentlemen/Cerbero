@@ -30,18 +30,18 @@
   height: var(--dog-size);
   cursor: pointer;
   border-radius: 50%;
-  /* El GIF declara transparencia, pero el canvas usa negro puro (#000).
-     El menú es #1a1a1a: sin este fondo se ve un cuadrado negro detrás. */
-  background-color: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+  /* El GIF trae el fondo en negro puro. lighten lo funde con el menú
+     y desaparece el recuadro; el perro, que es claro, se queda. */
+  background-color: transparent;
+  mix-blend-mode: lighten;
+  box-shadow: none;
+  transition: transform 0.3s ease, border-color 0.3s ease;
   border: 3px solid transparent;
   display: block;
 }
 
 .helper-dog-image:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   border-color: #2196F3;
 }
 
@@ -54,12 +54,10 @@
 
 @keyframes dogPulse {
   0%, 100% {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
-                0 0 0 0 rgba(102, 126, 234, 0.45);
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.45);
   }
   50% {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
-                0 0 0 12px rgba(102, 126, 234, 0);
+    box-shadow: 0 0 0 12px rgba(102, 126, 234, 0);
   }
 }
 
@@ -68,8 +66,40 @@
 .helper-dog.menu-open .helper-dog-image {
   animation: none;
   border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
-              0 0 0 4px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25);
+}
+
+.helper-dog.chat-open .helper-dog-image {
+  border-color: #38bdf8;
+}
+
+.dog-chat {
+  position: absolute;
+  left: calc(100% + 12px);
+  bottom: 0;
+  width: min(24rem, calc(100vw - var(--dog-size) - 2rem));
+  height: min(34rem, calc(100vh - 7rem));
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  border-radius: 14px;
+  background: var(--theme-surface, #111827);
+  color: var(--theme-text, #e5e7eb);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  z-index: 1020;
+  overflow: hidden;
+}
+
+.dog-chat[hidden] {
+  display: none !important;
+}
+
+.dog-chat app-asistente {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 
 .helper-dog-image.bounce {

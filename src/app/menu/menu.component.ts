@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { HelperDogComponent } from '../components/helper-dog/helper-dog.component';
+import { TourHelpButtonComponent } from '../components/tour-help-button/tour-help-button.component';
 import { UserHeaderComponent } from '../components/user-header/user-header.component';
 import { AppHeaderComponent } from '../components/app-header/app-header.component';
 import { AuthService } from '../services/auth.service';
@@ -11,6 +12,8 @@ import { PermissionsService } from '../services/permissions.service';
 import { getDefaultVersionInfo } from '../version';
 import { VersionService } from '../services/version.service';
 import { ThemeService } from '../services/theme.service';
+import { UnreadTicketsService } from '../services/unread-tickets.service';
+import { OcsDuplicatesAlertService } from '../services/ocs-duplicates-alert.service';
 
 @Component({
   selector: 'app-menu',
@@ -20,6 +23,7 @@ import { ThemeService } from '../services/theme.service';
     RouterOutlet,
     RouterModule,
     HelperDogComponent,
+    TourHelpButtonComponent,
     UserHeaderComponent,
     AppHeaderComponent
   ],
@@ -41,7 +45,11 @@ export class MenuComponent implements OnInit, OnDestroy {
   isAdquisicionesExpanded: boolean = false;
   currentUser: User | null = null;
   versionInfo = getDefaultVersionInfo();
+  ticketsSinLeer = 0;
+  ocsDuplicadosGrupos = 0;
   private routerSubscription: Subscription;
+  private unreadSub?: Subscription;
+  private ocsSub?: Subscription;
 
   // Arrays con las rutas específicas de cada sección
   private assetsRoutes = ['/menu/assets', '/menu/monitors', '/menu/historial', '/menu/devices', '/menu/subnets'];
@@ -73,7 +81,9 @@ export class MenuComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private permissionsService: PermissionsService,
-    private versionService: VersionService
+    private versionService: VersionService,
+    private unreadTicketsService: UnreadTicketsService,
+    private ocsDuplicatesAlertService: OcsDuplicatesAlertService
   ) {
     this.routerSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -126,6 +136,12 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.unreadSub = this.unreadTicketsService.unreadCount$.subscribe((count) => {
+      this.ticketsSinLeer = count;
+    });
+    this.ocsSub = this.ocsDuplicatesAlertService.summary$.subscribe((summary) => {
+      this.ocsDuplicadosGrupos = summary?.groupCount ?? 0;
+    });
     this.versionService.getVersionInfo().subscribe((versionInfo) => {
       this.versionInfo = versionInfo;
     });
@@ -149,6 +165,8 @@ export class MenuComponent implements OnInit, OnDestroy {
       this.routerSubscription.unsubscribe();
     }
     this.layoutSub?.unsubscribe();
+    this.unreadSub?.unsubscribe();
+    this.ocsSub?.unsubscribe();
   }
 
   toggleAssetsMenu(): void {

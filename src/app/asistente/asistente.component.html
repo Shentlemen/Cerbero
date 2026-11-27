@@ -1,8 +1,11 @@
-<section class="asistente">
+<section class="asistente" [class.asistente--compacto]="compacto">
   <header class="asistente-top">
     <div>
       <h1>Asistente</h1>
-      <p>Preguntá en español por el inventario. Solo lee la base: no modifica equipos, tickets ni usuarios.</p>
+      <p>
+        Hablale normal. Si pedís un dato del inventario, arma la consulta y te muestra el resultado.
+        Si seguís sobre lo que acaba de mostrar, tiene en cuenta esa conversación.
+      </p>
     </div>
     <div class="asistente-estado" [class.asistente-estado--ok]="disponible" [class.asistente-estado--off]="!disponible">
       <span>{{ estadoTexto }}</span>
@@ -11,11 +14,6 @@
   </header>
 
   <div class="asistente-hilo" #hilo>
-    <div class="asistente-vacio" *ngIf="mensajes.length === 0 && !enviando">
-      <p>Por ejemplo:</p>
-      <button type="button" *ngFor="let ejemplo of ejemplos" (click)="usarEjemplo(ejemplo)">{{ ejemplo }}</button>
-    </div>
-
     <article
       *ngFor="let mensaje of mensajes"
       class="burbuja"
@@ -43,7 +41,7 @@
       </details>
     </article>
 
-    <p class="asistente-espera" *ngIf="enviando">Consultando… la primera vez puede tardar un par de minutos mientras carga el modelo.</p>
+    <p class="asistente-espera" *ngIf="enviando">Consultando… en este servidor puede tardar un poco.</p>
   </div>
 
   <form class="asistente-form" (ngSubmit)="enviar()">
